@@ -1,0 +1,49 @@
+# ─── Caddyfile — Alternative nginx (TLS auto via Let's Encrypt) ───────────────
+# Plus simple que nginx pour un VPS.
+# Installer : apt install caddy  ou  brew install caddy
+# Démarrer : caddy run --config Caddyfile
+
+cronguard.io {
+    # TLS automatique via Let's Encrypt
+
+    # Rate limiting sur le ping (nécessite le module caddy-ratelimit)
+    @ping path /ping/*
+    rate_limit @ping {
+        zone ping_zone {
+            key {remote_host}
+            events 120
+            window 1m
+        }
+    }
+
+    # API rate limit général
+    rate_limit {
+        zone api_zone {
+            key {remote_host}
+            events 200
+            window 1m
+        }
+    }
+
+    reverse_proxy localhost:3000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        health_uri /health
+        health_interval 15s
+    }
+
+    # Headers de sécurité
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+        X-Frame-Options DENY
+        X-Content-Type-Options nosniff
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}

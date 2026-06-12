@@ -1,0 +1,57 @@
+# ─── fly.toml — CronGuard API + Workers ──────────────────────────────────────
+# Déploiement sur Fly.io (3 machines : api, worker, checker)
+#
+# fly launch --no-deploy  (première fois)
+# fly deploy              (mises à jour)
+
+app    = "cronguard"
+primary_region = "cdg"   # Paris
+
+[build]
+  dockerfile = "Dockerfile"
+
+# ── API ───────────────────────────────────────────────────────────────────────
+[[services]]
+  internal_port = 3000
+  protocol      = "tcp"
+  auto_stop_machines  = true
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [services.concurrency]
+    hard_limit = 200
+    soft_limit = 150
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port     = 443
+
+  [[services.ports]]
+    handlers = ["http"]
+    port     = 80
+    [services.ports.force_https]
+
+  [[services.http_checks]]
+    path              = "/health"
+    interval          = "15s"
+    timeout           = "5s"
+    grace_period      = "10s"
+    restart_limit     = 3
+
+# ── Variables d'env (secrets via fly secrets set) ─────────────────────────────
+[env]
+  PORT      = "3000"
+  NODE_ENV  = "production"
+  # DATABASE_URL        → fly secrets set DATABASE_URL=postgres://...
+  # REDIS_URL           → fly secrets set REDIS_URL=redis://...
+  # LLM_BASE_URL        → fly secrets set LLM_BASE_URL=http://gpu-server:8000/v1
+  # STRIPE_SECRET_KEY   → fly secrets set STRIPE_SECRET_KEY=sk_live_...
+  # STRIPE_WEBHOOK_SECRET → fly secrets set STRIPE_WEBHOOK_SECRET=whsec_...
+  # SMTP_HOST / SMTP_PASS → fly secrets set ...
+  # ALLOWED_ORIGINS     → fly secrets set ALLOWED_ORIGINS=https://cronguard.io
+
+# ── Machines ──────────────────────────────────────────────────────────────────
+[[vm]]
+  cpu_kind = "shared"
+  cpus     = 1
+  memory   = "512mb"

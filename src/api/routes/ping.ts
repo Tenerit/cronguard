@@ -1,0 +1,135 @@
+import { Router }    from 'express'
+import rateLimit     from 'express-rate-limit'
+import { z }         from 'zod'
+import { db }        from '../../db'
+import { pingQueue } from '../../queue'
+import { logger }    from '../../config/logger'
+import { asyncHandler } from '../middleware/async-handler'
+
+export const pingRouter = Router()
+
+const limiter = rateLimit({
+  windowMs: 60_000, max: 120,
+  keyGenerator: (req) => req.params.pingKey ?? req.ip ?? 'unknown',
+  message: { error: 'Too many pings' },
+})
+
+const Schema = z.object({
+  status:      z.enum(['success', 'fail']),
+  duration_ms: z.number().int().positive().max(86_400_000).optional(),
+  records:     z.number().int().nonnegative().max(1_000_000_000).optional(),
+  exit_code:   z.number().int().min(-999).max(999).optional(),
+  output:      z.string().max(4000).optional(),
+})
+
+interface PingData {
+  status:      'success' | 'fail'
+  duration_ms?: number
+  records?:    number
+  exit_code?:  number
+  output?:     string
+}
+
+interface MonitorRow {
+  id: string; client_id: string; active: boolean
+  expected_min: number | null; expected_max: number | null
+}
+
+// ─── Logique partagée : valide la sortie + enqueue le ping ────────────────────
+// Renvoie le statut final (peut être reclassé fail par l'output validation).
+
+async function enqueuePing(monitor: MonitorRow, data: PingData): Promise<'success' | 'fail'> {
+  let { status } = data
+  const { records } = data
+
+  if (
+    status === 'success' && records !== undefined &&
+    monitor.expected_min !== null && monitor.expected_max !== null &&
+    (records < monitor.expected_min || records > monitor.expected_max)
+  ) {
+    status = 'fail'
+    logger.warn('[Ping] Output validation failed', { records, monitorId: monitor.id })
+  }
+
+  await pingQueue.add('ping', {
+    monitorId: monitor.id, clientId: monitor.client_id, status,
+    durationMs: data.duration_ms, records,
+    exitCode: data.exit_code, output: data.output,
+  })
+
+  return status
+}
+
+async function findMonitor(pingKey: string): Promise<MonitorRow | null> {
+  const { rows: [monitor] } = await db.query(
+    `SELECT id, client_id, active, expected_min, expected_max FROM monitors WHERE ping_key = $1`,
+    [pingKey]
+  )
+  return monitor ?? null
+}
+
+// ─── POST /ping/:pingKey — payload JSON complet ───────────────────────────────
+
+pingRouter.post('/:pingKey', limiter, asyncHandler(async (req, res) => {
+  const parsed = Schema.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Invalid payload', details: parsed.error.flatten() })
+  }
+
+  const monitor = await findMonitor(req.params.pingKey)
+  if (!monitor)        return res.status(404).json({ error: 'Monitor not found' })
+  if (!monitor.active) return res.json({ ok: true, skipped: true })
+
+  const status = await enqueuePing(monitor, parsed.data)
+  return res.json({ ok: true, status })
+}))
+
+// ─── GET|POST /ping/:pingKey/:status — variante bash, sans JSON ──────────────
+// Healthchecks-style. Exemples :
+//   curl host/ping/KEY/0          → success  (exit code 0)
+//   curl host/ping/KEY/$?         → success si $?=0, sinon fail
+//   curl host/ping/KEY/fail       → fail
+//   curl "host/ping/KEY/success?duration_ms=1200"
+// La durée optionnelle passe par query string.
+
+const urlPingHandler = asyncHandler(async (req, res) => {
+  const raw = String(req.params.status).toLowerCase()
+
+  // ── /start : marque le job comme "en cours" (détection hung) ───────────────
+  if (raw === 'start') {
+    const monitor = await findMonitor(req.params.pingKey)
+    if (!monitor)        return res.status(404).json({ error: 'Monitor not found' })
+    if (!monitor.active) return res.json({ ok: true, skipped: true })
+    await db.query(
+      `UPDATE monitors SET last_start_at = NOW(), hung_alerted = false WHERE id = $1`,
+      [monitor.id]
+    )
+    return res.json({ ok: true, status: 'running' })
+  }
+
+  let status: 'success' | 'fail'
+  let exit_code: number | undefined
+  if (raw === 'success' || raw === 'ok')   status = 'success'
+  else if (raw === 'fail' || raw === 'down') status = 'fail'
+  else if (/^-?\d+$/.test(raw)) {
+    exit_code = parseInt(raw, 10)
+    status    = exit_code === 0 ? 'success' : 'fail'
+  } else {
+    return res.status(400).json({ error: "status doit être 'success', 'fail', 'start' ou un exit code numérique" })
+  }
+
+  // Durée optionnelle via query (?duration_ms=1200) — ignorée si invalide
+  let duration_ms: number | undefined
+  const d = parseInt(String(req.query.duration_ms ?? ''), 10)
+  if (Number.isFinite(d) && d > 0 && d <= 86_400_000) duration_ms = d
+
+  const monitor = await findMonitor(req.params.pingKey)
+  if (!monitor)        return res.status(404).json({ error: 'Monitor not found' })
+  if (!monitor.active) return res.json({ ok: true, skipped: true })
+
+  const finalStatus = await enqueuePing(monitor, { status, exit_code, duration_ms })
+  return res.json({ ok: true, status: finalStatus })
+})
+
+pingRouter.get('/:pingKey/:status',  limiter, urlPingHandler)
+pingRouter.post('/:pingKey/:status', limiter, urlPingHandler)

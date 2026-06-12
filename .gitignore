@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+
+# Secrets / env — NE JAMAIS committer
+.env
+.env.*
+!.env.example
+
+# Build
+dist
+
+# Logs & coverage
+*.log
+logs
+coverage
+.nyc_output
+
+# Outils locaux / éditeurs
+.claude
+.vscode
+.idea
+.DS_Store
+
+# Fichiers temporaires de scripts ad-hoc
+*.tmp
+_*.ts
+_*.json

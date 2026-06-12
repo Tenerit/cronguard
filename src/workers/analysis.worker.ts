@@ -1,0 +1,454 @@
+import 'dotenv/config'
+import { validateEnv }   from '../config/env'
+validateEnv()
+import axios from 'axios'
+import { Worker, Job }   from 'bullmq'
+import { db }            from '../db'
+import { logger }        from '../config/logger'
+import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
+import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
+import { sendAlert, sendRecovery } from '../services/alerts'
+import { hashError }     from '../services/sanitizer'
+import { getPingQueue, getAnalysisQueue, PingJob, AnalysisJob } from '../queue'
+import { getRedis }      from '../config/redis'
+import { writeHeartbeat } from './self-monitor.worker'
+
+const APP_URL = process.env.APP_URL ?? 'http://localhost:3000'
+
+// ─── Drain des queues AVANT de créer les workers ──────────────────────────────
+// Évite de traiter des jobs stale (après reseed, suppression de monitors...)
+
+async function drainQueuesFirst(): Promise<void> {
+  try {
+    const pq = getPingQueue()
+    const aq = getAnalysisQueue()
+    await Promise.all([
+      pq.drain(),  // supprime les jobs en attente
+      aq.drain(),
+      pq.clean(0, 1000, 'failed'),    // supprime les jobs échoués
+      aq.clean(0, 1000, 'failed'),
+      pq.clean(0, 1000, 'completed'), // supprime les jobs terminés
+      aq.clean(0, 1000, 'completed'),
+    ])
+    logger.debug('[Workers] Queues vidées avant démarrage')
+  } catch (e) {
+    logger.warn('[Workers] Drain échoué (non bloquant)', { err: (e as Error).message })
+  }
+}
+
+// ─── Worker 1 : Ping processor ────────────────────────────────────────────────
+
+function createPingWorker() {
+  return new Worker<PingJob>('ping-processor', async (job: Job<PingJob>) => {
+    const { monitorId, clientId, status, durationMs, records, exitCode, output } = job.data
+
+    // Guard : monitor peut avoir été supprimé entre l'enqueue et le traitement
+    const { rows: [exists] } = await db.query(
+      `SELECT id FROM monitors WHERE id=$1`, [monitorId]
+    )
+    if (!exists) {
+      logger.warn('[Worker] Monitor introuvable, ping ignoré', { monitorId })
+      return
+    }
+
+    const { rows: [ping] } = await db.query(
+      `INSERT INTO pings (monitor_id,status,duration_ms,records,exit_code,output)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+      [monitorId, status, durationMs, records, exitCode, (output ?? '').slice(0, 5000)]
+    )
+
+    // La complétion (success/fail) efface l'état "en cours" du run
+    await db.query(
+      `UPDATE monitors SET last_ping_at=NOW(), last_status=$2, last_start_at=NULL, hung_alerted=false WHERE id=$1`,
+      [monitorId, status]
+    )
+
+    // Enregistre le premier ping client (pour l'onboarding)
+    if (status === 'success') {
+      await db.query(`
+        UPDATE clients SET first_ping_at = NOW()
+        WHERE id = $1 AND first_ping_at IS NULL
+      `, [clientId])
+    }
+
+    if (status === 'success') {
+      const cleared = await clearAlert(monitorId)
+      // Notif de rétablissement + persistance de l'incident (MTTR/impact)
+      if (cleared?.wasFiring) {
+        const durationMs = Date.now() - new Date(cleared.firstFired).getTime()
+
+        // Dernière analyse de l'incident → cause racine, sévérité, impact
+        const { rows: [la] } = await db.query(`
+          SELECT id, severity, category, data_impact, diagnosis
+          FROM analyses WHERE monitor_id = $1 ORDER BY created_at DESC LIMIT 1
+        `, [monitorId])
+        let rootCause: string | null = null
+        if (la?.diagnosis) { try { rootCause = JSON.parse(la.diagnosis).cause ?? null } catch { /* texte brut */ rootCause = String(la.diagnosis).slice(0, 300) } }
+
+        await db.query(`
+          INSERT INTO incidents (monitor_id, started_at, resolved_at, duration_ms,
+            alert_count, severity, category, data_impact, root_cause, analysis_id)
+          VALUES ($1,$2,NOW(),$3,$4,$5,$6,$7,$8,$9)
+        `, [monitorId, cleared.firstFired, durationMs, cleared.alertCount,
+            la?.severity ?? null, la?.category ?? null, la?.data_impact ?? null, rootCause, la?.id ?? null])
+
+        const { rows: [rc] } = await db.query(`
+          SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url
+          FROM monitors m JOIN clients c ON c.id = m.client_id WHERE m.id = $1
+        `, [monitorId])
+        if (rc) {
+          await sendRecovery({
+            jobName: rc.name, env: rc.env,
+            downMs:  durationMs,
+            statusPageUrl: `${APP_URL}/status/${monitorId}`,
+            client: { email: rc.email, slackWebhook: rc.slack_webhook, webhookUrl: rc.webhook_url },
+          })
+        }
+      }
+      return
+    }
+
+    const { rows: [ctx] } = await db.query(`
+      SELECT m.name, m.schedule, m.env, m.expected_min, m.expected_max,
+             c.email, c.slack_webhook,
+             (SELECT pinged_at FROM pings WHERE monitor_id=m.id AND status='success' ORDER BY pinged_at DESC LIMIT 1) AS last_success,
+             (SELECT AVG(duration_ms) FROM pings WHERE monitor_id=m.id AND status='success' ORDER BY pinged_at DESC LIMIT 20) AS avg_dur
+      FROM monitors m JOIN clients c ON c.id=m.client_id WHERE m.id=$1
+    `, [monitorId])
+
+    if (!ctx) return
+
+    // Contexte historique 7 jours
+    const { rows: history7d } = await db.query(`
+      SELECT status, duration_ms FROM pings
+      WHERE monitor_id=$1 AND pinged_at > NOW() - INTERVAL '7 days'
+      ORDER BY pinged_at ASC
+    `, [monitorId])
+
+    const total       = history7d.length
+    const fails7d     = history7d.filter((p: {status: string}) => p.status !== 'success').length
+    const successRate = total > 0 ? Math.round((total - fails7d) / total * 100) : 100
+
+    const durations = history7d
+      .filter((p: {status: string; duration_ms: number}) => p.duration_ms > 0 && p.status === 'success')
+      .map((p: {duration_ms: number}) => p.duration_ms)
+
+    let durationTrend: number | undefined
+    if (durations.length >= 6) {
+      const mid  = Math.floor(durations.length / 2)
+      const avg1 = durations.slice(0, mid).reduce((a: number, b: number) => a + b, 0) / mid
+      const avg2 = durations.slice(mid).reduce((a: number, b: number) => a + b, 0) / (durations.length - mid)
+      if (avg1 > 0) durationTrend = Math.round((avg2 - avg1) / avg1 * 100)
+    }
+
+    const { rows: [recentError] } = await db.query(`
+      SELECT 1 FROM analyses
+      WHERE monitor_id=$1 AND created_at > NOW() - INTERVAL '7 days'
+      LIMIT 1
+    `, [monitorId])
+
+    // Défaillances simultanées (multi-monitors)
+    const { rows: correlatedRows } = await db.query(`
+      SELECT m.name FROM pings p
+      JOIN monitors m ON m.id = p.monitor_id
+      WHERE m.client_id = $1 AND m.id != $2
+        AND p.status != 'success'
+        AND p.pinged_at > NOW() - INTERVAL '30 minutes'
+      GROUP BY m.name LIMIT 5
+    `, [clientId, monitorId])
+    const correlatedFailures = correlatedRows.map((r: {name: string}) => r.name)
+
+    // Pattern temporel
+    const { rows: timePatternRows } = await db.query(`
+      SELECT EXTRACT(DOW  FROM pinged_at)::int AS dow,
+             EXTRACT(HOUR FROM pinged_at)::int AS hour,
+             COUNT(*) AS cnt
+      FROM pings WHERE monitor_id=$1 AND status != 'success'
+        AND pinged_at > NOW() - INTERVAL '30 days'
+      GROUP BY dow, hour HAVING COUNT(*) >= 3
+      ORDER BY cnt DESC LIMIT 1
+    `, [monitorId])
+    let timePattern: string | undefined
+    if (timePatternRows.length) {
+      const days = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi']
+      const { dow, hour, cnt } = timePatternRows[0]
+      timePattern = `Récurrent : ${cnt} échecs le ${days[dow]} entre ${hour}h–${hour+1}h`
+    }
+
+    // ─── Signal 4 : Série temporelle des durées ──────────────────────────────
+    // Les 10 derniers runs — la forme (progressive/soudaine) change tout
+    const durationSeries = history7d
+      .filter((p: {status: string; duration_ms: number}) => p.duration_ms > 0)
+      .map((p: {duration_ms: number}) => p.duration_ms)
+      .slice(-10)
+
+    // ─── Signal 5 : Causes des incidents précédents ──────────────────────────
+    // Pas juste "même erreur avant" (boolean) mais quelles catégories
+    const { rows: prevFailureRows } = await db.query(`
+      SELECT a.category, COUNT(*) AS cnt
+      FROM analyses a
+      WHERE a.monitor_id = $1
+        AND a.created_at > NOW() - INTERVAL '30 days'
+        AND a.created_at < NOW() - INTERVAL '1 minute'
+      GROUP BY a.category
+      ORDER BY cnt DESC
+      LIMIT 5
+    `, [monitorId])
+    const prevCategories = prevFailureRows.map(
+      (r: {category: string; cnt: string}) => `${r.category}(×${r.cnt})`
+    )
+
+    // ─── Signal 6 : Série temporelle des records ─────────────────────────────
+    // Tendance du volume de données traité
+    const recordsSeries = history7d
+      .filter((p: {status: string; records: number}) => p.records != null && p.records >= 0)
+      .map((p: {records: number}) => p.records)
+      .slice(-8)
+
+    // ─── Signal 7 : Delta depuis le dernier succès ────────────────────────────
+    let hoursSinceSuccess: number | undefined
+    if (ctx.last_success) {
+      hoursSinceSuccess = Math.round(
+        (Date.now() - new Date(ctx.last_success).getTime()) / 3600000
+      )
+    }
+
+    // ─── Signal 8 : Taux d'auto-résolution ───────────────────────────────────
+    // Ce job s'est-il déjà résolu seul, ou faut-il toujours intervenir ?
+    const { rows: [autoResolveRow] } = await db.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'success'
+          AND pinged_at > (
+            SELECT MAX(p2.pinged_at) FROM pings p2
+            WHERE p2.monitor_id = $1 AND p2.status != 'success'
+              AND p2.pinged_at < p.pinged_at
+          )
+          AND pinged_at - (
+            SELECT MAX(p2.pinged_at) FROM pings p2
+            WHERE p2.monitor_id = $1 AND p2.status != 'success'
+              AND p2.pinged_at < p.pinged_at
+          ) < INTERVAL '2 hours'
+        ) AS auto_resolved,
+        COUNT(*) FILTER (WHERE status != 'success') AS total_fails
+      FROM pings p WHERE monitor_id = $1 AND pinged_at > NOW() - INTERVAL '30 days'
+    `, [monitorId])
+
+    const autoResolveRate = autoResolveRow?.total_fails > 0
+      ? `${autoResolveRow.auto_resolved}/${autoResolveRow.total_fails}`
+      : undefined
+
+    // ─── Signal 9 : P95 durée ──────────────────────────────────────────────
+    const p95 = (() => {
+      if (durations.length < 4) return undefined
+      const sorted = [...durations].sort((a, b) => a - b)
+      return sorted[Math.floor(sorted.length * 0.95)]
+    })()
+
+    // ─── Few-shot : analyses passées validées ──────────────────────────────
+    const { rows: fewShotRows } = await db.query(`
+      SELECT a.diagnosis, p.output AS logs FROM analyses a
+      JOIN pings p ON p.id = a.ping_id
+      WHERE a.monitor_id=$1 AND a.user_feedback='positive' AND p.output IS NOT NULL
+      ORDER BY a.created_at DESC LIMIT 2
+    `, [monitorId])
+    const fewShotExamples = fewShotRows.map((r: {diagnosis: string; logs: string}) => {
+      try {
+        const diag = JSON.parse(r.diagnosis)
+        return { logs: (r.logs ?? '').slice(0, 200), cause: diag.cause, action: diag.action, category: diag.category ?? 'unknown' }
+      } catch { return null }
+    }).filter((x): x is NonNullable<typeof x> => x !== null)
+
+    await getAnalysisQueue().add('analyze', {
+      monitorId, clientId, pingId: ping.id,
+      jobName: ctx.name, env: ctx.env, schedule: ctx.schedule,
+      lastSuccess: ctx.last_success?.toISOString(),
+      durationMs, avgDuration: Math.round(ctx.avg_dur ?? 0),
+      records, expectedMin: ctx.expected_min, expectedMax: ctx.expected_max,
+      exitCode, logs: output ?? '',
+      failCount7d:        fails7d,
+      successRate7d:      successRate,
+      durationTrend,
+      sameErrorBefore:    !!recentError,
+      correlatedFailures: correlatedFailures.length ? correlatedFailures : undefined,
+      timePattern,
+      fewShotExamples:    fewShotExamples.length
+        ? fewShotExamples.map(x => ({ ...x, category: x.category as import('../services/llm/analyzer').ErrorCategory }))
+        : undefined,
+      // Nouveaux signaux enrichis
+      durationSeries:     durationSeries.length >= 3 ? durationSeries : undefined,
+      prevCategories:     prevCategories.length ? prevCategories : undefined,
+      recordsSeries:      recordsSeries.length >= 3 ? recordsSeries : undefined,
+      hoursSinceSuccess,
+      autoResolveRate,
+      p95Duration:        p95,
+    } satisfies AnalysisJob)
+
+  }, { connection: getRedis(), concurrency: 20 })
+}
+
+// ─── Worker 2 : LLM analysis ──────────────────────────────────────────────────
+
+function createAnalysisWorker() {
+  return new Worker<AnalysisJob>('llm-analysis', async (job: Job<AnalysisJob>) => {
+    const ctx = job.data
+
+    // Guard : client et monitor doivent toujours exister
+    const { rows: [client] } = await db.query(
+      `SELECT email, slack_webhook, webhook_url FROM clients WHERE id=$1`, [ctx.clientId]
+    )
+    if (!client) { logger.warn('[Worker] Client supprimé, job ignoré', { clientId: ctx.clientId }); return }
+
+    const { rows: [monitor] } = await db.query(
+      `SELECT id FROM monitors WHERE id=$1`, [ctx.monitorId]
+    )
+    if (!monitor) { logger.warn('[Worker] Monitor supprimé, job ignoré', { monitorId: ctx.monitorId }); return }
+
+    const analysis = await analyzeFailure({
+      jobName:     ctx.jobName, clientId: ctx.clientId, monitorId: ctx.monitorId,
+      env:         ctx.env,
+      schedule:    ctx.schedule, lastSuccess: ctx.lastSuccess,
+      duration:    ctx.durationMs, avgDuration: ctx.avgDuration,
+      exitCode:    ctx.exitCode, records: ctx.records,
+      expectedMin: ctx.expectedMin, expectedMax: ctx.expectedMax,
+      logs:        ctx.logs,
+      failCount7d:        ctx.failCount7d,
+      successRate7d:      ctx.successRate7d,
+      durationTrend:      ctx.durationTrend,
+      sameErrorBefore:    ctx.sameErrorBefore,
+      correlatedFailures: ctx.correlatedFailures,
+      timePattern:        ctx.timePattern,
+      fewShotExamples:    ctx.fewShotExamples as import('../services/llm/analyzer').FewShotExample[] | undefined,
+    })
+
+    if (analysis) {
+      await db.query(
+        `INSERT INTO analyses
+          (monitor_id,ping_id,error_hash,diagnosis,model_used,alert_type,
+           severity,from_cache,tokens_in,tokens_out,
+           category,prevention,confidence,correlated_monitors,
+           checks,data_impact,fix_minutes)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+        [ctx.monitorId, ctx.pingId ?? null, hashError(ctx.jobName, ctx.logs),
+         JSON.stringify({ cause: analysis.cause, action: analysis.action,
+                          prevention: analysis.prevention, category: analysis.category,
+                          checks: analysis.checks, data_impact: analysis.data_impact }),
+         analysis.model, 'fail', analysis.severity, analysis.fromCache,
+         analysis.tokensIn ?? 0, analysis.tokensOut ?? 0,
+         analysis.category ?? 'unknown',
+         analysis.prevention ?? null,
+         analysis.confidence ?? 'medium',
+         analysis.correlatedMonitors?.length ? JSON.stringify(analysis.correlatedMonitors) : null,
+         analysis.checks?.length ? JSON.stringify(analysis.checks) : null,
+         analysis.data_impact ?? 'none',
+         analysis.fix_minutes ?? 30,
+        ]
+      )
+    }
+
+    // shouldAlert avec protection FK
+    let alertState: Awaited<ReturnType<typeof shouldAlert>>
+    try {
+      alertState = await shouldAlert(ctx.monitorId)
+    } catch (e: unknown) {
+      const msg = (e as Error).message ?? ''
+      if (msg.includes('foreign key') || msg.includes('fkey')) {
+        logger.warn('[Worker] shouldAlert FK ignorée (monitor obsolète)', { monitorId: ctx.monitorId })
+        return
+      }
+      throw e
+    }
+
+    if (alertState.decision === 'send') {
+      await sendAlert({
+        jobName: ctx.jobName, env: ctx.env, lastPingAt: ctx.lastSuccess,
+        analysis, alertCount: alertState.alertCount, firstFired: alertState.firstFired,
+        statusPageUrl: `${APP_URL}/status/${ctx.monitorId}`,
+        client: { email: client.email, slackWebhook: client.slack_webhook, webhookUrl: client.webhook_url },
+      })
+    }
+
+    logger.info('[Analysis] Done', {
+      job: ctx.jobName,
+      severity: analysis?.severity,
+      decision: alertState.decision,
+      ...(analysis?.category && { category: analysis.category }),
+    })
+
+  }, { connection: getRedis(), concurrency: 3, limiter: { max: 30, duration: 60_000 } })
+}
+
+// ─── Démarrage ────────────────────────────────────────────────────────────────
+
+async function main() {
+  // 1. Migrations DB
+  await db.query('SELECT 1') // connexion sanity check
+  const { runMigrations } = await import('../db/migrations')
+  await runMigrations()
+
+  // 2. Warm-up du modèle LLM — évite le cold start de 30-60s au 1er job (Ollama local).
+  //    Inutile pour un provider cloud (pas de cold start, et ça coûterait un appel).
+  if (!isCloudLLM()) {
+    try {
+      const llmUrl = process.env.LLM_BASE_URL ?? 'http://localhost:11434/v1'
+      const model  = process.env.LLM_MODEL ?? 'llama3.2:3b'
+      await axios.post(`${llmUrl}/chat/completions`, {
+        model, max_tokens: 1, temperature: 0,
+        messages: [{ role: 'user', content: 'ok' }],
+      }, { timeout: 90_000, headers: llmHeaders() })
+      logger.info('[Workers] LLM warm-up OK', { model })
+    } catch {
+      logger.warn('[Workers] LLM warm-up échoué (Ollama indisponible ou modèle absent)')
+    }
+  }
+
+  // 4. Vider les queues stale AVANT de créer les workers
+  await drainQueuesFirst()
+
+  // 5. Créer les workers APRÈS le drain
+  const pingWorker     = createPingWorker()
+  const analysisWorker = createAnalysisWorker()
+
+  // Error handlers
+  for (const w of [pingWorker, analysisWorker]) {
+    w.on('failed', (job, err) => logger.error('[Worker] Job failed', { id: job?.id, err: err.message }))
+    w.on('error',  (err)      => logger.error('[Worker] Worker error', { err: err.message }))
+  }
+
+  logger.info('[Workers] Started — ping(20) + analysis(3)')
+
+  // Heartbeat
+  writeHeartbeat()
+  setInterval(writeHeartbeat, 5 * 60 * 1000)
+
+  // ─── Graceful shutdown ──────────────────────────────────────────────────────
+  let shuttingDown = false
+
+  async function shutdown(signal: string) {
+    if (shuttingDown) return
+    shuttingDown = true
+    logger.info(`[Workers] ${signal} — arrêt en cours...`)
+    try {
+      await Promise.all([pingWorker.close(), analysisWorker.close()])
+      await getRedis().quit()
+      logger.info('[Workers] Arrêt propre.')
+    } catch { /* best effort */ }
+    process.exit(0)
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'))
+  process.on('SIGINT',  () => shutdown('SIGINT'))
+}
+
+process.on('uncaughtException', (err) => {
+  logger.error('[Workers] Uncaught exception', { err: err.message, stack: err.stack })
+  process.exit(1)
+})
+process.on('unhandledRejection', (reason) => {
+  logger.error('[Workers] Unhandled rejection', { reason: String(reason) })
+  process.exit(1)
+})
+
+main().catch(err => {
+  logger.error('[Workers] Fatal', { err: err.message })
+  process.exit(1)
+})

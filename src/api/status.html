@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="60">
+<title>Status — CronGuard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c10;--bg2:#0f1218;--bg3:#151a22;
+  --border:rgba(255,255,255,0.07);--text:#e2e8f0;--muted:#64748b;
+  --green:#22d3a0;--amber:#f59e0b;--red:#f87171;--blue:#60a5fa;
+  --mono:'JetBrains Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:40px 20px}
+.container{max-width:600px;margin:0 auto}
+.header{text-align:center;margin-bottom:40px}
+.logo{font-family:var(--mono);font-size:14px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.logo-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.monitor-name{font-size:28px;font-weight:500;margin-bottom:8px}
+.monitor-env{font-size:12px;font-family:var(--mono);color:var(--muted)}
+.status-banner{display:flex;align-items:center;justify-content:center;gap:12px;padding:20px;border-radius:12px;margin:24px 0;border:1px solid}
+.banner-ok   {background:rgba(34,211,160,0.06);border-color:rgba(34,211,160,0.2)}
+.banner-late {background:rgba(245,158,11,0.06);border-color:rgba(245,158,11,0.2)}
+.banner-fail {background:rgba(248,113,113,0.06);border-color:rgba(248,113,113,0.2);animation:shake .4s ease}
+.banner-unknown{background:rgba(100,116,139,0.06);border-color:rgba(100,116,139,0.2)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.status-dot{width:12px;height:12px;border-radius:50%}
+.dot-ok   {background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot-late {background:var(--amber);box-shadow:0 0 8px var(--amber);animation:pulse 1.5s infinite}
+.dot-fail {background:var(--red);  box-shadow:0 0 8px var(--red);  animation:pulse 1s infinite}
+.dot-unknown{background:var(--muted)}
+.status-text{font-size:18px;font-weight:500}
+.ok-text   {color:var(--green)}
+.late-text {color:var(--amber)}
+.fail-text {color:var(--red)}
+.unk-text  {color:var(--muted)}
+.last-ping{font-size:12px;font-family:var(--mono);color:var(--muted);text-align:center;margin-bottom:32px}
+.section-title{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.uptime-section{margin-bottom:32px}
+.uptime-bar{display:flex;gap:3px;margin-bottom:8px}
+.up-seg{flex:1;height:32px;border-radius:3px;cursor:pointer;transition:opacity .15s;position:relative}
+.up-seg:hover{opacity:.75}
+.up-ok   {background:#1a4a3a}
+.up-late {background:#3d2e00}
+.up-fail {background:#3d1a1a}
+.up-none {background:var(--bg3)}
+.up-seg.filled-ok   {background:var(--green)}
+.up-seg.filled-late {background:var(--amber)}
+.up-seg.filled-fail {background:var(--red)}
+.uptime-labels{display:flex;justify-content:space-between;font-size:10px;font-family:var(--mono);color:var(--muted)}
+.uptime-pct{font-size:13px;font-family:var(--mono);color:var(--text);margin-top:6px}
+.history-section{margin-bottom:32px}
+.event-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border);font-size:12px}
+.event-row:last-child{border-bottom:none}
+.event-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.event-time{color:var(--muted);font-family:var(--mono);min-width:80px}
+.event-label{flex:1}
+.event-dur{color:var(--muted);font-family:var(--mono)}
+.footer{text-align:center;font-size:11px;color:var(--muted);padding-top:24px;border-top:0.5px solid var(--border)}
+.footer a{color:var(--blue);text-decoration:none}
+.loading{text-align:center;padding:60px;color:var(--muted);font-family:var(--mono)}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:8px;padding:16px;text-align:center;color:var(--red);font-size:13px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo"><div class="logo-dot"></div> CronGuard Status</div>
+    <div id="monitor-title"><div class="loading"><span class="spinner"></span>Chargement...</div></div>
+  </div>
+  <div id="content"></div>
+  <div class="footer">
+    Mis à jour automatiquement toutes les 60s ·
+    <a href="https://cronguard.io">CronGuard</a>
+  </div>
+</div>
+
+<script>
+// Extrait l'ID du monitor depuis l'URL : /status/UUID
+const monitorId = window.location.pathname.split('/status/')[1]?.split('?')[0]
+const API_BASE   = window.location.origin
+
+if (!monitorId) {
+  document.getElementById('content').innerHTML =
+    '<div class="error-box">Identifiant de monitor manquant dans l\'URL</div>'
+}
+
+function timeAgo(iso) {
+  if (!iso) return 'jamais'
+  const diff = Date.now() - new Date(iso).getTime()
+  if (diff < 60000)   return `il y a ${Math.round(diff/1000)}s`
+  if (diff < 3600000) return `il y a ${Math.round(diff/60000)}min`
+  if (diff < 86400000)return `il y a ${Math.round(diff/3600000)}h`
+  return `il y a ${Math.round(diff/86400000)}j`
+}
+
+function formatDur(ms) {
+  if (!ms) return ''
+  if (ms < 1000)    return ms + 'ms'
+  if (ms < 60000)   return (ms/1000).toFixed(1) + 's'
+  return Math.round(ms/60000) + 'min'
+}
+
+async function load() {
+  try {
+    const res  = await fetch(`${API_BASE}/status/${monitorId}`)
+    if (!res.ok) throw new Error(res.status === 404 ? 'Monitor introuvable' : 'Erreur serveur')
+    const data = await res.json()
+    render(data)
+  } catch(e) {
+    document.getElementById('content').innerHTML =
+      `<div class="error-box">${e.message || 'Impossible de charger le statut'}</div>`
+    document.getElementById('monitor-title').innerHTML =
+      '<div class="monitor-name" style="color:var(--red)">Erreur</div>'
+  }
+}
+
+function render(data) {
+  const st     = data.last_status || 'unknown'
+  const pings  = Array.isArray(data.recent_pings) ? data.recent_pings : []
+
+  // Header
+  document.getElementById('monitor-title').innerHTML = `
+    <div class="monitor-name">${esc(data.name)}</div>
+    <div class="monitor-env">${esc(data.env)}${data.schedule ? ' · ' + esc(data.schedule) : ''}</div>`
+
+  // Status banner
+  const bClass  = st === 'ok' ? 'banner-ok' : st === 'late' ? 'banner-late' : st === 'failed' ? 'banner-fail' : 'banner-unknown'
+  const dClass  = st === 'ok' ? 'dot-ok'   : st === 'late' ? 'dot-late'   : st === 'failed' ? 'dot-fail'   : 'dot-unknown'
+  const tClass  = st === 'ok' ? 'ok-text'  : st === 'late' ? 'late-text'  : st === 'failed' ? 'fail-text'  : 'unk-text'
+  const tText   = st === 'ok' ? 'Opérationnel' : st === 'late' ? 'En retard' : st === 'failed' ? 'Incident en cours' : 'Inconnu'
+
+  // Calcule uptime sur les 90 derniers pings
+  const okCount   = pings.filter(p => p.status === 'success').length
+  const uptimePct = pings.length > 0 ? Math.round((okCount / pings.length) * 1000) / 10 : 100
+
+  // Uptime sparkline
+  const segments = Array.from({ length: 90 }, (_, i) => {
+    const p = pings[i]
+    if (!p) return '<div class="up-seg up-none" title="Aucune donnée"></div>'
+    const cls = p.status === 'success' ? 'up-ok filled-ok' : p.status === 'late' ? 'up-late filled-late' : 'up-fail filled-fail'
+    const label = p.status === 'success' ? `OK · ${timeAgo(p.pinged_at)}` : `Échec · ${timeAgo(p.pinged_at)}`
+    return `<div class="up-seg ${cls}" title="${label}"></div>`
+  }).join('')
+
+  // Historique récent (10 derniers événements)
+  const events = pings.slice(0, 10).map(p => {
+    const dotCls = p.status === 'success' ? 'var(--green)' : p.status === 'late' ? 'var(--amber)' : 'var(--red)'
+    const label  = p.status === 'success' ? 'Exécution réussie' : p.status === 'late' ? 'Exécution en retard' : 'Échec d\'exécution'
+    return `
+    <div class="event-row">
+      <div class="event-dot" style="background:${dotCls}"></div>
+      <div class="event-time">${p.pinged_at ? new Date(p.pinged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '—'}</div>
+      <div class="event-label">${label}</div>
+      <div class="event-dur">${p.duration_ms ? formatDur(p.duration_ms) : ''}</div>
+    </div>`
+  }).join('') || '<div style="color:var(--muted);font-size:12px;padding:12px 0">Aucun événement récent</div>'
+
+  document.getElementById('content').innerHTML = `
+    <div class="status-banner ${bClass}">
+      <div class="status-dot ${dClass}"></div>
+      <div class="status-text ${tClass}">${tText}</div>
+    </div>
+    <div class="last-ping">Dernier ping : ${timeAgo(data.last_ping_at)}</div>
+
+    <div class="uptime-section">
+      <div class="section-title">Disponibilité — 90 dernières exécutions</div>
+      <div class="uptime-bar">${segments}</div>
+      <div class="uptime-labels"><span>← plus ancien</span><span>maintenant →</span></div>
+      <div class="uptime-pct">${uptimePct}% de succès</div>
+    </div>
+
+    <div class="history-section">
+      <div class="section-title">Historique récent</div>
+      ${events}
+    </div>`
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+}
+
+if (monitorId) load()
+</script>
+</body>
+</html>

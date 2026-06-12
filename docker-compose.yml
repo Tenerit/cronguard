@@ -1,0 +1,123 @@
+services:
+
+  # ── API ─────────────────────────────────────────────────────────────────────
+  api:
+    build: .
+    command: node dist/api/index.js
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      REDIS_URL:    redis://redis:6379
+      LLM_BASE_URL: http://ollama:11434/v1
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    healthcheck:
+      test:     ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
+    restart: unless-stopped
+
+  # ── Workers ──────────────────────────────────────────────────────────────────
+  worker:
+    build: .
+    command: node dist/workers/analysis.worker.js
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      REDIS_URL:    redis://redis:6379
+      LLM_BASE_URL: http://ollama:11434/v1
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    healthcheck:
+      test:     ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
+    restart: unless-stopped
+
+  checker:
+    build: .
+    command: node dist/workers/timeout.checker.js
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      REDIS_URL:    redis://redis:6379
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    healthcheck:
+      test:     ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
+    restart: unless-stopped
+
+  retention:
+    build: .
+    command: node dist/workers/retention.worker.js
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      REDIS_URL:    redis://redis:6379
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    restart: unless-stopped
+
+  self-monitor:
+    build: .
+    command: node dist/workers/self-monitor.worker.js
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      REDIS_URL:    redis://redis:6379
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+    restart: unless-stopped
+
+  # ── Infrastructure ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB:       cronguard
+      POSTGRES_USER:     cronguard
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U cronguard"]
+      interval: 5s
+      retries:  10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy noeviction
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test:     ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries:  10
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  ollama_models:

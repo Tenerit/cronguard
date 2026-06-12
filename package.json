@@ -1,0 +1,96 @@
+{
+  "name": "cronguard",
+  "version": "1.0.0",
+  "description": "Intelligent cron job monitoring with self-hosted LLM analysis",
+  "license": "MIT",
+  "keywords": [
+    "cron",
+    "monitoring",
+    "cron-monitoring",
+    "healthchecks",
+    "observability",
+    "incident",
+    "mttr",
+    "llm",
+    "ollama",
+    "self-hosted"
+  ],
+  "main": "dist/api/index.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "build": "tsc && node -e \"const fs=require('fs');['dashboard.html','status.html'].forEach(f=>fs.copyFileSync('src/api/'+f,'dist/api/'+f))\"",
+    "build:watch": "tsc --watch",
+    "dev": "tsx watch src/api/index.ts",
+    "worker:dev": "tsx watch src/workers/analysis.worker.ts",
+    "checker:dev": "tsx watch src/workers/timeout.checker.ts",
+    "dev:all": "concurrently --names api,worker,checker --prefix-colors green,blue,yellow \"npm run dev\" \"npm run worker:dev\" \"npm run checker:dev\"",
+    "start": "node dist/api/index.js",
+    "start:worker": "node dist/workers/analysis.worker.js",
+    "start:checker": "node dist/workers/timeout.checker.js",
+    "start:retention": "node dist/workers/retention.worker.js",
+    "start:self-monitor": "node dist/workers/self-monitor.worker.js",
+    "db:migrate": "node dist/db/migrations.js",
+    "seed": "node dist/db/seed.js",
+    "test": "jest --runInBand --forceExit",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --runInBand --forceExit --coverage",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "llm:pull": "docker compose exec ollama ollama pull llama3.2:3b",
+    "retention:now": "cross-env RUN_RETENTION_NOW=true node dist/workers/retention.worker.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "bullmq": "^5.0.0",
+    "cors": "^2.8.6",
+    "cron-parser": "^5.5.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.18.0",
+    "express-rate-limit": "^7.1.0",
+    "helmet": "^7.1.0",
+    "ioredis": "^5.3.0",
+    "nodemailer": "^8.0.8",
+    "pg": "^8.11.0",
+    "stripe": "^14.0.0",
+    "winston": "^3.11.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
+    "@types/nodemailer": "^6.4.0",
+    "@types/pg": "^8.20.0",
+    "@types/supertest": "^7.2.0",
+    "@types/uuid": "^9.0.0",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "jest": "^30.4.2",
+    "pg-mem": "^3.0.14",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.11",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0",
+    "vitest": "^4.1.7"
+  },
+  "vitest": {
+    "environment": "node"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src"
+    ],
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
+    "testTimeout": 15000,
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/__tests__/**"
+    ]
+  }
+}

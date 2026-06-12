@@ -1,0 +1,492 @@
+openapi: 3.0.3
+info:
+  title: CronGuard API
+  version: 1.0.0
+  description: |
+    Monitoring intelligent de cron jobs avec analyse IA self-hosted.
+
+    **Authentification** : toutes les routes (sauf /ping et /status) nécessitent
+    l'en-tête `X-API-Key: votre_clé`.
+
+    **Obtenir une clé** : `POST /auth/register`
+
+servers:
+  - url: https://api.cronguard.io
+    description: Production
+  - url: http://localhost:3000
+    description: Local
+
+tags:
+  - name: ping
+    description: Endpoint appelé par vos scripts
+  - name: monitors
+    description: CRUD monitors
+  - name: dashboard
+    description: Données agrégées
+  - name: auth
+    description: Inscription, récupération de clé, trial
+  - name: clients
+    description: Profil et paramètres
+  - name: status
+    description: Pages de statut publiques
+
+paths:
+
+  /ping/{pingKey}:
+    post:
+      tags: [ping]
+      summary: Envoie un ping (succès ou échec)
+      parameters:
+        - in: path
+          name: pingKey
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [success, fail]
+                duration_ms:
+                  type: integer
+                  minimum: 1
+                  maximum: 86400000
+                  description: Durée d'exécution en millisecondes
+                records:
+                  type: integer
+                  minimum: 0
+                  description: Nombre d'enregistrements traités
+                exit_code:
+                  type: integer
+                output:
+                  type: string
+                  maxLength: 4000
+                  description: Logs/stderr à analyser par le LLM si échec
+            examples:
+              success:
+                value: { status: success, duration_ms: 4521, records: 15230 }
+              failure:
+                value: { status: fail, exit_code: 1, output: "ERROR: DB connection refused" }
+      responses:
+        '200':
+          description: Ping enregistré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  status: { type: string }
+        '404':
+          description: Ping key inconnue
+
+  /monitors:
+    get:
+      tags: [monitors]
+      summary: Liste tous les monitors
+      security: [{ ApiKey: [] }]
+      responses:
+        '200':
+          description: Liste des monitors triés par criticité
+    post:
+      tags: [monitors]
+      summary: Crée un monitor
+      security: [{ ApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, maxLength: 100 }
+                schedule: { type: string, description: Expression cron }
+                grace_period: { type: integer, minimum: 60, maximum: 86400, default: 300 }
+                expected_min: { type: integer, minimum: 0 }
+                expected_max: { type: integer, minimum: 0 }
+                env:
+                  type: string
+                  enum: [development, staging, production]
+                  default: production
+      responses:
+        '201':
+          description: Monitor créé avec ping_key
+        '403':
+          description: Limite plan free (3 monitors) atteinte
+
+  /monitors/{id}:
+    get:
+      tags: [monitors]
+      summary: Détail d'un monitor (inclut la ping_key)
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Détails monitor }
+        '404': { description: Non trouvé }
+    patch:
+      tags: [monitors]
+      summary: Met à jour un monitor
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                active: { type: boolean }
+                grace_period: { type: integer }
+                expected_min: { type: integer }
+                expected_max: { type: integer }
+      responses:
+        '200': { description: Monitor mis à jour }
+    delete:
+      tags: [monitors]
+      summary: Supprime un monitor
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Supprimé }
+
+  /monitors/{id}/history:
+    get:
+      tags: [monitors]
+      summary: Historique des pings et analyses
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: limit
+          schema: { type: integer, maximum: 200, default: 50 }
+      responses:
+        '200': { description: Liste des pings avec analyses IA }
+
+  /monitors/{id}/acknowledge:
+    post:
+      tags: [monitors]
+      summary: Silence les alertes jusqu'au prochain incident
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Alertes silencées }
+
+  /monitors/{id}/snooze:
+    post:
+      tags: [monitors]
+      summary: Silence les alertes pendant N minutes
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                minutes: { type: integer, minimum: 5, maximum: 1440, default: 60 }
+      responses:
+        '200': { description: Alertes snoozées }
+
+  /monitors/{id}/pause:
+    post:
+      tags: [monitors]
+      summary: Pause temporaire (maintenance planifiée)
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                minutes: { type: integer, minimum: 1, maximum: 1440, default: 60 }
+      responses:
+        '200':
+          description: Monitor en pause
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  pausedUntil: { type: string, format: date-time }
+
+  /monitors/{id}/resume:
+    post:
+      tags: [monitors]
+      summary: Reprend un monitor en pause
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Monitor actif }
+
+  /monitors/{id}/test:
+    post:
+      tags: [monitors]
+      summary: Envoie une alerte de test pour vérifier email/Slack
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Alerte de test envoyée }
+
+  /dashboard/overview:
+    get:
+      tags: [dashboard]
+      summary: Stats globales (1 requête)
+      security: [{ ApiKey: [] }]
+      responses:
+        '200':
+          description: Statistiques agrégées
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  monitors:
+                    type: object
+                    properties:
+                      ok: { type: integer }
+                      failed: { type: integer }
+                      late: { type: integer }
+                      total: { type: integer }
+                  ai:
+                    type: object
+                    properties:
+                      today: { type: integer }
+
+  /dashboard/logs:
+    get:
+      tags: [dashboard]
+      summary: Flux d'activité récent
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, maximum: 100, default: 50 }
+      responses:
+        '200': { description: Pings récents avec analyses IA }
+
+  /dashboard/analyses:
+    get:
+      tags: [dashboard]
+      summary: Dernières analyses IA (tous monitors)
+      security: [{ ApiKey: [] }]
+      responses:
+        '200': { description: Analyses triées par date décroissante }
+
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Crée un compte plan free
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '201':
+          description: Compte créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey: { type: string }
+                  plan: { type: string }
+
+  /auth/reset-request:
+    post:
+      tags: [auth]
+      summary: Demande de récupération de clé API par email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: Email envoyé (même réponse si email inconnu) }
+
+  /auth/reset:
+    post:
+      tags: [auth]
+      summary: Consomme le token et retourne la clé API
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '200':
+          description: Clé API récupérée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiKey: { type: string }
+                  email: { type: string }
+        '400': { description: Token invalide ou expiré }
+
+  /auth/start-trial:
+    post:
+      tags: [auth]
+      summary: Active le trial Pro 14 jours (1 fois par compte)
+      security: [{ ApiKey: [] }]
+      responses:
+        '200': { description: Trial activé }
+        '400': { description: Déjà Pro ou trial déjà utilisé }
+
+  /billing/checkout:
+    post:
+      tags: [auth]
+      summary: Génère un lien Stripe Checkout pour passer Pro
+      security: [{ ApiKey: [] }]
+      responses:
+        '200':
+          description: URL de checkout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkoutUrl: { type: string, format: uri }
+
+  /clients/me:
+    get:
+      tags: [clients]
+      summary: Profil du client connecté
+      security: [{ ApiKey: [] }]
+      responses:
+        '200': { description: Profil avec monitor_count }
+
+  /clients/settings:
+    patch:
+      tags: [clients]
+      summary: Met à jour les paramètres (Slack webhook, etc.)
+      security: [{ ApiKey: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slack_webhook: { type: string, format: uri }
+                app_url: { type: string, format: uri }
+      responses:
+        '200': { description: Paramètres mis à jour }
+
+  /status/{monitorId}:
+    get:
+      tags: [status]
+      summary: Page de statut publique (HTML ou JSON)
+      description: |
+        Un navigateur reçoit la page HTML avec sparkline 90 pings.
+        Une requête avec `Accept: application/json` reçoit le JSON brut.
+      parameters:
+        - in: path
+          name: monitorId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Statut du monitor }
+        '404': { description: Monitor non trouvé }
+
+  /health:
+    get:
+      tags: [status]
+      summary: Healthcheck API
+      responses:
+        '200':
+          description: API opérationnelle
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  ts: { type: string, format: date-time }
+        '503': { description: DB indisponible }
+
+
+  /monitors/{id}/analyses:
+    get:
+      tags: [monitors]
+      summary: Analyses IA d'un monitor spécifique
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Liste des analyses triées par date décroissante
+
+  /monitors/{id}/audit:
+    get:
+      tags: [monitors]
+      summary: Journal des actions sur ce monitor
+      security: [{ ApiKey: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Historique des actions (création, modification, pause...)
+
+  

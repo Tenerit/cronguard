@@ -1,0 +1,2869 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CronGuard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* Backgrounds — bleu-nuit doux, plus chaud que le noir pur */
+  --bg:      #0d0f1a;
+  --bg2:     #13162a;
+  --bg3:     #1a1d35;
+  --bg4:     #21254a;
+  --bg-card: #161929;
+
+  /* Bordures — plus subtiles */
+  --border:  rgba(255,255,255,.07);
+  --border2: rgba(255,255,255,.12);
+  --border3: rgba(255,255,255,.20);
+
+  /* Texte */
+  --text:  #e8eaf0;
+  --text2: #9da3b8;
+  --text3: #4a5070;
+
+  /* Accents — palette plus chaude */
+  --green:       #34d399;
+  --green-dim:   rgba(52,211,153,.10);
+  --green-mid:   rgba(52,211,153,.20);
+  --amber:       #fbbf24;
+  --amber-dim:   rgba(251,191,36,.10);
+  --red:         #f87171;
+  --red-dim:     rgba(248,113,113,.10);
+  --blue:        #60a5fa;
+  --blue-dim:    rgba(96,165,250,.10);
+  --purple:      #a78bfa;
+  --purple-dim:  rgba(167,139,250,.10);
+  --indigo:      #818cf8;
+
+  /* Typographie */
+  --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --sans: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* Géométrie */
+  --radius:    6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --drawer:    440px;
+
+  /* Ombres */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:  0 4px 12px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.3);
+  --shadow-lg:  0 12px 32px rgba(0,0,0,.5), 0 4px 8px rgba(0,0,0,.3);
+  --shadow-glow-green:  0 0 12px rgba(52,211,153,.2);
+  --shadow-glow-red:    0 0 12px rgba(248,113,113,.2);
+}
+html,body{height:100%;font-size:13px;line-height:1.6}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:var(--border3)}
+
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+.app{display:grid;grid-template-columns:220px 1fr;height:100vh;overflow:hidden}
+
+/* ─── Sidebar ────────────────────────────────────────────────────────────── */
+.sidebar{
+  background:linear-gradient(180deg, #14172e 0%, #111328 100%);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:2px 0 12px rgba(0,0,0,.3);
+}
+.s-logo{padding:20px 18px 18px;border-bottom:1px solid var(--border)}
+.s-logo-mark{
+  font-family:var(--sans);font-size:15px;font-weight:600;
+  color:#fff;display:flex;align-items:center;gap:10px;letter-spacing:-.02em;
+}
+.s-logo-mark span{color:var(--green);font-weight:700}
+.s-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 8px var(--green);
+  animation:blink 2.5s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(0.85)}}
+.s-nav{padding:10px 10px;flex:1}
+.s-section{
+  font-size:10px;font-family:var(--mono);font-weight:500;
+  color:var(--text3);text-transform:uppercase;letter-spacing:.12em;
+  padding:14px 8px 6px;
+}
+.s-item{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 10px;border-radius:var(--radius-md);
+  cursor:pointer;font-size:13px;font-weight:500;
+  color:var(--text2);transition:all .2s ease;
+  margin-bottom:2px;user-select:none;position:relative;
+}
+.s-item:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.s-item.active{
+  background:rgba(52,211,153,.12);color:var(--green);
+  box-shadow:inset 3px 0 0 var(--green), var(--shadow-glow-green);
+}
+.s-item .icon{font-size:13px;width:18px;text-align:center;flex-shrink:0}
+.s-badge{
+  margin-left:auto;font-size:9px;font-family:var(--mono);font-weight:600;
+  background:var(--red);color:#fff;
+  padding:2px 6px;border-radius:20px;min-width:18px;text-align:center;
+  box-shadow:var(--shadow-glow-red);
+}
+.s-footer{padding:14px;border-top:1px solid var(--border)}
+.s-plan{
+  font-size:10px;font-family:var(--mono);color:var(--text3);
+  margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
+}
+.s-plan-badge{
+  color:var(--green);background:var(--green-dim);
+  padding:2px 8px;border-radius:20px;font-size:9px;font-weight:600;
+  letter-spacing:.04em;
+}
+
+/* ─── Main ───────────────────────────────────────────────────────────────── */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:0 24px;height:52px;
+  border-bottom:1px solid var(--border);
+  background:rgba(13,15,26,.9);
+  backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:10;
+  box-shadow:0 1px 0 var(--border);
+}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.01em}
+.search-wrap{flex:1;max-width:280px;position:relative}
+.search-input{
+  width:100%;background:var(--bg3);
+  border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:6px 10px 6px 30px;color:var(--text);
+  font-family:var(--sans);font-size:12px;
+  outline:none;transition:all .2s ease;
+}
+.search-input::placeholder{color:var(--text3)}
+.search-input:focus{border-color:var(--green);background:var(--bg2);box-shadow:0 0 0 3px rgba(52,211,153,.08)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:12px}
+.search-kbd{
+  position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  font-size:10px;font-family:var(--mono);color:var(--text3);
+  background:var(--bg4);padding:1px 5px;border-radius:4px;
+  border:1px solid var(--border);
+}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:var(--radius-md);
+  font-size:12px;font-family:var(--sans);font-weight:500;
+  cursor:pointer;transition:all .2s ease;
+  border:1px solid transparent;background:transparent;color:var(--text2);
+}
+.btn:hover{color:var(--text);background:var(--bg3);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-primary{
+  background:linear-gradient(135deg, #34d399 0%, #059669 100%);
+  color:#042f21;font-weight:600;border:none;
+  box-shadow:0 2px 8px rgba(52,211,153,.3), 0 1px 2px rgba(0,0,0,.2);
+}
+.btn-primary:hover{
+  background:linear-gradient(135deg, #4ade80 0%, #10b981 100%);
+  box-shadow:0 4px 12px rgba(52,211,153,.4), 0 2px 4px rgba(0,0,0,.2);
+}
+.btn-ghost{
+  border-color:var(--border2);color:var(--text2);
+  background:rgba(255,255,255,.03);
+}
+.btn-ghost:hover{border-color:var(--border3);color:var(--text);background:var(--bg3)}
+.live{display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);color:var(--green)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.8s ease-in-out infinite}
+
+/* ─── Content ────────────────────────────────────────────────────────────── */
+.content{flex:1;overflow-y:auto;padding:24px;scroll-behavior:smooth}
+
+/* ─── Stats ──────────────────────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
+.stat{
+  background:var(--bg-card);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:16px 18px;position:relative;overflow:hidden;
+  transition:transform .2s ease, box-shadow .2s ease;
+  box-shadow:var(--shadow-sm);
+}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.stat::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg, rgba(255,255,255,.03) 0%, transparent 60%);
+  pointer-events:none;
+}
+.stat::after{
+  content:'';position:absolute;
+  bottom:0;left:12px;right:12px;height:2px;
+  border-radius:99px;opacity:.7;
+}
+.stat-ok::after{background:var(--green)}
+.stat-fail::after{background:var(--red)}
+.stat-late::after{background:var(--amber)}
+.stat-ai::after{background:var(--purple)}
+.stat-uptime::after{background:var(--blue)}
+.stat-label{font-size:11px;font-weight:500;color:var(--text3);margin-bottom:8px;letter-spacing:.02em}
+.stat-val{font-size:28px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.stat-sub{font-size:11px;color:var(--text3)}
+.stat-ok .stat-val{color:var(--green);text-shadow:var(--shadow-glow-green)}
+.stat-fail .stat-val{color:var(--red);text-shadow:var(--shadow-glow-red)}
+.stat-late .stat-val{color:var(--amber)}
+.stat-ai .stat-val{color:var(--purple)}
+.stat-uptime .stat-val{color:var(--blue)}
+
+/* ─── Grid ───────────────────────────────────────────────────────────────── */
+.grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+
+/* ─── Panel ──────────────────────────────────────────────────────────────── */
+.panel{
+  background:var(--bg-card);
+  border:1px solid var(--border);border-radius:var(--radius-lg);
+  overflow:hidden;box-shadow:var(--shadow-sm);
+}
+.ph{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:1px solid var(--border);
+}
+.ph-title{
+  font-size:13px;font-weight:600;color:var(--text);
+  display:flex;align-items:center;gap:8px;
+}
+.ph-count{font-size:11px;font-family:var(--mono);color:var(--text3);font-weight:400}
+.ph-right{display:flex;align-items:center;gap:6px}
+
+/* ─── Monitor rows ───────────────────────────────────────────────────────── */
+.m-row{
+  display:grid;grid-template-columns:14px 1fr 120px 64px 80px;
+  align-items:center;gap:14px;padding:12px 18px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .15s ease;position:relative;
+}
+.m-row:last-child{border-bottom:none}
+.m-row:hover{background:rgba(255,255,255,.04)}
+.m-row:hover .m-actions{opacity:1}
+.m-row.active-row{
+  background:rgba(52,211,153,.05);
+  border-left:2px solid var(--green);
+}
+.m-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.d-ok{background:var(--green);box-shadow:0 0 6px rgba(52,211,153,.5)}
+.d-late{background:var(--amber);box-shadow:0 0 6px rgba(251,191,36,.4);animation:blink 2s ease-in-out infinite}
+.d-fail{background:var(--red);box-shadow:0 0 8px rgba(248,113,113,.5);animation:blink .8s ease-in-out infinite}
+.d-unk{background:var(--bg4)}
+.d-pause{background:var(--blue);opacity:.7}
+.m-name{font-family:var(--sans);font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-env{font-size:10px;font-family:var(--mono);margin-top:2px}
+.env-p{color:var(--blue)}.env-s{color:var(--amber)}.env-d{color:var(--text3)}
+.m-spark{display:flex;align-items:flex-end;gap:1.5px;height:18px;flex-shrink:0}
+.sp{width:4px;border-radius:2px;transition:opacity .15s}
+.sp:hover{opacity:.6}
+.sp-ok{background:var(--green)}.sp-late{background:var(--amber)}.sp-fail{background:var(--red)}.sp-unk{background:var(--bg4)}
+.m-dur{font-family:var(--mono);font-size:11px;color:var(--text2);text-align:right}
+.m-dur-anom{color:var(--amber)!important}
+.m-status{display:flex;align-items:center;justify-content:flex-end}
+.pill{
+  font-size:10px;font-family:var(--mono);
+  padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;
+}
+.pill-ok{background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.pill-late{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+.pill-fail{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2);box-shadow:0 0 8px rgba(248,113,113,.15)}
+.pill-unk{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
+.pill-pause{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(96,165,250,.2)}
+.m-actions{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  display:flex;gap:3px;opacity:0;transition:opacity .15s ease;
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--radius-md);padding:3px 5px;
+  box-shadow:var(--shadow-md);
+}
+.act-btn{
+  font-size:9px;font-family:var(--mono);cursor:pointer;
+  padding:3px 7px;border-radius:var(--radius);
+  color:var(--text2);background:transparent;border:none;
+  transition:all .15s ease;white-space:nowrap;
+}
+.act-btn:hover{background:var(--bg4);color:var(--text)}
+.act-btn.red:hover{color:var(--red);background:var(--red-dim)}
+
+/* ─── Health score ───────────────────────────────────────────────────────── */
+.health-ring{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px}
+.health-bar{width:32px;height:4px;background:var(--bg4);border-radius:99px;overflow:hidden}
+.health-fill{height:100%;border-radius:99px;transition:width .4s ease}
+
+/* ─── Trend ──────────────────────────────────────────────────────────────── */
+.trend{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:20px;font-weight:500}
+.trend-up{background:rgba(248,113,113,.12);color:var(--red)}
+.trend-down{background:rgba(52,211,153,.12);color:var(--green)}
+.trend-flat{color:var(--text3)}
+
+/* ─── Pending ────────────────────────────────────────────────────────────── */
+.pending-spin{
+  display:inline-block;width:9px;height:9px;
+  border:1.5px solid var(--purple);border-top-color:transparent;
+  border-radius:50%;animation:spin .7s linear infinite;
+  vertical-align:middle;margin-right:4px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── Log panel ──────────────────────────────────────────────────────────── */
+.log-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column;height:100%;box-shadow:var(--shadow-sm)}
+.log-body{flex:1;overflow-y:auto;min-height:0}
+.le{
+  display:grid;grid-template-columns:60px 36px 1fr;gap:8px;
+  align-items:start;padding:6px 14px;
+  border-bottom:1px solid rgba(255,255,255,.025);
+  font-family:var(--mono);font-size:10px;
+  transition:background .1s;
+}
+.le:hover{background:rgba(255,255,255,.03)}
+.le-time{color:var(--text3)}
+.le-level{font-weight:600;text-align:center}
+.lv-ok{color:var(--green)}.lv-err{color:var(--red)}.lv-ai{color:var(--purple)}.lv-warn{color:var(--amber)}
+.le-msg{color:var(--text);line-height:1.5}
+.le-sub{color:var(--text3);font-size:9px;margin-top:1px}
+.ai-pill{
+  display:inline-block;font-size:8px;
+  background:rgba(167,139,250,.15);color:var(--purple);
+  padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle;
+}
+
+/* ─── Drawer ─────────────────────────────────────────────────────────────── */
+.drawer-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  z-index:100;opacity:0;pointer-events:none;
+  transition:opacity .25s ease;backdrop-filter:blur(4px);
+}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;width:var(--drawer);
+  background:linear-gradient(180deg, #14172e 0%, #111328 100%);
+  border-left:1px solid var(--border2);z-index:101;
+  transform:translateX(100%);
+  transition:transform .25s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto;display:flex;flex-direction:column;
+  box-shadow:var(--shadow-lg);
+}
+.drawer.open{transform:translateX(0)}
+.d-head{padding:20px 20px 0;border-bottom:1px solid var(--border);flex-shrink:0}
+.d-name{
+  font-family:var(--sans);font-size:15px;font-weight:700;
+  color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:10px;
+}
+.d-meta{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:14px;display:flex;gap:12px;flex-wrap:wrap}
+.d-actions{display:flex;gap:6px;padding:12px 0 14px;flex-wrap:wrap}
+.d-btn{
+  font-size:10px;font-family:var(--sans);font-weight:500;
+  padding:5px 10px;border-radius:var(--radius-md);
+  border:1px solid var(--border2);background:rgba(255,255,255,.04);
+  color:var(--text2);cursor:pointer;transition:all .15s ease;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.d-btn:hover{border-color:var(--border3);color:var(--text);background:var(--bg4);transform:translateY(-1px)}
+.d-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.d-btn.success:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.d-body{padding:18px;flex:1}
+.d-section{margin-bottom:22px}
+.d-section-title{
+  font-size:10px;font-family:var(--mono);font-weight:500;
+  color:var(--text3);text-transform:uppercase;letter-spacing:.1em;
+  margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;
+}
+.d-stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.d-stat{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:12px 14px;
+  transition:transform .15s ease;
+}
+.d-stat:hover{transform:translateY(-1px)}
+.d-stat-label{font-size:9px;font-family:var(--mono);color:var(--text3);margin-bottom:5px;letter-spacing:.06em}
+.d-stat-val{font-size:18px;font-weight:700;font-family:var(--mono);color:var(--text)}
+.d-spark{display:flex;gap:2px;align-items:flex-end;height:36px;padding:4px 0}
+.ds{width:6px;border-radius:2px;flex-shrink:0;transition:opacity .15s}
+.ds:hover{opacity:.6}
+.key-box{
+  background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);
+  border-radius:var(--radius-md);padding:10px 14px;
+  font-family:var(--mono);font-size:11px;color:var(--green);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  word-break:break-all;margin-bottom:8px;
+}
+.key-copy{
+  font-size:9px;padding:3px 8px;border-radius:var(--radius);
+  border:1px solid rgba(52,211,153,.3);background:transparent;
+  color:var(--green);cursor:pointer;flex-shrink:0;transition:all .15s ease;
+  font-family:var(--sans);font-weight:500;
+}
+.key-copy:hover{background:var(--green-dim);border-color:var(--green)}
+.curl-box{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:12px 14px;
+  font-family:var(--mono);font-size:9px;color:var(--text3);
+  white-space:pre;overflow-x:auto;line-height:1.7;
+}
+.d-analysis{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:12px 14px;margin-bottom:8px;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.d-analysis:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.d-analysis-job{
+  font-size:12px;font-weight:600;font-family:var(--sans);
+  color:var(--text);margin-bottom:8px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.d-analysis-cause{font-size:11px;color:var(--text);margin-bottom:6px;line-height:1.5}
+.d-analysis-action{
+  font-size:10px;color:var(--text2);
+  padding:6px 10px;background:var(--bg2);
+  border-radius:var(--radius);border-left:2px solid var(--green);margin-bottom:6px;
+}
+.d-analysis-logs{
+  font-size:9px;font-family:var(--mono);color:var(--text3);
+  cursor:pointer;display:flex;align-items:center;gap:4px;
+  padding:2px 0;transition:color .1s;
+}
+.d-analysis-logs:hover{color:var(--text)}
+.d-logs-content{
+  display:none;margin-top:6px;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:10px;font-family:var(--mono);font-size:9px;color:var(--text2);
+  white-space:pre-wrap;word-break:break-all;max-height:160px;overflow-y:auto;line-height:1.6;
+}
+.d-logs-content.open{display:block}
+
+/* ─── Modal ──────────────────────────────────────────────────────────────── */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.65);
+  z-index:200;display:flex;align-items:center;justify-content:center;
+  backdrop-filter:blur(6px);
+}
+.modal-bg.hidden{display:none}
+.modal{
+  background:linear-gradient(180deg, #181b33 0%, #141628 100%);
+  border:1px solid var(--border2);border-radius:var(--radius-lg);
+  padding:28px;width:480px;max-width:calc(100vw - 32px);
+  box-shadow:var(--shadow-lg);
+}
+.modal-title{
+  font-size:16px;font-weight:700;font-family:var(--sans);
+  color:var(--text);margin-bottom:6px;letter-spacing:-.02em;
+}
+.modal-sub{font-size:12px;color:var(--text2);margin-bottom:22px;line-height:1.6}
+.field{margin-bottom:14px}
+.field-label{
+  display:block;font-size:10px;font-family:var(--sans);font-weight:600;
+  color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;
+}
+.field-input,.field-select{
+  width:100%;background:var(--bg3);
+  border:1px solid var(--border);border-radius:var(--radius-md);
+  padding:8px 12px;color:var(--text);
+  font-family:var(--sans);font-size:12px;
+  outline:none;transition:all .2s ease;
+}
+.field-input::placeholder{color:var(--text3)}
+.field-input:focus,.field-select:focus{
+  border-color:var(--green);background:var(--bg2);
+  box-shadow:0 0 0 3px rgba(52,211,153,.08);
+}
+.field-select option{background:var(--bg3)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-hint{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.modal-actions{
+  display:flex;gap:8px;justify-content:flex-end;
+  margin-top:22px;padding-top:18px;border-top:1px solid var(--border);
+}
+.field-err{font-size:10px;color:var(--red);font-family:var(--mono);margin-top:6px;min-height:18px}
+.success-box{
+  background:var(--green-dim);border:1px solid var(--green-mid);
+  border-radius:var(--radius-md);padding:16px;margin-top:16px;
+}
+.success-key{
+  font-family:var(--mono);font-size:11px;color:var(--green);
+  word-break:break-all;margin-bottom:10px;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+}
+.curl-success{
+  font-family:var(--mono);font-size:9px;color:var(--text3);
+  background:var(--bg);padding:10px;border-radius:var(--radius);
+  white-space:pre;overflow-x:auto;line-height:1.7;border:1px solid var(--border);
+}
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+.toast-container{
+  position:fixed;bottom:24px;right:24px;z-index:500;
+  display:flex;flex-direction:column;gap:8px;pointer-events:none;
+}
+.toast{
+  background:var(--bg2);border:1px solid var(--border2);
+  border-radius:var(--radius-lg);padding:12px 16px;
+  font-family:var(--sans);font-size:12px;font-weight:500;
+  color:var(--text);display:flex;align-items:center;gap:8px;
+  animation:toast-in .25s cubic-bezier(.4,0,.2,1);
+  max-width:320px;pointer-events:all;
+  box-shadow:var(--shadow-lg);backdrop-filter:blur(8px);
+}
+.toast.err{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.08)}
+.toast.ok{border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)}
+@keyframes toast-in{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+
+/* ─── Auth ───────────────────────────────────────────────────────────────── */
+.auth-overlay{
+  position:fixed;inset:0;
+  background:radial-gradient(ellipse at 30% 20%, rgba(52,211,153,.08) 0%, transparent 50%),
+             radial-gradient(ellipse at 70% 80%, rgba(167,139,250,.06) 0%, transparent 50%),
+             var(--bg);
+  display:flex;align-items:center;justify-content:center;z-index:999;
+}
+.auth-card{
+  background:linear-gradient(180deg, #181b33 0%, #14162b 100%);
+  border:1px solid var(--border2);border-radius:var(--radius-lg);
+  padding:36px;width:380px;box-shadow:var(--shadow-lg);
+  position:relative;overflow:hidden;
+}
+.auth-card::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle, rgba(52,211,153,.08) 0%, transparent 70%);
+  pointer-events:none;
+}
+.auth-logo{
+  font-family:var(--sans);font-size:18px;font-weight:700;
+  color:#fff;display:flex;align-items:center;gap:10px;margin-bottom:8px;
+}
+.auth-logo span{color:var(--green)}
+.auth-sub{font-size:12px;color:var(--text2);margin-bottom:28px;line-height:1.6}
+
+/* ─── Views ──────────────────────────────────────────────────────────────── */
+.view{display:none}.view.active{display:block}
+
+/* ─── Settings ───────────────────────────────────────────────────────────── */
+.settings-section{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:12px;
+  box-shadow:var(--shadow-sm);
+}
+.settings-title{
+  font-size:12px;font-family:var(--sans);font-weight:600;
+  color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px;
+}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;border-bottom:1px solid var(--border);
+}
+.settings-row:last-child{border-bottom:none}
+.settings-label{font-size:12px;color:var(--text);font-weight:500}
+.settings-val{font-size:11px;font-family:var(--mono);color:var(--text2)}
+.settings-input-row{display:flex;gap:8px;margin-top:10px}
+.settings-input-row .field-input{flex:1}
+
+/* ─── Docs ───────────────────────────────────────────────────────────────── */
+.docs-section{margin-bottom:28px}
+.docs-h2{
+  font-family:var(--sans);font-size:14px;font-weight:700;
+  color:var(--text);margin-bottom:12px;padding-bottom:8px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.docs-h2::before{
+  content:'';width:3px;height:16px;background:var(--green);
+  border-radius:99px;display:inline-block;
+}
+.docs-h3{
+  font-size:11px;font-family:var(--sans);font-weight:600;
+  color:var(--text2);margin:14px 0 8px;text-transform:uppercase;letter-spacing:.06em;
+}
+.docs-p{font-size:12px;color:var(--text2);line-height:1.75;margin-bottom:10px}
+.docs-code{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:14px 16px;
+  font-family:var(--mono);font-size:11px;color:var(--text2);
+  white-space:pre;overflow-x:auto;line-height:1.75;
+  margin-bottom:12px;position:relative;
+}
+.docs-copy{
+  position:absolute;top:10px;right:10px;
+  font-size:9px;font-family:var(--sans);font-weight:500;
+  padding:3px 9px;border-radius:var(--radius);
+  border:1px solid var(--border2);background:var(--bg2);
+  color:var(--text3);cursor:pointer;transition:all .15s ease;
+}
+.docs-copy:hover{border-color:var(--green);color:var(--green)}
+.docs-badge{
+  display:inline-block;font-size:9px;font-family:var(--mono);font-weight:600;
+  padding:2px 7px;border-radius:4px;margin-right:4px;vertical-align:middle;
+}
+.docs-badge-bash{background:rgba(52,211,153,.12);color:var(--green)}
+.docs-badge-node{background:rgba(96,165,250,.12);color:var(--blue)}
+.docs-badge-python{background:rgba(251,191,36,.12);color:var(--amber)}
+.docs-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.docs-card{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:14px 16px;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+.docs-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.docs-card-title{
+  font-family:var(--sans);font-size:12px;font-weight:600;
+  color:var(--text);margin-bottom:5px;
+}
+.docs-card-desc{font-size:11px;color:var(--text3);line-height:1.6}
+
+/* ─── Analyse enrichie ───────────────────────────────────────────────────── */
+.an-cat{
+  font-size:8px;font-family:var(--mono);padding:2px 7px;
+  border-radius:20px;font-weight:600;text-transform:uppercase;
+  margin-right:5px;letter-spacing:.04em;
+}
+.cat-database{background:rgba(96,165,250,.12);color:var(--blue)}
+.cat-network{background:rgba(167,139,250,.12);color:var(--purple)}
+.cat-timeout{background:rgba(251,191,36,.12);color:var(--amber)}
+.cat-resources{background:rgba(248,113,113,.12);color:var(--red)}
+.cat-dependency{background:rgba(52,211,153,.12);color:var(--green)}
+.cat-code{background:rgba(100,116,139,.12);color:var(--text2)}
+.cat-data{background:rgba(129,140,248,.12);color:var(--indigo)}
+.cat-unknown{background:var(--bg4);color:var(--text3)}
+.an-prevention{
+  font-size:11px;color:var(--text3);line-height:1.5;
+  padding:8px 10px;background:rgba(96,165,250,.05);
+  border-radius:var(--radius);border-left:2px solid var(--blue);margin-bottom:8px;
+}
+.an-confidence{font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:20px;font-weight:500}
+.conf-high{background:var(--green-dim);color:var(--green)}
+.conf-medium{background:var(--amber-dim);color:var(--amber)}
+.conf-low{background:var(--bg4);color:var(--text3)}
+.an-correlated{
+  font-size:11px;color:var(--purple);margin-bottom:8px;
+  padding:6px 10px;background:rgba(167,139,250,.08);
+  border-radius:var(--radius);display:flex;gap:8px;align-items:flex-start;
+  border:1px solid rgba(167,139,250,.15);
+}
+.an-meta-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.data-impact{font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:20px;font-weight:500}
+.impact-none{background:var(--green-dim);color:var(--green)}
+.impact-possible{background:var(--amber-dim);color:var(--amber)}
+.impact-confirmed{background:var(--red-dim);color:var(--red);box-shadow:var(--shadow-glow-red)}
+.fix-time{font-size:10px;font-family:var(--mono);color:var(--text3)}
+.fix-time span{color:var(--text2);font-weight:500}
+.an-checks{margin:8px 0 10px}
+.an-checks-label{
+  font-size:9px;font-family:var(--sans);font-weight:600;
+  color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;
+}
+.an-check-item{
+  font-size:11px;color:var(--text2);
+  padding:4px 0;display:flex;gap:8px;align-items:flex-start;line-height:1.5;
+}
+.an-check-item::before{content:"→";color:var(--green);font-family:var(--mono);flex-shrink:0}
+.an-item{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:16px 18px;margin-bottom:10px;
+  box-shadow:var(--shadow-sm);
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.an-item:hover{transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.an-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:10px}
+.an-job{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text)}
+.an-meta{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.an-time{font-size:9px;font-family:var(--mono);color:var(--text3)}
+.an-cause{font-size:12px;color:var(--text);margin-bottom:8px;line-height:1.6}
+.an-action{
+  font-size:11px;color:var(--text2);line-height:1.5;
+  padding:8px 12px;background:rgba(52,211,153,.05);
+  border-radius:var(--radius);border-left:2px solid var(--green);margin-bottom:8px;
+}
+.an-logs-toggle{
+  font-size:9px;font-family:var(--mono);color:var(--text3);
+  cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+  padding:2px 0;transition:color .15s;
+}
+.an-logs-toggle:hover{color:var(--text)}
+.an-logs-content{
+  display:none;margin-top:6px;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:10px;font-family:var(--mono);font-size:9px;color:var(--text2);
+  white-space:pre-wrap;word-break:break-all;max-height:200px;overflow-y:auto;line-height:1.6;
+}
+.an-logs-content.open{display:block}
+.sev-high{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.sev-medium{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+.sev-low{background:var(--green-dim);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.sev-critical{background:rgba(248,113,113,.2);color:#ff6b6b;border:1px solid rgba(248,113,113,.3);box-shadow:var(--shadow-glow-red)}
+.sev-pill{font-size:9px;font-family:var(--mono);padding:2px 8px;border-radius:20px;font-weight:600}
+.an-filter-badge{
+  font-size:9px;font-family:var(--mono);
+  background:var(--green-dim);color:var(--green);
+  padding:2px 9px;border-radius:20px;
+  display:inline-flex;align-items:center;gap:4px;
+  margin-left:8px;cursor:pointer;border:1px solid rgba(52,211,153,.2);
+  transition:all .15s ease;
+}
+.an-filter-badge:hover{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,.2)}
+
+/* ─── Feedback ───────────────────────────────────────────────────────────── */
+.feedback-row{display:flex;gap:6px;margin-top:10px;align-items:center;padding-top:10px;border-top:1px solid var(--border)}
+.fb-btn{
+  font-size:11px;padding:3px 10px;border-radius:var(--radius-md);
+  border:1px solid var(--border);background:transparent;
+  cursor:pointer;transition:all .15s ease;
+}
+.fb-btn:hover{border-color:var(--border2);transform:scale(1.05)}
+.fb-btn.active-pos{border-color:var(--green);background:var(--green-dim)}
+.fb-btn.active-neg{border-color:var(--red);background:var(--red-dim)}
+.fb-label{font-size:10px;font-family:var(--sans);color:var(--text3)}
+
+/* ─── Delete confirm ─────────────────────────────────────────────────────── */
+.del-input{
+  width:100%;background:var(--bg3);
+  border:1px solid rgba(248,113,113,.3);border-radius:var(--radius-md);
+  padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:11px;
+  outline:none;margin-top:10px;transition:all .2s ease;
+}
+.del-input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(248,113,113,.08)}
+.del-input::placeholder{color:var(--text3)}
+
+/* ─── Edit modal ─────────────────────────────────────────────────────────── */
+/* réutilise .modal */
+
+/* ─── Mobile responsive ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .sidebar.open{display:flex;position:fixed;inset:0;z-index:50;width:240px}
+  .mobile-menu-btn{display:flex}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .grid{grid-template-columns:1fr}
+  .log-panel{display:none}
+  .d-stats-row{grid-template-columns:repeat(3,1fr)}
+  .docs-grid{grid-template-columns:1fr}
+  .field-row{grid-template-columns:1fr}
+  .modal{width:calc(100vw - 24px);padding:22px}
+  .drawer{width:100vw}
+  .m-row{grid-template-columns:14px 1fr 80px}
+  .m-spark,.m-dur,.m-status{display:none}
+  .m-row:hover .m-actions{display:none}
+  .topbar{padding:0 14px;gap:8px}
+  .search-wrap{max-width:160px}
+  .content{padding:14px}
+}
+@media (max-width: 480px) {
+  .stats{grid-template-columns:1fr 1fr}
+  .stat-val{font-size:22px}
+  .topbar-title{font-size:13px}
+}
+.mobile-menu-btn{
+  display:none;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:var(--radius-md);
+  border:1px solid var(--border);background:transparent;
+  color:var(--text2);cursor:pointer;font-size:15px;flex-shrink:0;
+  transition:all .15s ease;
+}
+.mobile-menu-btn:hover{color:var(--text);border-color:var(--border2)}
+.sidebar-backdrop{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.5);z-index:49;backdrop-filter:blur(2px);
+}
+.sidebar-backdrop.show{display:block}
+
+/* ─── Empty states ───────────────────────────────────────────────────────── */
+.empty{
+  padding:40px 24px;text-align:center;
+  color:var(--text3);font-size:12px;line-height:1.8;
+}
+.empty::before{display:block;font-size:28px;margin-bottom:10px;opacity:.4}
+
+/* ─── Qualité IA ────────────────────────────────────────────────────── */
+.quality-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.q-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow-sm)}
+.q-title{font-size:10px;font-family:var(--sans);font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.cat-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.cat-bar-label{font-size:10px;font-family:var(--mono);color:var(--text2);width:80px;flex-shrink:0}
+.cat-bar-wrap{flex:1;height:6px;background:var(--bg4);border-radius:99px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:99px;transition:width .4s ease}
+.cat-bar-count{font-size:9px;font-family:var(--mono);color:var(--text3);width:24px;text-align:right;flex-shrink:0}
+.conf-circle{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.conf-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.conf-info{flex:1}
+.conf-label{font-size:11px;color:var(--text);font-weight:500}
+.conf-sub{font-size:9px;font-family:var(--mono);color:var(--text3)}
+.q-big-number{font-size:32px;font-weight:700;font-family:var(--mono);color:var(--text);margin-bottom:4px}
+.q-big-sub{font-size:11px;color:var(--text3)}
+/* ─── Playground ────────────────────────────────────────────────────── */
+.playground{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm);margin-bottom:16px}
+.playground-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.playground-sub{font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6}
+.playground-form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.playground-logs textarea{
+  width:100%;height:180px;background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:12px;color:var(--text);
+  font-family:var(--mono);font-size:11px;resize:vertical;outline:none;
+  transition:border-color .2s;line-height:1.6;
+}
+.playground-logs textarea::placeholder{color:var(--text3)}
+.playground-logs textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(52,211,153,.08)}
+.playground-result{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:var(--radius-md);padding:16px;
+  display:none;margin-top:12px;
+}
+.playground-result.show{display:block}
+.pr-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.pr-cause{font-size:13px;color:var(--text);margin-bottom:8px;line-height:1.6;font-weight:500}
+.pr-action{font-size:12px;color:var(--text2);padding:8px 12px;background:rgba(52,211,153,.06);border-radius:var(--radius);border-left:2px solid var(--green);margin-bottom:8px}
+.pr-prevention{font-size:11px;color:var(--text3);padding:8px 12px;background:rgba(96,165,250,.05);border-radius:var(--radius);border-left:2px solid var(--blue);margin-bottom:8px}
+.pr-checks{margin-top:8px}
+.pr-check{font-size:11px;color:var(--text2);padding:3px 0;display:flex;gap:8px}
+.pr-check::before{content:"→";color:var(--green);font-family:var(--mono);flex-shrink:0}
+.playground-spinner{display:none;align-items:center;gap:8px;color:var(--text3);font-size:12px;margin-top:12px;font-family:var(--mono)}
+.playground-spinner.show{display:flex}
+.quick-errors{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.quick-err-btn{
+  font-size:9px;font-family:var(--mono);font-weight:600;
+  padding:4px 10px;border-radius:20px;cursor:pointer;
+  border:1px solid;transition:all .15s ease;background:transparent;
+}
+.quick-err-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+
+/* ─── Journal enrichi ───────────────────────────────────────────────────── */
+.lf-btn.active{background:var(--bg4)!important;color:var(--text)!important}
+.je{
+  display:grid;grid-template-columns:68px 58px 1fr auto;gap:12px;align-items:center;
+  padding:10px 16px 10px 14px;border-bottom:1px solid rgba(255,255,255,.04);
+  border-left:2px solid transparent;
+  font-family:var(--mono);font-size:11px;cursor:pointer;transition:background .12s,border-color .12s;
+}
+.je:hover{background:rgba(255,255,255,.045)}
+.je-r-fail{border-left-color:var(--red)}
+.je-r-late{border-left-color:var(--amber)}
+.je-r-ok{border-left-color:rgba(52,211,153,.35)}
+.je-r-ok:hover{border-left-color:var(--green)}
+.je-time{color:var(--text3);font-size:10px}
+.je-status{font-size:9px;font-weight:600;padding:3px 0;border-radius:20px;text-align:center;white-space:nowrap}
+.je-s-ok{background:var(--green-dim);color:var(--green)}
+.je-s-fail{background:var(--red-dim);color:var(--red)}
+.je-s-late{background:var(--amber-dim);color:var(--amber)}
+.je-name{font-family:var(--sans);font-size:12.5px;color:var(--text);font-weight:500;display:flex;align-items:baseline;gap:7px;min-width:0}
+.je-name .je-n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.je-name .je-env{font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.je-meta{display:flex;gap:12px;align-items:center;color:var(--text3);font-size:10px;white-space:nowrap}
+.je-meta b{color:var(--text2);font-weight:600}
+.je-ai{font-size:8px;font-weight:600;background:rgba(167,139,250,.15);color:var(--purple);padding:2px 7px;border-radius:4px;letter-spacing:.04em}
+.an-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.an-toolbar select{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);
+  color:var(--text2);font-family:var(--mono);font-size:10px;padding:5px 8px;outline:none;cursor:pointer;
+}
+.an-toolbar select:focus{border-color:var(--green)}
+/* Accent latéral par gravité sur les cartes d'analyse (scannabilité) */
+.an-item{border-left:3px solid transparent}
+.an-item.acc-critical{border-left-color:var(--red)}
+.an-item.acc-high{border-left-color:#fb923c}
+.an-item.acc-medium{border-left-color:var(--amber)}
+.an-item.acc-low{border-left-color:rgba(52,211,153,.4)}
+.pg-collapse{margin-top:20px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--bg-card)}
+.pg-collapse>summary{
+  cursor:pointer;padding:14px 18px;font-size:13px;font-weight:600;color:var(--text);
+  list-style:none;display:flex;align-items:center;gap:8px;user-select:none;
+}
+.pg-collapse>summary::-webkit-details-marker{display:none}
+.pg-collapse>summary::before{content:'▶';font-size:9px;color:var(--text3);transition:transform .15s}
+.pg-collapse[open]>summary::before{transform:rotate(90deg)}
+.pg-collapse>summary:hover{background:rgba(255,255,255,.03)}
+.pg-collapse .playground{margin:0;border:none;border-top:1px solid var(--border);border-radius:0;box-shadow:none}
+</style>
+</head>
+<body>
+
+<!-- Auth -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-logo"><div class="s-dot"></div> Cron<span>Guard</span></div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:20px;font-family:var(--mono)">
+      Monitoring de cron jobs avec analyse IA
+    </div>
+    <div class="field">
+      <label class="field-label">API Key</label>
+      <input class="field-input" type="password" id="auth-key" placeholder="cg_live_..." autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="field-label">URL de l'API</label>
+      <input class="field-input" type="text" id="auth-url" value="http://localhost:3000">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:8px" onclick="login()">
+      → Connexion
+    </button>
+    <div class="field-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- Sidebar backdrop (mobile) -->
+<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+
+<!-- Drawer overlay -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="d-head">
+    <div class="d-name" id="d-name">—</div>
+    <div class="d-meta" id="d-meta"></div>
+    <div class="d-actions" id="d-actions"></div>
+  </div>
+  <div class="d-body" id="d-body"></div>
+</div>
+
+<!-- Modal nouveau monitor -->
+<div class="modal-bg hidden" id="modal-bg">
+  <div class="modal" id="modal-form">
+    <div class="modal-title">// nouveau monitor</div>
+    <div class="modal-sub">Vous recevrez une ping_key à ajouter à la fin de votre script.</div>
+    <div class="field">
+      <label class="field-label">Nom *</label>
+      <input class="field-input" id="m-name" placeholder="backup-postgres, etl-nightly, sync-invoices">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Environnement</label>
+        <select class="field-select" id="m-env">
+          <option value="production">production</option>
+          <option value="staging">staging</option>
+          <option value="development">development</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Grace period (s)</label>
+        <input class="field-input" id="m-grace" type="number" value="300" min="60" max="86400">
+        <div class="field-hint">délai avant alerte "en retard"</div>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Schedule cron</label>
+      <input class="field-input" id="m-schedule" placeholder="0 2 * * *  (optionnel)">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Records min</label>
+        <input class="field-input" id="m-emin" type="number" placeholder="100 (optionnel)">
+      </div>
+      <div class="field">
+        <label class="field-label">Records max</label>
+        <input class="field-input" id="m-emax" type="number" placeholder="100000">
+      </div>
+    </div>
+    <div class="field-err" id="m-err"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">annuler</button>
+      <button class="btn btn-primary" onclick="createMonitor()">créer →</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-success" style="display:none">
+    <div class="modal-title" style="color:var(--green)">✓ monitor créé</div>
+    <div class="modal-sub">Ajoutez ceci à la fin de votre script cron :</div>
+    <div class="success-box">
+      <div class="success-key">
+        <span id="s-key">—</span>
+        <button class="key-copy" onclick="copyKey('s-key')">copier</button>
+      </div>
+      <div class="curl-success" id="s-curl"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary btn-full" style="width:100%;justify-content:center" onclick="closeModal()">fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit modal (préremplit depuis le monitor sélectionné) -->
+<div class="modal-bg hidden" id="edit-modal-bg">
+  <div class="modal">
+    <div class="modal-title">// modifier monitor</div>
+    <div class="modal-sub" id="edit-modal-name" style="font-family:var(--mono);color:var(--green)">—</div>
+    <div class="field">
+      <label class="field-label">Nom</label>
+      <input class="field-input" id="em-name">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Environnement</label>
+        <select class="field-select" id="em-env">
+          <option value="production">production</option>
+          <option value="staging">staging</option>
+          <option value="development">development</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label">Grace period (s)</label>
+        <input class="field-input" id="em-grace" type="number" min="60" max="86400">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label">Schedule cron</label>
+      <input class="field-input" id="em-schedule">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Records min</label>
+        <input class="field-input" id="em-emin" type="number" placeholder="optionnel">
+      </div>
+      <div class="field">
+        <label class="field-label">Records max</label>
+        <input class="field-input" id="em-emax" type="number" placeholder="optionnel">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label" style="display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="em-active"> Monitor actif
+      </label>
+    </div>
+    <div class="field-err" id="em-err"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditModal()">annuler</button>
+      <button class="btn btn-primary" onclick="saveMonitor()">sauvegarder →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toasts"></div>
+
+<!-- App -->
+<div class="app" id="app" style="display:none">
+  <aside class="sidebar">
+    <div class="s-logo">
+      <div class="s-logo-mark"><div class="s-dot"></div> Cron<span>Guard</span></div>
+    </div>
+    <nav class="s-nav">
+      <div class="s-section">monitoring</div>
+      <div class="s-item active" id="nav-dashboard" onclick="setView('dashboard')">
+        <span class="icon">◈</span> dashboard
+      </div>
+      <div class="s-item" id="nav-monitors" onclick="setView('monitors')">
+        <span class="icon">⬡</span> services
+        <span class="s-badge" id="alert-badge" style="display:none">0</span>
+      </div>
+      <div class="s-item" id="nav-logs" onclick="setView('logs')">
+        <span class="icon">≡</span> journal
+      </div>
+      <div class="s-item" id="nav-analyses" onclick="setView('analyses')">
+        <span class="icon">✦</span> analyses ia
+      </div>
+      <div class="s-section">compte</div>
+      <div class="s-item" id="nav-settings" onclick="setView('settings')">
+        <span class="icon">⚙</span> paramètres
+      </div>
+      <div class="s-item" id="nav-docs" onclick="setView('docs')">
+        <span class="icon">?</span> documentation
+      </div>
+    </nav>
+    <div class="s-footer">
+      <div class="s-plan">
+        <span id="sidebar-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
+        <span class="s-plan-badge" id="sidebar-plan">free</span>
+      </div>
+      <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:center;font-size:10px">déconnexion</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="page-title">dashboard</div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="search" placeholder="filtrer monitors..." oninput="filterMonitors()">
+        <span class="search-kbd">/</span>
+      </div>
+      <div class="topbar-right">
+        <div class="live"><div class="live-dot"></div> live</div>
+        <button class="btn btn-ghost" onclick="refreshAll()" title="Rafraîchir (R)">↻</button>
+        <button class="btn btn-primary" onclick="openModal()">+ monitor</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD VIEW -->
+      <div class="view active" id="view-dashboard">
+        <div class="stats" id="stats-row">
+          <div class="stat stat-ok"><div class="stat-label">ok</div><div class="stat-val" id="s-ok">—</div><div class="stat-sub" id="s-total">—</div></div>
+          <div class="stat stat-fail"><div class="stat-label">échec</div><div class="stat-val" id="s-fail">—</div><div class="stat-sub">alertes actives</div></div>
+          <div class="stat stat-late"><div class="stat-label">en retard</div><div class="stat-val" id="s-late">—</div><div class="stat-sub">grace dépassée</div></div>
+          <div class="stat stat-uptime"><div class="stat-label">uptime 24h</div><div class="stat-val" id="s-uptime">—</div><div class="stat-sub">% succès</div></div>
+          <div class="stat stat-ai"><div class="stat-label">analyses ia</div><div class="stat-val" id="s-ai">—</div><div class="stat-sub">dernières 24h</div></div>
+        </div>
+        <div class="grid">
+          <div class="panel">
+            <div class="ph">
+              <div class="ph-title">services <span class="ph-count" id="m-count-dash">—</span></div>
+              <div class="ph-right">
+                <button class="btn btn-ghost" id="f-all" onclick="setFilter('all')" style="font-size:9px;padding:2px 7px">tous</button>
+                <button class="btn btn-ghost" id="f-alerts" onclick="setFilter('alerts')" style="font-size:9px;padding:2px 7px">alertes</button>
+              </div>
+            </div>
+            <div id="monitors-list"><div class="empty">chargement...</div></div>
+          </div>
+          <div class="panel log-panel" style="min-height:400px">
+            <div class="ph"><div class="ph-title">activité <span style="color:var(--text3)">récente</span></div><div class="live"><div class="live-dot"></div></div></div>
+            <div class="log-body" id="log-body"><div class="empty">chargement...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONITORS VIEW (full) -->
+      <div class="view" id="view-monitors">
+        <div class="panel">
+          <div class="ph">
+            <div class="ph-title">tous les services <span class="ph-count" id="m-count-full">—</span></div>
+            <div class="ph-right">
+              <button class="btn btn-ghost" id="f-all-f" onclick="setFilter('all','full')" style="font-size:9px;padding:2px 7px">tous</button>
+              <button class="btn btn-ghost" id="f-alerts-f" onclick="setFilter('alerts','full')" style="font-size:9px;padding:2px 7px">alertes</button>
+            </div>
+          </div>
+          <div id="monitors-list-full"><div class="empty">chargement...</div></div>
+        </div>
+      </div>
+
+      <!-- LOGS VIEW -->
+      <div class="view" id="view-logs">
+        <div class="panel" style="min-height:500px;display:flex;flex-direction:column">
+          <div class="ph">
+            <div class="ph-title">journal d'activité <span class="ph-count" id="log-count">—</span></div>
+            <div class="ph-right" style="gap:8px">
+              <input class="search-input" id="log-search" placeholder="filtrer par job..." oninput="filterLogs()"
+                     style="width:160px;padding-left:10px">
+              <button class="btn btn-ghost lf-btn active" id="lf-all"  onclick="setLogFilter('all')"  style="font-size:9px;padding:3px 8px">tous</button>
+              <button class="btn btn-ghost lf-btn" id="lf-fail" onclick="setLogFilter('fail')" style="font-size:9px;padding:3px 8px">échecs</button>
+              <button class="btn btn-ghost lf-btn" id="lf-ai"   onclick="setLogFilter('ai')"   style="font-size:9px;padding:3px 8px">analysés IA</button>
+              <div class="live"><div class="live-dot"></div> live</div>
+            </div>
+          </div>
+          <div class="log-body" id="log-body-full" style="flex:1;min-height:400px"><div class="empty">chargement...</div></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS VIEW -->
+      <div class="view" id="view-settings">
+        <div class="settings-section">
+          <div class="settings-title">⚙ compte</div>
+          <div class="settings-row">
+            <span class="settings-label">Email</span>
+            <span class="settings-val" id="set-email">—</span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Plan</span>
+            <span class="settings-val" id="set-plan">—</span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Monitors actifs</span>
+            <span class="settings-val" id="set-monitors">—</span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">Clé API</span>
+            <span class="settings-val" style="display:flex;align-items:center;gap:6px">
+              <span id="set-key-hidden">••••••••••••••••</span>
+              <button class="key-copy" onclick="toggleApiKey()">afficher</button>
+              <button class="key-copy" onclick="copyText(window._rawApiKey||'','clé API copiée')">copier</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">🔔 notifications</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Webhook Slack</div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">URL de votre Incoming Webhook Slack</div>
+            </div>
+          </div>
+          <div class="settings-input-row">
+            <input class="field-input" id="set-slack" placeholder="https://hooks.slack.com/services/...">
+            <button class="btn btn-ghost" onclick="saveSlack()">sauvegarder</button>
+          </div>
+          <div class="settings-row" style="margin-top:12px">
+            <div>
+              <div class="settings-label">Webhook générique</div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Reçoit le JSON d'alerte (Discord, Teams, PagerDuty, n8n...)</div>
+            </div>
+          </div>
+          <div class="settings-input-row">
+            <input class="field-input" id="set-webhook" placeholder="https://...">
+            <button class="btn btn-ghost" onclick="saveWebhook()">sauvegarder</button>
+          </div>
+          <div class="settings-row" style="margin-top:12px">
+            <div>
+              <div class="settings-label">Timezone</div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Affichage des heures dans votre fuseau</div>
+            </div>
+          </div>
+          <div class="settings-input-row">
+            <select class="field-input field-select" id="set-tz" onchange="saveTz()">
+              <option value="">Automatique (navigateur)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section" id="trial-section" style="display:none">
+          <div class="settings-title">⚡ passer pro</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
+            Essayez les fonctionnalités Pro pendant 14 jours gratuitement : monitors illimités, alertes Slack, analyses IA avancées.
+          </div>
+          <button class="btn btn-primary" onclick="startTrial()">Démarrer l'essai gratuit 14 jours →</button>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">📊 page de statut publique</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
+            Partagez le statut de vos monitors. URL accessible sans authentification.
+          </div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--text3)">
+            Format : <span style="color:var(--green)" id="set-status-url">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCS VIEW -->
+      <div class="view" id="view-docs">
+        <div class="docs-section">
+          <div class="docs-h2">// démarrage rapide</div>
+          <div class="docs-p">Ajoutez un ping à la fin de votre script cron. C'est tout. Si le script ne ping pas dans sa fenêtre de grâce, CronGuard vous alerte.</div>
+
+          <div class="docs-h3">1. Créez un monitor</div>
+          <div class="docs-p">Cliquez <strong style="color:var(--text)">+ monitor</strong> dans la topbar. Vous obtenez une <code style="background:var(--bg3);padding:1px 4px;border-radius:3px">ping_key</code> unique.</div>
+
+          <div class="docs-h3">2. Ajoutez le ping à votre script</div>
+          <div class="docs-grid">
+            <div class="docs-card">
+              <div class="docs-card-title"><span class="docs-badge docs-badge-bash">bash</span> Script shell</div>
+              <div class="docs-card-desc">Une ligne après votre commande. Capture exit_code et logs automatiquement.</div>
+            </div>
+            <div class="docs-card">
+              <div class="docs-card-title"><span class="docs-badge docs-badge-node">node</span> Script Node.js</div>
+              <div class="docs-card-desc">Wrapper async — mesure la durée, capture les erreurs, envoie le ping.</div>
+            </div>
+          </div>
+
+          <div class="docs-code" id="code-bash">#!/bin/bash
+# Votre script existant
+./backup.sh
+STATUS=$?
+LOG=$(cat /var/log/backup.log 2>/dev/null | tail -50)
+
+# Ping CronGuard (remplacez VOTRE_PING_KEY)
+curl -sX POST <span id="doc-url">http://localhost:3000</span>/ping/VOTRE_PING_KEY \
+  -H "Content-Type: application/json" \
+  -d "{"status":"$([ $STATUS -eq 0 ] && echo success || echo fail)","exit_code":$STATUS,"output":"$LOG"}"
+<button class="docs-copy" onclick="copyCode('code-bash')">copier</button></div>
+
+          <div class="docs-code" id="code-node">// Node.js / TypeScript
+const PING_KEY = 'VOTRE_PING_KEY'
+const BASE_URL = '<span id="doc-url2">http://localhost:3000</span>'
+
+async function withMonitor(fn) {
+  const start = Date.now()
+  try {
+    const records = await fn()
+    await fetch(`${BASE_URL}/ping/${PING_KEY}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'success', duration_ms: Date.now()-start, records })
+    })
+  } catch(err) {
+    await fetch(`${BASE_URL}/ping/${PING_KEY}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ status: 'fail', output: err.message, exit_code: 1 })
+    })
+    throw err
+  }
+}
+
+// Utilisation
+await withMonitor(async () => {
+  const count = await syncDatabase()
+  return count // nombre d'enregistrements traités
+})
+<button class="docs-copy" onclick="copyCode('code-node')">copier</button></div>
+
+          <div class="docs-code" id="code-python">import requests, time, traceback
+
+PING_KEY = 'VOTRE_PING_KEY'
+BASE_URL = '<span id="doc-url3">http://localhost:3000</span>'
+
+def with_monitor(fn):
+    start = time.time()
+    try:
+        records = fn()
+        requests.post(f'{BASE_URL}/ping/{PING_KEY}', json={
+            'status': 'success',
+            'duration_ms': int((time.time()-start)*1000),
+            'records': records
+        })
+    except Exception as e:
+        requests.post(f'{BASE_URL}/ping/{PING_KEY}', json={
+            'status': 'fail',
+            'output': traceback.format_exc()[-3000:],
+            'exit_code': 1
+        })
+        raise
+
+# Utilisation
+with_monitor(lambda: sync_database())
+<button class="docs-copy" onclick="copyCode('code-python')">copier</button></div>
+        </div>
+
+        <div class="docs-section">
+          <div class="docs-h2">// payload du ping</div>
+          <div class="docs-p">Tous les champs sont optionnels sauf <code style="background:var(--bg3);padding:1px 4px;border-radius:3px">status</code>.</div>
+          <div class="docs-code" id="code-payload">{
+  "status":      "success" | "fail",    // obligatoire
+  "duration_ms": 4521,                  // durée en ms (pour détection d'anomalie)
+  "records":     15230,                 // nb d'enregistrements (pour output validation)
+  "exit_code":   0,                     // code de retour du script
+  "output":      "logs du script..."   // envoyé au LLM si status=fail (max 4000c)
+}
+<button class="docs-copy" onclick="copyCode('code-payload')">copier</button></div>
+
+          <div class="docs-h3">output validation</div>
+          <div class="docs-p">Si vous configurez <strong style="color:var(--text)">records min/max</strong> sur un monitor, CronGuard reclassifie automatiquement un ping "success" avec 0 records en "fail". Idéal pour détecter les backups silencieux qui ne traitent rien.</div>
+        </div>
+
+        <div class="docs-section">
+          <div class="docs-h2">// détection d'anomalies</div>
+          <div class="docs-grid">
+            <div class="docs-card">
+              <div class="docs-card-title">⏱ Timeout (silence)</div>
+              <div class="docs-card-desc">Si votre script ne ping pas dans la fenêtre de grâce (configurable), CronGuard détecte l'absence et alerte. Couvre les crons qui ne tournent pas du tout.</div>
+            </div>
+            <div class="docs-card">
+              <div class="docs-card-title">🐢 Dérive de performance</div>
+              <div class="docs-card-desc">Si un job prend ×2.5 sa durée baseline (7 jours), une alerte est émise avant qu'il timeout. Détecte la dégradation progressive.</div>
+            </div>
+            <div class="docs-card">
+              <div class="docs-card-title">📊 Output validation</div>
+              <div class="docs-card-desc">Exit 0 mais 0 enregistrements traités ? CronGuard reclasse en échec. Couvre les backups "réussis" qui ne font rien.</div>
+            </div>
+            <div class="docs-card">
+              <div class="docs-card-title">🧠 Analyse IA</div>
+              <div class="docs-card-desc">Qwen 3 8B analyse les logs localement. Vos données ne quittent jamais votre serveur. Cause racine + action corrective en &lt; 30s.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="docs-section">
+          <div class="docs-h2">// référence API</div>
+          <div class="docs-code" id="code-api">POST /ping/:ping_key              # Envoie un ping
+GET  /monitors                    # Liste les monitors
+POST /monitors                    # Crée un monitor
+PATCH /monitors/:id               # Modifie un monitor
+DELETE /monitors/:id              # Supprime un monitor
+GET  /monitors/:id/history        # Historique des pings
+POST /monitors/:id/pause          # Pause temporaire
+POST /monitors/:id/resume         # Reprend après pause
+POST /monitors/:id/acknowledge    # Acquitte les alertes
+POST /monitors/:id/snooze         # Snooze N minutes
+POST /monitors/:id/test           # Envoie une alerte de test
+GET  /dashboard/overview          # Stats globales
+GET  /dashboard/logs              # Journal d'activité
+GET  /dashboard/analyses          # Dernières analyses IA
+GET  /clients/me                  # Profil compte
+PATCH /clients/settings           # Paramètres (Slack, etc.)
+GET  /status/:monitor_id          # Page de statut publique
+GET  /health                      # Santé de l'API
+
+# Toutes les routes nécessitent : X-API-Key: votre_cle
+<button class="docs-copy" onclick="copyCode('code-api')">copier</button></div>
+        </div>
+
+        <div class="docs-section">
+          <div class="docs-h2">// raccourcis clavier</div>
+          <div class="docs-grid">
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">R</code> Rafraîchir</div><div class="docs-card-desc">Recharge toutes les données</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">/</code> Rechercher</div><div class="docs-card-desc">Focus sur le champ de recherche</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">Esc</code> Fermer</div><div class="docs-card-desc">Ferme le drawer ou la modale</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">1–6</code> Navigation</div><div class="docs-card-desc">Dashboard · Services · Logs · Analyses · Paramètres · Docs</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYSES VIEW -->
+      <div class="view" id="view-analyses">
+        <!-- Bandeau IMPACT (MTTR / downtime / récurrence — la preuve de valeur) -->
+        <div id="impact-strip" style="margin-bottom:18px"></div>
+
+        <!-- Bandeau résumé compact (toujours visible) -->
+        <div class="stats" id="an-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px"></div>
+
+        <!-- Métriques détaillées (toggle) -->
+        <div class="quality-grid" id="quality-grid" style="display:none">
+          <div class="q-card">
+            <div class="q-title">Catégories</div>
+            <div id="cat-bars"></div>
+          </div>
+          <div class="q-card">
+            <div class="q-title">Confiance</div>
+            <div id="conf-circles"></div>
+          </div>
+          <div class="q-card">
+            <div class="q-title">Résolution</div>
+            <div class="q-big-number" id="avg-fix">—</div>
+            <div class="q-big-sub">minutes en moyenne</div>
+            <div style="margin-top:12px">
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">Impact données</div>
+              <div id="impact-bar" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barre de filtres -->
+        <div class="an-toolbar">
+          <select id="an-sev" onchange="filterAnalyses()">
+            <option value="all">toutes sévérités</option>
+            <option value="critical">critical</option>
+            <option value="high">high</option>
+            <option value="medium">medium</option>
+            <option value="low">low</option>
+          </select>
+          <select id="an-cat" onchange="filterAnalyses()">
+            <option value="all">toutes catégories</option>
+            <option value="database">database</option>
+            <option value="network">network</option>
+            <option value="timeout">timeout</option>
+            <option value="resources">resources</option>
+            <option value="dependency">dependency</option>
+            <option value="code">code</option>
+            <option value="data">data</option>
+            <option value="unknown">unknown</option>
+          </select>
+          <input class="search-input" id="an-search" placeholder="rechercher cause / job..." oninput="filterAnalyses()" style="width:180px;padding-left:10px">
+          <span id="an-filter-badge" class="an-filter-badge" style="display:none" onclick="clearAnFilter()">— <span id="an-filter-name"></span> ✕</span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
+            <button class="btn btn-ghost" id="toggle-metrics" onclick="toggleMetrics()" style="font-size:10px;padding:3px 8px">📊 détails</button>
+            <span style="font-size:9px;font-family:var(--mono);color:var(--text3)" id="an-info">—</span>
+          </span>
+        </div>
+
+        <div id="analyses-list"><div class="empty">chargement...</div></div>
+
+        <!-- Playground (outil de calibration, replié) -->
+        <details class="pg-collapse">
+          <summary>🧪 Tester le LLM <span style="font-weight:400;color:var(--text3);font-size:11px">— playground de calibration</span></summary>
+          <div class="playground" id="llm-playground">
+            <div class="playground-sub">Collez n'importe quels logs de cron job pour voir ce que l'analyse IA produit en temps réel.</div>
+
+            <div style="margin-bottom:8px;font-size:10px;color:var(--text3);font-family:var(--mono)">Scénarios prédéfinis :</div>
+            <div class="quick-errors" id="quick-errors"></div>
+
+            <div class="playground-form">
+              <div class="field">
+                <label class="field-label">Nom du job</label>
+                <input class="field-input" id="pg-job" value="mon-cron-job">
+              </div>
+              <div class="field">
+                <label class="field-label">Environnement</label>
+                <select class="field-select" id="pg-env">
+                  <option value="production">production</option>
+                  <option value="staging">staging</option>
+                  <option value="development">development</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Exit code</label>
+                <input class="field-input" id="pg-exit" type="number" value="1">
+              </div>
+            </div>
+            <div class="playground-logs">
+              <label class="field-label">Logs d'erreur</label>
+              <textarea id="pg-logs" placeholder="Collez ici les logs d'erreur de votre cron job...
+Exemple:
+ERROR: Connection refused 127.0.0.1:5432
+  at Pool.connect (pg/lib/pool.js:45:11)
+  errno: ECONNREFUSED"></textarea>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+              <button class="btn btn-primary" onclick="runPreview()">⚡ Analyser maintenant</button>
+              <button class="btn btn-ghost" onclick="clearPreview()">Effacer</button>
+            </div>
+            <div class="playground-spinner" id="pg-spinner">
+              <div class="pending-spin"></div>
+              <span id="pg-spinner-text">Analyse en cours (15-30s selon le modèle)...</span>
+            </div>
+            <div class="playground-result" id="pg-result"></div>
+          </div>
+        </details>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let BASE_URL      = localStorage.getItem('cg_url') || 'http://localhost:3000'
+let API_KEY       = localStorage.getItem('cg_key') || ''
+let monitors      = []
+let searchText    = ''
+let currentFilter = 'all'
+let currentView   = 'dashboard'
+let anLocked      = false
+let anMonitor     = null
+let activeMonitor = null
+let editMonitorId = null
+let timer         = null
+let TZ            = localStorage.getItem('cg_tz') || ''
+const pendingAnalysis = new Set() // monitor IDs avec analyse en attente
+
+// Journal
+let logsData      = []
+let logFilter     = 'all'   // all | fail | ai
+let logSearch     = ''
+// Analyses IA
+let analysesData  = []
+let anSevFilter   = 'all'
+let anCatFilter   = 'all'
+let anSearch      = ''
+
+// ─── Timezone ────────────────────────────────────────────────────────────────
+function fmtTime(iso) {
+  if (!iso) return '—'
+  const opts = { hour:'2-digit', minute:'2-digit', second:'2-digit' }
+  if (TZ) opts.timeZone = TZ
+  try { return new Date(iso).toLocaleTimeString('fr-FR', opts) } catch { return new Date(iso).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) }
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—'
+  const opts = { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit' }
+  if (TZ) opts.timeZone = TZ
+  try { return new Date(iso).toLocaleString('fr-FR', opts) } catch { return new Date(iso).toLocaleString('fr-FR', { hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit' }) }
+}
+
+// ─── Health score ─────────────────────────────────────────────────────────────
+function healthScore(m) {
+  const pings  = m.recent_pings || []
+  if (!pings.length) return 50
+  const ok     = pings.filter(p => p.status === 'success').length
+  const base   = Math.round(ok / pings.length * 100)
+  const hasAnom = m.last_status === 'late' ? -10 : m.last_status === 'failed' ? -25 : 0
+  return Math.max(0, Math.min(100, base + hasAnom))
+}
+
+function healthColor(score) {
+  if (score >= 90) return 'var(--green)'
+  if (score >= 70) return 'var(--amber)'
+  return 'var(--red)'
+}
+
+// ─── Duration trend (7j) ─────────────────────────────────────────────────────
+function calcTrend(history) {
+  const durs = history.filter(h => h.status==='success' && h.duration_ms > 0).map(h => h.duration_ms)
+  if (durs.length < 4) return null
+  const mid  = Math.floor(durs.length/2)
+  const avg1 = durs.slice(0,mid).reduce((a,b)=>a+b,0) / mid
+  const avg2 = durs.slice(mid).reduce((a,b)=>a+b,0) / (durs.length-mid)
+  if (avg1 <= 0) return null
+  return Math.round((avg2-avg1)/avg1*100)
+}
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const r = await fetch(BASE_URL+path, {
+    ...opts, headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json', ...opts.headers }
+  })
+  if (!r.ok) { const t=await r.text(); throw new Error(`${r.status}: ${t}`) }
+  return r.json()
+}
+
+// ─── Toasts ───────────────────────────────────────────────────────────────────
+function toast(msg, type='info', ms=3000) {
+  const c = document.getElementById('toasts')
+  const el = document.createElement('div')
+  el.className = `toast ${type}`
+  el.textContent = msg
+  c.appendChild(el)
+  setTimeout(() => el.remove(), ms)
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+async function login() {
+  const key = document.getElementById('auth-key').value.trim()
+  const url = document.getElementById('auth-url').value.trim().replace(/\/$/, '') || 'http://localhost:3000'
+  if (!key) { document.getElementById('auth-err').textContent = 'clé requise'; return }
+  API_KEY = key; BASE_URL = url
+  try {
+    const r = await fetch(url+'/dashboard/overview', { headers: { 'X-API-Key': key } })
+    if (!r.ok) throw new Error()
+    localStorage.setItem('cg_key', key); localStorage.setItem('cg_url', url)
+    boot()
+  } catch { document.getElementById('auth-err').textContent = 'clé invalide ou API inaccessible' }
+}
+
+function logout() {
+  clearInterval(timer)
+  localStorage.removeItem('cg_key')
+  document.getElementById('app').style.display = 'none'
+  document.getElementById('auth-overlay').style.display = 'flex'
+}
+
+async function boot() {
+  document.getElementById('auth-overlay').style.display = 'none'
+  document.getElementById('app').style.display = 'grid'
+  updateDocUrls()
+  fetch(BASE_URL+'/health').then(r=>r.json()).then(h=>{ if(h.model) window._activeModel=h.model }).catch(()=>{})
+  await refreshAll()
+  loadClientInfo()
+  timer = setInterval(refreshAll, 15000)
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+async function refreshAll() {
+  await Promise.allSettled([loadOverview(), loadMonitors(), loadLogs('dash')])
+  if (currentView === 'logs') renderJournal()   // même logsData, vue complète à jour
+  if (!anLocked) loadAnalyses()
+}
+
+async function loadOverview() {
+  try {
+    const d = await api('/dashboard/overview')
+    document.getElementById('s-ok').textContent    = d.monitors.ok
+    document.getElementById('s-fail').textContent  = d.monitors.failed
+    document.getElementById('s-late').textContent  = d.monitors.late
+    document.getElementById('s-ai').textContent    = d.ai.today
+    document.getElementById('s-total').textContent = `/ ${d.monitors.total}`
+    const alerts = d.monitors.failed + d.monitors.late
+    const b = document.getElementById('alert-badge')
+    b.textContent = alerts; b.style.display = alerts ? '' : 'none'
+    document.title = alerts ? `(${alerts}) CronGuard` : 'CronGuard'
+  } catch(e) { console.error(e) }
+}
+
+async function loadMonitors() {
+  try {
+    monitors = await api('/monitors')
+    let totalPings = 0, successPings = 0
+    monitors.forEach(m => {
+      const p = m.recent_pings || []
+      totalPings   += p.length
+      successPings += p.filter(x => x.status === 'success').length
+      // Détecte les monitors en échec récent sans analyse → marque comme pending
+      const isFailed = m.last_status === 'failed' || m.last_status === 'fail'
+      const isRecent = m.last_ping_at && (Date.now() - new Date(m.last_ping_at).getTime()) < 120000
+      if (isFailed && isRecent && !pendingAnalysis.has(m.id)) {
+        // On vérifie s'il y a une analyse très récente dans les logs
+        const recentLog = p[0]
+        if (recentLog && (recentLog.status==='failed'||recentLog.status==='fail')) {
+          markPending(m.id)
+        }
+      }
+    })
+    const uptime = totalPings > 0 ? Math.round(successPings/totalPings*100) : 100
+    document.getElementById('s-uptime').textContent = uptime + '%'
+    document.getElementById('m-count-dash').textContent = monitors.length
+    document.getElementById('m-count-full').textContent = monitors.length
+    renderMonitors('dash')
+    renderMonitors('full')
+  } catch(e) { toast('Erreur chargement monitors: '+e.message, 'err') }
+}
+
+async function loadLogs(target) {
+  try {
+    logsData = await api('/dashboard/logs?limit=80')
+    renderLogs(target)
+  } catch(e) { console.error(e) }
+}
+
+function fmtDur(ms) { return ms > 60000 ? Math.round(ms/1000)+'s' : ms+'ms' }
+
+async function loadAnalyses(monitorId) {
+  try {
+    let analyses
+    if (monitorId) {
+      analyses = await api(`/monitors/${monitorId}/analyses`)
+      const mon = monitors.find(m => m.id === monitorId)
+      analyses.forEach(a => {
+        a.monitorName = mon?.name || '?'
+        // ping_output et ping_exit_code viennent directement de l'API (JOIN pings)
+        if (typeof a.correlated_monitors === 'string') {
+          try { a.correlated_monitors = JSON.parse(a.correlated_monitors) } catch { a.correlated_monitors = [] }
+        }
+      })
+    } else {
+      analyses = await api('/dashboard/analyses?limit=15')
+      analyses.forEach(a => {
+        const m = monitors.find(m => m.id === a.monitor_id)
+        a.monitorName = m?.monitor_name || m?.name || a.monitor_name || '?'
+        if (typeof a.correlated_monitors === 'string') {
+          try { a.correlated_monitors = JSON.parse(a.correlated_monitors) } catch { a.correlated_monitors = [] }
+        }
+      })
+    }
+    analysesData = analyses
+    renderAnalyses()
+  } catch(e) { console.error(e) }
+}
+
+// ─── Impact / MTTR (preuve de valeur) ─────────────────────────────────────────
+function fmtMs(ms) {
+  if (!ms || ms < 0) return '0'
+  const s = Math.round(ms/1000)
+  if (s < 60)  return s+'s'
+  const m = Math.round(s/60)
+  if (m < 60)  return m+'min'
+  const h = Math.floor(m/60), rm = m%60
+  if (h < 24)  return rm ? `${h}h${rm}` : `${h}h`
+  const days = Math.floor(h/24), rh = h%24
+  return rh ? `${days}j${rh}h` : `${days}j`
+}
+
+async function loadImpact() {
+  try { renderImpact(await api('/dashboard/impact?days=30')) }
+  catch(e) { console.error(e) }
+}
+
+function renderImpact(d) {
+  const el = document.getElementById('impact-strip'); if (!el) return
+  if (!d.incidents) {                                  // aucun incident résolu → message positif
+    el.innerHTML = `<div style="font-size:11px;font-family:var(--mono);color:var(--text3);padding:4px 0">✓ Aucun incident résolu sur les 30 derniers jours.</div>`
+    return
+  }
+  const rec = d.recurring?.length
+    ? `<div style="margin-top:10px;font-size:11px;color:var(--text2)">🔁 Récurrents : ${d.recurring.map(r=>`<b style="color:var(--text)">${esc(r.name)}</b> ×${r.n}`).join(' · ')}</div>`
+    : ''
+  el.innerHTML = `
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Impact · 30 derniers jours</div>
+    <div class="stats" style="grid-template-columns:repeat(4,1fr);margin:0">
+      <div class="stat stat-fail"><div class="stat-label">incidents</div><div class="stat-val">${d.incidents}</div><div class="stat-sub">${d.affectedMonitors} job(s) touché(s)</div></div>
+      <div class="stat stat-ai"><div class="stat-label">MTTR moyen</div><div class="stat-val" style="font-size:22px">${fmtMs(d.avgMttrMs)}</div><div class="stat-sub">temps de rétablissement</div></div>
+      <div class="stat stat-late"><div class="stat-label">downtime total</div><div class="stat-val" style="font-size:22px">${fmtMs(d.totalDowntimeMs)}</div><div class="stat-sub">cumulé</div></div>
+      <div class="stat ${d.dataLoss?'stat-fail':'stat-ok'}"><div class="stat-label">perte données</div><div class="stat-val">${d.dataLoss}</div><div class="stat-sub">impact confirmé</div></div>
+    </div>${rec}`
+}
+
+async function loadClientInfo() {
+  try {
+    const c = await api('/clients/me')
+    document.getElementById('sidebar-email').textContent = c.email || '—'
+    document.getElementById('sidebar-plan').textContent  = c.plan || 'free'
+    document.getElementById('sidebar-plan').style.color  = c.plan === 'pro' ? 'var(--amber)' : 'var(--green)'
+  } catch(e) { console.error(e) }
+}
+
+// ─── Renders ──────────────────────────────────────────────────────────────────
+function renderMonitors(target) {
+  const listId = target === 'full' ? 'monitors-list-full' : 'monitors-list'
+  const el     = document.getElementById(listId)
+  const q      = searchText.toLowerCase()
+  const list   = monitors
+    .filter(m => !q || m.name.toLowerCase().includes(q) || m.env.toLowerCase().includes(q))
+    .filter(m => currentFilter !== 'alerts' || (m.last_status !== 'ok' && m.last_status !== 'unknown'))
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">${q ? 'aucun résultat pour "'+q+'"' : currentFilter==='alerts' ? '✓ aucune alerte active' : 'aucun monitor — cliquez + monitor'}</div>`
+    return
+  }
+
+  el.innerHTML = list.map(m => {
+    const st      = m.last_status || 'unknown'
+    const isPaused = m.paused_until && new Date(m.paused_until) > new Date()
+    const dotCls  = isPaused ? 'd-pause' : {ok:'d-ok',late:'d-late',failed:'d-fail'}[st] || 'd-unk'
+    const pillCls = isPaused ? 'pill-pause' : {ok:'pill-ok',late:'pill-late',failed:'pill-fail'}[st] || 'pill-unk'
+    const pillTxt = isPaused ? '⏸ pause' : {ok:'ok',late:'retard',failed:'échec'}[st] || '?'
+    const pings   = m.recent_pings || []
+    const durs    = pings.filter(p => p.duration_ms > 0).map(p => p.duration_ms)
+    const maxDur  = Math.max(...durs, 1)
+    const spark   = pings.slice(0,25).map(p => {
+      const s = p.status
+      const cls = s==='success'?'sp-ok':s==='failed'||s==='fail'?'sp-fail':s==='late'?'sp-late':'sp-unk'
+      const h = p.duration_ms > 0 ? Math.max(3, Math.round(p.duration_ms/maxDur*18)) : 4
+      return `<div class="sp ${cls}" style="height:${h}px" title="${s} ${p.duration_ms||0}ms · ${fmtTime(p.pinged_at)}"></div>`
+    }).join('')
+    const lastDur = pings[0]?.duration_ms
+    const avgDur  = m.avg_duration_7d
+    const durTxt  = lastDur ? (lastDur>60000 ? Math.round(lastDur/1000)+'s' : lastDur+'ms') : '—'
+    const durAnom = lastDur && avgDur && lastDur > avgDur*2.5
+    const envCls  = {production:'env-p',staging:'env-s',development:'env-d'}[m.env]||'env-d'
+    const isActive = activeMonitor?.id === m.id ? ' active-row' : ''
+    const lastPing = m.last_ping_at ? ago(m.last_ping_at) : 'jamais'
+    // Health score
+    const score   = healthScore(m)
+    const hColor  = healthColor(score)
+    // Pending analysis indicator
+    const isPending = pendingAnalysis.has(m.id)
+    const pendingHtml = isPending ? '<span class="pending-spin" title="Analyse IA en cours..."></span>' : ''
+    return `<div class="m-row${isActive}" onclick="openDrawer('${m.id}')">
+      <div class="m-dot ${dotCls}"></div>
+      <div>
+        <div class="m-name">${esc(m.name)} ${pendingHtml}</div>
+        <div class="m-env ${envCls}">${m.env} · ${lastPing}</div>
+      </div>
+      <div class="m-spark">${spark||'<div style="color:var(--text3);font-size:9px">—</div>'}</div>
+      <div class="m-dur ${durAnom?'m-dur-anom':''}">
+        ${durTxt}
+        <div class="health-ring" style="margin-top:2px">
+          <div class="health-bar"><div class="health-fill" style="width:${score}%;background:${hColor}"></div></div>
+          <span style="color:${hColor}">${score}</span>
+        </div>
+      </div>
+      <div class="m-status"><span class="pill ${pillCls}">${pillTxt}</span></div>
+      <div class="m-actions">
+        <button class="act-btn" onclick="event.stopPropagation();openEditModal(${JSON.stringify(m).replace(/"/g,'&quot;')})" title="Modifier">edit</button>
+        <button class="act-btn" onclick="event.stopPropagation();ackMonitor('${m.id}')" title="Acknowledge">ack</button>
+        <button class="act-btn" onclick="event.stopPropagation();snoozeMonitor('${m.id}')" title="Snooze 1h">snooze</button>
+        <button class="act-btn" onclick="event.stopPropagation();copyText('${m.ping_key}','ping key copiée')" title="Copier ping key">key</button>
+        <button class="act-btn red" onclick="event.stopPropagation();confirmDelete('${m.id}','${esc(m.name)}')" title="Supprimer">del</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function renderLogs(target) {
+  if (target === 'full') return renderJournal()
+  // Panneau latéral du dashboard : version compacte
+  const el = document.getElementById('log-body')
+  if (!el) return
+  if (!logsData.length) { el.innerHTML = '<div class="empty">aucune activité</div>'; return }
+  el.innerHTML = logsData.slice(0, 40).map(l => {
+    const fail = l.status==='fail'||l.status==='failed'
+    const isAI = !!l.diagnosis
+    const lvl  = isAI ? 'AI' : fail ? 'ERR' : 'OK'
+    const lCls = isAI ? 'lv-ai' : fail ? 'lv-err' : 'lv-ok'
+    const t    = l.pinged_at ? fmtTime(l.pinged_at) : '—'
+    const ai   = isAI ? '<span class="ai-pill">AI</span>' : ''
+    const dur  = l.duration_ms ? ` ${fmtDur(l.duration_ms)}` : ''
+    const rec  = l.records!=null ? ` · ${l.records}r` : ''
+    const sub  = (dur||rec) ? `<div class="le-sub">${dur}${rec}</div>` : ''
+    return `<div class="le"><span class="le-time">${t}</span><span class="le-level ${lCls}">${lvl}</span><div class="le-msg">${esc(l.monitor_name)}${ai}${sub}</div></div>`
+  }).join('')
+}
+
+// ─── Journal (vue complète, filtrable, cliquable) ────────────────────────────
+function renderJournal() {
+  const el = document.getElementById('log-body-full')
+  if (!el) return
+  const q = logSearch.toLowerCase()
+  const list = logsData.filter(l => {
+    const fail = l.status==='fail'||l.status==='failed'||l.status==='late'
+    if (logFilter === 'fail' && !fail)       return false
+    if (logFilter === 'ai'   && !l.diagnosis) return false
+    if (q && !(l.monitor_name||'').toLowerCase().includes(q)) return false
+    return true
+  })
+  const cnt = document.getElementById('log-count')
+  if (cnt) cnt.textContent = `${list.length}${list.length !== logsData.length ? '/'+logsData.length : ''}`
+  if (!list.length) { el.innerHTML = '<div class="empty">aucune activité</div>'; return }
+  el.innerHTML = list.map(l => {
+    const isFail = l.status==='fail'||l.status==='failed'
+    const isLate = l.status==='late'
+    const isAI   = !!l.diagnosis
+    const sCls   = isFail ? 'je-s-fail' : isLate ? 'je-s-late' : 'je-s-ok'
+    const sTxt   = isFail ? 'échec' : isLate ? 'retard' : 'ok'
+    const t      = l.pinged_at ? fmtTime(l.pinged_at) : '—'
+    const meta   = []
+    if (l.duration_ms)    meta.push(`<b>${fmtDur(l.duration_ms)}</b>`)
+    if (l.records != null) meta.push(`<b>${l.records}</b> rec`)
+    if (l.exit_code != null) meta.push(`exit <b>${l.exit_code}</b>`)
+    const ai    = isAI ? '<span class="je-ai">IA</span>' : ''
+    const rCls  = isFail ? 'je-r-fail' : isLate ? 'je-r-late' : 'je-r-ok'
+    const click = l.monitor_id ? `onclick="openDrawer('${l.monitor_id}')"` : ''
+    return `<div class="je ${rCls}" ${click}>
+      <span class="je-time">${t}</span>
+      <span class="je-status ${sCls}">${sTxt}</span>
+      <span class="je-name"><span class="je-n">${esc(l.monitor_name)}</span>${l.env?`<span class="je-env">${esc(l.env)}</span>`:''}</span>
+      <span class="je-meta">${meta.join(' · ')} ${ai}</span>
+    </div>`
+  }).join('')
+}
+
+function setLogFilter(f) {
+  logFilter = f
+  ;['all','fail','ai'].forEach(s => {
+    const b = document.getElementById('lf-'+s); if (b) b.classList.toggle('active', s===f)
+  })
+  renderJournal()
+}
+function filterLogs() {
+  logSearch = document.getElementById('log-search').value
+  renderJournal()
+}
+
+function anSeverity(a) { const d = typeof a.diagnosis==='string'?parse(a.diagnosis):a.diagnosis; return d?.severity || a.severity || 'medium' }
+function anCategory(a) { const d = typeof a.diagnosis==='string'?parse(a.diagnosis):a.diagnosis; return d?.category || a.category || 'unknown' }
+const SEV_RANK = { critical:0, high:1, medium:2, low:3 }
+
+function filterAnalyses() {
+  anSevFilter = document.getElementById('an-sev').value
+  anCatFilter = document.getElementById('an-cat').value
+  anSearch    = document.getElementById('an-search').value
+  renderAnalyses()
+}
+
+function renderAnalyses() {
+  const el = document.getElementById('analyses-list')
+  renderAnSummary(analysesData)                       // bandeau sur le jeu complet
+  if (metricsVisible) renderQualityMetrics(analysesData)
+  const activeModel = window._activeModel || analysesData[0]?.model_used || 'llama3.2:3b'
+
+  const q = anSearch.toLowerCase()
+  let list = analysesData.filter(a => {
+    if (anSevFilter !== 'all' && anSeverity(a) !== anSevFilter) return false
+    if (anCatFilter !== 'all' && anCategory(a) !== anCatFilter) return false
+    if (q) {
+      const d = typeof a.diagnosis==='string'?parse(a.diagnosis):a.diagnosis
+      const hay = ((d?.cause||'')+' '+(a.monitorName||a.monitor_name||'')).toLowerCase()
+      if (!hay.includes(q)) return false
+    }
+    return true
+  })
+  list = list.slice().sort((a,b) =>
+    (SEV_RANK[anSeverity(a)] ?? 9) - (SEV_RANK[anSeverity(b)] ?? 9)
+    || new Date(b.created_at) - new Date(a.created_at))
+
+  document.getElementById('an-info').textContent =
+    `${list.length}${list.length!==analysesData.length ? '/'+analysesData.length : ''} diagnostic${list.length!==1?'s':''} · ${activeModel}`
+
+  if (!analysesData.length) { el.innerHTML = '<div class="empty">aucune analyse IA pour le moment</div>'; return }
+  if (!list.length) { el.innerHTML = '<div class="empty">aucune analyse ne correspond aux filtres</div>'; return }
+
+  el.innerHTML = list.map((a, i) => {
+    const d          = typeof a.diagnosis==='string' ? parse(a.diagnosis) : a.diagnosis
+    const cause      = d?.cause      || a.diagnosis || '—'
+    const action     = d?.action     || null
+    const prevention = d?.prevention || a.prevention || null
+    const category   = d?.category   || a.category   || 'unknown'
+    const confidence = a.confidence  || 'medium'
+    const sev        = d?.severity   || a.severity   || 'medium'
+    const impact     = a.data_impact || 'none'
+    const fixMins    = a.fix_minutes || null
+    const t          = a.created_at  ? fmtTime(a.created_at) : '—'
+    const cache      = a.from_cache  ? '<span class="ai-pill">cache</span>' : ''
+    const type       = a.alert_type==='timeout' ? '⏱' : a.alert_type==='slow' ? '🐢' : '✕'
+
+    // Parse checks
+    const checks = (() => {
+      const raw = a.checks || d?.checks
+      if (!raw) return []
+      if (typeof raw === 'string') { try { return JSON.parse(raw) } catch { return [] } }
+      return Array.isArray(raw) ? raw : []
+    })()
+
+    // Parse correlated monitors
+    const correlated = (() => {
+      const raw = a.correlated_monitors
+      if (!raw) return []
+      if (typeof raw === 'string') { try { return JSON.parse(raw) } catch { return [] } }
+      return Array.isArray(raw) ? raw : []
+    })()
+
+    const hasLog = a.ping_output || a.ping_exit_code != null
+    const logTxt = (a.ping_exit_code != null ? 'exit: ' + a.ping_exit_code + '\n' : '') + (a.ping_output || '')
+
+    const impactLabel = {none: '✓ données ok', possible: '? impact possible', confirmed: '⚠ données affectées'}
+
+    const correlatedHtml = correlated.length
+      ? `<div class="an-correlated">🔗 Défaillances simultanées : ${esc(correlated.join(', '))} — probable cause commune</div>`
+      : ''
+    const checksHtml = checks.length
+      ? `<div class="an-checks">
+           <div class="an-checks-label">Vérifications immédiates</div>
+           ${checks.map(c => `<div class="an-check-item">${esc(String(c))}</div>`).join('')}
+         </div>` : ''
+    const logsHtml = hasLog
+      ? `<div class="an-logs-toggle" onclick="toggleLog('al${i}',this)">▶ logs (${logTxt.trim().length}c)</div>
+         <div class="an-logs-content" id="al${i}">${esc(logTxt.trim())}</div>` : ''
+
+    return `<div class="an-item acc-${sev}" id="an-${a.id||i}">
+      <div class="an-header">
+        <div class="an-job">
+          <span class="an-cat cat-${category}">${category}</span>
+          ${esc(a.monitorName||'?')} ${type} ${cache}
+        </div>
+        <div class="an-meta">
+          <span class="an-confidence conf-${confidence}">${confidence}</span>
+          <span class="sev-pill sev-${sev}">${sev}</span>
+          <span class="an-time">${t} · ${a.model_used||'llama3.2:3b'}</span>
+        </div>
+      </div>
+
+      <div class="an-meta-row">
+        <span class="data-impact impact-${impact}">${impactLabel[impact]||impact}</span>
+        ${fixMins ? `<span class="fix-time">résolution estimée : <span>~${fixMins} min</span></span>` : ''}
+      </div>
+
+      ${correlatedHtml}
+      <div class="an-cause">🔍 ${esc(cause)}</div>
+      ${action     ? `<div class="an-action">→ ${esc(action)}</div>` : ''}
+      ${prevention && prevention !== action
+        ? `<div class="an-prevention">🛡 ${esc(prevention)}</div>` : ''}
+      ${checksHtml}
+      ${logsHtml}
+
+      <div class="feedback-row">
+        <span class="fb-label">Cette analyse était-elle utile ?</span>
+        <button class="fb-btn ${a.user_feedback==='positive'?'active-pos':''}"
+          onclick="sendFeedback('${a.id||''}','positive','an-${a.id||i}')">👍</button>
+        <button class="fb-btn ${a.user_feedback==='negative'?'active-neg':''}"
+          onclick="sendFeedback('${a.id||''}','negative','an-${a.id||i}')">👎</button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ─── Drawer (détail monitor) ──────────────────────────────────────────────────
+async function openDrawer(id) {
+  const m = monitors.find(x => x.id===id)
+  if (!m) return
+  activeMonitor = m
+  anLocked = true
+  anMonitor = m
+  // Badge "analyses filtrées sur ce monitor" dans l'onglet Analyses IA
+  const fb = document.getElementById('an-filter-badge')
+  const fn = document.getElementById('an-filter-name')
+  if (fb && fn) { fn.textContent = m.name; fb.style.display = '' }
+  renderMonitors('dash'); renderMonitors('full')
+
+  const isPaused = m.paused_until && new Date(m.paused_until) > new Date()
+  const st = m.last_status || 'unknown'
+  const dotCls = {ok:'d-ok',late:'d-late',failed:'d-fail'}[st] || 'd-unk'
+
+  document.getElementById('d-name').innerHTML = `<div class="m-dot ${dotCls}"></div> ${esc(m.name)}`
+  document.getElementById('d-meta').innerHTML = `
+    <span class="env-p">${m.env}</span>
+    <span>grace: ${m.grace_period}s</span>
+    ${m.schedule ? `<span>⟳ ${m.schedule}</span>` : ''}
+    ${m.expected_min!=null ? `<span>${m.expected_min}–${m.expected_max||'∞'} records</span>` : ''}`
+
+  document.getElementById('d-actions').innerHTML = `
+    <button class="d-btn" onclick="openEditModal(${JSON.stringify(m).replace(/'/g,'\'').replace(/"/g,'&quot;')})">✎ modifier</button>
+    <button class="d-btn" onclick="copyText('${m.ping_key}','ping_key copiée !')">⎘ ping_key</button>
+    <button class="d-btn" onclick="testMonitor('${id}')">⚡ test alerte</button>
+    <button class="d-btn" onclick="ackMonitor('${id}')">✓ acknowledge</button>
+    <button class="d-btn" onclick="snoozeMonitor('${id}')">⏸ snooze 1h</button>
+    ${isPaused ? `<button class="d-btn success" onclick="resumeMonitor('${id}')">▶ reprendre</button>`
+               : `<button class="d-btn" onclick="pauseMonitor('${id}')">⏹ pause 2h</button>`}
+    <button class="d-btn danger" onclick="confirmDelete('${id}','${esc(m.name)}')">✕ supprimer</button>`
+
+  document.getElementById('d-body').innerHTML = '<div class="empty">chargement...</div>'
+  document.getElementById('drawer-overlay').classList.add('open')
+  document.getElementById('drawer').classList.add('open')
+
+  // Charge l'historique en parallèle
+  try {
+    const [history, analyses] = await Promise.all([
+      api(`/monitors/${id}/history?limit=50`),
+      api(`/monitors/${id}/analyses`)
+    ])
+    const mon = monitors.find(m => m.id === id)
+    analyses.forEach(a => {
+      a.monitorName = mon?.name || '?'
+      const ping = history.find(h => h.analysed_at === a.created_at)
+      a.ping_output   = ping?.output   || null
+      a.ping_exit_code = ping?.exit_code ?? null
+    })
+    renderDrawerBody(m, history, analyses)
+    // Met aussi à jour la vue analyses (verrouillée sur ce monitor)
+    analysesData = analyses
+    renderAnalyses()
+  } catch(e) {
+    document.getElementById('d-body').innerHTML = `<div class="empty">erreur: ${e.message}</div>`
+  }
+}
+
+function renderDrawerBody(m, history, analyses) {
+  const ok    = history.filter(h => h.status==='success').length
+  const total = history.length
+  const uptimePct = total > 0 ? Math.round(ok/total*100) : 100
+  const durs  = history.filter(h => h.duration_ms>0).map(h => h.duration_ms)
+  const avg   = durs.length ? Math.round(durs.reduce((a,b)=>a+b,0)/durs.length) : 0
+  const p95   = durs.length ? [...durs].sort((a,b)=>a-b)[Math.floor(durs.length*.95)] : 0
+
+  // Sparkline grande taille
+  const maxD = Math.max(...durs, 1)
+  const bigSpark = history.slice(0,50).map(h => {
+    const s = h.status
+    const cls = s==='success'?'sp-ok':s==='failed'||s==='fail'?'sp-fail':'sp-late'
+    const ht = h.duration_ms>0 ? Math.max(4, Math.round(h.duration_ms/maxD*28)) : 6
+    return `<div class="ds ${cls}" style="height:${ht}px" title="${s} ${h.duration_ms||0}ms · ${ago(h.pinged_at)}"></div>`
+  }).join('')
+
+  const histRows = history.slice(0,30).map(h => {
+    const s = h.status
+    const sc = s==='success'?'hs-ok':s==='failed'||s==='fail'?'hs-fail':'hs-late'
+    const dur = h.duration_ms ? (h.duration_ms>60000?Math.round(h.duration_ms/1000)+'s':h.duration_ms+'ms') : '—'
+    const rec = h.records!=null ? h.records+'r' : ''
+    const ai  = h.diagnosis ? '<span class="hist-ai">'+esc((parse(h.diagnosis)||{}).cause||'').slice(0,30)+'</span>' : ''
+    return `<div class="hist-row">
+      <span class="hist-time">${ago(h.pinged_at)}</span>
+      <span class="hist-status ${sc}">${s==='success'?'ok':s}</span>
+      <span class="hist-dur">${dur}</span>
+      <span class="hist-rec">${rec}</span>
+      ${ai}
+    </div>`
+  }).join('')
+
+  const recentAnalyses = analyses.slice(0,5).map((a,i) => {
+    const d          = typeof a.diagnosis==='string' ? parse(a.diagnosis) : a.diagnosis
+    const cause      = d?.cause      || '—'
+    const action     = d?.action     || null
+    const prevention = d?.prevention || a.prevention || null
+    const sev        = d?.severity   || a.severity || 'medium'
+    const category   = d?.category   || a.category || 'unknown'
+    const fixMins    = a.fix_minutes || d?.fix_minutes || null
+    const impact     = a.data_impact || d?.data_impact || 'none'
+    const dChecks = (() => {
+      const raw = a.checks || d?.checks
+      if (!raw) return []
+      if (typeof raw === 'string') { try { return JSON.parse(raw) } catch { return [] } }
+      return Array.isArray(raw) ? raw : []
+    })()
+    const hasLog = a.ping_output || a.ping_exit_code!=null
+    const logTxt = (a.ping_exit_code!=null?'exit: '+a.ping_exit_code+'\n':'')+(a.ping_output||'')
+    const logs   = hasLog ? `<div class="d-analysis-logs" onclick="toggleLog('dl${i}',this)">▶ logs</div>
+      <div class="d-logs-content" id="dl${i}">${esc(logTxt.trim())}</div>` : ''
+    const checksHtml = dChecks.length
+      ? dChecks.map(c => `<div style="font-size:10px;color:var(--text2);padding:1px 0;font-family:var(--mono)">→ ${esc(String(c))}</div>`).join('')
+      : ''
+    return `<div class="d-analysis">
+      <div class="d-analysis-job">
+        <span><span class="an-cat cat-${category}" style="font-size:8px">${category}</span> ${a.alert_type==='timeout'?'⏱':a.alert_type==='slow'?'🐢':'✕'} ${esc(a.monitorName||'?')}</span>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          ${impact !== 'none' ? `<span class="data-impact impact-${impact}" style="font-size:8px">${impact === 'confirmed' ? '⚠ data' : '? data'}</span>` : ''}
+          ${fixMins ? `<span style="font-size:8px;font-family:var(--mono);color:var(--text3)">~${fixMins}m</span>` : ''}
+          <span class="sev-pill ${`sev-${sev}`}">${sev}</span>
+        </div>
+      </div>
+      <div class="d-analysis-cause">🔍 ${esc(cause)}</div>
+      ${action    ? `<div class="d-analysis-action">→ ${esc(action)}</div>` : ''}
+      ${prevention && prevention !== action ? `<div style="font-size:10px;color:var(--text3);padding:4px 6px;background:var(--bg2);border-radius:3px;border-left:2px solid var(--blue);margin-bottom:4px">🛡 ${esc(prevention)}</div>` : ''}
+      ${checksHtml}
+      ${logs}
+    </div>`
+  }).join('')
+
+  const trend7d = calcTrend(history)
+  const trendHtml = trend7d !== null
+    ? `<span class="trend ${Math.abs(trend7d)<10?'trend-flat':trend7d>0?'trend-up':'trend-down'}">
+        ${trend7d>0?'↑':'↓'} ${Math.abs(trend7d)}% / 7j
+       </span>`
+    : ''
+
+  document.getElementById('d-body').innerHTML = `
+    <div class="d-section">
+      <div class="d-stats-row">
+        <div class="d-stat"><div class="d-stat-label">uptime</div><div class="d-stat-val" style="color:var(--${uptimePct>95?'green':uptimePct>80?'amber':'red'})">${uptimePct}%</div></div>
+        <div class="d-stat"><div class="d-stat-label">durée moy.</div><div class="d-stat-val">${avg>60000?Math.round(avg/1000)+'s':avg+'ms'} ${trendHtml}</div></div>
+        <div class="d-stat"><div class="d-stat-label">p95</div><div class="d-stat-val">${p95>60000?Math.round(p95/1000)+'s':p95+'ms'}</div></div>
+      </div>
+      <div class="d-spark">${bigSpark}</div>
+    </div>
+
+    <div class="d-section">
+      <div class="d-section-title">ping_key <button class="key-copy" onclick="copyText('${m.ping_key}','ping_key copiée !')">copier</button></div>
+      <div class="key-box"><span style="word-break:break-all">${m.ping_key}</span></div>
+      <div class="curl-box">curl -sX POST ${BASE_URL}/ping/${m.ping_key} \\
+  -d '{"status":"success","duration_ms":1200}'
+
+# ou en bash
+./mon-script.sh && curl -sX POST \\
+  ${BASE_URL}/ping/${m.ping_key} \\
+  -d "{\"status\":\"success\",\"exit_code\":$?,\"records\":$COUNT}"</div>
+      <div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--text3)">
+        Page statut publique :
+        <a href="${BASE_URL}/status/${m.id}" target="_blank"
+           style="color:var(--green);text-decoration:none"
+           title="Ouvrir la page de statut publique">
+          ${BASE_URL}/status/${m.id}
+        </a>
+      </div>
+    </div>
+
+    ${recentAnalyses ? `<div class="d-section">
+      <div class="d-section-title">analyses récentes</div>
+      ${recentAnalyses}
+    </div>` : ''}
+
+    <div class="d-section">
+      <div class="d-section-title">historique (${history.length})</div>
+      ${histRows || '<div class="empty">aucun ping</div>'}
+    </div>`
+}
+
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open')
+  document.getElementById('drawer').classList.remove('open')
+  activeMonitor = null
+  anLocked      = false
+  renderMonitors('dash'); renderMonitors('full')
+}
+
+// ─── Monitor actions ──────────────────────────────────────────────────────────
+async function ackMonitor(id) {
+  try { await api(`/monitors/${id}/acknowledge`, {method:'POST'}); toast('Alertes acquittées','ok'); await loadMonitors() }
+  catch(e) { toast(e.message,'err') }
+}
+
+async function snoozeMonitor(id) {
+  try { await api(`/monitors/${id}/snooze`, {method:'POST',body:JSON.stringify({minutes:60})}); toast('Alertes silencieuses 1h','ok'); await loadMonitors() }
+  catch(e) { toast(e.message,'err') }
+}
+
+async function pauseMonitor(id) {
+  try { await api(`/monitors/${id}/pause`, {method:'POST',body:JSON.stringify({minutes:120})}); toast('Monitor en pause 2h','ok'); await loadMonitors(); if(activeMonitor?.id===id) openDrawer(id) }
+  catch(e) { toast(e.message,'err') }
+}
+
+async function resumeMonitor(id) {
+  try { await api(`/monitors/${id}/resume`, {method:'POST'}); toast('Monitor repris','ok'); await loadMonitors(); if(activeMonitor?.id===id) openDrawer(id) }
+  catch(e) { toast(e.message,'err') }
+}
+
+async function testMonitor(id) {
+  try { await api(`/monitors/${id}/test`, {method:'POST'}); toast('Alerte de test envoyée','ok') }
+  catch(e) { toast(e.message,'err') }
+}
+
+function confirmDelete(id, name) {
+  // Crée un modal de confirmation qui exige de taper le nom
+  const existing = document.getElementById('del-confirm')
+  if (existing) existing.remove()
+  const div = document.createElement('div')
+  div.id = 'del-confirm'
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center'
+  div.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--red-dim);border-radius:var(--radius-lg);padding:24px;width:360px">
+    <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">supprimer "${name}"</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Cette action est irréversible. Tapez le nom pour confirmer :</div>
+    <input id="del-name-input" class="del-input" placeholder="${name}" oninput="checkDelName('${name}','del-ok-btn')">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-ghost" onclick="document.getElementById('del-confirm').remove()">annuler</button>
+      <button id="del-ok-btn" class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim);opacity:.4;pointer-events:none" onclick="doDelete('${id}')">supprimer</button>
+    </div>
+  </div>`
+  document.body.appendChild(div)
+}
+
+function checkDelName(expected, btnId) {
+  const val = document.getElementById('del-name-input').value
+  const btn = document.getElementById(btnId)
+  const ok  = val === expected
+  btn.style.opacity = ok ? '1' : '.4'
+  btn.style.pointerEvents = ok ? 'auto' : 'none'
+}
+
+async function doDelete(id) {
+  const div = document.getElementById('del-confirm')
+  if (div) div.remove()
+  try {
+    await api(`/monitors/${id}`, {method:'DELETE'})
+    toast('Monitor supprimé','ok')
+    if (activeMonitor?.id===id) closeDrawer()
+    await loadMonitors()
+  } catch(e) { toast(e.message,'err') }
+}
+
+// ─── Modal nouveau monitor ────────────────────────────────────────────────────
+function openModal() {
+  document.getElementById('modal-form').style.display = ''
+  document.getElementById('modal-success').style.display = 'none'
+  document.getElementById('m-err').textContent = ''
+  ;['m-name','m-schedule','m-emin','m-emax'].forEach(id => document.getElementById(id).value='')
+  document.getElementById('modal-bg').classList.remove('hidden')
+  setTimeout(() => document.getElementById('m-name').focus(), 50)
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.add('hidden')
+  loadMonitors()
+}
+
+async function createMonitor() {
+  const name     = document.getElementById('m-name').value.trim()
+  const env      = document.getElementById('m-env').value
+  const grace    = parseInt(document.getElementById('m-grace').value)||300
+  const schedule = document.getElementById('m-schedule').value.trim()||undefined
+  const emin     = parseInt(document.getElementById('m-emin').value)||undefined
+  const emax     = parseInt(document.getElementById('m-emax').value)||undefined
+  if (!name) { document.getElementById('m-err').textContent='le nom est obligatoire'; return }
+  try {
+    const m = await api('/monitors', {method:'POST', body:JSON.stringify({name,env,grace_period:grace,schedule,expected_min:emin,expected_max:emax})})
+    document.getElementById('modal-form').style.display = 'none'
+    document.getElementById('modal-success').style.display = ''
+    document.getElementById('s-key').textContent = m.ping_key
+    document.getElementById('s-curl').textContent =
+      `# succès\ncurl -sX POST ${BASE_URL}/ping/${m.ping_key} \\\n  -d '{"status":"success","duration_ms":$SECONDS}'\n\n# échec\ncurl -sX POST ${BASE_URL}/ping/${m.ping_key} \\\n  -d "{\"status\":\"fail\",\"exit_code\":$?,\"output\":\"$LOG\"}"`
+  } catch(e) { document.getElementById('m-err').textContent = e.message }
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+function setView(view) {
+  currentView = view
+  document.querySelectorAll('.s-item').forEach(n => n.classList.remove('active'))
+  const nav = document.getElementById('nav-'+view); if (nav) nav.classList.add('active')
+  const titles = {dashboard:'dashboard',monitors:'services',logs:'journal',analyses:'analyses ia',settings:'paramètres',docs:'documentation'}
+  document.getElementById('page-title').textContent = titles[view]||view
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
+  const vp = document.getElementById('view-'+view); if (vp) vp.classList.add('active')
+  if (view==='logs')    loadLogs('full')
+  if (view==='analyses') { loadImpact(); loadAnalyses(anLocked?anMonitor?.id:null); initQuickErrors() }
+  if (view==='monitors') renderMonitors('full')
+  if (view==='settings') { loadSettings(); updateDocUrls() }
+  if (view==='docs')     updateDocUrls()
+}
+
+// ─── Filters ──────────────────────────────────────────────────────────────────
+function setFilter(f, target) {
+  currentFilter = f
+  const sfx = target==='full'?'-f':''
+  ;['all','alerts'].forEach(s => {
+    const el = document.getElementById(`f-${s}${sfx}`)
+    if (el) el.style.background = f===s ? 'var(--bg4)' : ''
+  })
+  renderMonitors(target||'dash')
+}
+
+function filterMonitors() {
+  searchText = document.getElementById('search').value
+  renderMonitors('dash'); renderMonitors('full')
+}
+
+function clearAnFilter() {
+  anLocked = false; anMonitor = null
+  document.getElementById('an-filter-badge').style.display='none'
+  loadAnalyses()
+}
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function ago(iso) {
+  if (!iso) return 'jamais'
+  const d = Date.now() - new Date(iso).getTime()
+  if (d < 10000)   return 'à l\'instant'
+  if (d < 60000)   return `${Math.round(d/1000)}s`
+  if (d < 3600000) return `${Math.round(d/60000)}m`
+  if (d < 86400000) return `${Math.round(d/3600000)}h`
+  return `${Math.round(d/86400000)}j`
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+}
+
+function parse(s) { try { return JSON.parse(s) } catch { return null } }
+
+function copyText(text, msg) {
+  navigator.clipboard.writeText(text).then(() => toast(msg||'copié','ok')).catch(() => toast('échec copie','err'))
+}
+
+function copyKey(id) {
+  copyText(document.getElementById(id).textContent.trim(), 'clé copiée !')
+}
+
+function toggleLog(id, btn) {
+  const el = document.getElementById(id)
+  const open = el.classList.toggle('open')
+  btn.textContent = open ? '▼ masquer logs' : `▶ logs (${el.textContent.length}c)`
+}
+
+// ─── Raccourcis clavier ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return
+  if (e.key==='r'||e.key==='R') { e.preventDefault(); refreshAll(); toast('Rafraîchi','ok') }
+  if (e.key==='/'){ e.preventDefault(); document.getElementById('search').focus() }
+  if (e.key==='Escape') {
+    if (document.getElementById('drawer').classList.contains('open')) closeDrawer()
+    else if (!document.getElementById('modal-bg').classList.contains('hidden')) closeModal()
+  }
+  if (e.key==='1') setView('dashboard')
+  if (e.key==='2') setView('monitors')
+  if (e.key==='3') setView('logs')
+  if (e.key==='4') setView('analyses')
+  if (e.key==='5') setView('settings')
+  if (e.key==='6') setView('docs')
+})
+
+document.getElementById('auth-key').addEventListener('keydown', e => { if(e.key==='Enter') login() })
+document.getElementById('modal-bg').addEventListener('click', e => { if(e.target===document.getElementById('modal-bg')) closeModal() })
+document.getElementById('edit-modal-bg').addEventListener('click', e => { if(e.target===document.getElementById('edit-modal-bg')) closeEditModal() })
+
+// ─── Edit monitor ─────────────────────────────────────────────────────────────
+function openEditModal(m) {
+  editMonitorId = m.id
+  document.getElementById('edit-modal-name').textContent = '// ' + m.name
+  document.getElementById('em-name').value     = m.name || ''
+  document.getElementById('em-env').value      = m.env || 'production'
+  document.getElementById('em-grace').value    = m.grace_period || 300
+  document.getElementById('em-schedule').value = m.schedule || ''
+  document.getElementById('em-emin').value     = m.expected_min != null ? m.expected_min : ''
+  document.getElementById('em-emax').value     = m.expected_max != null ? m.expected_max : ''
+  document.getElementById('em-active').checked = m.active !== false
+  document.getElementById('em-err').textContent = ''
+  document.getElementById('edit-modal-bg').classList.remove('hidden')
+  setTimeout(() => document.getElementById('em-name').focus(), 50)
+}
+
+function closeEditModal() {
+  document.getElementById('edit-modal-bg').classList.add('hidden')
+  editMonitorId = null
+}
+
+async function saveMonitor() {
+  if (!editMonitorId) return
+  const name     = document.getElementById('em-name').value.trim()
+  const env      = document.getElementById('em-env').value
+  const grace    = parseInt(document.getElementById('em-grace').value) || 300
+  const schedule = document.getElementById('em-schedule').value.trim() || null
+  const emin     = document.getElementById('em-emin').value ? parseInt(document.getElementById('em-emin').value) : null
+  const emax     = document.getElementById('em-emax').value ? parseInt(document.getElementById('em-emax').value) : null
+  const active   = document.getElementById('em-active').checked
+  if (!name) { document.getElementById('em-err').textContent = 'nom requis'; return }
+  try {
+    await api(`/monitors/${editMonitorId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ name, env, grace_period: grace, schedule, expected_min: emin, expected_max: emax, active })
+    })
+    toast('Monitor mis à jour', 'ok')
+    closeEditModal()
+    await loadMonitors()
+    if (activeMonitor?.id === editMonitorId) {
+      const updated = monitors.find(m => m.id === editMonitorId)
+      if (updated) openDrawer(updated.id)
+    }
+  } catch(e) { document.getElementById('em-err').textContent = e.message }
+}
+
+// ─── Pending analysis ─────────────────────────────────────────────────────────
+function markPending(monitorId) {
+  pendingAnalysis.add(monitorId)
+  // Auto-clear après 90s (le LLM devrait avoir répondu)
+  setTimeout(() => {
+    pendingAnalysis.delete(monitorId)
+    renderMonitors('dash'); renderMonitors('full')
+  }, 90000)
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+window._rawApiKey = ''
+
+function toggleApiKey() {
+  const el  = document.getElementById('set-key-hidden')
+  const btn = event.target
+  if (el.textContent.includes('•')) {
+    el.textContent = window._rawApiKey || API_KEY
+    btn.textContent = 'masquer'
+  } else {
+    el.textContent = '••••••••••••••••'
+    btn.textContent = 'afficher'
+  }
+}
+
+async function loadSettings() {
+  try {
+    const c = await api('/clients/me')
+    window._rawApiKey = API_KEY
+    document.getElementById('set-email').textContent    = c.email || '—'
+    document.getElementById('set-plan').textContent     = c.plan || 'free'
+    document.getElementById('set-monitors').textContent = `${c.monitor_count || 0} actifs`
+    if (c.plan === 'free') document.getElementById('trial-section').style.display = ''
+    document.getElementById('set-status-url').textContent = `${BASE_URL}/status/{monitor_id}`
+
+    if (c.slack_webhook) document.getElementById('set-slack').value = c.slack_webhook
+    if (c.webhook_url)   document.getElementById('set-webhook').value = c.webhook_url
+
+    // Peuple le select timezone
+    const tzSelect = document.getElementById('set-tz')
+    const timezones = [
+      'Europe/Paris', 'Europe/London', 'Europe/Berlin', 'Europe/Madrid',
+      'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'America/Montreal',
+      'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Dubai', 'Australia/Sydney', 'UTC'
+    ]
+    timezones.forEach(tz => {
+      const opt = document.createElement('option')
+      opt.value = tz; opt.textContent = tz
+      if (tz === TZ) opt.selected = true
+      tzSelect.appendChild(opt)
+    })
+  } catch(e) { console.error(e) }
+}
+
+async function saveSlack() {
+  const webhook = document.getElementById('set-slack').value.trim()
+  try {
+    await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ slack_webhook: webhook || '' }) })
+    toast('Slack webhook sauvegardé', 'ok')
+  } catch(e) { toast(e.message, 'err') }
+}
+
+async function saveWebhook() {
+  const url = document.getElementById('set-webhook').value.trim()
+  try {
+    await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ webhook_url: url || '' }) })
+    toast('Webhook sauvegardé', 'ok')
+  } catch(e) { toast(e.message, 'err') }
+}
+
+function saveTz() {
+  TZ = document.getElementById('set-tz').value
+  localStorage.setItem('cg_tz', TZ)
+  toast('Timezone mise à jour', 'ok')
+}
+
+async function startTrial() {
+  try {
+    await api('/auth/start-trial', { method: 'POST' })
+    toast('Essai Pro 14 jours activé !', 'ok')
+    document.getElementById('trial-section').style.display = 'none'
+    loadSettings()
+    loadClientInfo()
+  } catch(e) { toast(e.message, 'err') }
+}
+
+// ─── Docs ─────────────────────────────────────────────────────────────────────
+function copyCode(id) {
+  const el = document.getElementById(id)
+  // Supprime les boutons copier du texte
+  const text = el.cloneNode(true)
+  text.querySelectorAll('button').forEach(b => b.remove())
+  text.querySelectorAll('span[id^="doc-url"]').forEach(s => s.replaceWith(BASE_URL))
+  navigator.clipboard.writeText(text.textContent.trim())
+    .then(() => toast('Code copié', 'ok'))
+    .catch(() => toast('Échec copie', 'err'))
+}
+
+// ─── Mobile sidebar ──────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const sidebar  = document.querySelector('.sidebar')
+  const backdrop = document.getElementById('sidebar-backdrop')
+  sidebar.classList.toggle('open')
+  backdrop.classList.toggle('show')
+}
+
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open')
+  document.getElementById('sidebar-backdrop').classList.remove('show')
+}
+
+// Ferme la sidebar mobile après navigation
+const origSetView = setView
+window.setView = function(view) {
+  origSetView(view)
+  if (window.innerWidth <= 768) closeSidebar()
+}
+
+// ─── Feedback analyses ───────────────────────────────────────────────────────
+async function sendFeedback(analysisId, feedback, elementId) {
+  if (!analysisId) { toast('ID analyse manquant', 'err'); return }
+  try {
+    await api(`/monitors/analyses/${analysisId}/feedback`, {
+      method: 'POST',
+      body: JSON.stringify({ feedback })
+    })
+    toast(feedback === 'positive' ? '👍 Merci !' : '👎 Noté', 'ok')
+    // Met à jour les boutons visuellement
+    const el = document.getElementById(elementId)
+    if (el) {
+      el.querySelectorAll('.fb-btn').forEach(b => { b.classList.remove('active-pos','active-neg') })
+      const btn = el.querySelector(`.fb-btn:${feedback==='positive'?'first':'last'}-of-type`)
+      if (btn) btn.classList.add(feedback==='positive'?'active-pos':'active-neg')
+    }
+  } catch(e) { toast(e.message, 'err') }
+}
+
+
+// ─── Quick error scenarios (playground) ──────────────────────────────────────
+const QUICK_ERRORS = [
+  {
+    label: '🗄 DB deadlock',      category: 'database',
+    job: 'cleanup-sessions',      exit: 1,
+    logs: `ERROR:  deadlock detected
+DETAIL:  Process 12345 waits for ShareLock on transaction 88472; blocked by process 12346.
+         Process 12346 waits for ShareLock on transaction 88471; blocked by process 12345.
+HINT:  See server log for query details.
+CONTEXT: while updating tuple (0,43) in relation "user_sessions"
+ROLLBACK: 0 rows deleted`
+  },
+  {
+    label: '🌐 ECONNREFUSED',     category: 'network',
+    job: 'etl-warehouse',         exit: 1,
+    logs: `Connecting to warehouse 10.0.1.45:5439...
+ConnectionError: connect ECONNREFUSED 10.0.1.45:5439
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1716:16) {
+  errno: -4078, code: 'ECONNREFUSED', syscall: 'connect'
+}
+Retrying (1/3)... ECONNREFUSED
+Retrying (2/3)... ECONNREFUSED
+All retries exhausted. ETL aborted. Records: 0/847392`
+  },
+  {
+    label: '💥 OOM killed',       category: 'resources',
+    job: 'reindex-search',        exit: 137,
+    logs: `Starting Elasticsearch reindex (2.4M documents)
+Progress: 38% (912,000 / 2,400,000)
+Process killed by OOM killer (exit code 137)
+Killed
+dmesg: Out of memory: Killed process 23847 (node) total-vm:4892840kB, anon-rss:3891232kB`
+  },
+  {
+    label: '⏱ Grace timeout',    category: 'timeout',
+    job: 'export-reports',        exit: 124,
+    logs: `[INFO] Generating PDF reports: 201/384 (52%)
+[INFO] ETA: 35 min remaining
+[WARNING] Memory usage 89% (7.1 GB / 8 GB)
+Timeout: job exceeded 3600s grace period
+Process killed. Generated: 201/384 reports — INCOMPLETE`
+  },
+  {
+    label: '🧩 TypeError JS',     category: 'code',
+    job: 'send-digests',          exit: 1,
+    logs: `TypeError: Cannot read properties of undefined (reading 'email')
+    at buildDigest (/app/src/services/digest.js:134:28)
+    at async processSubscriptions (/app/src/services/digest.js:89:5)
+0 / 1247 digests sent`
+  },
+  {
+    label: '📊 Data quality',     category: 'data',
+    job: 'validate-pipeline',     exit: 1,
+    logs: `Validation failed: 23,847 records with NULL customer_id
+Validation failed: 847 records with future timestamps
+Validation failed: price_usd contains negative values (min: -99.99)
+Data quality score: 29.7% (threshold: 95%)
+Pipeline aborted. 0 records written to production tables.`
+  },
+  {
+    label: '🔌 Rate limit 429',   category: 'dependency',
+    job: 'sync-invoices',         exit: 1,
+    logs: `Fetching from Stripe API...
+StripeRateLimitError: Too Many Requests
+  statusCode: 429
+  headers: { 'retry-after': '29', 'x-ratelimit-remaining-requests': '0' }
+Processed: 0 / ~2400 invoices. Aborting.`
+  },
+]
+
+function initQuickErrors() {
+  const container = document.getElementById('quick-errors')
+  if (!container) return
+  const catColors = {
+    database:'var(--blue)',network:'var(--purple)',resources:'var(--red)',
+    timeout:'var(--amber)',code:'var(--text2)',data:'var(--indigo)',dependency:'var(--green)'
+  }
+  container.innerHTML = QUICK_ERRORS.map((s, i) => `
+    <button class="quick-err-btn"
+      style="color:${catColors[s.category]||'var(--text2)'};border-color:${catColors[s.category]||'var(--border2)'}20"
+      onclick="loadScenario(${i})">${s.label}</button>
+  `).join('')
+}
+
+function loadScenario(i) {
+  const s = QUICK_ERRORS[i]
+  clearPreview()
+  document.getElementById('pg-job').value   = s.job
+  document.getElementById('pg-exit').value  = String(s.exit)
+  document.getElementById('pg-logs').value  = s.logs
+  document.getElementById('pg-env').value   = 'production'
+}
+
+async function runPreview() {
+  const logs    = document.getElementById('pg-logs').value.trim()
+  const jobName = document.getElementById('pg-job').value.trim() || 'test-job'
+  const env     = document.getElementById('pg-env').value
+  const exitCode= parseInt(document.getElementById('pg-exit').value) || 1
+
+  if (!logs) { toast('Collez des logs à analyser', 'err'); return }
+
+  document.getElementById('pg-spinner').classList.add('show')
+  document.getElementById('pg-result').classList.remove('show')
+  const spinnerTxt = document.getElementById('pg-spinner-text')
+  if (spinnerTxt) spinnerTxt.textContent =
+    `Analyse en cours avec ${window._activeModel||'LLM'} — 30-60s au premier appel...`
+
+  try {
+    const r = await api('/monitors/analyze/preview', {
+      method: 'POST',
+      body: JSON.stringify({ logs, job_name: jobName, env, exit_code: exitCode })
+    })
+    renderPreviewResult(r)
+  } catch(e) {
+    let errData = null
+    try { errData = JSON.parse(e.message.replace(/^\d+: /, '')) } catch {}
+
+    const resultEl = document.getElementById('pg-result')
+
+    if (errData) {
+      // Affiche toujours l'erreur dans le panneau résultat (plus visible qu'un toast)
+      const actionsHtml = (errData.actions||[]).map(a =>
+        `<div style="font-size:11px;font-family:var(--mono);color:var(--text2);padding:3px 0;display:flex;gap:8px">
+           <span style="color:var(--green);flex-shrink:0">→</span>${esc(a)}
+         </div>`
+      ).join('')
+
+      const availableHtml = errData.available?.length
+        ? `<div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--text3)">
+             Modèles disponibles : ${esc(errData.available.slice(0,3).join(', '))}
+           </div>` : ''
+
+      resultEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:16px">⚠</span>
+          <span style="color:var(--red);font-weight:600;font-size:13px">${esc(errData.error||'Erreur LLM')}</span>
+        </div>
+        ${errData.detail  ? `<div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:10px;padding:6px 10px;background:var(--bg);border-radius:4px">${esc(errData.detail)}</div>` : ''}
+        ${errData.hint    ? `<div style="font-size:11px;color:var(--text2);margin-bottom:10px">💡 ${esc(errData.hint)}</div>` : ''}
+        ${errData.fix     ? `<div style="font-family:var(--mono);font-size:11px;color:var(--green);padding:6px 10px;background:var(--green-dim);border-radius:4px;margin-bottom:8px">${esc(errData.fix)}</div>` : ''}
+        ${errData.timeout ? `<div style="font-size:10px;font-family:var(--mono);color:var(--text3)">Timeout actuel : ${esc(errData.timeout)} · Modèle : ${esc(errData.model||'?')}</div>` : ''}
+        ${actionsHtml}
+        ${availableHtml}`
+      resultEl.classList.add('show')
+    } else {
+      toast(e.message, 'err')
+    }
+  } finally {
+    document.getElementById('pg-spinner').classList.remove('show')
+  }
+}
+
+function renderPreviewResult(r) {
+  const catColors = {
+    database:'var(--blue)',network:'var(--purple)',resources:'var(--red)',
+    timeout:'var(--amber)',code:'var(--text2)',data:'var(--indigo)',
+    dependency:'var(--green)',unknown:'var(--text3)'
+  }
+  const impactLabel = {none:'✓ données ok',possible:'? impact possible',confirmed:'⚠ données affectées'}
+  const sev = r.severity || 'medium'
+  const cat = r.category || 'unknown'
+  const conf= r.confidence || 'medium'
+
+  const checksHtml = (r.checks||[]).map(c =>
+    `<div class="pr-check">${esc(String(c))}</div>`
+  ).join('')
+
+  document.getElementById('pg-result').innerHTML = `
+    <div class="pr-header">
+      <span class="an-cat cat-${cat}">${cat}</span>
+      <span class="sev-pill sev-${sev}">${sev}</span>
+      <span class="an-confidence conf-${conf}">${conf}</span>
+      <span class="data-impact impact-${r.data_impact||'none'}">${impactLabel[r.data_impact]||'?'}</span>
+      ${r.fix_minutes ? `<span class="fix-time">~<span>${r.fix_minutes}</span>min</span>` : ''}
+      <span style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:auto">${r.model||'llama3.2:3b'}</span>
+    </div>
+    <div class="pr-cause">🔍 ${esc(r.cause||'—')}</div>
+    ${r.action    ? `<div class="pr-action">→ ${esc(r.action)}</div>` : ''}
+    ${r.prevention? `<div class="pr-prevention">🛡 ${esc(r.prevention)}</div>` : ''}
+    ${checksHtml ? `<div class="pr-checks"><div style="font-size:9px;color:var(--text3);font-family:var(--sans);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Vérifications immédiates</div>${checksHtml}</div>` : ''}
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:9px;font-family:var(--mono);color:var(--text3)">
+      ${r._meta ? `${r._meta.logs_length} chars analysés · ${r.tokensIn||0} tokens in · ${r.tokensOut||0} tokens out` : ''}
+      ${r.fromCache ? ' · <span style="color:var(--amber)">⚡ depuis cache</span>' : ''}
+    </div>`
+  document.getElementById('pg-result').classList.add('show')
+}
+
+function clearPreview() {
+  document.getElementById('pg-result').classList.remove('show')
+  document.getElementById('pg-result').innerHTML = ''
+  document.getElementById('pg-spinner').classList.remove('show')
+  document.getElementById('pg-logs').value = ''
+  document.getElementById('pg-job').value  = 'mon-cron-job'
+  document.getElementById('pg-exit').value = '1'
+}
+
+// ─── Métriques qualité ────────────────────────────────────────────────────────
+let metricsVisible = false
+
+function toggleMetrics() {
+  metricsVisible = !metricsVisible
+  document.getElementById('quality-grid').style.display = metricsVisible ? 'grid' : 'none'
+  document.getElementById('toggle-metrics').textContent = metricsVisible ? '📊 masquer' : '📊 détails'
+  if (metricsVisible) renderQualityMetrics(analysesData)
+}
+
+// Bandeau résumé compact — toujours visible en tête de l'onglet
+function renderAnSummary(analyses) {
+  const el = document.getElementById('an-summary')
+  if (!el) return
+  if (!analyses.length) { el.innerHTML = ''; return }
+  const total  = analyses.length
+  const urgent = analyses.filter(a => ['critical','high'].includes(anSeverity(a))).length
+  const cats = {}
+  analyses.forEach(a => { const c = anCategory(a); cats[c] = (cats[c]||0)+1 })
+  const topCat = Object.entries(cats).sort(([,x],[,y]) => y-x)[0]
+  const fixTimes = analyses.filter(a => a.fix_minutes > 0).map(a => a.fix_minutes)
+  const avgFix = fixTimes.length ? Math.round(fixTimes.reduce((a,b)=>a+b,0)/fixTimes.length) : 0
+  el.innerHTML = `
+    <div class="stat stat-ai"><div class="stat-label">analyses</div><div class="stat-val">${total}</div><div class="stat-sub">total récent</div></div>
+    <div class="stat stat-fail"><div class="stat-label">à traiter</div><div class="stat-val">${urgent}</div><div class="stat-sub">high + critical</div></div>
+    <div class="stat stat-uptime"><div class="stat-label">catégorie #1</div><div class="stat-val" style="font-size:18px">${topCat?topCat[0]:'—'}</div><div class="stat-sub">${topCat?topCat[1]+' cas':''}</div></div>
+    <div class="stat stat-late"><div class="stat-label">résolution</div><div class="stat-val">${avgFix||'—'}</div><div class="stat-sub">min en moyenne</div></div>`
+}
+
+function renderQualityMetrics(analyses) {
+  if (!analyses.length) return
+
+  // Catégories
+  const cats = {}
+  analyses.forEach(a => {
+    const d = typeof a.diagnosis==='string' ? parse(a.diagnosis) : a.diagnosis
+    const cat = d?.category || a.category || 'unknown'
+    cats[cat] = (cats[cat]||0) + 1
+  })
+  const maxCat = Math.max(...Object.values(cats))
+  const catColors = {
+    database:'var(--blue)',network:'var(--purple)',resources:'var(--red)',
+    timeout:'var(--amber)',code:'var(--text2)',data:'var(--indigo)',
+    dependency:'var(--green)',unknown:'var(--bg4)'
+  }
+  document.getElementById('cat-bars').innerHTML = Object.entries(cats)
+    .sort(([,a],[,b]) => b-a)
+    .map(([cat, count]) => `
+      <div class="cat-bar-row">
+        <div class="cat-bar-label" style="color:${catColors[cat]||'var(--text3)'}">${cat}</div>
+        <div class="cat-bar-wrap">
+          <div class="cat-bar-fill" style="width:${Math.round(count/maxCat*100)}%;background:${catColors[cat]||'var(--bg4)'}"></div>
+        </div>
+        <div class="cat-bar-count">${count}</div>
+      </div>`).join('')
+
+  // Confiance
+  const confs = {high:0,medium:0,low:0}
+  analyses.forEach(a => { const c=a.confidence||'medium'; confs[c]=(confs[c]||0)+1 })
+  document.getElementById('conf-circles').innerHTML = [
+    {k:'high',   label:'Haute',   color:'var(--green)',  sub:'Cause explicite dans les logs'},
+    {k:'medium', label:'Moyenne', color:'var(--amber)',  sub:'Inférée depuis le contexte'},
+    {k:'low',    label:'Faible',  color:'var(--text3)',  sub:'Hypothèse basée sur le pattern'},
+  ].map(({k,label,color,sub}) => `
+    <div class="conf-circle">
+      <div class="conf-dot" style="background:${color}"></div>
+      <div class="conf-info">
+        <div class="conf-label">${label} (${confs[k]||0})</div>
+        <div class="conf-sub">${sub}</div>
+      </div>
+    </div>`).join('')
+
+  // Fix minutes moyen
+  const fixTimes = analyses.filter(a => a.fix_minutes > 0).map(a => a.fix_minutes)
+  const avgFix = fixTimes.length ? Math.round(fixTimes.reduce((a,b)=>a+b,0)/fixTimes.length) : 0
+  document.getElementById('avg-fix').textContent = avgFix || '—'
+
+  // Impact données
+  const impacts = {none:0,possible:0,confirmed:0}
+  analyses.forEach(a => { const i=a.data_impact||'none'; impacts[i]=(impacts[i]||0)+1 })
+  document.getElementById('impact-bar').innerHTML = [
+    {k:'none',       label:'OK',    color:'var(--green-dim)',  textColor:'var(--green)'},
+    {k:'possible',   label:'?',     color:'var(--amber-dim)',  textColor:'var(--amber)'},
+    {k:'confirmed',  label:'⚠',    color:'var(--red-dim)',    textColor:'var(--red)'},
+  ].map(({k,label,color,textColor}) => impacts[k] ? `
+    <span style="font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:20px;background:${color};color:${textColor}">${label} ${impacts[k]}</span>
+  ` : '').join('')
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+// Met à jour les URLs dans la doc
+function updateDocUrls() {
+  document.querySelectorAll('[id^="doc-url"]').forEach(el => { el.textContent = BASE_URL })
+}
+
+if (API_KEY) {
+  document.getElementById('auth-key').value = API_KEY
+  document.getElementById('auth-url').value = BASE_URL
+  boot()
+}
+</script>
+</body>
+</html>
