@@ -1,0 +1,404 @@
+{
+  "date": "2026-06-12T21:18:51.162Z",
+  "model": "llama3.2:3b",
+  "cases": 26,
+  "scores": {
+    "parsable": 1,
+    "category_exact": 0.8076923076923077,
+    "severity_exact": 0.5769230769230769,
+    "severity_near": 0.9615384615384616,
+    "avg_latency_ms": 14910
+  },
+  "results": [
+    {
+      "name": "pg-connection-refused",
+      "expected": {
+        "category": "database",
+        "severity": "high"
+      },
+      "got": {
+        "category": "database",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 16603
+    },
+    {
+      "name": "pg-too-many-connections",
+      "expected": {
+        "category": "database",
+        "severity": "high"
+      },
+      "got": {
+        "category": "database",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 14088
+    },
+    {
+      "name": "mysql-deadlock",
+      "expected": {
+        "category": "database",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "database",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 14174
+    },
+    {
+      "name": "pg-disk-full-wal",
+      "expected": {
+        "category": "database",
+        "severity": "critical"
+      },
+      "got": {
+        "category": "resources",
+        "severity": "critical"
+      },
+      "categoryOk": false,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 13922
+    },
+    {
+      "name": "dns-resolution-failure",
+      "expected": {
+        "category": "network",
+        "severity": "high"
+      },
+      "got": {
+        "category": "network",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 17848
+    },
+    {
+      "name": "tls-cert-expired",
+      "expected": {
+        "category": "network",
+        "severity": "high"
+      },
+      "got": {
+        "category": "network",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 13118
+    },
+    {
+      "name": "econnreset-mid-transfer",
+      "expected": {
+        "category": "network",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "database",
+        "severity": "high"
+      },
+      "categoryOk": false,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 14965
+    },
+    {
+      "name": "route-unreachable-vpn",
+      "expected": {
+        "category": "network",
+        "severity": "high"
+      },
+      "got": {
+        "category": "network",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 13817
+    },
+    {
+      "name": "watchdog-sigkill",
+      "expected": {
+        "category": "timeout",
+        "severity": "high"
+      },
+      "got": {
+        "category": "timeout",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 16109
+    },
+    {
+      "name": "http-client-timeout",
+      "expected": {
+        "category": "timeout",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "timeout",
+        "severity": "medium"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 15675
+    },
+    {
+      "name": "query-statement-timeout",
+      "expected": {
+        "category": "timeout",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "timeout",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 14084
+    },
+    {
+      "name": "oom-killer-137",
+      "expected": {
+        "category": "resources",
+        "severity": "critical"
+      },
+      "got": {
+        "category": "resources",
+        "severity": "critical"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 16515
+    },
+    {
+      "name": "disk-full-enospc",
+      "expected": {
+        "category": "resources",
+        "severity": "critical"
+      },
+      "got": {
+        "category": "resources",
+        "severity": "critical"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 13406
+    },
+    {
+      "name": "fork-cannot-allocate",
+      "expected": {
+        "category": "resources",
+        "severity": "high"
+      },
+      "got": {
+        "category": "resources",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 17248
+    },
+    {
+      "name": "inode-exhaustion",
+      "expected": {
+        "category": "resources",
+        "severity": "high"
+      },
+      "got": {
+        "category": "resources",
+        "severity": "critical"
+      },
+      "categoryOk": true,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 15375
+    },
+    {
+      "name": "stripe-rate-limit-429",
+      "expected": {
+        "category": "dependency",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "dependency",
+        "severity": "medium"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 13439
+    },
+    {
+      "name": "api-key-revoked-401",
+      "expected": {
+        "category": "dependency",
+        "severity": "high"
+      },
+      "got": {
+        "category": "dependency",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 15535
+    },
+    {
+      "name": "vendor-maintenance-503",
+      "expected": {
+        "category": "dependency",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "dependency",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 13496
+    },
+    {
+      "name": "geocoding-quota-exceeded",
+      "expected": {
+        "category": "dependency",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "resources",
+        "severity": "critical"
+      },
+      "categoryOk": false,
+      "severityOk": false,
+      "severityNear": false,
+      "ms": 14478
+    },
+    {
+      "name": "typeerror-undefined-prop",
+      "expected": {
+        "category": "code",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "code",
+        "severity": "medium"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 12540
+    },
+    {
+      "name": "python-keyerror",
+      "expected": {
+        "category": "code",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "code",
+        "severity": "high"
+      },
+      "categoryOk": true,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 15092
+    },
+    {
+      "name": "syntax-error-bad-deploy",
+      "expected": {
+        "category": "code",
+        "severity": "high"
+      },
+      "got": {
+        "category": "code",
+        "severity": "medium"
+      },
+      "categoryOk": true,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 13196
+    },
+    {
+      "name": "unhandled-rejection-null-order",
+      "expected": {
+        "category": "code",
+        "severity": "medium"
+      },
+      "got": {
+        "category": "code",
+        "severity": "medium"
+      },
+      "categoryOk": true,
+      "severityOk": true,
+      "severityNear": true,
+      "ms": 15804
+    },
+    {
+      "name": "validation-null-ids",
+      "expected": {
+        "category": "data",
+        "severity": "critical"
+      },
+      "got": {
+        "category": "code",
+        "severity": "high"
+      },
+      "categoryOk": false,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 15751
+    },
+    {
+      "name": "csv-encoding-garbage",
+      "expected": {
+        "category": "data",
+        "severity": "high"
+      },
+      "got": {
+        "category": "code",
+        "severity": "medium"
+      },
+      "categoryOk": false,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 17190
+    },
+    {
+      "name": "schema-drift-extra-column",
+      "expected": {
+        "category": "data",
+        "severity": "high"
+      },
+      "got": {
+        "category": "data",
+        "severity": "medium"
+      },
+      "categoryOk": true,
+      "severityOk": false,
+      "severityNear": true,
+      "ms": 14190
+    }
+  ]
+}

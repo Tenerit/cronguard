@@ -31,6 +31,13 @@ help: ## Affiche cette aide
 setup: ## Premier lancement : installe, configure et démarre tout
 	@bash setup.sh
 
+demo: ## Démo complète en une commande (aucun .env requis)
+	@docker compose -f docker-compose.demo.yml up --build
+	@echo "Dashboard : http://localhost:3000/dashboard — API key : cg_demo_dockerdemo123456"
+
+demo-down: ## Arrête et nettoie la démo
+	@docker compose -f docker-compose.demo.yml down -v
+
 dev: ## Lance l'API + workers en mode développement (hot reload)
 	@echo "$(BLUE)→$(NC) Démarrage des services Docker..."
 	@docker compose up -d postgres redis ollama

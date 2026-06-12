@@ -13,7 +13,8 @@ import { runMigrations } from './migrations'
 import { logger }        from '../config/logger'
 import * as fs           from 'fs'
 
-const DEMO_API_KEY = 'cg_demo_' + Math.random().toString(36).slice(2, 18)
+// SEED_API_KEY: clé fixe pour la démo docker (README la documente) — sinon aléatoire
+const DEMO_API_KEY = process.env.SEED_API_KEY || 'cg_demo_' + Math.random().toString(36).slice(2, 18)
 const DEMO_EMAIL   = 'demo@cronguard.local'
 
 // ─── Scénarios d'erreur réalistes ─────────────────────────────────────────────
@@ -31,6 +32,25 @@ const ERROR_SCENARIOS: Record<string, {
   data_impact: string
   fix_minutes: number
 }> = {
+
+  // Scénario vitrine (GIF/démo) : panne lisible en 2s par n'importe quel dev.
+  // Le plus frais du seed → apparaît en tête du dashboard.
+  'backup-disk-full': {
+    category: 'resources', severity: 'critical', exit_code: 1,
+    logs: `[02:30:01] Starting nightly backup → /backups/db-2026-06-12.tar.zst
+[02:30:01] Dumping database (12.4 GB)...
+[02:31:47] Compressing archive...
+tar: /backups/db-2026-06-12.tar.zst: Write error: No space left on device
+ENOSPC: no space left on device, write
+df -h /backups: /dev/sdb1  2.0T  2.0T  0 100% /backups
+ls /backups | wc -l: 397 archives (oldest: 2024-11-03 — no rotation configured)
+BACKUP FAILED — last good backup is 26h old`,
+    cause: 'Partition /backups pleine à 100% — 397 archives accumulées depuis novembre 2024, aucune rotation configurée',
+    action: 'Libérer de l\'espace immédiatement : supprimer les archives de plus de 30 jours (find /backups -mtime +30 -delete), puis relancer le backup',
+    prevention: 'Mettre en place une rotation automatique (garder 14 quotidiens + 8 hebdos) et une alerte disque à 80% d\'occupation',
+    checks: ['df -h /backups après purge', 'Taille moyenne d\'une archive × rétention visée', 'Dernier backup valide restaurable ?'],
+    data_impact: 'possible', fix_minutes: 10,
+  },
 
   'backup-postgres': {
     category: 'database', severity: 'high', exit_code: 1,
@@ -204,6 +224,7 @@ Generated: 201/384 reports — INCOMPLETE`,
 // ─── Monitors de démo ──────────────────────────────────────────────────────────
 
 const MONITORS = [
+  { name: 'backup-disk-full',      env: 'production',  schedule: '30 2 * * *',   grace: 600,  emin: null,  emax: null,   failAt: [0] },
   { name: 'backup-postgres',       env: 'production',  schedule: '0 2 * * *',    grace: 300,  emin: 1000,  emax: 100000, failAt: [0] },
   { name: 'etl-analytics',         env: 'production',  schedule: '0 1 * * *',    grace: 600,  emin: 100000,emax: 5000000,failAt: [0, 3] },
   { name: 'sync-stripe-invoices',  env: 'production',  schedule: '0 * * * *',    grace: 120,  emin: null,  emax: null,   failAt: [0] },
@@ -354,23 +375,29 @@ async function seed() {
 
     const lastStatus = mon.failAt.includes(0) ? 'failed'
                      : mon.name === 'sync-stripe-invoices' ? 'late' : 'ok'
+    // Le scénario vitrine est le plus récent → en tête du dashboard pour la démo
+    const pingAge = mon.name === 'backup-disk-full' ? 30_000 : 2 * 60000
     await db.query(
       `UPDATE monitors SET last_ping_at=$2, last_status=$3 WHERE id=$1`,
-      [mon.id, new Date(now - 2 * 60000), lastStatus]
+      [mon.id, new Date(now - pingAge), lastStatus]
     )
   }
 
   const firstMon = createdMonitors[0]
-  fs.writeFileSync('.env.seed', [
-    `# Généré par npm run seed`,
-    `DEMO_API_KEY=${DEMO_API_KEY}`,
-    `DEMO_PING_KEY=${firstMon.ping_key}`,
-    `DEMO_MONITOR=${firstMon.name}`,
-  ].join('\n'))
+  try {
+    fs.writeFileSync('.env.seed', [
+      `# Généré par npm run seed`,
+      `DEMO_API_KEY=${DEMO_API_KEY}`,
+      `DEMO_PING_KEY=${firstMon.ping_key}`,
+      `DEMO_MONITOR=${firstMon.name}`,
+    ].join('\n'))
+  } catch {
+    // FS read-only (container démo) — les infos sont affichées dans les logs
+  }
 
   logger.info('[Seed] Done!')
   console.log('\n' + '─'.repeat(60))
-  console.log('  ✓ Compte démo créé — 8 monitors, 8 scénarios d\'erreur')
+  console.log(`  ✓ Compte démo créé — ${MONITORS.length} monitors, ${Object.keys(ERROR_SCENARIOS).length} scénarios d'erreur`)
   console.log(`\n  Email    : ${DEMO_EMAIL}`)
   console.log(`  API Key  : ${DEMO_API_KEY}`)
   console.log(`  Ping Key : ${firstMon.ping_key}  (${firstMon.name})`)

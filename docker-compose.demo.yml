@@ -1,0 +1,110 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# CronGuard — démo en une commande, aucun .env requis :
+#
+#     docker compose -f docker-compose.demo.yml up
+#
+# Dashboard : http://localhost:3000/dashboard
+# API key   : cg_demo_dockerdemo123456
+#
+# Boote Postgres + Redis + Ollama, migre, seed 9 monitors avec scénarios
+# d'échec réalistes, et télécharge llama3.2:3b en arrière-plan (~2 GB —
+# l'analyse IA live devient disponible une fois le pull terminé ; les
+# analyses seedées sont visibles immédiatement).
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-demo-env: &demo-env
+  DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+  REDIS_URL:    redis://redis:6379
+  LLM_BASE_URL: http://ollama:11434/v1
+  LLM_MODEL:    llama3.2:3b
+  NODE_ENV:     development
+
+services:
+
+  api:
+    build: .
+    command: node dist/api/index.js
+    ports:
+      - "3000:3000"
+    environment: *demo-env
+    depends_on:
+      seed:  { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: node dist/workers/analysis.worker.js
+    environment: *demo-env
+    depends_on:
+      seed:  { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+    restart: unless-stopped
+
+  checker:
+    build: .
+    command: node dist/workers/timeout.checker.js
+    environment: *demo-env
+    depends_on:
+      seed:  { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+    restart: unless-stopped
+
+  # One-shot : migrations + données démo (clé API fixe, documentée ci-dessus)
+  seed:
+    build: .
+    command: node dist/db/seed.js
+    environment:
+      <<: *demo-env
+      SEED_API_KEY: cg_demo_dockerdemo123456
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: "no"
+
+  # One-shot : télécharge le modèle LLM (en parallèle du boot, ~2 GB)
+  ollama-pull:
+    image: ollama/ollama:latest
+    entrypoint: ["ollama"]
+    command: ["pull", "llama3.2:3b"]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    depends_on:
+      - ollama
+    restart: "no"
+
+  # ── Infrastructure (ports non exposés sur l'hôte : zéro conflit) ────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       cronguard
+      POSTGRES_USER:     cronguard
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_demo:/var/lib/postgresql/data
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U cronguard"]
+      interval: 5s
+      retries:  10
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy noeviction
+    healthcheck:
+      test:     ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries:  10
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_models:/root/.ollama
+
+volumes:
+  postgres_demo:
+  ollama_models:

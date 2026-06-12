@@ -38,6 +38,7 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
     "llm:pull": "docker compose exec ollama ollama pull llama3.2:3b",
+    "eval": "tsx eval/run.ts",
     "retention:now": "cross-env RUN_RETENTION_NOW=true node dist/workers/retention.worker.js"
   },
   "dependencies": {
