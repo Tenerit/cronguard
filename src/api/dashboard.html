@@ -991,6 +991,18 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 /* ─── Bouton thème ────────────────────────────────────────────────────────── */
 .theme-toggle{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--radius-md);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:14px;transition:all .15s ease}
 .theme-toggle:hover{color:var(--text);background:var(--bg3);border-color:var(--border3)}
+
+/* ─── Sous-navigation Settings ────────────────────────────────────────────── */
+.settings-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--border);padding-bottom:2px}
+.stab{
+  font-size:12px;font-family:var(--sans);font-weight:500;
+  padding:8px 14px;border:none;background:transparent;color:var(--text3);
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;
+  transition:color .15s ease,border-color .15s ease;border-radius:6px 6px 0 0;
+}
+.stab:hover{color:var(--text2);background:var(--bg3)}
+.stab.active{color:var(--green);border-bottom-color:var(--green)}
+.stab-off{display:none!important}
 </style>
 <script>
 /* Applique le thème avant le rendu pour éviter tout flash (FOUC) */
@@ -1337,7 +1349,14 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
 
       <!-- SETTINGS VIEW -->
       <div class="view" id="view-settings">
-        <div class="settings-section">
+        <div class="settings-tabs" role="tablist">
+          <button class="stab active" data-stab-btn="account" onclick="setSettingsTab('account')" data-i18n="set.tab.account">Compte</button>
+          <button class="stab" data-stab-btn="notifications" onclick="setSettingsTab('notifications')" data-i18n="set.tab.notifications">Notifications</button>
+          <button class="stab" data-stab-btn="alerts" onclick="setSettingsTab('alerts')" data-i18n="set.tab.alerts">Alertes</button>
+          <button class="stab" data-stab-btn="team" onclick="setSettingsTab('team')" data-i18n="set.tab.team">Équipe</button>
+          <button class="stab" data-stab-btn="status" onclick="setSettingsTab('status')" data-i18n="set.tab.status">Statut</button>
+        </div>
+        <div class="settings-section" data-stab="account">
           <div class="settings-title" data-i18n="set.account">compte</div>
           <div class="settings-row">
             <span class="settings-label" data-i18n="set.email">Email</span>
@@ -1371,7 +1390,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" data-stab="notifications">
           <div class="settings-title" data-i18n="set.notifications">notifications</div>
           <div class="settings-row">
             <div>
@@ -1406,7 +1425,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
         </div>
 
-        <div class="settings-section" id="trial-section" style="display:none">
+        <div class="settings-section" id="trial-section" data-stab="account" style="display:none">
           <div class="settings-title" data-i18n="set.trial">passer à l'offre pro</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6" data-i18n="set.trialDesc">
             Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, analyses IA avancées.
@@ -1414,7 +1433,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <button class="btn btn-primary" onclick="startTrial()" data-i18n="set.startTrial">Démarrer l'essai 14 jours →</button>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" data-stab="alerts">
           <div class="settings-title" data-i18n="set.escalation">escalade automatique</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6" data-i18n="set.escalationDesc">
             Si une alerte n'est pas acquittée après le délai, un second contact est notifié (astreinte, manager...).
@@ -1451,7 +1470,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" data-stab="alerts">
           <div class="settings-title" data-i18n="set.maintenance">fenêtres de maintenance</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6" data-i18n="set.maintenanceDesc">
             Silence automatiquement les alertes pendant les maintenances planifiées (cron récurrent).
@@ -1462,7 +1481,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" data-stab="team">
           <div class="settings-title" data-i18n="set.team">équipe</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
             <span data-i18n="set.teamDesc">Invitez des membres avec différents rôles :</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">viewer · member · admin · owner</span>
@@ -1474,7 +1493,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
         </div>
 
-        <div class="settings-section">
+        <div class="settings-section" data-stab="status">
           <div class="settings-title" data-i18n="set.statusPage">page de statut publique</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6" data-i18n="set.statusPageDesc">
             Partagez le statut de vos services. URL accessible sans authentification.
@@ -1803,6 +1822,7 @@ const I18N = {
     'set.invitedBy':'invité par','set.pending':'En attente','set.expires':'expire','set.cancel':'annuler','set.inviteMember':'+ inviter un membre',
     'set.trial':'passer à l\'offre pro','set.trialDesc':'Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, analyses IA avancées.','set.startTrial':'Démarrer l\'essai 14 jours →',
     'set.statusPage':'page de statut publique','set.statusPageDesc':'Partagez le statut de vos services. URL accessible sans authentification.','set.format':'Format',
+    'set.tab.account':'Compte','set.tab.notifications':'Notifications','set.tab.alerts':'Alertes','set.tab.team':'Équipe','set.tab.status':'Statut',
     'mod.new.title':'nouveau service','mod.new.sub':'Vous recevrez une ping_key à ajouter à la fin de votre script.',
     'mod.new.name':'Nom','mod.new.namePh':'backup-postgres, etl-nightly, sync-invoices','mod.new.env':'Environnement',
     'mod.new.grace':'Délai de grâce (s)','mod.new.graceHint':'délai avant l\'alerte « en retard »','mod.new.schedule':'Planning cron','mod.new.schedulePh':'0 2 * * *  (optionnel)',
@@ -1912,6 +1932,7 @@ const I18N = {
     'set.invitedBy':'invited by','set.pending':'Pending','set.expires':'expires','set.cancel':'cancel','set.inviteMember':'+ invite a member',
     'set.trial':'upgrade to pro','set.trialDesc':'Try the Pro features for 14 days: unlimited services, Slack alerts, advanced AI analyses.','set.startTrial':'Start 14-day trial →',
     'set.statusPage':'public status page','set.statusPageDesc':'Share your services status. URL accessible without authentication.','set.format':'Format',
+    'set.tab.account':'Account','set.tab.notifications':'Notifications','set.tab.alerts':'Alerts','set.tab.team':'Team','set.tab.status':'Status',
     'mod.new.title':'new service','mod.new.sub':'You will receive a ping_key to add at the end of your script.',
     'mod.new.name':'Name','mod.new.namePh':'backup-postgres, etl-nightly, sync-invoices','mod.new.env':'Environment',
     'mod.new.grace':'Grace period (s)','mod.new.graceHint':'delay before the "late" alert','mod.new.schedule':'Cron schedule','mod.new.schedulePh':'0 2 * * *  (optional)',
@@ -2986,8 +3007,19 @@ function setView(view) {
   if (view==='analyses')  { loadImpact(); loadAnalyses(anLocked?anMonitor?.id:null); initQuickErrors() }
   if (view==='playground'){ initQuickErrors(); const m = window._activeModel; if(m) { const p=document.getElementById('pg-model-pill'); if(p) p.textContent=m } }
   if (view==='monitors')  renderMonitors('full')
-  if (view==='settings')  { loadSettings(); updateDocUrls() }
+  if (view==='settings')  { loadSettings(); updateDocUrls(); setSettingsTab(settingsTab) }
   if (view==='docs')      updateDocUrls()
+}
+
+// ─── Sous-navigation Settings ─────────────────────────────────────────────────
+let settingsTab = 'account'
+function setSettingsTab(tab) {
+  settingsTab = tab
+  document.querySelectorAll('[data-stab-btn]').forEach(b =>
+    b.classList.toggle('active', b.getAttribute('data-stab-btn') === tab))
+  document.querySelectorAll('[data-stab]').forEach(s =>
+    s.classList.toggle('stab-off', s.getAttribute('data-stab') !== tab))
+  const c = document.querySelector('.content'); if (c) c.scrollTop = 0
 }
 
 // ─── Filters ──────────────────────────────────────────────────────────────────
