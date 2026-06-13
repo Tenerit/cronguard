@@ -253,6 +253,27 @@ async function v10(client: {query(sql: string, params?: unknown[]): Promise<unkn
   `)
 }
 
+// ─── V11 : Fenêtres de maintenance récurrentes ───────────────────────────────
+
+async function v11(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  // monitor_id NULL = s'applique à tous les monitors du client
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS maintenance_windows (
+      id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      client_id    UUID REFERENCES clients(id) ON DELETE CASCADE,
+      monitor_id   UUID REFERENCES monitors(id) ON DELETE CASCADE,
+      label        TEXT NOT NULL DEFAULT '',
+      cron_expr    TEXT NOT NULL,
+      duration_min INT  NOT NULL DEFAULT 60,
+      active       BOOLEAN NOT NULL DEFAULT true,
+      created_at   TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+  await client.query(`
+    CREATE INDEX IF NOT EXISTS idx_maint_client ON maintenance_windows(client_id, active)
+  `)
+}
+
 export async function runMigrations() {
   const client = await db.connect()
   try {
@@ -267,8 +288,9 @@ export async function runMigrations() {
     await v8(client)
     await v9(client)
     await v10(client)
+    await v11(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v10)')
+    logger.info('[DB] Migrations terminées (v1 → v11)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

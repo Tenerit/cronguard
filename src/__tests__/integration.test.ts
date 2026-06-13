@@ -143,6 +143,19 @@ beforeAll(async () => {
   `)
 
   await pgPool.query(`
+    CREATE TABLE maintenance_windows (
+      id           TEXT PRIMARY KEY,
+      client_id    TEXT REFERENCES clients(id) ON DELETE CASCADE,
+      monitor_id   TEXT REFERENCES monitors(id) ON DELETE CASCADE,
+      label        TEXT NOT NULL DEFAULT '',
+      cron_expr    TEXT NOT NULL,
+      duration_min INT  NOT NULL DEFAULT 60,
+      active       BOOLEAN NOT NULL DEFAULT true,
+      created_at   TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+
+  await pgPool.query(`
     CREATE TABLE audit_logs (
       id          TEXT PRIMARY KEY,
       client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,

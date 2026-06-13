@@ -18,8 +18,9 @@ import { metricsHandler } from './routes/metrics'
 import { pingRouter }     from './routes/ping'
 import { monitorsRouter } from './routes/monitors'
 import { dashboardRouter } from './routes/dashboard'
-import { clientsRouter }  from './routes/clients'
-import billingRouter      from './routes/billing'
+import { clientsRouter }       from './routes/clients'
+import { maintenanceRouter }   from './routes/maintenance'
+import billingRouter           from './routes/billing'
 
 // Vérifie la connexion DB au démarrage
 initDb()
@@ -65,9 +66,10 @@ app.use('/ping',     pingRouter)
 
 app.get('/dashboard', (_, res) => res.sendFile('dashboard.html', { root: __dirname }))
 
-app.use('/monitors', apiLimiter, requireApiKey, monitorsRouter)
-app.use('/dashboard', apiLimiter, requireApiKey, dashboardRouter)
-app.use('/clients',  apiLimiter, requireApiKey, clientsRouter)
+app.use('/monitors',             apiLimiter, requireApiKey, monitorsRouter)
+app.use('/dashboard',            apiLimiter, requireApiKey, dashboardRouter)
+app.use('/clients',              apiLimiter, requireApiKey, clientsRouter)
+app.use('/maintenance-windows',  apiLimiter, requireApiKey, maintenanceRouter)
 
 // ─── Pages HTML ───────────────────────────────────────────────────────────────
 

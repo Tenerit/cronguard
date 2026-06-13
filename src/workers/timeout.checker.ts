@@ -10,12 +10,14 @@ import { sendOnboardingReminders } from '../services/onboarding'
 import { scheduleWeeklyReports }   from '../services/weekly-report'
 import { checkEscalations }        from '../services/alerts/dedup'
 import { sendEscalation }          from '../services/alerts'
+import { getAllActiveWindows, isMonitorInMaintenance, MaintenanceWindow } from '../services/maintenance'
 
 const INTERVAL       = 60_000
 const ANOMALY_FACTOR = 2.5
 
 async function check() {
-  const [late, slow, hung] = await Promise.all([checkLate(), checkSlow(), checkHung()])
+  const windows = await getAllActiveWindows()
+  const [late, slow, hung] = await Promise.all([checkLate(windows), checkSlow(windows), checkHung(windows)])
   if (late + slow + hung > 0) logger.info('[Checker]', { late, slow, hung })
   await runEscalations()
 }
@@ -39,7 +41,7 @@ async function runEscalations() {
   }
 }
 
-async function checkLate(): Promise<number> {
+async function checkLate(windows: Map<string, MaintenanceWindow[]>): Promise<number> {
   // On récupère les candidats actifs et on décide en JS : un monitor avec un
   // schedule cron est jugé sur l'heure d'exécution attendue (précis), sinon on
   // retombe sur la grace depuis le dernier ping.
@@ -57,6 +59,10 @@ async function checkLate(): Promise<number> {
   let count = 0
   for (const m of rows) {
     if (!isLate(m)) continue
+    if (isMonitorInMaintenance(m.id, windows.get(m.client_id) ?? [])) {
+      logger.debug('[Checker] Late suppressed — maintenance window', { job: m.name })
+      continue
+    }
     await db.query(`UPDATE monitors SET last_status='late' WHERE id=$1`, [m.id])
     await enqueue(m, lateLog(m), 'timeout', 1)
     count++
@@ -89,7 +95,7 @@ export function isLate(m: MonitorRow, now: number = Date.now()): boolean {
   return base < now - graceMs
 }
 
-async function checkSlow(): Promise<number> {
+async function checkSlow(windows: Map<string, MaintenanceWindow[]>): Promise<number> {
   const { rows } = await db.query(`
     SELECT p.id AS ping_id, p.monitor_id, p.duration_ms, p.output,
            m.client_id, m.name, m.schedule, m.env, m.expected_min, m.expected_max,
@@ -105,8 +111,16 @@ async function checkSlow(): Promise<number> {
       )
       AND NOT EXISTS (SELECT 1 FROM analyses WHERE ping_id=p.id)
   `, [ANOMALY_FACTOR])
-  for (const p of rows) await enqueue(p, slowLog(p), 'slowdown', 5)
-  return rows.length
+  let count = 0
+  for (const p of rows) {
+    if (isMonitorInMaintenance(p.monitor_id, windows.get(p.client_id) ?? [])) {
+      logger.debug('[Checker] Slow suppressed — maintenance window', { job: p.name })
+      continue
+    }
+    await enqueue(p, slowLog(p), 'slowdown', 5)
+    count++
+  }
+  return count
 }
 
 // ─── Détection des jobs "hung" (démarré via /start, jamais terminé) ───────────
@@ -120,7 +134,7 @@ function hungThreshold(avgDur?: number): number {
   return avgDur && avgDur > 0 ? Math.max(avgDur * 3, HUNG_FLOOR_MS) : HUNG_NO_BASELINE_MS
 }
 
-async function checkHung(): Promise<number> {
+async function checkHung(windows: Map<string, MaintenanceWindow[]>): Promise<number> {
   const { rows } = await db.query(`
     SELECT m.id, m.client_id, m.name, m.schedule, m.env, m.last_start_at,
            (SELECT AVG(duration_ms) FROM pings WHERE monitor_id=m.id AND status='success'
@@ -135,6 +149,10 @@ async function checkHung(): Promise<number> {
   for (const m of rows) {
     const runningMs = Date.now() - new Date(m.last_start_at).getTime()
     if (runningMs <= hungThreshold(m.avg_dur)) continue
+    if (isMonitorInMaintenance(m.id, windows.get(m.client_id) ?? [])) {
+      logger.debug('[Checker] Hung suppressed — maintenance window', { job: m.name })
+      continue
+    }
     await db.query(`UPDATE monitors SET hung_alerted=true WHERE id=$1`, [m.id])
     await enqueue(m, hungLog(m, runningMs), 'hung', 1)
     count++
