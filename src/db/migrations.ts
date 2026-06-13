@@ -236,6 +236,23 @@ async function v9(client: {query(sql: string, params?: unknown[]): Promise<unkno
   await client.query(`CREATE INDEX IF NOT EXISTS idx_incidents_monitor ON incidents(monitor_id, resolved_at DESC)`)
 }
 
+// ─── V10 : Escalade (2ᵉ contact si alerte non acquittée sous N min) ───────────
+
+async function v10(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  // Config escalade sur le compte (email + webhook dédiés, délai configurable)
+  await client.query(`
+    ALTER TABLE clients
+      ADD COLUMN IF NOT EXISTS escalation_email       TEXT,
+      ADD COLUMN IF NOT EXISTS escalation_webhook     TEXT,
+      ADD COLUMN IF NOT EXISTS escalation_after_min   INT NOT NULL DEFAULT 30
+  `)
+  // Timestamp pour ne pas ré-escalader sur chaque tick du checker
+  await client.query(`
+    ALTER TABLE alert_states
+      ADD COLUMN IF NOT EXISTS escalated_at TIMESTAMPTZ
+  `)
+}
+
 export async function runMigrations() {
   const client = await db.connect()
   try {
@@ -249,8 +266,9 @@ export async function runMigrations() {
     await v7(client)
     await v8(client)
     await v9(client)
+    await v10(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v9)')
+    logger.info('[DB] Migrations terminées (v1 → v10)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

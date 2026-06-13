@@ -132,6 +132,90 @@ export async function acknowledgeAlert(monitorId: string): Promise<void> {
   logger.info('[Alert] Acknowledged', { monitorId })
 }
 
+// ─── checkEscalations — appelé par le checker toutes les 60s ─────────────────
+// Retourne les alertes firing non-ackées qui ont dépassé le délai d'escalade et
+// n'ont pas encore été escaladées. Marque escalated_at pour éviter les répétitions.
+
+export interface EscalationTarget {
+  monitorId:   string
+  clientId:    string
+  jobName:     string
+  env:         string
+  firstFired:  Date
+  alertCount:  number
+  escalationEmail?:   string
+  escalationWebhook?: string
+  lastAnalysis?: {
+    cause?:    string
+    action?:   string
+    severity?: string
+    category?: string
+  } | null
+}
+
+export async function checkEscalations(): Promise<EscalationTarget[]> {
+  const { rows } = await db.query(`
+    SELECT
+      a.monitor_id,
+      m.client_id,
+      m.name       AS job_name,
+      m.env,
+      a.first_fired,
+      a.alert_count,
+      c.escalation_email,
+      c.escalation_webhook,
+      c.escalation_after_min,
+      (
+        SELECT row_to_json(x) FROM (
+          SELECT diagnosis, severity FROM analyses
+          WHERE monitor_id = m.id
+          ORDER BY created_at DESC LIMIT 1
+        ) x
+      ) AS last_analysis
+    FROM alert_states a
+    JOIN monitors m ON m.id = a.monitor_id
+    JOIN clients  c ON c.id = m.client_id
+    WHERE a.status     NOT IN ('acknowledged', 'snoozed')
+      AND a.escalated_at IS NULL
+      AND (c.escalation_email IS NOT NULL OR c.escalation_webhook IS NOT NULL)
+      AND a.first_fired < NOW() - (c.escalation_after_min || ' minutes')::INTERVAL
+  `)
+
+  if (rows.length === 0) return []
+
+  // Marque en une requête pour ne pas ré-escalader
+  const ids = rows.map((r: { monitor_id: string }) => r.monitor_id)
+  await db.query(
+    `UPDATE alert_states SET escalated_at = NOW() WHERE monitor_id = ANY($1)`,
+    [ids]
+  )
+
+  return rows.map((r: {
+    monitor_id: string; client_id: string; job_name: string; env: string
+    first_fired: Date; alert_count: number
+    escalation_email?: string; escalation_webhook?: string
+    last_analysis?: { diagnosis?: string; severity?: string } | null
+  }) => {
+    let parsedAnalysis = null
+    if (r.last_analysis?.diagnosis) {
+      try { parsedAnalysis = JSON.parse(r.last_analysis.diagnosis as unknown as string) } catch { /* noop */ }
+    }
+    return {
+      monitorId:          r.monitor_id,
+      clientId:           r.client_id,
+      jobName:            r.job_name,
+      env:                r.env,
+      firstFired:         new Date(r.first_fired),
+      alertCount:         r.alert_count,
+      escalationEmail:    r.escalation_email,
+      escalationWebhook:  r.escalation_webhook,
+      lastAnalysis:       parsedAnalysis
+        ? { ...parsedAnalysis, severity: r.last_analysis?.severity }
+        : null,
+    }
+  })
+}
+
 // ─── snoozeAlert — silence pendant N minutes ──────────────────────────────────
 
 export async function snoozeAlert(monitorId: string, minutes: number): Promise<void> {

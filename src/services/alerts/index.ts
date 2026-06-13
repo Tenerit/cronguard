@@ -274,6 +274,82 @@ export async function sendRecovery(p: RecoveryPayload) {
   logger.info('[Alert] Recovery sent', { job: p.jobName, downtime })
 }
 
+// ─── Escalade ─────────────────────────────────────────────────────────────────
+// Envoyée quand une alerte reste firing + non-ackée au-delà du délai configuré.
+// Va vers escalation_email / escalation_webhook (canaux séparés des alertes normales).
+
+export interface EscalationPayload {
+  jobName:      string
+  env:          string
+  firstFired:   Date
+  alertCount:   number
+  statusPageUrl: string
+  escalationEmail?:   string
+  escalationWebhook?: string
+  analysis?: { cause?: string; action?: string; severity?: string; category?: string } | null
+}
+
+export async function sendEscalation(p: EscalationPayload) {
+  const down    = formatDuration(Date.now() - p.firstFired.getTime())
+  const emoji   = SEVERITY_EMOJI[p.analysis?.severity ?? 'high']
+  const subject = `🚨 [ESCALADE] Job toujours en échec : ${p.jobName} (${down})`
+
+  const email = async () => {
+    if (!p.escalationEmail) return
+    const aiBlock = p.analysis?.cause
+      ? `<p style="margin:4px 0"><strong>Cause connue :</strong> ${p.analysis.cause}</p>
+         <p style="margin:4px 0"><strong>Action :</strong> ${p.analysis.action ?? '—'}</p>`
+      : `<p style="color:#888">Aucune analyse IA disponible.</p>`
+
+    await getMailer().sendMail({
+      from:    `"CronGuard" <${process.env.SMTP_FROM}>`,
+      to:      p.escalationEmail,
+      subject,
+      html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;border-top:4px solid #e53e3e;padding-top:16px;">
+        <h2 style="color:#e53e3e;margin:0 0 4px;">🚨 Escalade : ${p.jobName}</h2>
+        <p style="color:#555;margin:0 0 16px;">
+          Ce job est en échec depuis <strong>${down}</strong> et n'a pas été pris en charge
+          (${p.alertCount} alerte${p.alertCount > 1 ? 's' : ''} envoyée${p.alertCount > 1 ? 's' : ''}).
+        </p>
+        <div style="background:#fff5f5;border-left:4px solid #e53e3e;padding:12px 16px;border-radius:4px;">
+          ${aiBlock}
+        </div>
+        <a href="${p.statusPageUrl}" style="display:inline-block;background:#e53e3e;color:white;
+           padding:10px 20px;border-radius:6px;text-decoration:none;margin-top:16px;">
+          Voir le statut et acquitter →
+        </a>
+        <p style="color:#aaa;font-size:12px;margin-top:24px;">CronGuard · Escalade automatique</p>
+      </div>`,
+    })
+    logger.info('[Alert] Escalation email sent', { to: p.escalationEmail, job: p.jobName, down })
+  }
+
+  const webhook = async () => {
+    if (!p.escalationWebhook) return
+    await axios.post(p.escalationWebhook, {
+      event:        'escalation',
+      job:          p.jobName,
+      env:          p.env,
+      severity:     p.analysis?.severity ?? 'high',
+      category:     p.analysis?.category ?? 'unknown',
+      cause:        p.analysis?.cause ?? null,
+      action:       p.analysis?.action ?? null,
+      alert_count:  p.alertCount,
+      down_since:   p.firstFired.toISOString(),
+      down_duration: down,
+      status_page:  p.statusPageUrl,
+      timestamp:    new Date().toISOString(),
+    }, { timeout: 5000 })
+    logger.info('[Alert] Escalation webhook sent', { job: p.jobName, down })
+  }
+
+  const results = await Promise.allSettled([email(), webhook()])
+  for (const r of results) {
+    if (r.status === 'rejected') logger.error('[Alert] Escalation channel failed', { err: r.reason })
+  }
+}
+
 function formatDuration(ms: number): string {
   const m = Math.floor(ms / 60000)
   if (m < 60) return `${m}min`

@@ -8,6 +8,8 @@ import { analysisQueue } from '../queue'
 import { getRedis } from '../config/redis'
 import { sendOnboardingReminders } from '../services/onboarding'
 import { scheduleWeeklyReports }   from '../services/weekly-report'
+import { checkEscalations }        from '../services/alerts/dedup'
+import { sendEscalation }          from '../services/alerts'
 
 const INTERVAL       = 60_000
 const ANOMALY_FACTOR = 2.5
@@ -15,6 +17,26 @@ const ANOMALY_FACTOR = 2.5
 async function check() {
   const [late, slow, hung] = await Promise.all([checkLate(), checkSlow(), checkHung()])
   if (late + slow + hung > 0) logger.info('[Checker]', { late, slow, hung })
+  await runEscalations()
+}
+
+async function runEscalations() {
+  const targets = await checkEscalations()
+  if (targets.length === 0) return
+  logger.info('[Checker] Escalations', { count: targets.length })
+  const appUrl = process.env.APP_URL ?? 'http://localhost:3000'
+  for (const t of targets) {
+    await sendEscalation({
+      jobName:           t.jobName,
+      env:               t.env,
+      firstFired:        t.firstFired,
+      alertCount:        t.alertCount,
+      statusPageUrl:     `${appUrl}/status`,
+      escalationEmail:   t.escalationEmail,
+      escalationWebhook: t.escalationWebhook,
+      analysis:          t.lastAnalysis,
+    })
+  }
 }
 
 async function checkLate(): Promise<number> {

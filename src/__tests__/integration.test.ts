@@ -65,6 +65,9 @@ beforeAll(async () => {
       slack_webhook TEXT,
       webhook_url TEXT,
       app_url     TEXT,
+      escalation_email     TEXT,
+      escalation_webhook   TEXT,
+      escalation_after_min INT NOT NULL DEFAULT 30,
       first_ping_at TIMESTAMPTZ,
       onboarding_sent BOOLEAN DEFAULT false,
       trial_ends_at TIMESTAMPTZ,
@@ -134,6 +137,7 @@ beforeAll(async () => {
       last_alerted TIMESTAMPTZ DEFAULT NOW(),
       snooze_until TIMESTAMPTZ,
       alert_count  INT DEFAULT 1,
+      escalated_at TIMESTAMPTZ,
       UNIQUE (monitor_id)
     )
   `)
