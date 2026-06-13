@@ -1097,7 +1097,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
     <div id="inv-success" style="display:none;margin-top:12px">
       <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono)" data-i18n="mod.inv.link">Lien d'acceptation (valable 7 jours) :</div>
       <div class="key-box" id="inv-link" style="font-size:10px;word-break:break-all"></div>
-      <button class="btn btn-ghost" onclick="copyText(document.getElementById('inv-link').dataset.url,'lien copié !')" data-i18n="mod.inv.copyLink">copier le lien</button>
+      <button class="btn btn-ghost" onclick="copyText(document.getElementById('inv-link').dataset.url,t('toast.linkCopied'))" data-i18n="mod.inv.copyLink">copier le lien</button>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeInviteModal()" data-i18n="mod.close">fermer</button>
@@ -1195,7 +1195,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
       </div>
       <div class="topbar-right">
         <div class="live" id="live-indicator"><div class="live-dot"></div> <span id="live-ts">live</span></div>
-        <button class="btn btn-ghost" onclick="refreshAll()" title="Rafraîchir (R)">↻</button>
+        <button class="btn btn-ghost" onclick="refreshAll()" data-i18n-title="top.refresh" title="Rafraîchir (R)">↻</button>
         <button class="btn btn-primary" onclick="openModal()" data-i18n="top.newMonitor">+ monitor</button>
       </div>
     </div>
@@ -1284,7 +1284,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
             <span class="settings-val" style="display:flex;align-items:center;gap:6px">
               <span id="set-key-hidden">••••••••••••••••</span>
               <button class="key-copy" onclick="toggleApiKey()" data-i18n="set.show">afficher</button>
-              <button class="key-copy" onclick="copyText(window._rawApiKey||'','clé API copiée')" data-i18n="set.copy">copier</button>
+              <button class="key-copy" onclick="copyText(window._rawApiKey||'',t('toast.apiKeyCopied'))" data-i18n="set.copy">copier</button>
             </span>
           </div>
           <div class="settings-row">
@@ -1416,21 +1416,19 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
       <!-- DOCS VIEW -->
       <div class="view" id="view-docs">
         <div class="docs-section">
-          <div class="docs-h2">// démarrage rapide</div>
-          <div class="docs-p">Ajoutez un ping à la fin de votre script cron. C'est tout. Si le script ne ping pas dans sa fenêtre de grâce, CronGuard vous alerte.</div>
+          <div class="docs-h2" data-i18n="docs.qs">démarrage rapide</div>
+          <div class="docs-p" data-i18n="docs.qsP">Ajoutez un ping à la fin de votre script cron. C'est tout. Si le script ne ping pas dans sa fenêtre de grâce, CronGuard vous alerte.</div>
 
-          <div class="docs-h3">1. Créez un monitor</div>
-          <div class="docs-p">Cliquez <strong style="color:var(--text)">+ monitor</strong> dans la topbar. Vous obtenez une <code style="background:var(--bg3);padding:1px 4px;border-radius:3px">ping_key</code> unique.</div>
-
-          <div class="docs-h3">2. Ajoutez le ping à votre script</div>
+          <div class="docs-h3" data-i18n="docs.step1">1. Créez un service</div>
+          <div class="docs-h3" data-i18n="docs.step2">2. Ajoutez le ping à votre script</div>
           <div class="docs-grid">
             <div class="docs-card">
-              <div class="docs-card-title"><span class="docs-badge docs-badge-bash">bash</span> Script shell</div>
-              <div class="docs-card-desc">Une ligne après votre commande. Capture exit_code et logs automatiquement.</div>
+              <div class="docs-card-title"><span class="docs-badge docs-badge-bash">bash</span> <span data-i18n="docs.bashTitle">Script shell</span></div>
+              <div class="docs-card-desc" data-i18n="docs.bashDesc">Une ligne après votre commande. Capture exit_code et logs automatiquement.</div>
             </div>
             <div class="docs-card">
-              <div class="docs-card-title"><span class="docs-badge docs-badge-node">node</span> Script Node.js</div>
-              <div class="docs-card-desc">Wrapper async — mesure la durée, capture les erreurs, envoie le ping.</div>
+              <div class="docs-card-title"><span class="docs-badge docs-badge-node">node</span> <span data-i18n="docs.nodeTitle">Script Node.js</span></div>
+              <div class="docs-card-desc" data-i18n="docs.nodeDesc">Wrapper async — mesure la durée, capture les erreurs, envoie le ping.</div>
             </div>
           </div>
 
@@ -1444,7 +1442,7 @@ LOG=$(cat /var/log/backup.log 2>/dev/null | tail -50)
 curl -sX POST <span id="doc-url">http://localhost:3000</span>/ping/VOTRE_PING_KEY \
   -H "Content-Type: application/json" \
   -d "{"status":"$([ $STATUS -eq 0 ] && echo success || echo fail)","exit_code":$STATUS,"output":"$LOG"}"
-<button class="docs-copy" onclick="copyCode('code-bash')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-bash')">copier</button></div>
 
           <div class="docs-code" id="code-node">// Node.js / TypeScript
 const PING_KEY = 'VOTRE_PING_KEY'
@@ -1472,7 +1470,7 @@ await withMonitor(async () => {
   const count = await syncDatabase()
   return count // nombre d'enregistrements traités
 })
-<button class="docs-copy" onclick="copyCode('code-node')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-node')">copier</button></div>
 
           <div class="docs-code" id="code-python">import requests, time, traceback
 
@@ -1498,12 +1496,12 @@ def with_monitor(fn):
 
 # Utilisation
 with_monitor(lambda: sync_database())
-<button class="docs-copy" onclick="copyCode('code-python')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-python')">copier</button></div>
         </div>
 
         <div class="docs-section">
-          <div class="docs-h2">// payload du ping</div>
-          <div class="docs-p">Tous les champs sont optionnels sauf <code style="background:var(--bg3);padding:1px 4px;border-radius:3px">status</code>.</div>
+          <div class="docs-h2" data-i18n="docs.payload">payload du ping</div>
+          <div class="docs-p"><span data-i18n="docs.payloadAll">Tous les champs sont optionnels sauf</span> <code style="background:var(--bg3);padding:1px 4px;border-radius:3px">status</code>.</div>
           <div class="docs-code" id="code-payload">{
   "status":      "success" | "fail",    // obligatoire
   "duration_ms": 4521,                  // durée en ms (pour détection d'anomalie)
@@ -1511,36 +1509,36 @@ with_monitor(lambda: sync_database())
   "exit_code":   0,                     // code de retour du script
   "output":      "logs du script..."   // envoyé au LLM si status=fail (max 4000c)
 }
-<button class="docs-copy" onclick="copyCode('code-payload')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-payload')">copier</button></div>
 
-          <div class="docs-h3">output validation</div>
-          <div class="docs-p">Si vous configurez <strong style="color:var(--text)">records min/max</strong> sur un monitor, CronGuard reclassifie automatiquement un ping "success" avec 0 records en "fail". Idéal pour détecter les backups silencieux qui ne traitent rien.</div>
+          <div class="docs-h3" data-i18n="docs.outVal">validation de sortie</div>
+          <div class="docs-p" data-i18n="docs.outValP">Si vous configurez records min/max sur un service, CronGuard reclasse automatiquement un ping « success » avec 0 record en « fail ». Idéal pour détecter les backups silencieux qui ne traitent rien.</div>
         </div>
 
         <div class="docs-section">
-          <div class="docs-h2">// détection d'anomalies</div>
+          <div class="docs-h2" data-i18n="docs.anomalies">détection d'anomalies</div>
           <div class="docs-grid">
             <div class="docs-card">
-              <div class="docs-card-title">⏱ Timeout (silence)</div>
-              <div class="docs-card-desc">Si votre script ne ping pas dans la fenêtre de grâce (configurable), CronGuard détecte l'absence et alerte. Couvre les crons qui ne tournent pas du tout.</div>
+              <div class="docs-card-title" data-i18n="docs.aTimeout">Timeout (silence)</div>
+              <div class="docs-card-desc" data-i18n="docs.aTimeoutD">Si votre script ne ping pas dans la fenêtre de grâce (configurable), CronGuard détecte l'absence et alerte.</div>
             </div>
             <div class="docs-card">
-              <div class="docs-card-title">🐢 Dérive de performance</div>
-              <div class="docs-card-desc">Si un job prend ×2.5 sa durée baseline (7 jours), une alerte est émise avant qu'il timeout. Détecte la dégradation progressive.</div>
+              <div class="docs-card-title" data-i18n="docs.aPerf">Dérive de performance</div>
+              <div class="docs-card-desc" data-i18n="docs.aPerfD">Si un job prend ×2.5 sa durée de référence (7 jours), une alerte est émise avant le timeout.</div>
             </div>
             <div class="docs-card">
-              <div class="docs-card-title">📊 Output validation</div>
-              <div class="docs-card-desc">Exit 0 mais 0 enregistrements traités ? CronGuard reclasse en échec. Couvre les backups "réussis" qui ne font rien.</div>
+              <div class="docs-card-title" data-i18n="docs.aOut">Validation de sortie</div>
+              <div class="docs-card-desc" data-i18n="docs.aOutD">Exit 0 mais 0 enregistrement traité ? CronGuard reclasse en échec.</div>
             </div>
             <div class="docs-card">
-              <div class="docs-card-title">🧠 Analyse IA</div>
-              <div class="docs-card-desc">Qwen 3 8B analyse les logs localement. Vos données ne quittent jamais votre serveur. Cause racine + action corrective en &lt; 30s.</div>
+              <div class="docs-card-title" data-i18n="docs.aAI">Analyse IA</div>
+              <div class="docs-card-desc" data-i18n="docs.aAID">Le LLM analyse les logs localement. Vos données ne quittent jamais votre serveur.</div>
             </div>
           </div>
         </div>
 
         <div class="docs-section">
-          <div class="docs-h2">// référence API</div>
+          <div class="docs-h2" data-i18n="docs.apiRef">référence API</div>
           <div class="docs-code" id="code-api">POST /ping/:ping_key              # Envoie un ping
 GET  /monitors                    # Liste les monitors
 POST /monitors                    # Crée un monitor
@@ -1561,16 +1559,16 @@ GET  /status/:monitor_id          # Page de statut publique
 GET  /health                      # Santé de l'API
 
 # Toutes les routes nécessitent : X-API-Key: votre_cle
-<button class="docs-copy" onclick="copyCode('code-api')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-api')">copier</button></div>
         </div>
 
         <div class="docs-section">
-          <div class="docs-h2">// raccourcis clavier</div>
+          <div class="docs-h2" data-i18n="docs.shortcuts">raccourcis clavier</div>
           <div class="docs-grid">
-            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">R</code> Rafraîchir</div><div class="docs-card-desc">Recharge toutes les données</div></div>
-            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">/</code> Rechercher</div><div class="docs-card-desc">Focus sur le champ de recherche</div></div>
-            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">Esc</code> Fermer</div><div class="docs-card-desc">Ferme le drawer ou la modale</div></div>
-            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">1–7</code> Navigation</div><div class="docs-card-desc">Dashboard · Services · Logs · Analyses · Paramètres · Docs · IA Playground</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">R</code> <span data-i18n="docs.scRefresh">Rafraîchir</span></div><div class="docs-card-desc" data-i18n="docs.scRefreshD">Recharge toutes les données</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">/</code> <span data-i18n="docs.scSearch">Rechercher</span></div><div class="docs-card-desc" data-i18n="docs.scSearchD">Focus sur le champ de recherche</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">Esc</code> <span data-i18n="docs.scClose">Fermer</span></div><div class="docs-card-desc" data-i18n="docs.scCloseD">Ferme le panneau ou la modale</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">1–7</code> <span data-i18n="docs.scNav">Navigation</span></div><div class="docs-card-desc" data-i18n="docs.scNavD">Dashboard · Services · Journal · Analyses · Paramètres · Docs · Playground IA</div></div>
           </div>
         </div>
       </div>
@@ -1586,19 +1584,19 @@ GET  /health                      # Santé de l'API
         <!-- Métriques détaillées (toggle) -->
         <div class="quality-grid" id="quality-grid">
           <div class="q-card">
-            <div class="q-title">Catégories</div>
+            <div class="q-title" data-i18n="q.categories">Catégories</div>
             <div id="cat-bars"></div>
           </div>
           <div class="q-card">
-            <div class="q-title">Confiance</div>
+            <div class="q-title" data-i18n="q.confidence">Confiance</div>
             <div id="conf-circles"></div>
           </div>
           <div class="q-card">
-            <div class="q-title">Résolution</div>
+            <div class="q-title" data-i18n="q.resolution">Résolution</div>
             <div class="q-big-number" id="avg-fix">—</div>
-            <div class="q-big-sub">minutes en moyenne</div>
+            <div class="q-big-sub" data-i18n="q.avgMinutes">minutes en moyenne</div>
             <div style="margin-top:12px">
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px">Impact données</div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:4px" data-i18n="q.dataImpact">Impact données</div>
               <div id="impact-bar" style="display:flex;gap:6px;flex-wrap:wrap"></div>
             </div>
           </div>
@@ -1607,14 +1605,14 @@ GET  /health                      # Santé de l'API
         <!-- Barre de filtres -->
         <div class="an-toolbar">
           <select id="an-sev" onchange="filterAnalyses()">
-            <option value="all">toutes sévérités</option>
+            <option value="all" data-i18n="antb.allSev">toutes sévérités</option>
             <option value="critical">critical</option>
             <option value="high">high</option>
             <option value="medium">medium</option>
             <option value="low">low</option>
           </select>
           <select id="an-cat" onchange="filterAnalyses()">
-            <option value="all">toutes catégories</option>
+            <option value="all" data-i18n="antb.allCat">toutes catégories</option>
             <option value="database">database</option>
             <option value="network">network</option>
             <option value="timeout">timeout</option>
@@ -1624,10 +1622,10 @@ GET  /health                      # Santé de l'API
             <option value="data">data</option>
             <option value="unknown">unknown</option>
           </select>
-          <input class="search-input" id="an-search" placeholder="rechercher cause / job..." oninput="filterAnalyses()" style="width:180px;padding-left:10px">
+          <input class="search-input" id="an-search" data-i18n-ph="antb.search" placeholder="rechercher cause / service..." oninput="filterAnalyses()" style="width:180px;padding-left:10px">
           <span id="an-filter-badge" class="an-filter-badge" style="display:none" onclick="clearAnFilter()">— <span id="an-filter-name"></span> ✕</span>
           <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
-            <button class="btn btn-ghost" id="toggle-metrics" onclick="toggleMetrics()" style="font-size:10px;padding:3px 8px">📊 masquer</button>
+            <button class="btn btn-ghost" id="toggle-metrics" onclick="toggleMetrics()" style="font-size:10px;padding:3px 8px" data-i18n="antb.hide">masquer</button>
             <span style="font-size:9px;font-family:var(--mono);color:var(--text3)" id="an-info">—</span>
           </span>
         </div>
@@ -1774,6 +1772,41 @@ const I18N = {
     'sample.action':'Vérifier que le service PostgreSQL est démarré :','sample.prevention':'Ajouter un healthcheck PostgreSQL avant le backup, surveiller pg_isready',
     'sample.checks':'Vérifications immédiates','sample.disk':'Vérifier l\'espace disque :','sample.cta':'Tester l\'analyse IA maintenant →',
     'never':'jamais','now':'à l\'instant','pending':'Analyse IA en cours...',
+    'toast.loadErr':'Erreur de chargement des services :','toast.acked':'Alertes acquittées','toast.snoozed':'Alertes silencieuses 1h',
+    'toast.paused':'Service en pause 2h','toast.resumed':'Service repris','toast.testSent':'Alerte de test envoyée','toast.deleted':'Service supprimé',
+    'toast.copyFail':'échec de la copie','toast.updated':'Service mis à jour','toast.slackSaved':'Webhook Slack enregistré','toast.webhookSaved':'Webhook enregistré',
+    'toast.tzSaved':'Fuseau horaire mis à jour','toast.trialOn':'Essai Pro 14 jours activé !','toast.escSaved':'Escalade enregistrée',
+    'toast.mwDeleted':'Fenêtre supprimée','toast.mwCreated':'Fenêtre créée','toast.memberRemoved':'Membre retiré','toast.inviteCancelled':'Invitation annulée',
+    'toast.inviteCreated':'Invitation créée','toast.codeCopied':'Code copié','toast.missingId':'ID d\'analyse manquant','toast.pasteLogs':'Collez des logs à analyser',
+    'toast.pingKeyCopied':'ping_key copiée !','toast.apiKeyCopied':'clé API copiée','toast.linkCopied':'lien copié !','toast.fbThanks':'Merci !','toast.fbNoted':'Noté',
+    'dr.edit':'modifier','dr.pingKey':'ping_key','dr.testAlert':'test alerte','dr.ack':'acquitter','dr.snooze':'snooze 1h','dr.resume':'reprendre','dr.pause':'pause 2h','dr.delete':'supprimer',
+    'dr.grace':'grâce','dr.records':'records','dr.uptime':'uptime','dr.avgDur':'durée moy.','dr.p95':'p95','dr.recentAnalyses':'analyses récentes','dr.history':'historique','dr.noPing':'aucun ping','dr.statusPage':'Page de statut publique :',
+    'dr.pingKeyCopied':'ping_key copiée !','dr.copy':'copier',
+    'del.title':'Supprimer','del.warn':'Cette action est irréversible. Tapez le nom pour confirmer :','del.cancel':'annuler','del.confirm':'supprimer',
+    'pg.step.tokenize':'Tokenisation des logs','pg.step.send':'Envoi au modèle','pg.step.cause':'Identification de la cause racine...','pg.step.reco':'Génération des recommandations...','pg.step.final':'Finalisation...',
+    'pg.res.checks':'Vérifications immédiates','pg.res.fromCache':'depuis le cache','pg.res.analyzed':'caractères analysés','pg.res.errTitle':'Erreur LLM','pg.res.models':'Modèles disponibles :',
+    'log.hide':'masquer logs','log.show':'logs','fb.question':'Cette analyse était-elle utile ?',
+    'err.nameReq':'nom requis','err.emailReq':'Email requis','err.cronReq':'Expression cron requise',
+    'pg.res.timeout':'Timeout actuel :','pg.res.model':'Modèle :',
+    'di.none':'✓ données ok','di.possible':'? impact possible','di.confirmed':'⚠ données affectées',
+    'an.correlated':'Défaillances simultanées :','an.commonCause':'— probable cause commune','an.fixEst':'résolution estimée :',
+    'dr.dataShort':'data','dr.statusOpen':'Ouvrir la page de statut publique',
+    'top.refresh':'Rafraîchir (R)','row.edit':'Modifier','row.ack':'Acquitter','row.snooze':'Snooze 1h','row.copyKey':'Copier la ping key','row.delete':'Supprimer',
+    'docs.copy':'copier','docs.qs':'démarrage rapide','docs.qsP':'Ajoutez un ping à la fin de votre script cron. C\'est tout. Si le script ne ping pas dans sa fenêtre de grâce, CronGuard vous alerte.',
+    'docs.step1':'1. Créez un service','docs.step2':'2. Ajoutez le ping à votre script',
+    'docs.bashTitle':'Script shell','docs.bashDesc':'Une ligne après votre commande. Capture exit_code et logs automatiquement.',
+    'docs.nodeTitle':'Script Node.js','docs.nodeDesc':'Wrapper async — mesure la durée, capture les erreurs, envoie le ping.',
+    'docs.payload':'payload du ping','docs.payloadAll':'Tous les champs sont optionnels sauf','docs.outVal':'validation de sortie','docs.outValP':'Si vous configurez records min/max sur un service, CronGuard reclasse automatiquement un ping « success » avec 0 record en « fail ». Idéal pour détecter les backups silencieux qui ne traitent rien.',
+    'docs.anomalies':'détection d\'anomalies','docs.aTimeout':'Timeout (silence)','docs.aTimeoutD':'Si votre script ne ping pas dans la fenêtre de grâce (configurable), CronGuard détecte l\'absence et alerte. Couvre les crons qui ne tournent pas du tout.',
+    'docs.aPerf':'Dérive de performance','docs.aPerfD':'Si un job prend ×2.5 sa durée de référence (7 jours), une alerte est émise avant le timeout. Détecte la dégradation progressive.',
+    'docs.aOut':'Validation de sortie','docs.aOutD':'Exit 0 mais 0 enregistrement traité ? CronGuard reclasse en échec. Couvre les backups « réussis » qui ne font rien.',
+    'docs.aAI':'Analyse IA','docs.aAID':'Le LLM analyse les logs localement. Vos données ne quittent jamais votre serveur. Cause racine + action corrective en moins de 30s.',
+    'docs.apiRef':'référence API','docs.shortcuts':'raccourcis clavier',
+    'docs.scRefresh':'Rafraîchir','docs.scRefreshD':'Recharge toutes les données','docs.scSearch':'Rechercher','docs.scSearchD':'Focus sur le champ de recherche',
+    'docs.scClose':'Fermer','docs.scCloseD':'Ferme le panneau ou la modale','docs.scNav':'Navigation','docs.scNavD':'Dashboard · Services · Journal · Analyses · Paramètres · Docs · Playground IA',
+    'q.categories':'Catégories','q.confidence':'Confiance','q.resolution':'Résolution','q.avgMinutes':'minutes en moyenne','q.dataImpact':'Impact données',
+    'antb.allSev':'toutes sévérités','antb.allCat':'toutes catégories','antb.search':'rechercher cause / service...','antb.details':'détails','antb.hide':'masquer',
+    'conf.high':'Haute','conf.medium':'Moyenne','conf.low':'Faible','conf.highSub':'Cause explicite dans les logs','conf.mediumSub':'Inférée depuis le contexte','conf.lowSub':'Hypothèse basée sur le pattern',
     'lang.label':'Langue',
   },
   en: {
@@ -1846,6 +1879,41 @@ const I18N = {
     'sample.action':'Check that the PostgreSQL service is running:','sample.prevention':'Add a PostgreSQL healthcheck before the backup, monitor pg_isready',
     'sample.checks':'Immediate checks','sample.disk':'Check disk space:','sample.cta':'Test the AI analysis now →',
     'never':'never','now':'just now','pending':'AI analysis in progress...',
+    'toast.loadErr':'Error loading services:','toast.acked':'Alerts acknowledged','toast.snoozed':'Alerts silenced 1h',
+    'toast.paused':'Service paused 2h','toast.resumed':'Service resumed','toast.testSent':'Test alert sent','toast.deleted':'Service deleted',
+    'toast.copyFail':'copy failed','toast.updated':'Service updated','toast.slackSaved':'Slack webhook saved','toast.webhookSaved':'Webhook saved',
+    'toast.tzSaved':'Timezone updated','toast.trialOn':'14-day Pro trial activated!','toast.escSaved':'Escalation saved',
+    'toast.mwDeleted':'Window deleted','toast.mwCreated':'Window created','toast.memberRemoved':'Member removed','toast.inviteCancelled':'Invitation cancelled',
+    'toast.inviteCreated':'Invitation created','toast.codeCopied':'Code copied','toast.missingId':'Missing analysis ID','toast.pasteLogs':'Paste logs to analyze',
+    'toast.pingKeyCopied':'ping_key copied!','toast.apiKeyCopied':'API key copied','toast.linkCopied':'link copied!','toast.fbThanks':'Thanks!','toast.fbNoted':'Noted',
+    'dr.edit':'edit','dr.pingKey':'ping_key','dr.testAlert':'test alert','dr.ack':'acknowledge','dr.snooze':'snooze 1h','dr.resume':'resume','dr.pause':'pause 2h','dr.delete':'delete',
+    'dr.grace':'grace','dr.records':'records','dr.uptime':'uptime','dr.avgDur':'avg duration','dr.p95':'p95','dr.recentAnalyses':'recent analyses','dr.history':'history','dr.noPing':'no ping','dr.statusPage':'Public status page:',
+    'dr.pingKeyCopied':'ping_key copied!','dr.copy':'copy',
+    'del.title':'Delete','del.warn':'This action is irreversible. Type the name to confirm:','del.cancel':'cancel','del.confirm':'delete',
+    'pg.step.tokenize':'Tokenizing logs','pg.step.send':'Sending to model','pg.step.cause':'Identifying root cause...','pg.step.reco':'Generating recommendations...','pg.step.final':'Finalizing...',
+    'pg.res.checks':'Immediate checks','pg.res.fromCache':'from cache','pg.res.analyzed':'characters analyzed','pg.res.errTitle':'LLM error','pg.res.models':'Available models:',
+    'log.hide':'hide logs','log.show':'logs','fb.question':'Was this analysis helpful?',
+    'err.nameReq':'name required','err.emailReq':'Email required','err.cronReq':'Cron expression required',
+    'pg.res.timeout':'Current timeout:','pg.res.model':'Model:',
+    'di.none':'✓ data ok','di.possible':'? possible impact','di.confirmed':'⚠ data affected',
+    'an.correlated':'Simultaneous failures:','an.commonCause':'— likely common cause','an.fixEst':'estimated resolution:',
+    'dr.dataShort':'data','dr.statusOpen':'Open the public status page',
+    'top.refresh':'Refresh (R)','row.edit':'Edit','row.ack':'Acknowledge','row.snooze':'Snooze 1h','row.copyKey':'Copy ping key','row.delete':'Delete',
+    'docs.copy':'copy','docs.qs':'quick start','docs.qsP':'Add a ping at the end of your cron script. That\'s it. If the script doesn\'t ping within its grace window, CronGuard alerts you.',
+    'docs.step1':'1. Create a service','docs.step2':'2. Add the ping to your script',
+    'docs.bashTitle':'Shell script','docs.bashDesc':'One line after your command. Captures exit_code and logs automatically.',
+    'docs.nodeTitle':'Node.js script','docs.nodeDesc':'Async wrapper — measures duration, captures errors, sends the ping.',
+    'docs.payload':'ping payload','docs.payloadAll':'All fields are optional except','docs.outVal':'output validation','docs.outValP':'If you set records min/max on a service, CronGuard automatically reclassifies a "success" ping with 0 records as "fail". Ideal for catching silent backups that process nothing.',
+    'docs.anomalies':'anomaly detection','docs.aTimeout':'Timeout (silence)','docs.aTimeoutD':'If your script doesn\'t ping within the grace window (configurable), CronGuard detects the absence and alerts. Covers crons that don\'t run at all.',
+    'docs.aPerf':'Performance drift','docs.aPerfD':'If a job takes ×2.5 its baseline duration (7 days), an alert fires before it times out. Detects gradual degradation.',
+    'docs.aOut':'Output validation','docs.aOutD':'Exit 0 but 0 records processed? CronGuard reclassifies as a failure. Covers "successful" backups that do nothing.',
+    'docs.aAI':'AI analysis','docs.aAID':'The LLM analyzes logs locally. Your data never leaves your server. Root cause + corrective action in under 30s.',
+    'docs.apiRef':'API reference','docs.shortcuts':'keyboard shortcuts',
+    'docs.scRefresh':'Refresh','docs.scRefreshD':'Reloads all data','docs.scSearch':'Search','docs.scSearchD':'Focus the search field',
+    'docs.scClose':'Close','docs.scCloseD':'Closes the panel or modal','docs.scNav':'Navigation','docs.scNavD':'Dashboard · Services · Activity · Analyses · Settings · Docs · AI Playground',
+    'q.categories':'Categories','q.confidence':'Confidence','q.resolution':'Resolution','q.avgMinutes':'avg minutes','q.dataImpact':'Data impact',
+    'antb.allSev':'all severities','antb.allCat':'all categories','antb.search':'search cause / service...','antb.details':'details','antb.hide':'hide',
+    'conf.high':'High','conf.medium':'Medium','conf.low':'Low','conf.highSub':'Cause explicit in the logs','conf.mediumSub':'Inferred from context','conf.lowSub':'Hypothesis based on the pattern',
     'lang.label':'Language',
   },
 }
@@ -1855,6 +1923,7 @@ function t(k) { return (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k }
 function applyI18n(root = document) {
   root.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')) })
   root.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')) })
+  root.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')) })
   const pt = document.getElementById('page-title')
   if (pt && typeof currentView !== 'undefined') pt.textContent = t('title.' + currentView)
   document.documentElement.lang = LANG
@@ -2041,7 +2110,7 @@ async function loadMonitors() {
     renderMonitors('dash')
     renderMonitors('full')
     renderAlertBanner(monitors)
-  } catch(e) { toast('Erreur chargement monitors: '+e.message, 'err') }
+  } catch(e) { toast(t('toast.loadErr')+' '+e.message, 'err') }
 }
 
 function renderAlertBanner(list) {
@@ -2263,11 +2332,11 @@ function renderMonitors(target) {
       </div>
       <div class="m-status"><span class="pill ${pillCls}">${pillTxt}</span></div>
       <div class="m-actions">
-        <button class="act-btn" onclick="event.stopPropagation();openEditModal(${JSON.stringify(m).replace(/"/g,'&quot;')})" title="Modifier">edit</button>
-        <button class="act-btn" onclick="event.stopPropagation();ackMonitor('${m.id}')" title="Acknowledge">ack</button>
-        <button class="act-btn" onclick="event.stopPropagation();snoozeMonitor('${m.id}')" title="Snooze 1h">snooze</button>
-        <button class="act-btn" onclick="event.stopPropagation();copyText('${m.ping_key}','ping key copiée')" title="Copier ping key">key</button>
-        <button class="act-btn red" onclick="event.stopPropagation();confirmDelete('${m.id}','${esc(m.name)}')" title="Supprimer">del</button>
+        <button class="act-btn" onclick="event.stopPropagation();openEditModal(${JSON.stringify(m).replace(/"/g,'&quot;')})" title="${t('row.edit')}">edit</button>
+        <button class="act-btn" onclick="event.stopPropagation();ackMonitor('${m.id}')" title="${t('row.ack')}">ack</button>
+        <button class="act-btn" onclick="event.stopPropagation();snoozeMonitor('${m.id}')" title="${t('row.snooze')}">snooze</button>
+        <button class="act-btn" onclick="event.stopPropagation();copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')" title="${t('row.copyKey')}">key</button>
+        <button class="act-btn red" onclick="event.stopPropagation();confirmDelete('${m.id}','${esc(m.name)}')" title="${t('row.delete')}">del</button>
       </div>
     </div>`
   }).join('')
@@ -2444,18 +2513,18 @@ function renderAnalyses() {
     const hasLog = a.ping_output || a.ping_exit_code != null
     const logTxt = (a.ping_exit_code != null ? 'exit: ' + a.ping_exit_code + '\n' : '') + (a.ping_output || '')
 
-    const impactLabel = {none: '✓ données ok', possible: '? impact possible', confirmed: '⚠ données affectées'}
+    const impactLabel = {none: t('di.none'), possible: t('di.possible'), confirmed: t('di.confirmed')}
 
     const correlatedHtml = correlated.length
-      ? `<div class="an-correlated">🔗 Défaillances simultanées : ${esc(correlated.join(', '))} — probable cause commune</div>`
+      ? `<div class="an-correlated">🔗 ${t('an.correlated')} ${esc(correlated.join(', '))} ${t('an.commonCause')}</div>`
       : ''
     const checksHtml = checks.length
       ? `<div class="an-checks">
-           <div class="an-checks-label">Vérifications immédiates</div>
+           <div class="an-checks-label">${t('pg.res.checks')}</div>
            ${checks.map(c => `<div class="an-check-item">${esc(String(c))}</div>`).join('')}
          </div>` : ''
     const logsHtml = hasLog
-      ? `<div class="an-logs-toggle" onclick="toggleLog('al${i}',this)">▶ logs (${logTxt.trim().length}c)</div>
+      ? `<div class="an-logs-toggle" onclick="toggleLog('al${i}',this)">▶ ${t('log.show')} (${logTxt.trim().length}c)</div>
          <div class="an-logs-content" id="al${i}">${esc(logTxt.trim())}</div>` : ''
 
     return `<div class="an-item acc-${sev}" id="an-${a.id||i}">
@@ -2473,7 +2542,7 @@ function renderAnalyses() {
 
       <div class="an-meta-row">
         <span class="data-impact impact-${impact}">${impactLabel[impact]||impact}</span>
-        ${fixMins ? `<span class="fix-time">résolution estimée : <span>~${fixMins} min</span></span>` : ''}
+        ${fixMins ? `<span class="fix-time">${t('an.fixEst')} <span>~${fixMins} min</span></span>` : ''}
       </div>
 
       ${correlatedHtml}
@@ -2485,7 +2554,7 @@ function renderAnalyses() {
       ${logsHtml}
 
       <div class="feedback-row">
-        <span class="fb-label">Cette analyse était-elle utile ?</span>
+        <span class="fb-label">${t('fb.question')}</span>
         <button class="fb-btn ${a.user_feedback==='positive'?'active-pos':''}"
           onclick="sendFeedback('${a.id||''}','positive','an-${a.id||i}')">👍</button>
         <button class="fb-btn ${a.user_feedback==='negative'?'active-neg':''}"
@@ -2515,19 +2584,19 @@ async function openDrawer(id) {
   document.getElementById('d-name').innerHTML = `<div class="m-dot ${dotCls}"></div> ${esc(m.name)}`
   document.getElementById('d-meta').innerHTML = `
     <span class="env-p">${m.env}</span>
-    <span>grace: ${m.grace_period}s</span>
+    <span>${t('dr.grace')}: ${m.grace_period}s</span>
     ${m.schedule ? `<span>⟳ ${m.schedule}</span>` : ''}
-    ${m.expected_min!=null ? `<span>${m.expected_min}–${m.expected_max||'∞'} records</span>` : ''}`
+    ${m.expected_min!=null ? `<span>${m.expected_min}–${m.expected_max||'∞'} ${t('dr.records')}</span>` : ''}`
 
   document.getElementById('d-actions').innerHTML = `
-    <button class="d-btn" onclick="openEditModal(${JSON.stringify(m).replace(/'/g,'\'').replace(/"/g,'&quot;')})">✎ modifier</button>
-    <button class="d-btn" onclick="copyText('${m.ping_key}','ping_key copiée !')">⎘ ping_key</button>
-    <button class="d-btn" onclick="testMonitor('${id}')">⚡ test alerte</button>
-    <button class="d-btn" onclick="ackMonitor('${id}')">✓ acknowledge</button>
-    <button class="d-btn" onclick="snoozeMonitor('${id}')">⏸ snooze 1h</button>
-    ${isPaused ? `<button class="d-btn success" onclick="resumeMonitor('${id}')">▶ reprendre</button>`
-               : `<button class="d-btn" onclick="pauseMonitor('${id}')">⏹ pause 2h</button>`}
-    <button class="d-btn danger" onclick="confirmDelete('${id}','${esc(m.name)}')">✕ supprimer</button>`
+    <button class="d-btn" onclick="openEditModal(${JSON.stringify(m).replace(/'/g,'\'').replace(/"/g,'&quot;')})">✎ ${t('dr.edit')}</button>
+    <button class="d-btn" onclick="copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')">⎘ ${t('dr.pingKey')}</button>
+    <button class="d-btn" onclick="testMonitor('${id}')">⚡ ${t('dr.testAlert')}</button>
+    <button class="d-btn" onclick="ackMonitor('${id}')">✓ ${t('dr.ack')}</button>
+    <button class="d-btn" onclick="snoozeMonitor('${id}')">⏸ ${t('dr.snooze')}</button>
+    ${isPaused ? `<button class="d-btn success" onclick="resumeMonitor('${id}')">▶ ${t('dr.resume')}</button>`
+               : `<button class="d-btn" onclick="pauseMonitor('${id}')">⏹ ${t('dr.pause')}</button>`}
+    <button class="d-btn danger" onclick="confirmDelete('${id}','${esc(m.name)}')">✕ ${t('dr.delete')}</button>`
 
   document.getElementById('d-body').innerHTML = '<div class="empty">…</div>'
   document.getElementById('drawer-overlay').classList.add('open')
@@ -2604,7 +2673,7 @@ function renderDrawerBody(m, history, analyses) {
     })()
     const hasLog = a.ping_output || a.ping_exit_code!=null
     const logTxt = (a.ping_exit_code!=null?'exit: '+a.ping_exit_code+'\n':'')+(a.ping_output||'')
-    const logs   = hasLog ? `<div class="d-analysis-logs" onclick="toggleLog('dl${i}',this)">▶ logs</div>
+    const logs   = hasLog ? `<div class="d-analysis-logs" onclick="toggleLog('dl${i}',this)">▶ ${t('log.show')}</div>
       <div class="d-logs-content" id="dl${i}">${esc(logTxt.trim())}</div>` : ''
     const checksHtml = dChecks.length
       ? dChecks.map(c => `<div style="font-size:10px;color:var(--text2);padding:1px 0;font-family:var(--mono)">→ ${esc(String(c))}</div>`).join('')
@@ -2613,7 +2682,7 @@ function renderDrawerBody(m, history, analyses) {
       <div class="d-analysis-job">
         <span><span class="an-cat cat-${category}" style="font-size:8px">${category}</span> ${a.alert_type==='timeout'?'⏱':a.alert_type==='slow'?'🐢':'✕'} ${esc(a.monitorName||'?')}</span>
         <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          ${impact !== 'none' ? `<span class="data-impact impact-${impact}" style="font-size:8px">${impact === 'confirmed' ? '⚠ data' : '? data'}</span>` : ''}
+          ${impact !== 'none' ? `<span class="data-impact impact-${impact}" style="font-size:8px">${impact === 'confirmed' ? '⚠ '+t('dr.dataShort') : '? '+t('dr.dataShort')}</span>` : ''}
           ${fixMins ? `<span style="font-size:8px;font-family:var(--mono);color:var(--text3)">~${fixMins}m</span>` : ''}
           <span class="sev-pill ${`sev-${sev}`}">${sev}</span>
         </div>
@@ -2636,15 +2705,15 @@ function renderDrawerBody(m, history, analyses) {
   document.getElementById('d-body').innerHTML = `
     <div class="d-section">
       <div class="d-stats-row">
-        <div class="d-stat"><div class="d-stat-label">uptime</div><div class="d-stat-val" style="color:var(--${uptimePct>95?'green':uptimePct>80?'amber':'red'})">${uptimePct}%</div></div>
-        <div class="d-stat"><div class="d-stat-label">durée moy.</div><div class="d-stat-val">${avg>60000?Math.round(avg/1000)+'s':avg+'ms'} ${trendHtml}</div></div>
-        <div class="d-stat"><div class="d-stat-label">p95</div><div class="d-stat-val">${p95>60000?Math.round(p95/1000)+'s':p95+'ms'}</div></div>
+        <div class="d-stat"><div class="d-stat-label">${t('dr.uptime')}</div><div class="d-stat-val" style="color:var(--${uptimePct>95?'green':uptimePct>80?'amber':'red'})">${uptimePct}%</div></div>
+        <div class="d-stat"><div class="d-stat-label">${t('dr.avgDur')}</div><div class="d-stat-val">${avg>60000?Math.round(avg/1000)+'s':avg+'ms'} ${trendHtml}</div></div>
+        <div class="d-stat"><div class="d-stat-label">${t('dr.p95')}</div><div class="d-stat-val">${p95>60000?Math.round(p95/1000)+'s':p95+'ms'}</div></div>
       </div>
       <div class="d-spark">${bigSpark}</div>
     </div>
 
     <div class="d-section">
-      <div class="d-section-title">ping_key <button class="key-copy" onclick="copyText('${m.ping_key}','ping_key copiée !')">copier</button></div>
+      <div class="d-section-title">ping_key <button class="key-copy" onclick="copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')">${t('dr.copy')}</button></div>
       <div class="key-box"><span style="word-break:break-all">${m.ping_key}</span></div>
       <div class="curl-box">curl -sX POST ${BASE_URL}/ping/${m.ping_key} \\
   -d '{"status":"success","duration_ms":1200}'
@@ -2654,23 +2723,23 @@ function renderDrawerBody(m, history, analyses) {
   ${BASE_URL}/ping/${m.ping_key} \\
   -d "{\"status\":\"success\",\"exit_code\":$?,\"records\":$COUNT}"</div>
       <div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--text3)">
-        Page statut publique :
+        ${t('dr.statusPage')}
         <a href="${BASE_URL}/status/${m.id}" target="_blank"
            style="color:var(--green);text-decoration:none"
-           title="Ouvrir la page de statut publique">
+           title="${t('dr.statusOpen')}">
           ${BASE_URL}/status/${m.id}
         </a>
       </div>
     </div>
 
     ${recentAnalyses ? `<div class="d-section">
-      <div class="d-section-title">analyses récentes</div>
+      <div class="d-section-title">${t('dr.recentAnalyses')}</div>
       ${recentAnalyses}
     </div>` : ''}
 
     <div class="d-section">
-      <div class="d-section-title">historique (${history.length})</div>
-      ${histRows || '<div class="empty">aucun ping</div>'}
+      <div class="d-section-title">${t('dr.history')} (${history.length})</div>
+      ${histRows || `<div class="empty">${t('dr.noPing')}</div>`}
     </div>`
 }
 
@@ -2684,27 +2753,27 @@ function closeDrawer() {
 
 // ─── Monitor actions ──────────────────────────────────────────────────────────
 async function ackMonitor(id) {
-  try { await api(`/monitors/${id}/acknowledge`, {method:'POST'}); toast('Alertes acquittées','ok'); await loadMonitors() }
+  try { await api(`/monitors/${id}/acknowledge`, {method:'POST'}); toast(t('toast.acked'),'ok'); await loadMonitors() }
   catch(e) { toast(e.message,'err') }
 }
 
 async function snoozeMonitor(id) {
-  try { await api(`/monitors/${id}/snooze`, {method:'POST',body:JSON.stringify({minutes:60})}); toast('Alertes silencieuses 1h','ok'); await loadMonitors() }
+  try { await api(`/monitors/${id}/snooze`, {method:'POST',body:JSON.stringify({minutes:60})}); toast(t('toast.snoozed'),'ok'); await loadMonitors() }
   catch(e) { toast(e.message,'err') }
 }
 
 async function pauseMonitor(id) {
-  try { await api(`/monitors/${id}/pause`, {method:'POST',body:JSON.stringify({minutes:120})}); toast('Monitor en pause 2h','ok'); await loadMonitors(); if(activeMonitor?.id===id) openDrawer(id) }
+  try { await api(`/monitors/${id}/pause`, {method:'POST',body:JSON.stringify({minutes:120})}); toast(t('toast.paused'),'ok'); await loadMonitors(); if(activeMonitor?.id===id) openDrawer(id) }
   catch(e) { toast(e.message,'err') }
 }
 
 async function resumeMonitor(id) {
-  try { await api(`/monitors/${id}/resume`, {method:'POST'}); toast('Monitor repris','ok'); await loadMonitors(); if(activeMonitor?.id===id) openDrawer(id) }
+  try { await api(`/monitors/${id}/resume`, {method:'POST'}); toast(t('toast.resumed'),'ok'); await loadMonitors(); if(activeMonitor?.id===id) openDrawer(id) }
   catch(e) { toast(e.message,'err') }
 }
 
 async function testMonitor(id) {
-  try { await api(`/monitors/${id}/test`, {method:'POST'}); toast('Alerte de test envoyée','ok') }
+  try { await api(`/monitors/${id}/test`, {method:'POST'}); toast(t('toast.testSent'),'ok') }
   catch(e) { toast(e.message,'err') }
 }
 
@@ -2716,12 +2785,12 @@ function confirmDelete(id, name) {
   div.id = 'del-confirm'
   div.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:300;display:flex;align-items:center;justify-content:center'
   div.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--red-dim);border-radius:var(--radius-lg);padding:24px;width:360px">
-    <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">supprimer "${name}"</div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Cette action est irréversible. Tapez le nom pour confirmer :</div>
-    <input id="del-name-input" class="del-input" placeholder="${name}" oninput="checkDelName('${name}','del-ok-btn')">
+    <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">${t('del.title')} "${esc(name)}"</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px">${t('del.warn')}</div>
+    <input id="del-name-input" class="del-input" placeholder="${esc(name)}" oninput="checkDelName('${name}','del-ok-btn')">
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-      <button class="btn btn-ghost" onclick="document.getElementById('del-confirm').remove()">annuler</button>
-      <button id="del-ok-btn" class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim);opacity:.4;pointer-events:none" onclick="doDelete('${id}')">supprimer</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('del-confirm').remove()">${t('del.cancel')}</button>
+      <button id="del-ok-btn" class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim);opacity:.4;pointer-events:none" onclick="doDelete('${id}')">${t('del.confirm')}</button>
     </div>
   </div>`
   document.body.appendChild(div)
@@ -2740,7 +2809,7 @@ async function doDelete(id) {
   if (div) div.remove()
   try {
     await api(`/monitors/${id}`, {method:'DELETE'})
-    toast('Monitor supprimé','ok')
+    toast(t('toast.deleted'),'ok')
     if (activeMonitor?.id===id) closeDrawer()
     await loadMonitors()
   } catch(e) { toast(e.message,'err') }
@@ -2836,23 +2905,23 @@ function esc(s) {
 function parse(s) { try { return JSON.parse(s) } catch { return null } }
 
 function copyText(text, msg) {
-  navigator.clipboard.writeText(text).then(() => toast(msg||'copié','ok')).catch(() => toast('échec copie','err'))
+  navigator.clipboard.writeText(text).then(() => toast(msg||t('toast.copied'),'ok')).catch(() => toast(t('toast.copyFail'),'err'))
 }
 
 function copyKey(id) {
-  copyText(document.getElementById(id).textContent.trim(), 'clé copiée !')
+  copyText(document.getElementById(id).textContent.trim(), t('toast.copied'))
 }
 
 function toggleLog(id, btn) {
   const el = document.getElementById(id)
   const open = el.classList.toggle('open')
-  btn.textContent = open ? '▼ masquer logs' : `▶ logs (${el.textContent.length}c)`
+  btn.textContent = open ? `▼ ${t('log.hide')}` : `▶ ${t('log.show')} (${el.textContent.length}c)`
 }
 
 // ─── Raccourcis clavier ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return
-  if (e.key==='r'||e.key==='R') { e.preventDefault(); refreshAll(); toast('Rafraîchi','ok') }
+  if (e.key==='r'||e.key==='R') { e.preventDefault(); refreshAll(); toast(t('toast.refreshed'),'ok') }
   if (e.key==='/'){ e.preventDefault(); document.getElementById('search').focus() }
   if (e.key==='Escape') {
     if (document.getElementById('drawer').classList.contains('open')) closeDrawer()
@@ -2903,13 +2972,13 @@ async function saveMonitor() {
   const emin     = document.getElementById('em-emin').value ? parseInt(document.getElementById('em-emin').value) : null
   const emax     = document.getElementById('em-emax').value ? parseInt(document.getElementById('em-emax').value) : null
   const active   = document.getElementById('em-active').checked
-  if (!name) { document.getElementById('em-err').textContent = 'nom requis'; return }
+  if (!name) { document.getElementById('em-err').textContent = t('err.nameReq'); return }
   try {
     await api(`/monitors/${editMonitorId}`, {
       method: 'PATCH',
       body: JSON.stringify({ name, env, grace_period: grace, schedule, expected_min: emin, expected_max: emax, active })
     })
-    toast('Monitor mis à jour', 'ok')
+    toast(t('toast.updated'), 'ok')
     closeEditModal()
     await loadMonitors()
     if (activeMonitor?.id === editMonitorId) {
@@ -2984,7 +3053,7 @@ async function saveSlack() {
   const webhook = document.getElementById('set-slack').value.trim()
   try {
     await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ slack_webhook: webhook || '' }) })
-    toast('Slack webhook sauvegardé', 'ok')
+    toast(t('toast.slackSaved'), 'ok')
   } catch(e) { toast(e.message, 'err') }
 }
 
@@ -2992,20 +3061,20 @@ async function saveWebhook() {
   const url = document.getElementById('set-webhook').value.trim()
   try {
     await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ webhook_url: url || '' }) })
-    toast('Webhook sauvegardé', 'ok')
+    toast(t('toast.webhookSaved'), 'ok')
   } catch(e) { toast(e.message, 'err') }
 }
 
 function saveTz() {
   TZ = document.getElementById('set-tz').value
   localStorage.setItem('cg_tz', TZ)
-  toast('Timezone mise à jour', 'ok')
+  toast(t('toast.tzSaved'), 'ok')
 }
 
 async function startTrial() {
   try {
     await api('/auth/start-trial', { method: 'POST' })
-    toast('Essai Pro 14 jours activé !', 'ok')
+    toast(t('toast.trialOn'), 'ok')
     document.getElementById('trial-section').style.display = 'none'
     loadSettings()
     loadClientInfo()
@@ -3023,7 +3092,7 @@ async function saveEscalation() {
       escalation_webhook: webhook || '',
       escalation_after_min: delay,
     })})
-    toast('Escalade sauvegardée', 'ok')
+    toast(t('toast.escSaved'), 'ok')
   } catch(e) { toast(e.message, 'err') }
 }
 
@@ -3050,7 +3119,7 @@ async function loadMaintenanceWindows() {
 async function deleteMaintenanceWindow(id) {
   try {
     await api(`/maintenance-windows/${id}`, { method: 'DELETE' })
-    toast('Fenêtre supprimée', 'ok')
+    toast(t('toast.mwDeleted'), 'ok')
     loadMaintenanceWindows()
   } catch(e) { toast(e.message, 'err') }
 }
@@ -3070,10 +3139,10 @@ async function createMaintenanceWindow() {
   const duration = parseInt(document.getElementById('mw-duration').value) || 60
   const label    = document.getElementById('mw-label').value.trim()
   const monId    = document.getElementById('mw-monitor').value || null
-  if (!cron) { document.getElementById('mw-err').textContent = 'Expression cron requise'; return }
+  if (!cron) { document.getElementById('mw-err').textContent = t('err.cronReq'); return }
   try {
     await api('/maintenance-windows', { method: 'POST', body: JSON.stringify({ cron_expr: cron, duration_min: duration, label, monitor_id: monId || undefined }) })
-    toast('Fenêtre créée', 'ok')
+    toast(t('toast.mwCreated'), 'ok')
     closeMaintenanceModal()
     loadMaintenanceWindows()
   } catch(e) { document.getElementById('mw-err').textContent = e.message }
@@ -3116,12 +3185,12 @@ async function loadTeamMembers() {
 }
 
 async function removeTeamMember(id) {
-  try { await api(`/team/members/${id}`, { method: 'DELETE' }); toast('Membre retiré', 'ok'); loadTeamMembers() }
+  try { await api(`/team/members/${id}`, { method: 'DELETE' }); toast(t('toast.memberRemoved'), 'ok'); loadTeamMembers() }
   catch(e) { toast(e.message, 'err') }
 }
 
 async function cancelInvite(id) {
-  try { await api(`/team/invitations/${id}`, { method: 'DELETE' }); toast('Invitation annulée', 'ok'); loadTeamMembers() }
+  try { await api(`/team/invitations/${id}`, { method: 'DELETE' }); toast(t('toast.inviteCancelled'), 'ok'); loadTeamMembers() }
   catch(e) { toast(e.message, 'err') }
 }
 
@@ -3137,7 +3206,7 @@ function closeInviteModal() { document.getElementById('invite-modal-bg').classLi
 async function sendInvite() {
   const email = document.getElementById('inv-email').value.trim()
   const role  = document.getElementById('inv-role').value
-  if (!email) { document.getElementById('inv-err').textContent = 'Email requis'; return }
+  if (!email) { document.getElementById('inv-err').textContent = t('err.emailReq'); return }
   try {
     const r = await api('/team/invite', { method: 'POST', body: JSON.stringify({ email, role }) })
     const linkEl = document.getElementById('inv-link')
@@ -3146,7 +3215,7 @@ async function sendInvite() {
     document.getElementById('inv-success').style.display = ''
     document.getElementById('inv-btn').style.display = 'none'
     document.getElementById('inv-err').textContent = ''
-    toast('Invitation créée', 'ok')
+    toast(t('toast.inviteCreated'), 'ok')
     loadTeamMembers()
   } catch(e) { document.getElementById('inv-err').textContent = e.message }
 }
@@ -3159,8 +3228,8 @@ function copyCode(id) {
   text.querySelectorAll('button').forEach(b => b.remove())
   text.querySelectorAll('span[id^="doc-url"]').forEach(s => s.replaceWith(BASE_URL))
   navigator.clipboard.writeText(text.textContent.trim())
-    .then(() => toast('Code copié', 'ok'))
-    .catch(() => toast('Échec copie', 'err'))
+    .then(() => toast(t('toast.codeCopied'), 'ok'))
+    .catch(() => toast(t('toast.copyFail'), 'err'))
 }
 
 // ─── Mobile sidebar ──────────────────────────────────────────────────────────
@@ -3185,13 +3254,13 @@ window.setView = function(view) {
 
 // ─── Feedback analyses ───────────────────────────────────────────────────────
 async function sendFeedback(analysisId, feedback, elementId) {
-  if (!analysisId) { toast('ID analyse manquant', 'err'); return }
+  if (!analysisId) { toast(t('toast.missingId'), 'err'); return }
   try {
     await api(`/monitors/analyses/${analysisId}/feedback`, {
       method: 'POST',
       body: JSON.stringify({ feedback })
     })
-    toast(feedback === 'positive' ? '👍 Merci !' : '👎 Noté', 'ok')
+    toast(feedback === 'positive' ? '👍 '+t('toast.fbThanks') : '👎 '+t('toast.fbNoted'), 'ok')
     // Met à jour les boutons visuellement
     const el = document.getElementById(elementId)
     if (el) {
@@ -3302,18 +3371,18 @@ async function runPreview() {
   const env     = document.getElementById('pg-env').value
   const exitCode= parseInt(document.getElementById('pg-exit').value) || 1
 
-  if (!logs) { toast('Collez des logs à analyser', 'err'); return }
+  if (!logs) { toast(t('toast.pasteLogs'), 'err'); return }
 
   document.getElementById('pg-spinner').classList.add('show')
   document.getElementById('pg-result').classList.remove('show')
   const spinnerTxt = document.getElementById('pg-spinner-text')
   const model = window._activeModel || 'LLM'
   const steps = [
-    `Tokenisation des logs (${logs.length} chars)...`,
-    `Envoi au modèle ${model}...`,
-    'Identification de la cause racine...',
-    'Génération des recommandations...',
-    'Finalisation...',
+    `${t('pg.step.tokenize')} (${logs.length} chars)...`,
+    `${t('pg.step.send')} ${model}...`,
+    t('pg.step.cause'),
+    t('pg.step.reco'),
+    t('pg.step.final'),
   ]
   let stepIdx = 0
   if (spinnerTxt) spinnerTxt.textContent = steps[0]
@@ -3344,18 +3413,18 @@ async function runPreview() {
 
       const availableHtml = errData.available?.length
         ? `<div style="margin-top:8px;font-size:10px;font-family:var(--mono);color:var(--text3)">
-             Modèles disponibles : ${esc(errData.available.slice(0,3).join(', '))}
+             ${t('pg.res.models')} ${esc(errData.available.slice(0,3).join(', '))}
            </div>` : ''
 
       resultEl.innerHTML = `
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <span style="font-size:16px">⚠</span>
-          <span style="color:var(--red);font-weight:600;font-size:13px">${esc(errData.error||'Erreur LLM')}</span>
+          <span style="color:var(--red);font-weight:600;font-size:13px">${esc(errData.error||t('pg.res.errTitle'))}</span>
         </div>
         ${errData.detail  ? `<div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:10px;padding:6px 10px;background:var(--bg);border-radius:4px">${esc(errData.detail)}</div>` : ''}
         ${errData.hint    ? `<div style="font-size:11px;color:var(--text2);margin-bottom:10px">💡 ${esc(errData.hint)}</div>` : ''}
         ${errData.fix     ? `<div style="font-family:var(--mono);font-size:11px;color:var(--green);padding:6px 10px;background:var(--green-dim);border-radius:4px;margin-bottom:8px">${esc(errData.fix)}</div>` : ''}
-        ${errData.timeout ? `<div style="font-size:10px;font-family:var(--mono);color:var(--text3)">Timeout actuel : ${esc(errData.timeout)} · Modèle : ${esc(errData.model||'?')}</div>` : ''}
+        ${errData.timeout ? `<div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${t('pg.res.timeout')} ${esc(errData.timeout)} · ${t('pg.res.model')} ${esc(errData.model||'?')}</div>` : ''}
         ${actionsHtml}
         ${availableHtml}`
       resultEl.classList.add('show')
@@ -3374,7 +3443,7 @@ function renderPreviewResult(r) {
     timeout:'var(--amber)',code:'var(--text2)',data:'var(--indigo)',
     dependency:'var(--green)',unknown:'var(--text3)'
   }
-  const impactLabel = {none:'✓ données ok',possible:'? impact possible',confirmed:'⚠ données affectées'}
+  const impactLabel = {none:t('di.none'),possible:t('di.possible'),confirmed:t('di.confirmed')}
   const sev = r.severity || 'medium'
   const cat = r.category || 'unknown'
   const conf= r.confidence || 'medium'
@@ -3395,10 +3464,10 @@ function renderPreviewResult(r) {
     <div class="pr-cause">🔍 ${esc(r.cause||'—')}</div>
     ${r.action    ? `<div class="pr-action">→ ${esc(r.action)}</div>` : ''}
     ${r.prevention? `<div class="pr-prevention">🛡 ${esc(r.prevention)}</div>` : ''}
-    ${checksHtml ? `<div class="pr-checks"><div style="font-size:9px;color:var(--text3);font-family:var(--sans);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Vérifications immédiates</div>${checksHtml}</div>` : ''}
+    ${checksHtml ? `<div class="pr-checks"><div style="font-size:9px;color:var(--text3);font-family:var(--sans);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${t('pg.res.checks')}</div>${checksHtml}</div>` : ''}
     <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:9px;font-family:var(--mono);color:var(--text3)">
-      ${r._meta ? `${r._meta.logs_length} chars analysés · ${r.tokensIn||0} tokens in · ${r.tokensOut||0} tokens out` : ''}
-      ${r.fromCache ? ' · <span style="color:var(--amber)">⚡ depuis cache</span>' : ''}
+      ${r._meta ? `${r._meta.logs_length} ${t('pg.res.analyzed')} · ${r.tokensIn||0} tokens in · ${r.tokensOut||0} tokens out` : ''}
+      ${r.fromCache ? ` · <span style="color:var(--amber)">⚡ ${t('pg.res.fromCache')}</span>` : ''}
     </div>`
   document.getElementById('pg-result').classList.add('show')
 }
@@ -3418,7 +3487,7 @@ let metricsVisible = true
 function toggleMetrics() {
   metricsVisible = !metricsVisible
   document.getElementById('quality-grid').style.display = metricsVisible ? 'grid' : 'none'
-  document.getElementById('toggle-metrics').textContent = metricsVisible ? '📊 masquer' : '📊 détails'
+  document.getElementById('toggle-metrics').textContent = metricsVisible ? t('antb.hide') : t('antb.details')
   if (metricsVisible) renderQualityMetrics(analysesData)
 }
 
@@ -3472,9 +3541,9 @@ function renderQualityMetrics(analyses) {
   const confs = {high:0,medium:0,low:0}
   analyses.forEach(a => { const c=a.confidence||'medium'; confs[c]=(confs[c]||0)+1 })
   document.getElementById('conf-circles').innerHTML = [
-    {k:'high',   label:'Haute',   color:'var(--green)',  sub:'Cause explicite dans les logs'},
-    {k:'medium', label:'Moyenne', color:'var(--amber)',  sub:'Inférée depuis le contexte'},
-    {k:'low',    label:'Faible',  color:'var(--text3)',  sub:'Hypothèse basée sur le pattern'},
+    {k:'high',   label:t('conf.high'),   color:'var(--green)',  sub:t('conf.highSub')},
+    {k:'medium', label:t('conf.medium'), color:'var(--amber)',  sub:t('conf.mediumSub')},
+    {k:'low',    label:t('conf.low'),    color:'var(--text3)',  sub:t('conf.lowSub')},
   ].map(({k,label,color,sub}) => `
     <div class="conf-circle">
       <div class="conf-dot" style="background:${color}"></div>
