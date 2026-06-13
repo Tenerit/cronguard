@@ -351,7 +351,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
   box-shadow:var(--shadow-lg);
 }
 .drawer.open{transform:translateX(0)}
-.d-head{padding:20px 20px 0;border-bottom:1px solid var(--border);flex-shrink:0}
+.d-head{padding:20px 20px 0;border-bottom:1px solid var(--border);flex-shrink:0;position:relative}
+.d-name{padding-right:38px}
 .d-name{
   font-family:var(--sans);font-size:15px;font-weight:700;
   color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:10px;
@@ -925,12 +926,40 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .pg-collapse[open]>summary::before{transform:rotate(90deg)}
 .pg-collapse>summary:hover{background:rgba(255,255,255,.03)}
 .pg-collapse .playground{margin:0;border:none;border-top:1px solid var(--border);border-radius:0;box-shadow:none}
+
+/* ─── A11y : focus visible au clavier ─────────────────────────────────────── */
+:focus-visible{outline:2px solid var(--green);outline-offset:2px;border-radius:4px}
+/* Souris : pas de halo, clavier : halo net */
+.m-row:focus-visible,.je:focus-visible{outline:2px solid var(--green);outline-offset:-2px}
+.s-item:focus-visible,.btn:focus-visible,.d-btn:focus-visible,.act-btn:focus-visible,
+.ab-chip:focus-visible,.quick-err-btn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.d-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:var(--radius-md);border:1px solid var(--border2);background:rgba(255,255,255,.03);color:var(--text2);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s ease;z-index:2}
+.d-close:hover{color:var(--text);background:var(--bg4);border-color:var(--border3)}
+
+/* ─── A11y : respect du mouvement réduit ──────────────────────────────────── */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important;scroll-behavior:auto!important;
+  }
+}
+
+/* ─── Skeletons de chargement ─────────────────────────────────────────────── */
+.skel{background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 37%,var(--bg3) 63%);background-size:400% 100%;animation:skel 1.4s ease infinite;border-radius:6px}
+@keyframes skel{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.skel-row{display:grid;grid-template-columns:14px 1fr 120px 64px 80px;gap:14px;align-items:center;padding:12px 18px;border-bottom:1px solid var(--border)}
+.skel-row .skel{height:10px}
+.skel-dot{width:8px;height:8px;border-radius:50%}
+.skel-le{display:grid;grid-template-columns:60px 36px 1fr;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.025)}
+.skel-le .skel{height:9px}
+@media (prefers-reduced-motion: reduce){.skel{animation:none;opacity:.6}}
 </style>
 </head>
 <body>
 
 <!-- Auth -->
-<div class="auth-overlay" id="auth-overlay">
+<div class="auth-overlay" id="auth-overlay" role="dialog" aria-modal="true" aria-label="CronGuard — connexion">
   <div class="auth-card">
     <div class="auth-logo"><div class="s-dot"></div> Cron<span>Guard</span></div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:20px;font-family:var(--mono)" data-i18n="auth.tagline">
@@ -956,8 +985,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 
 <!-- Drawer overlay -->
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
-<div class="drawer" id="drawer">
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-name">
   <div class="d-head">
+    <button class="d-close" onclick="closeDrawer()" data-i18n-aria="a11y.closeDrawer" aria-label="Fermer le panneau">✕</button>
     <div class="d-name" id="d-name">—</div>
     <div class="d-meta" id="d-meta"></div>
     <div class="d-actions" id="d-actions"></div>
@@ -966,9 +996,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 </div>
 
 <!-- Modal nouveau monitor -->
-<div class="modal-bg hidden" id="modal-bg">
+<div class="modal-bg hidden" id="modal-bg" role="dialog" aria-modal="true" aria-labelledby="modal-form-title">
   <div class="modal" id="modal-form">
-    <div class="modal-title" data-i18n="mod.new.title">nouveau service</div>
+    <div class="modal-title" id="modal-form-title" data-i18n="mod.new.title">nouveau service</div>
     <div class="modal-sub" data-i18n="mod.new.sub">Vous recevrez une ping_key à ajouter à la fin de votre script.</div>
     <div class="field">
       <label class="field-label"><span data-i18n="mod.new.name">Nom</span> *</label>
@@ -1027,9 +1057,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 </div>
 
 <!-- Edit modal (préremplit depuis le service sélectionné) -->
-<div class="modal-bg hidden" id="edit-modal-bg">
+<div class="modal-bg hidden" id="edit-modal-bg" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
   <div class="modal">
-    <div class="modal-title" data-i18n="mod.edit.title">modifier le service</div>
+    <div class="modal-title" id="edit-modal-title" data-i18n="mod.edit.title">modifier le service</div>
     <div class="modal-sub" id="edit-modal-name" style="font-family:var(--mono);color:var(--green)">—</div>
     <div class="field">
       <label class="field-label" data-i18n="mod.edit.name">Nom</label>
@@ -1077,9 +1107,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 </div>
 
 <!-- Modal invite équipe -->
-<div class="modal-bg hidden" id="invite-modal-bg">
+<div class="modal-bg hidden" id="invite-modal-bg" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title">
   <div class="modal">
-    <div class="modal-title" data-i18n="mod.inv.title">inviter un membre</div>
+    <div class="modal-title" id="invite-modal-title" data-i18n="mod.inv.title">inviter un membre</div>
     <div class="modal-sub" data-i18n="mod.inv.sub">Un lien d'acceptation sera généré. Aucun mot de passe — l'accès se fait par clé API.</div>
     <div class="field">
       <label class="field-label"><span data-i18n="mod.inv.email">Email</span> *</label>
@@ -1107,9 +1137,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 </div>
 
 <!-- Modal fenêtre maintenance -->
-<div class="modal-bg hidden" id="maint-modal-bg">
+<div class="modal-bg hidden" id="maint-modal-bg" role="dialog" aria-modal="true" aria-labelledby="maint-modal-title">
   <div class="modal">
-    <div class="modal-title" data-i18n="mod.mw.title">fenêtre de maintenance</div>
+    <div class="modal-title" id="maint-modal-title" data-i18n="mod.mw.title">fenêtre de maintenance</div>
     <div class="modal-sub" data-i18n="mod.mw.sub">Les alertes seront silencieuses pendant cette plage récurrente.</div>
     <div class="field">
       <label class="field-label" data-i18n="mod.mw.label">Libellé</label>
@@ -1186,16 +1216,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 
   <main class="main">
     <div class="topbar">
-      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-      <div class="topbar-title" id="page-title">dashboard</div>
+      <button class="mobile-menu-btn" onclick="toggleSidebar()" data-i18n-aria="a11y.menu" aria-label="Ouvrir le menu">☰</button>
+      <h1 class="topbar-title" id="page-title" style="margin:0;font-size:14px;font-weight:600">dashboard</h1>
       <div class="search-wrap">
-        <span class="search-icon">⌕</span>
-        <input class="search-input" id="search" data-i18n-ph="top.search" placeholder="filtrer les services..." oninput="filterMonitors()">
-        <span class="search-kbd">/</span>
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input class="search-input" id="search" type="search" data-i18n-ph="top.search" data-i18n-aria="a11y.search" aria-label="Filtrer les services" placeholder="filtrer les services..." oninput="filterMonitors()">
+        <span class="search-kbd" aria-hidden="true">/</span>
       </div>
       <div class="topbar-right">
-        <div class="live" id="live-indicator"><div class="live-dot"></div> <span id="live-ts">live</span></div>
-        <button class="btn btn-ghost" onclick="refreshAll()" data-i18n-title="top.refresh" title="Rafraîchir (R)">↻</button>
+        <div class="live" id="live-indicator" role="status" aria-live="polite"><div class="live-dot" aria-hidden="true"></div> <span id="live-ts">live</span></div>
+        <button class="btn btn-ghost" onclick="refreshAll()" data-i18n-title="top.refresh" data-i18n-aria="a11y.refresh" aria-label="Rafraîchir" title="Rafraîchir (R)">↻</button>
         <button class="btn btn-primary" onclick="openModal()" data-i18n="top.newMonitor">+ monitor</button>
       </div>
     </div>
@@ -1807,6 +1837,7 @@ const I18N = {
     'q.categories':'Catégories','q.confidence':'Confiance','q.resolution':'Résolution','q.avgMinutes':'minutes en moyenne','q.dataImpact':'Impact données',
     'antb.allSev':'toutes sévérités','antb.allCat':'toutes catégories','antb.search':'rechercher cause / service...','antb.details':'détails','antb.hide':'masquer',
     'conf.high':'Haute','conf.medium':'Moyenne','conf.low':'Faible','conf.highSub':'Cause explicite dans les logs','conf.mediumSub':'Inférée depuis le contexte','conf.lowSub':'Hypothèse basée sur le pattern',
+    'a11y.menu':'Ouvrir le menu','a11y.refresh':'Rafraîchir les données','a11y.search':'Filtrer les services','a11y.closeDrawer':'Fermer le panneau','a11y.closeModal':'Fermer la fenêtre',
     'lang.label':'Langue',
   },
   en: {
@@ -1914,6 +1945,7 @@ const I18N = {
     'q.categories':'Categories','q.confidence':'Confidence','q.resolution':'Resolution','q.avgMinutes':'avg minutes','q.dataImpact':'Data impact',
     'antb.allSev':'all severities','antb.allCat':'all categories','antb.search':'search cause / service...','antb.details':'details','antb.hide':'hide',
     'conf.high':'High','conf.medium':'Medium','conf.low':'Low','conf.highSub':'Cause explicit in the logs','conf.mediumSub':'Inferred from context','conf.lowSub':'Hypothesis based on the pattern',
+    'a11y.menu':'Open menu','a11y.refresh':'Refresh data','a11y.search':'Filter services','a11y.closeDrawer':'Close panel','a11y.closeModal':'Close dialog',
     'lang.label':'Language',
   },
 }
@@ -1924,6 +1956,7 @@ function applyI18n(root = document) {
   root.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')) })
   root.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')) })
   root.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = t(el.getAttribute('data-i18n-title')) })
+  root.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria'))) })
   const pt = document.getElementById('page-title')
   if (pt && typeof currentView !== 'undefined') pt.textContent = t('title.' + currentView)
   document.documentElement.lang = LANG
@@ -2054,11 +2087,33 @@ async function boot() {
   document.getElementById('auth-overlay').style.display = 'none'
   document.getElementById('app').style.display = 'grid'
   updateDocUrls()
+  showSkeletons()
   fetch(BASE_URL+'/health').then(r=>r.json()).then(h=>{ if(h.model) window._activeModel=h.model }).catch(()=>{})
   await refreshAll()
   loadClientInfo()
   loadImpact()
   timer = setInterval(refreshAll, 15000)
+}
+
+// ─── Skeletons de chargement (premier rendu) ─────────────────────────────────
+function showSkeletons() {
+  const rows = (n) => Array.from({length:n}, () => `
+    <div class="skel-row" aria-hidden="true">
+      <div class="skel skel-dot"></div>
+      <div class="skel" style="width:60%"></div>
+      <div class="skel" style="width:80%"></div>
+      <div class="skel" style="width:70%"></div>
+      <div class="skel" style="width:60%"></div>
+    </div>`).join('')
+  const logs = (n) => Array.from({length:n}, () => `
+    <div class="skel-le" aria-hidden="true">
+      <div class="skel"></div><div class="skel"></div><div class="skel" style="width:70%"></div>
+    </div>`).join('')
+  const set = (id, html) => { const el = document.getElementById(id); if (el && el.querySelector('.empty')) el.innerHTML = html }
+  set('monitors-list', rows(4))
+  set('monitors-list-full', rows(6))
+  set('log-body', logs(6))
+  set('log-body-full', logs(8))
 }
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -2316,27 +2371,29 @@ function renderMonitors(target) {
     // Pending analysis indicator
     const isPending = pendingAnalysis.has(m.id)
     const pendingHtml = isPending ? `<span class="pending-spin" title="${t('pending')}"></span>` : ''
-    return `<div class="m-row${isActive}" onclick="openDrawer('${m.id}')">
-      <div class="m-dot ${dotCls}"></div>
+    const rowLabel = `${esc(m.name)}, ${m.env}, ${pillTxt}`
+    return `<div class="m-row${isActive}" role="button" tabindex="0" aria-label="${rowLabel}"
+      onclick="openDrawer('${m.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
+      <div class="m-dot ${dotCls}" aria-hidden="true"></div>
       <div>
         <div class="m-name">${esc(m.name)} ${pendingHtml}</div>
         <div class="m-env ${envCls}">${m.env} · ${lastPing}</div>
       </div>
-      <div class="m-spark">${spark||'<div style="color:var(--text3);font-size:9px">—</div>'}</div>
+      <div class="m-spark" aria-hidden="true">${spark||'<div style="color:var(--text3);font-size:9px">—</div>'}</div>
       <div class="m-dur ${durAnom?'m-dur-anom':''}">
         ${durTxt}
-        <div class="health-ring" style="margin-top:2px">
+        <div class="health-ring" style="margin-top:2px" title="health ${score}/100">
           <div class="health-bar"><div class="health-fill" style="width:${score}%;background:${hColor}"></div></div>
           <span style="color:${hColor}">${score}</span>
         </div>
       </div>
       <div class="m-status"><span class="pill ${pillCls}">${pillTxt}</span></div>
-      <div class="m-actions">
-        <button class="act-btn" onclick="event.stopPropagation();openEditModal(${JSON.stringify(m).replace(/"/g,'&quot;')})" title="${t('row.edit')}">edit</button>
-        <button class="act-btn" onclick="event.stopPropagation();ackMonitor('${m.id}')" title="${t('row.ack')}">ack</button>
-        <button class="act-btn" onclick="event.stopPropagation();snoozeMonitor('${m.id}')" title="${t('row.snooze')}">snooze</button>
-        <button class="act-btn" onclick="event.stopPropagation();copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')" title="${t('row.copyKey')}">key</button>
-        <button class="act-btn red" onclick="event.stopPropagation();confirmDelete('${m.id}','${esc(m.name)}')" title="${t('row.delete')}">del</button>
+      <div class="m-actions" role="group" aria-label="${esc(m.name)} actions">
+        <button class="act-btn" onclick="event.stopPropagation();openEditModal(${JSON.stringify(m).replace(/"/g,'&quot;')})" aria-label="${t('row.edit')}" title="${t('row.edit')}">edit</button>
+        <button class="act-btn" onclick="event.stopPropagation();ackMonitor('${m.id}')" aria-label="${t('row.ack')}" title="${t('row.ack')}">ack</button>
+        <button class="act-btn" onclick="event.stopPropagation();snoozeMonitor('${m.id}')" aria-label="${t('row.snooze')}" title="${t('row.snooze')}">snooze</button>
+        <button class="act-btn" onclick="event.stopPropagation();copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')" aria-label="${t('row.copyKey')}" title="${t('row.copyKey')}">key</button>
+        <button class="act-btn red" onclick="event.stopPropagation();confirmDelete('${m.id}','${esc(m.name)}')" aria-label="${t('row.delete')}" title="${t('row.delete')}">del</button>
       </div>
     </div>`
   }).join('')
@@ -2390,7 +2447,9 @@ function renderJournal() {
     if (l.exit_code != null) meta.push(`exit <b>${l.exit_code}</b>`)
     const ai    = isAI ? '<span class="je-ai">IA</span>' : ''
     const rCls  = isFail ? 'je-r-fail' : isLate ? 'je-r-late' : 'je-r-ok'
-    const click = l.monitor_id ? `onclick="openDrawer('${l.monitor_id}')"` : ''
+    const click = l.monitor_id
+      ? `role="button" tabindex="0" aria-label="${esc(l.monitor_name)} ${sTxt}" onclick="openDrawer('${l.monitor_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"`
+      : ''
     return `<div class="je ${rCls}" ${click}>
       <span class="je-time">${t}</span>
       <span class="je-status ${sCls}">${sTxt}</span>
@@ -2924,8 +2983,13 @@ document.addEventListener('keydown', e => {
   if (e.key==='r'||e.key==='R') { e.preventDefault(); refreshAll(); toast(t('toast.refreshed'),'ok') }
   if (e.key==='/'){ e.preventDefault(); document.getElementById('search').focus() }
   if (e.key==='Escape') {
-    if (document.getElementById('drawer').classList.contains('open')) closeDrawer()
+    const delC = document.getElementById('del-confirm')
+    if (delC) delC.remove()
+    else if (document.getElementById('drawer').classList.contains('open')) closeDrawer()
     else if (!document.getElementById('modal-bg').classList.contains('hidden')) closeModal()
+    else if (!document.getElementById('edit-modal-bg').classList.contains('hidden')) closeEditModal()
+    else if (!document.getElementById('invite-modal-bg').classList.contains('hidden')) closeInviteModal()
+    else if (!document.getElementById('maint-modal-bg').classList.contains('hidden')) closeMaintenanceModal()
   }
   if (e.key==='1') setView('dashboard')
   if (e.key==='2') setView('monitors')
@@ -3578,6 +3642,15 @@ function updateDocUrls() {
 
 // Traduit le chrome statique (auth overlay + sidebar + settings + modals) au chargement
 applyI18n()
+
+// A11y : rend les items de navigation (div onclick) opérables au clavier
+document.querySelectorAll('.s-item').forEach(el => {
+  el.setAttribute('tabindex', '0')
+  el.setAttribute('role', 'button')
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click() }
+  })
+})
 
 if (API_KEY) {
   document.getElementById('auth-key').value = API_KEY
