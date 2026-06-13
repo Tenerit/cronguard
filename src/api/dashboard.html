@@ -954,7 +954,48 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .skel-le{display:grid;grid-template-columns:60px 36px 1fr;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.025)}
 .skel-le .skel{height:9px}
 @media (prefers-reduced-motion: reduce){.skel{animation:none;opacity:.6}}
+
+/* ─── Thème clair ─────────────────────────────────────────────────────────── */
+:root[data-theme="light"]{
+  --bg:#f7f8fc; --bg2:#ffffff; --bg3:#eef1f7; --bg4:#e2e6f0; --bg-card:#ffffff;
+  --border:rgba(16,24,40,.10); --border2:rgba(16,24,40,.16); --border3:rgba(16,24,40,.26);
+  --text:#181b2c; --text2:#444b60; --text3:#5d6478;
+  --green:#059669; --green-dim:rgba(5,150,105,.10); --green-mid:rgba(5,150,105,.22);
+  --amber:#b45309; --amber-dim:rgba(180,83,9,.10);
+  --red:#dc2626; --red-dim:rgba(220,38,38,.10);
+  --blue:#2563eb; --blue-dim:rgba(37,99,235,.10);
+  --purple:#7c3aed; --purple-dim:rgba(124,58,237,.10);
+  --indigo:#4f46e5;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --shadow-md:0 4px 10px rgba(16,24,40,.08),0 2px 4px rgba(16,24,40,.06);
+  --shadow-lg:0 12px 28px rgba(16,24,40,.14),0 4px 8px rgba(16,24,40,.08);
+  --shadow-glow-green:none; --shadow-glow-red:none;
+}
+/* Surfaces avec couleurs codées en dur → équivalents clairs */
+[data-theme="light"] .sidebar{background:linear-gradient(180deg,#ffffff 0%,#f4f6fb 100%)}
+[data-theme="light"] .s-logo-mark{color:#181b2c}
+[data-theme="light"] .topbar{background:rgba(247,248,252,.85)}
+[data-theme="light"] .drawer{background:linear-gradient(180deg,#ffffff 0%,#f6f7fb 100%)}
+[data-theme="light"] .modal{background:linear-gradient(180deg,#ffffff 0%,#f7f8fc 100%)}
+[data-theme="light"] .auth-card{background:linear-gradient(180deg,#ffffff 0%,#f6f7fb 100%)}
+[data-theme="light"] .auth-logo{color:#181b2c}
+[data-theme="light"] .auth-overlay{
+  background:radial-gradient(ellipse at 30% 20%,rgba(5,150,105,.07) 0%,transparent 50%),
+             radial-gradient(ellipse at 70% 80%,rgba(124,58,237,.05) 0%,transparent 50%),var(--bg);
+}
+[data-theme="light"] .btn-primary{color:#ffffff}
+[data-theme="light"] .stat-ok .stat-val,[data-theme="light"] .stat-fail .stat-val{text-shadow:none}
+[data-theme="light"] .s-item.active{box-shadow:inset 3px 0 0 var(--green)}
+[data-theme="light"] ::-webkit-scrollbar-thumb{background:var(--border3)}
+
+/* ─── Bouton thème ────────────────────────────────────────────────────────── */
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--radius-md);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:14px;transition:all .15s ease}
+.theme-toggle:hover{color:var(--text);background:var(--bg3);border-color:var(--border3)}
 </style>
+<script>
+/* Applique le thème avant le rendu pour éviter tout flash (FOUC) */
+try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',_th)}catch(e){}
+</script>
 </head>
 <body>
 
@@ -1225,6 +1266,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
       </div>
       <div class="topbar-right">
         <div class="live" id="live-indicator" role="status" aria-live="polite"><div class="live-dot" aria-hidden="true"></div> <span id="live-ts">live</span></div>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème">☀</button>
         <button class="btn btn-ghost" onclick="refreshAll()" data-i18n-title="top.refresh" data-i18n-aria="a11y.refresh" aria-label="Rafraîchir" title="Rafraîchir (R)">↻</button>
         <button class="btn btn-primary" onclick="openModal()" data-i18n="top.newMonitor">+ monitor</button>
       </div>
@@ -1779,7 +1821,7 @@ const I18N = {
     'empty.mon.createFirst':'+ Créer mon premier service','empty.mon.seeDocs':'Voir la documentation →',
     'empty.mon.s1t':'1. Créer','empty.mon.s1d':'Obtenez une ping_key unique','empty.mon.s2t':'2. Intégrer','empty.mon.s2d':'curl -X POST /ping/KEY','empty.mon.s3t':'3. Recevoir','empty.mon.s3d':'Alerte + analyse IA auto',
     'empty.an.intro':'L\'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :','empty.an.cta':'Tester l\'analyse IA maintenant →',
-    'empty.alerts':'aucune alerte active','empty.noResult':'aucun résultat pour',
+    'empty.alerts':'aucune alerte active','empty.noResult':'aucun résultat pour','empty.activity':'aucune activité',
     'pg.title':'Playground IA','pg.sub':'Testez l\'analyse LLM en temps réel sur n\'importe quels logs de cron job.',
     'pg.scenarios':'Scénarios prédéfinis :','pg.jobName':'Nom du job','pg.env':'Environnement','pg.exitCode':'Code de sortie',
     'pg.logsLabel':'Logs d\'erreur','pg.logsPh':'Collez ici les logs d\'erreur de votre cron job...','pg.analyze':'Analyser maintenant','pg.clear':'Effacer','pg.testCta':'Tester le LLM en direct →',
@@ -1792,7 +1834,7 @@ const I18N = {
     'mttr.downtime':'Indispo. totale','mttr.downtimeSub':'cumulée sur 30 jours','mttr.dataLoss':'Perte de données','mttr.dataLossSub':'impact confirmé',
     'ansum.analyses':'analyses','ansum.analysesSub':'total récent','ansum.todo':'à traiter','ansum.todoSub':'high + critical',
     'ansum.topCat':'catégorie n°1','ansum.cases':'cas','ansum.resolution':'résolution','ansum.resolutionSub':'min en moyenne',
-    'an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres',
+    'an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
     'impact.none':'Aucun incident résolu sur les 30 derniers jours.','impact.recurring':'Récurrents','impact.header':'Impact · 30 derniers jours',
     'impact.incidents':'incidents','impact.affected':'service(s) touché(s)','impact.mttr':'MTTR moyen','impact.mttrSub':'temps de rétablissement',
     'impact.downtime':'indispo. totale','impact.downtimeSub':'cumulée','impact.dataLoss':'perte de données','impact.dataLossSub':'impact confirmé',
@@ -1838,6 +1880,7 @@ const I18N = {
     'antb.allSev':'toutes sévérités','antb.allCat':'toutes catégories','antb.search':'rechercher cause / service...','antb.details':'détails','antb.hide':'masquer',
     'conf.high':'Haute','conf.medium':'Moyenne','conf.low':'Faible','conf.highSub':'Cause explicite dans les logs','conf.mediumSub':'Inférée depuis le contexte','conf.lowSub':'Hypothèse basée sur le pattern',
     'a11y.menu':'Ouvrir le menu','a11y.refresh':'Rafraîchir les données','a11y.search':'Filtrer les services','a11y.closeDrawer':'Fermer le panneau','a11y.closeModal':'Fermer la fenêtre',
+    'a11y.themeLight':'Passer en thème clair','a11y.themeDark':'Passer en thème sombre',
     'lang.label':'Langue',
   },
   en: {
@@ -1887,7 +1930,7 @@ const I18N = {
     'empty.mon.createFirst':'+ Create my first service','empty.mon.seeDocs':'See documentation →',
     'empty.mon.s1t':'1. Create','empty.mon.s1d':'Get a unique ping_key','empty.mon.s2t':'2. Integrate','empty.mon.s2d':'curl -X POST /ping/KEY','empty.mon.s3t':'3. Receive','empty.mon.s3d':'Alert + auto AI analysis',
     'empty.an.intro':'The AI automatically analyzes every cron job failure. Here is an example of what you will receive:','empty.an.cta':'Test the AI analysis now →',
-    'empty.alerts':'no active alerts','empty.noResult':'no result for',
+    'empty.alerts':'no active alerts','empty.noResult':'no result for','empty.activity':'no activity',
     'pg.title':'AI Playground','pg.sub':'Test the LLM analysis in real time on any cron job logs.',
     'pg.scenarios':'Preset scenarios:','pg.jobName':'Job name','pg.env':'Environment','pg.exitCode':'Exit code',
     'pg.logsLabel':'Error logs','pg.logsPh':'Paste your cron job error logs here...','pg.analyze':'Analyze now','pg.clear':'Clear','pg.testCta':'Test the LLM live →',
@@ -1900,7 +1943,7 @@ const I18N = {
     'mttr.downtime':'Total downtime','mttr.downtimeSub':'over 30 days','mttr.dataLoss':'Data loss','mttr.dataLossSub':'confirmed impact',
     'ansum.analyses':'analyses','ansum.analysesSub':'recent total','ansum.todo':'to handle','ansum.todoSub':'high + critical',
     'ansum.topCat':'top category','ansum.cases':'cases','ansum.resolution':'resolution','ansum.resolutionSub':'avg minutes',
-    'an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters',
+    'an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
     'impact.none':'No incident resolved in the last 30 days.','impact.recurring':'Recurring','impact.header':'Impact · last 30 days',
     'impact.incidents':'incidents','impact.affected':'service(s) affected','impact.mttr':'avg MTTR','impact.mttrSub':'time to recovery',
     'impact.downtime':'total downtime','impact.downtimeSub':'cumulative','impact.dataLoss':'data loss','impact.dataLossSub':'confirmed impact',
@@ -1946,6 +1989,7 @@ const I18N = {
     'antb.allSev':'all severities','antb.allCat':'all categories','antb.search':'search cause / service...','antb.details':'details','antb.hide':'hide',
     'conf.high':'High','conf.medium':'Medium','conf.low':'Low','conf.highSub':'Cause explicit in the logs','conf.mediumSub':'Inferred from context','conf.lowSub':'Hypothesis based on the pattern',
     'a11y.menu':'Open menu','a11y.refresh':'Refresh data','a11y.search':'Filter services','a11y.closeDrawer':'Close panel','a11y.closeModal':'Close dialog',
+    'a11y.themeLight':'Switch to light theme','a11y.themeDark':'Switch to dark theme',
     'lang.label':'Language',
   },
 }
@@ -1965,6 +2009,24 @@ function setLang(val) {
   if (val) localStorage.setItem('cg_lang', val)
   else     localStorage.removeItem('cg_lang')
   location.reload()   // re-rend tout le chrome + les vues dynamiques proprement
+}
+
+// ─── Thème clair / sombre ─────────────────────────────────────────────────────
+let THEME = localStorage.getItem('cg_theme')
+  || (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', THEME)
+  const b = document.getElementById('theme-toggle')
+  if (b) {
+    b.textContent = THEME === 'light' ? '☾' : '☀'
+    b.setAttribute('aria-label', THEME === 'light' ? t('a11y.themeDark') : t('a11y.themeLight'))
+    b.title = b.getAttribute('aria-label')
+  }
+}
+function toggleTheme() {
+  THEME = THEME === 'light' ? 'dark' : 'light'
+  localStorage.setItem('cg_theme', THEME)
+  applyTheme()
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -2404,7 +2466,7 @@ function renderLogs(target) {
   // Panneau latéral du dashboard : version compacte
   const el = document.getElementById('log-body')
   if (!el) return
-  if (!logsData.length) { el.innerHTML = '<div class="empty">aucune activité</div>'; return }
+  if (!logsData.length) { el.innerHTML = `<div class="empty">${t('empty.activity')}</div>`; return }
   el.innerHTML = logsData.slice(0, 40).map(l => {
     const fail = l.status==='fail'||l.status==='failed'
     const isAI = !!l.diagnosis
@@ -2433,14 +2495,14 @@ function renderJournal() {
   })
   const cnt = document.getElementById('log-count')
   if (cnt) cnt.textContent = `${list.length}${list.length !== logsData.length ? '/'+logsData.length : ''}`
-  if (!list.length) { el.innerHTML = '<div class="empty">aucune activité</div>'; return }
+  if (!list.length) { el.innerHTML = `<div class="empty">${t('empty.activity')}</div>`; return }
   el.innerHTML = list.map(l => {
     const isFail = l.status==='fail'||l.status==='failed'
     const isLate = l.status==='late'
     const isAI   = !!l.diagnosis
     const sCls   = isFail ? 'je-s-fail' : isLate ? 'je-s-late' : 'je-s-ok'
-    const sTxt   = isFail ? 'échec' : isLate ? 'retard' : 'ok'
-    const t      = l.pinged_at ? fmtTime(l.pinged_at) : '—'
+    const sTxt   = isFail ? t('pill.failed') : isLate ? t('pill.late') : t('pill.ok')
+    const ts     = l.pinged_at ? fmtTime(l.pinged_at) : '—'
     const meta   = []
     if (l.duration_ms)    meta.push(`<b>${fmtDur(l.duration_ms)}</b>`)
     if (l.records != null) meta.push(`<b>${l.records}</b> rec`)
@@ -2451,7 +2513,7 @@ function renderJournal() {
       ? `role="button" tabindex="0" aria-label="${esc(l.monitor_name)} ${sTxt}" onclick="openDrawer('${l.monitor_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"`
       : ''
     return `<div class="je ${rCls}" ${click}>
-      <span class="je-time">${t}</span>
+      <span class="je-time">${ts}</span>
       <span class="je-status ${sCls}">${sTxt}</span>
       <span class="je-name"><span class="je-n">${esc(l.monitor_name)}</span>${l.env?`<span class="je-env">${esc(l.env)}</span>`:''}</span>
       <span class="je-meta">${meta.join(' · ')} ${ai}</span>
@@ -2537,7 +2599,11 @@ function renderAnalyses() {
     </div>`
     return
   }
-  if (!list.length) { el.innerHTML = `<div class="empty">${t('an.none')}</div>`; return }
+  if (!list.length) {
+    el.innerHTML = `<div class="empty">${t('an.none')}<br>
+      <button class="btn btn-ghost" onclick="resetAnFilters()" style="margin-top:12px">↺ ${t('an.reset')}</button></div>`
+    return
+  }
 
   el.innerHTML = list.map((a, i) => {
     const d          = typeof a.diagnosis==='string' ? parse(a.diagnosis) : a.diagnosis
@@ -2549,7 +2615,7 @@ function renderAnalyses() {
     const sev        = d?.severity   || a.severity   || 'medium'
     const impact     = a.data_impact || 'none'
     const fixMins    = a.fix_minutes || null
-    const t          = a.created_at  ? fmtTime(a.created_at) : '—'
+    const ts         = a.created_at  ? fmtTime(a.created_at) : '—'
     const cache      = a.from_cache  ? '<span class="ai-pill">cache</span>' : ''
     const type       = a.alert_type==='timeout' ? '⏱' : a.alert_type==='slow' ? '🐢' : '✕'
 
@@ -2595,7 +2661,7 @@ function renderAnalyses() {
         <div class="an-meta">
           <span class="an-confidence conf-${confidence}">${confidence}</span>
           <span class="sev-pill sev-${sev}">${sev}</span>
-          <span class="an-time">${t} · ${a.model_used||'llama3.2:3b'}</span>
+          <span class="an-time">${ts} · ${a.model_used||'llama3.2:3b'}</span>
         </div>
       </div>
 
@@ -2943,6 +3009,17 @@ function filterMonitors() {
 function clearAnFilter() {
   anLocked = false; anMonitor = null
   document.getElementById('an-filter-badge').style.display='none'
+  loadAnalyses()
+}
+
+// Réinitialise tous les filtres analyses (sévérité, catégorie, recherche, verrou monitor)
+function resetAnFilters() {
+  anSevFilter = 'all'; anCatFilter = 'all'; anSearch = ''
+  const sev = document.getElementById('an-sev'); if (sev) sev.value = 'all'
+  const cat = document.getElementById('an-cat'); if (cat) cat.value = 'all'
+  const search = document.getElementById('an-search'); if (search) search.value = ''
+  anLocked = false; anMonitor = null
+  document.getElementById('an-filter-badge').style.display = 'none'
   loadAnalyses()
 }
 
@@ -3642,6 +3719,7 @@ function updateDocUrls() {
 
 // Traduit le chrome statique (auth overlay + sidebar + settings + modals) au chargement
 applyI18n()
+applyTheme()
 
 // A11y : rend les items de navigation (div onclick) opérables au clavier
 document.querySelectorAll('.s-item').forEach(el => {
