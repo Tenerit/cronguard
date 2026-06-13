@@ -3730,6 +3730,49 @@ document.querySelectorAll('.s-item').forEach(el => {
   })
 })
 
+// ─── A11y : focus-trap générique pour dialogs ─────────────────────────────────
+// Réagit aux toggles existants (.hidden / .open / display) sans toucher open/close.
+let _trapped = null, _lastFocus = null
+function _focusables(el) {
+  return [...el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(e => e.offsetParent !== null)
+}
+function _visibleDialog() {
+  const del = document.getElementById('del-confirm'); if (del) return del
+  const dr = document.getElementById('drawer'); if (dr && dr.classList.contains('open')) return dr
+  const mb = [...document.querySelectorAll('.modal-bg')].find(m => !m.classList.contains('hidden')); if (mb) return mb
+  const auth = document.getElementById('auth-overlay'); if (auth && getComputedStyle(auth).display !== 'none') return auth
+  return null
+}
+function _syncFocusTrap() {
+  const d = _visibleDialog()
+  if (d === _trapped) return
+  if (!_trapped && d) _lastFocus = document.activeElement   // mémorise le déclencheur
+  _trapped = d
+  if (d) {
+    const f = _focusables(d)
+    if (f.length) setTimeout(() => { if (_trapped === d && !d.contains(document.activeElement)) f[0].focus() }, 30)
+  } else if (_lastFocus && _lastFocus.focus && document.contains(_lastFocus)) {
+    try { _lastFocus.focus() } catch (e) {}
+    _lastFocus = null
+  }
+}
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab' || !_trapped) return
+  const f = _focusables(_trapped); if (!f.length) return
+  const first = f[0], last = f[f.length - 1]
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+  else if (!_trapped.contains(document.activeElement)) { e.preventDefault(); first.focus() }
+})
+const _trapObs = new MutationObserver(_syncFocusTrap)
+;['drawer','modal-bg','edit-modal-bg','invite-modal-bg','maint-modal-bg','auth-overlay'].forEach(id => {
+  const el = document.getElementById(id)
+  if (el) _trapObs.observe(el, { attributes: true, attributeFilter: ['class','style'] })
+})
+_trapObs.observe(document.body, { childList: true })   // del-confirm créé/retiré dynamiquement
+_syncFocusTrap()
+
 if (API_KEY) {
   document.getElementById('auth-key').value = API_KEY
   document.getElementById('auth-url').value = BASE_URL
