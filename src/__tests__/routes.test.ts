@@ -70,7 +70,7 @@ function buildPingApp() {
 function buildAuthApp(router: express.Router) {
   const app = express()
   app.use(express.json())
-  app.use((req, res, next) => { res.locals.clientId = CLIENT_ID; next() })
+  app.use((req, res, next) => { res.locals.clientId = CLIENT_ID; res.locals.role = 'owner'; next() })
   app.use('/', router)
   // Global error handler
   app.use((err: Error, req: express.Request, res: express.Response, _: express.NextFunction) => {

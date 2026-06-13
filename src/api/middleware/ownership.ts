@@ -1,5 +1,18 @@
 import { Request, Response, NextFunction } from 'express'
 import { db } from '../../db'
+import { hasRole, Role } from './auth'
+
+// requireRole — bloque si le rôle du caller est insuffisant.
+// À placer après requireApiKey.
+export function requireRole(minimum: Role) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const role = (res.locals.role ?? 'viewer') as Role
+    if (!hasRole(role, minimum)) {
+      return res.status(403).json({ error: 'Insufficient permissions', required: minimum, actual: role })
+    }
+    next()
+  }
+}
 
 // ─── ownsMonitor ─────────────────────────────────────────────────────────────
 // Vérifie que le monitor :id appartient au client authentifié.

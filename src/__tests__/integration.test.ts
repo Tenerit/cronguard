@@ -156,6 +156,32 @@ beforeAll(async () => {
   `)
 
   await pgPool.query(`
+    CREATE TABLE team_members (
+      id          TEXT PRIMARY KEY,
+      client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,
+      email       TEXT NOT NULL,
+      role        TEXT NOT NULL DEFAULT 'member',
+      api_key     TEXT UNIQUE NOT NULL,
+      invited_by  TEXT,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+
+  await pgPool.query(`
+    CREATE TABLE invitations (
+      id          TEXT PRIMARY KEY,
+      client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,
+      email       TEXT NOT NULL,
+      role        TEXT NOT NULL DEFAULT 'member',
+      token       TEXT UNIQUE NOT NULL,
+      expires_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      accepted_at TIMESTAMPTZ,
+      invited_by  TEXT,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+
+  await pgPool.query(`
     CREATE TABLE audit_logs (
       id          TEXT PRIMARY KEY,
       client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,

@@ -84,6 +84,7 @@ function buildApp() {
   app.use((req, res, next) => {
     res.locals.clientId = CLIENT_ID
     res.locals.plan     = 'pro'
+    res.locals.role     = 'owner'
     next()
   })
   app.use('/', monitorsRouter)
@@ -168,7 +169,7 @@ describe('POST /monitors', () => {
   it('blocks free plan above 3 monitors limit', async () => {
     const freeApp = express()
     freeApp.use(express.json())
-    freeApp.use((req, res, next) => { res.locals.clientId = CLIENT_ID; res.locals.plan = 'free'; next() })
+    freeApp.use((req, res, next) => { res.locals.clientId = CLIENT_ID; res.locals.plan = 'free'; res.locals.role = 'owner'; next() })
     freeApp.use('/', monitorsRouter)
 
     // Mock: already 3 monitors

@@ -18,7 +18,7 @@ const CLIENT_ID = 'cli-test-overview'
 function buildApp() {
   const app = express()
   app.use(express.json())
-  app.use((req, res, next) => { res.locals.clientId = CLIENT_ID; res.locals.plan = 'free'; next() })
+  app.use((req, res, next) => { res.locals.clientId = CLIENT_ID; res.locals.plan = 'free'; res.locals.role = 'owner'; next() })
   app.use('/dashboard', dashboardRouter)
   app.use('/clients',   clientsRouter)
   app.use((err: Error, _req: any, res: any, _next: any) =>

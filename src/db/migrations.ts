@@ -274,6 +274,44 @@ async function v11(client: {query(sql: string, params?: unknown[]): Promise<unkn
   `)
 }
 
+// ─── V12 : RBAC / multi-équipe ───────────────────────────────────────────────
+
+async function v12(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  // Membres invités d'une équipe — clé API personnelle + rôle
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS team_members (
+      id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      client_id   UUID REFERENCES clients(id) ON DELETE CASCADE,
+      email       TEXT NOT NULL,
+      role        TEXT NOT NULL DEFAULT 'member'
+                    CHECK (role IN ('owner','admin','member','viewer')),
+      api_key     TEXT UNIQUE NOT NULL DEFAULT gen_random_uuid()::text,
+      invited_by  TEXT,
+      created_at  TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (client_id, email)
+    )
+  `)
+
+  // Invitations en attente
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS invitations (
+      id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      client_id   UUID REFERENCES clients(id) ON DELETE CASCADE,
+      email       TEXT NOT NULL,
+      role        TEXT NOT NULL DEFAULT 'member'
+                    CHECK (role IN ('admin','member','viewer')),
+      token       TEXT UNIQUE NOT NULL DEFAULT gen_random_uuid()::text,
+      expires_at  TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '7 days',
+      accepted_at TIMESTAMPTZ,
+      invited_by  TEXT,
+      created_at  TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_invitations_token  ON invitations(token)`)
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_team_members_key   ON team_members(api_key)`)
+}
+
 export async function runMigrations() {
   const client = await db.connect()
   try {
@@ -289,8 +327,9 @@ export async function runMigrations() {
     await v9(client)
     await v10(client)
     await v11(client)
+    await v12(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v11)')
+    logger.info('[DB] Migrations terminées (v1 → v12)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

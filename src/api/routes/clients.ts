@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { z }      from 'zod'
 import { db }     from '../../db'
 import { asyncHandler } from '../middleware/async-handler'
+import { requireRole }  from '../middleware/ownership'
 
 export const clientsRouter = Router()
 
@@ -16,7 +17,7 @@ clientsRouter.get('/me', asyncHandler(async (req, res) => {
   res.json(client)
 }))
 
-clientsRouter.patch('/settings', asyncHandler(async (req, res) => {
+clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, res) => {
   const Schema = z.object({
     slack_webhook:          z.string().url().optional().or(z.literal('')),
     webhook_url:            z.string().url().optional().or(z.literal('')),

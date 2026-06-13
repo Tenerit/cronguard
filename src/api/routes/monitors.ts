@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { z }      from 'zod'
 import { db }     from '../../db'
-import { ownsMonitor }                   from '../middleware/ownership'
+import { ownsMonitor, requireRole }       from '../middleware/ownership'
 import { asyncHandler }                  from '../middleware/async-handler'
 import { audit }                         from '../middleware/audit'
 import { acknowledgeAlert, snoozeAlert } from '../../services/alerts/dedup'
@@ -60,7 +60,7 @@ monitorsRouter.get('/:id', ownsMonitor, asyncHandler(async (req, res) => {
 
 // ─── POST /monitors ───────────────────────────────────────────────────────────
 
-monitorsRouter.post('/', asyncHandler(async (req, res) => {
+monitorsRouter.post('/', requireRole('admin'), asyncHandler(async (req, res) => {
   if (res.locals.plan === 'free') {
     const { rows } = await db.query(
       `SELECT COUNT(*) FROM monitors WHERE client_id = $1 AND active = true`,
@@ -85,7 +85,7 @@ monitorsRouter.post('/', asyncHandler(async (req, res) => {
 
 // ─── PATCH /monitors/:id ──────────────────────────────────────────────────────
 
-monitorsRouter.patch('/:id', ownsMonitor, asyncHandler(async (req, res) => {
+monitorsRouter.patch('/:id', requireRole('admin'), ownsMonitor, asyncHandler(async (req, res) => {
   const UpdateSchema = MonitorSchema.partial().extend({ active: z.boolean().optional() })
   const parsed = UpdateSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
@@ -105,7 +105,7 @@ monitorsRouter.patch('/:id', ownsMonitor, asyncHandler(async (req, res) => {
 
 // ─── DELETE /monitors/:id ─────────────────────────────────────────────────────
 
-monitorsRouter.delete('/:id', ownsMonitor, asyncHandler(async (req, res) => {
+monitorsRouter.delete('/:id', requireRole('admin'), ownsMonitor, asyncHandler(async (req, res) => {
   await db.query(`DELETE FROM monitors WHERE id = $1`, [req.params.id])
   res.json({ ok: true })
 }))
@@ -145,14 +145,14 @@ monitorsRouter.get('/:id/analyses', ownsMonitor, asyncHandler(async (req, res) =
 
 // ─── POST /monitors/:id/acknowledge ──────────────────────────────────────────
 
-monitorsRouter.post('/:id/acknowledge', ownsMonitor, asyncHandler(async (req, res) => {
+monitorsRouter.post('/:id/acknowledge', requireRole('member'), ownsMonitor, asyncHandler(async (req, res) => {
   await acknowledgeAlert(req.params.id)
   res.json({ ok: true, status: 'acknowledged' })
 }))
 
 // ─── POST /monitors/:id/snooze ────────────────────────────────────────────────
 
-monitorsRouter.post('/:id/snooze', ownsMonitor, asyncHandler(async (req, res) => {
+monitorsRouter.post('/:id/snooze', requireRole('member'), ownsMonitor, asyncHandler(async (req, res) => {
   const minutes = Math.min(Math.max(parseInt(req.body?.minutes ?? '60'), 5), 1440)
   await snoozeAlert(req.params.id, minutes)
   res.json({ ok: true, status: 'snoozed', minutes, until: new Date(Date.now() + minutes * 60000) })
@@ -161,7 +161,7 @@ monitorsRouter.post('/:id/snooze', ownsMonitor, asyncHandler(async (req, res) =>
 
 // ─── POST /monitors/:id/pause — pause temporaire (maintenance) ────────────────
 
-monitorsRouter.post('/:id/pause', ownsMonitor, asyncHandler(async (req, res) => {
+monitorsRouter.post('/:id/pause', requireRole('admin'), ownsMonitor, asyncHandler(async (req, res) => {
   const minutes = Math.min(Math.max(parseInt(req.body?.minutes ?? '60'), 1), 1440)
   const until   = new Date(Date.now() + minutes * 60000)
 
@@ -176,7 +176,7 @@ monitorsRouter.post('/:id/pause', ownsMonitor, asyncHandler(async (req, res) => 
 
 // ─── POST /monitors/:id/resume — reprend après pause ─────────────────────────
 
-monitorsRouter.post('/:id/resume', ownsMonitor, asyncHandler(async (req, res) => {
+monitorsRouter.post('/:id/resume', requireRole('admin'), ownsMonitor, asyncHandler(async (req, res) => {
   await db.query(
     `UPDATE monitors SET paused_until = NULL WHERE id = $1`,
     [req.params.id]

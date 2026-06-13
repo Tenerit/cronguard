@@ -20,6 +20,7 @@ import { monitorsRouter } from './routes/monitors'
 import { dashboardRouter } from './routes/dashboard'
 import { clientsRouter }       from './routes/clients'
 import { maintenanceRouter }   from './routes/maintenance'
+import { teamRouter }          from './routes/team'
 import billingRouter           from './routes/billing'
 
 // Vérifie la connexion DB au démarrage
@@ -70,6 +71,9 @@ app.use('/monitors',             apiLimiter, requireApiKey, monitorsRouter)
 app.use('/dashboard',            apiLimiter, requireApiKey, dashboardRouter)
 app.use('/clients',              apiLimiter, requireApiKey, clientsRouter)
 app.use('/maintenance-windows',  apiLimiter, requireApiKey, maintenanceRouter)
+// /team/invite/accept est public (pas de requireApiKey) — doit être avant requireApiKey
+app.use('/team/invite/accept',   apiLimiter, teamRouter)
+app.use('/team',                 apiLimiter, requireApiKey, teamRouter)
 
 // ─── Pages HTML ───────────────────────────────────────────────────────────────
 
