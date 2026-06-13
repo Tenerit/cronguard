@@ -20,10 +20,10 @@
   --border2: rgba(255,255,255,.12);
   --border3: rgba(255,255,255,.20);
 
-  /* Texte */
+  /* Texte — contraste WCAG AA (text3 ≥ 4.5:1 sur --bg) */
   --text:  #e8eaf0;
-  --text2: #9da3b8;
-  --text3: #4a5070;
+  --text2: #aab0c4;
+  --text3: #7e85a3;
 
   /* Accents — palette plus chaude */
   --green:       #34d399;
@@ -327,7 +327,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .le-level{font-weight:600;text-align:center}
 .lv-ok{color:var(--green)}.lv-err{color:var(--red)}.lv-ai{color:var(--purple)}.lv-warn{color:var(--amber)}
 .le-msg{color:var(--text);line-height:1.5}
-.le-sub{color:var(--text3);font-size:9px;margin-top:1px}
+.le-sub{color:var(--text3);font-size:10px;margin-top:1px}
 .ai-pill{
   display:inline-block;font-size:8px;
   background:rgba(167,139,250,.15);color:var(--purple);
@@ -382,7 +382,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
   transition:transform .15s ease;
 }
 .d-stat:hover{transform:translateY(-1px)}
-.d-stat-label{font-size:9px;font-family:var(--mono);color:var(--text3);margin-bottom:5px;letter-spacing:.06em}
+.d-stat-label{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:5px;letter-spacing:.06em}
 .d-stat-val{font-size:18px;font-weight:700;font-family:var(--mono);color:var(--text)}
 .d-spark{display:flex;gap:2px;align-items:flex-end;height:36px;padding:4px 0}
 .ds{width:6px;border-radius:2px;flex-shrink:0;transition:opacity .15s}
@@ -475,7 +475,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 }
 .field-select option{background:var(--bg3)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field-hint{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.field-hint{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px}
 .modal-actions{
   display:flex;gap:8px;justify-content:flex-end;
   margin-top:22px;padding-top:18px;border-top:1px solid var(--border);
@@ -672,7 +672,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .an-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:10px}
 .an-job{font-family:var(--sans);font-size:13px;font-weight:600;color:var(--text)}
 .an-meta{display:flex;align-items:center;gap:6px;flex-shrink:0}
-.an-time{font-size:9px;font-family:var(--mono);color:var(--text3)}
+.an-time{font-size:10px;font-family:var(--mono);color:var(--text3)}
 .an-cause{font-size:12px;color:var(--text);margin-bottom:8px;line-height:1.6}
 .an-action{
   font-size:11px;color:var(--text2);line-height:1.5;
@@ -835,12 +835,12 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .cat-bar-label{font-size:10px;font-family:var(--mono);color:var(--text2);width:80px;flex-shrink:0}
 .cat-bar-wrap{flex:1;height:6px;background:var(--bg4);border-radius:99px;overflow:hidden}
 .cat-bar-fill{height:100%;border-radius:99px;transition:width .4s ease}
-.cat-bar-count{font-size:9px;font-family:var(--mono);color:var(--text3);width:24px;text-align:right;flex-shrink:0}
+.cat-bar-count{font-size:10px;font-family:var(--mono);color:var(--text3);width:24px;text-align:right;flex-shrink:0}
 .conf-circle{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .conf-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .conf-info{flex:1}
 .conf-label{font-size:11px;color:var(--text);font-weight:500}
-.conf-sub{font-size:9px;font-family:var(--mono);color:var(--text3)}
+.conf-sub{font-size:10px;font-family:var(--mono);color:var(--text3)}
 .q-big-number{font-size:32px;font-weight:700;font-family:var(--mono);color:var(--text);margin-bottom:4px}
 .q-big-sub{font-size:11px;color:var(--text3)}
 /* ─── Playground ────────────────────────────────────────────────────── */
@@ -933,18 +933,18 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 <div class="auth-overlay" id="auth-overlay">
   <div class="auth-card">
     <div class="auth-logo"><div class="s-dot"></div> Cron<span>Guard</span></div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:20px;font-family:var(--mono)">
-      Monitoring de cron jobs avec analyse IA
+    <div style="font-size:11px;color:var(--text2);margin-bottom:20px;font-family:var(--mono)" data-i18n="auth.tagline">
+      Supervision de cron jobs avec analyse IA
     </div>
     <div class="field">
       <label class="field-label">API Key</label>
       <input class="field-input" type="password" id="auth-key" placeholder="cg_live_..." autocomplete="off">
     </div>
     <div class="field">
-      <label class="field-label">URL de l'API</label>
+      <label class="field-label" data-i18n="auth.apiUrl">URL de l'API</label>
       <input class="field-input" type="text" id="auth-url" value="http://localhost:3000">
     </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:8px" onclick="login()">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:8px" onclick="login()" data-i18n="auth.login">
       → Connexion
     </button>
     <div class="field-err" id="auth-err"></div>
@@ -968,15 +968,15 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 <!-- Modal nouveau monitor -->
 <div class="modal-bg hidden" id="modal-bg">
   <div class="modal" id="modal-form">
-    <div class="modal-title">// nouveau monitor</div>
-    <div class="modal-sub">Vous recevrez une ping_key à ajouter à la fin de votre script.</div>
+    <div class="modal-title" data-i18n="mod.new.title">nouveau service</div>
+    <div class="modal-sub" data-i18n="mod.new.sub">Vous recevrez une ping_key à ajouter à la fin de votre script.</div>
     <div class="field">
-      <label class="field-label">Nom *</label>
-      <input class="field-input" id="m-name" placeholder="backup-postgres, etl-nightly, sync-invoices">
+      <label class="field-label"><span data-i18n="mod.new.name">Nom</span> *</label>
+      <input class="field-input" id="m-name" data-i18n-ph="mod.new.namePh" placeholder="backup-postgres, etl-nightly, sync-invoices">
     </div>
     <div class="field-row">
       <div class="field">
-        <label class="field-label">Environnement</label>
+        <label class="field-label" data-i18n="mod.new.env">Environnement</label>
         <select class="field-select" id="m-env">
           <option value="production">production</option>
           <option value="staging">staging</option>
@@ -984,60 +984,60 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
         </select>
       </div>
       <div class="field">
-        <label class="field-label">Grace period (s)</label>
+        <label class="field-label" data-i18n="mod.new.grace">Délai de grâce (s)</label>
         <input class="field-input" id="m-grace" type="number" value="300" min="60" max="86400">
-        <div class="field-hint">délai avant alerte "en retard"</div>
+        <div class="field-hint" data-i18n="mod.new.graceHint">délai avant l'alerte « en retard »</div>
       </div>
     </div>
     <div class="field">
-      <label class="field-label">Schedule cron</label>
-      <input class="field-input" id="m-schedule" placeholder="0 2 * * *  (optionnel)">
+      <label class="field-label" data-i18n="mod.new.schedule">Planning cron</label>
+      <input class="field-input" id="m-schedule" data-i18n-ph="mod.new.schedulePh" placeholder="0 2 * * *  (optionnel)">
     </div>
     <div class="field-row">
       <div class="field">
-        <label class="field-label">Records min</label>
-        <input class="field-input" id="m-emin" type="number" placeholder="100 (optionnel)">
+        <label class="field-label" data-i18n="mod.new.recMin">Records min</label>
+        <input class="field-input" id="m-emin" type="number" placeholder="100">
       </div>
       <div class="field">
-        <label class="field-label">Records max</label>
+        <label class="field-label" data-i18n="mod.new.recMax">Records max</label>
         <input class="field-input" id="m-emax" type="number" placeholder="100000">
       </div>
     </div>
     <div class="field-err" id="m-err"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()">annuler</button>
-      <button class="btn btn-primary" onclick="createMonitor()">créer →</button>
+      <button class="btn btn-ghost" onclick="closeModal()" data-i18n="mod.cancel">annuler</button>
+      <button class="btn btn-primary" onclick="createMonitor()" data-i18n="mod.new.create">créer →</button>
     </div>
   </div>
 
   <div class="modal" id="modal-success" style="display:none">
-    <div class="modal-title" style="color:var(--green)">✓ monitor créé</div>
-    <div class="modal-sub">Ajoutez ceci à la fin de votre script cron :</div>
+    <div class="modal-title" style="color:var(--green)" data-i18n="mod.ok.title">service créé</div>
+    <div class="modal-sub" data-i18n="mod.ok.sub">Ajoutez ceci à la fin de votre script cron :</div>
     <div class="success-box">
       <div class="success-key">
         <span id="s-key">—</span>
-        <button class="key-copy" onclick="copyKey('s-key')">copier</button>
+        <button class="key-copy" onclick="copyKey('s-key')" data-i18n="set.copy">copier</button>
       </div>
       <div class="curl-success" id="s-curl"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-primary btn-full" style="width:100%;justify-content:center" onclick="closeModal()">fermer</button>
+      <button class="btn btn-primary btn-full" style="width:100%;justify-content:center" onclick="closeModal()" data-i18n="mod.close">fermer</button>
     </div>
   </div>
 </div>
 
-<!-- Edit modal (préremplit depuis le monitor sélectionné) -->
+<!-- Edit modal (préremplit depuis le service sélectionné) -->
 <div class="modal-bg hidden" id="edit-modal-bg">
   <div class="modal">
-    <div class="modal-title">// modifier monitor</div>
+    <div class="modal-title" data-i18n="mod.edit.title">modifier le service</div>
     <div class="modal-sub" id="edit-modal-name" style="font-family:var(--mono);color:var(--green)">—</div>
     <div class="field">
-      <label class="field-label">Nom</label>
+      <label class="field-label" data-i18n="mod.edit.name">Nom</label>
       <input class="field-input" id="em-name">
     </div>
     <div class="field-row">
       <div class="field">
-        <label class="field-label">Environnement</label>
+        <label class="field-label" data-i18n="mod.new.env">Environnement</label>
         <select class="field-select" id="em-env">
           <option value="production">production</option>
           <option value="staging">staging</option>
@@ -1045,33 +1045,33 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
         </select>
       </div>
       <div class="field">
-        <label class="field-label">Grace period (s)</label>
+        <label class="field-label" data-i18n="mod.new.grace">Délai de grâce (s)</label>
         <input class="field-input" id="em-grace" type="number" min="60" max="86400">
       </div>
     </div>
     <div class="field">
-      <label class="field-label">Schedule cron</label>
+      <label class="field-label" data-i18n="mod.new.schedule">Planning cron</label>
       <input class="field-input" id="em-schedule">
     </div>
     <div class="field-row">
       <div class="field">
-        <label class="field-label">Records min</label>
-        <input class="field-input" id="em-emin" type="number" placeholder="optionnel">
+        <label class="field-label" data-i18n="mod.new.recMin">Records min</label>
+        <input class="field-input" id="em-emin" type="number">
       </div>
       <div class="field">
-        <label class="field-label">Records max</label>
-        <input class="field-input" id="em-emax" type="number" placeholder="optionnel">
+        <label class="field-label" data-i18n="mod.new.recMax">Records max</label>
+        <input class="field-input" id="em-emax" type="number">
       </div>
     </div>
     <div class="field">
       <label class="field-label" style="display:flex;align-items:center;gap:6px">
-        <input type="checkbox" id="em-active"> Monitor actif
+        <input type="checkbox" id="em-active"> <span data-i18n="mod.edit.active">Service actif</span>
       </label>
     </div>
     <div class="field-err" id="em-err"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeEditModal()">annuler</button>
-      <button class="btn btn-primary" onclick="saveMonitor()">sauvegarder →</button>
+      <button class="btn btn-ghost" onclick="closeEditModal()" data-i18n="mod.cancel">annuler</button>
+      <button class="btn btn-primary" onclick="saveMonitor()" data-i18n="mod.edit.save">enregistrer →</button>
     </div>
   </div>
 </div>
@@ -1079,29 +1079,29 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 <!-- Modal invite équipe -->
 <div class="modal-bg hidden" id="invite-modal-bg">
   <div class="modal">
-    <div class="modal-title">// inviter un membre</div>
-    <div class="modal-sub">Un lien d'acceptation sera généré. Aucun mot de passe requis — l'accès se fait via clé API.</div>
+    <div class="modal-title" data-i18n="mod.inv.title">inviter un membre</div>
+    <div class="modal-sub" data-i18n="mod.inv.sub">Un lien d'acceptation sera généré. Aucun mot de passe — l'accès se fait par clé API.</div>
     <div class="field">
-      <label class="field-label">Email *</label>
-      <input class="field-input" id="inv-email" type="email" placeholder="colleague@company.com">
+      <label class="field-label"><span data-i18n="mod.inv.email">Email</span> *</label>
+      <input class="field-input" id="inv-email" type="email" data-i18n-ph="mod.inv.emailPh" placeholder="colleague@company.com">
     </div>
     <div class="field">
-      <label class="field-label">Rôle</label>
+      <label class="field-label" data-i18n="mod.inv.role">Rôle</label>
       <select class="field-select" id="inv-role">
-        <option value="viewer">viewer — lecture seule</option>
-        <option value="member" selected>member — acknowledge / snooze</option>
-        <option value="admin">admin — créer / modifier monitors</option>
+        <option value="viewer" data-i18n="mod.inv.viewer">viewer — lecture seule</option>
+        <option value="member" selected data-i18n="mod.inv.member">member — acquitter / snooze</option>
+        <option value="admin" data-i18n="mod.inv.admin">admin — créer / modifier les services</option>
       </select>
     </div>
     <div class="field-err" id="inv-err"></div>
     <div id="inv-success" style="display:none;margin-top:12px">
-      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono)">Lien d'acceptation (valable 7 jours) :</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono)" data-i18n="mod.inv.link">Lien d'acceptation (valable 7 jours) :</div>
       <div class="key-box" id="inv-link" style="font-size:10px;word-break:break-all"></div>
-      <button class="btn btn-ghost" onclick="copyText(document.getElementById('inv-link').dataset.url,'lien copié !')">copier le lien</button>
+      <button class="btn btn-ghost" onclick="copyText(document.getElementById('inv-link').dataset.url,'lien copié !')" data-i18n="mod.inv.copyLink">copier le lien</button>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeInviteModal()">fermer</button>
-      <button class="btn btn-primary" id="inv-btn" onclick="sendInvite()">envoyer →</button>
+      <button class="btn btn-ghost" onclick="closeInviteModal()" data-i18n="mod.close">fermer</button>
+      <button class="btn btn-primary" id="inv-btn" onclick="sendInvite()" data-i18n="mod.inv.send">envoyer →</button>
     </div>
   </div>
 </div>
@@ -1109,33 +1109,33 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 <!-- Modal fenêtre maintenance -->
 <div class="modal-bg hidden" id="maint-modal-bg">
   <div class="modal">
-    <div class="modal-title">// fenêtre de maintenance</div>
-    <div class="modal-sub">Les alertes seront silencieuses pendant cette plage récurrente.</div>
+    <div class="modal-title" data-i18n="mod.mw.title">fenêtre de maintenance</div>
+    <div class="modal-sub" data-i18n="mod.mw.sub">Les alertes seront silencieuses pendant cette plage récurrente.</div>
     <div class="field">
-      <label class="field-label">Label</label>
-      <input class="field-input" id="mw-label" placeholder="Maintenance nuit · Déploiement hebdo...">
+      <label class="field-label" data-i18n="mod.mw.label">Libellé</label>
+      <input class="field-input" id="mw-label" data-i18n-ph="mod.mw.labelPh" placeholder="Maintenance nuit · Déploiement hebdo...">
     </div>
     <div class="field">
-      <label class="field-label">Expression cron *</label>
-      <input class="field-input" id="mw-cron" placeholder="0 2 * * 0  (tous les dimanches à 2h)">
-      <div class="field-hint">5 champs : minute heure jour-mois mois jour-semaine</div>
+      <label class="field-label"><span data-i18n="mod.mw.cron">Expression cron</span> *</label>
+      <input class="field-input" id="mw-cron" data-i18n-ph="mod.mw.cronPh" placeholder="0 2 * * 0  (tous les dimanches à 2h)">
+      <div class="field-hint" data-i18n="mod.mw.cronHint">5 champs : minute heure jour-mois mois jour-semaine</div>
     </div>
     <div class="field-row">
       <div class="field">
-        <label class="field-label">Durée (minutes)</label>
+        <label class="field-label" data-i18n="mod.mw.duration">Durée (minutes)</label>
         <input class="field-input" id="mw-duration" type="number" value="60" min="1" max="1440">
       </div>
       <div class="field">
-        <label class="field-label">Monitor (optionnel)</label>
+        <label class="field-label" data-i18n="mod.mw.monitor">Service (optionnel)</label>
         <select class="field-select" id="mw-monitor">
-          <option value="">Tous les monitors</option>
+          <option value="" data-i18n="mod.mw.allMonitors">Tous les services</option>
         </select>
       </div>
     </div>
     <div class="field-err" id="mw-err"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeMaintenanceModal()">annuler</button>
-      <button class="btn btn-primary" onclick="createMaintenanceWindow()">créer →</button>
+      <button class="btn btn-ghost" onclick="closeMaintenanceModal()" data-i18n="mod.cancel">annuler</button>
+      <button class="btn btn-primary" onclick="createMaintenanceWindow()" data-i18n="mod.mw.create">créer →</button>
     </div>
   </div>
 </div>
@@ -1150,29 +1150,29 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
       <div class="s-logo-mark"><div class="s-dot"></div> Cron<span>Guard</span></div>
     </div>
     <nav class="s-nav">
-      <div class="s-section">monitoring</div>
+      <div class="s-section" data-i18n="nav.monitoring">monitoring</div>
       <div class="s-item active" id="nav-dashboard" onclick="setView('dashboard')">
-        <span class="icon">◈</span> dashboard
+        <span class="icon">◈</span> <span data-i18n="nav.dashboard">dashboard</span>
       </div>
       <div class="s-item" id="nav-monitors" onclick="setView('monitors')">
-        <span class="icon">⬡</span> services
+        <span class="icon">⬡</span> <span data-i18n="nav.services">services</span>
         <span class="s-badge" id="alert-badge" style="display:none">0</span>
       </div>
       <div class="s-item" id="nav-logs" onclick="setView('logs')">
-        <span class="icon">≡</span> journal
+        <span class="icon">≡</span> <span data-i18n="nav.logs">journal</span>
       </div>
       <div class="s-item" id="nav-analyses" onclick="setView('analyses')">
-        <span class="icon">✦</span> analyses ia
+        <span class="icon">✦</span> <span data-i18n="nav.analyses">analyses ia</span>
       </div>
       <div class="s-item" id="nav-playground" onclick="setView('playground')">
-        <span class="icon">⚡</span> ia playground
+        <span class="icon">⚡</span> <span data-i18n="nav.playground">playground ia</span>
       </div>
-      <div class="s-section">compte</div>
+      <div class="s-section" data-i18n="nav.account">compte</div>
       <div class="s-item" id="nav-settings" onclick="setView('settings')">
-        <span class="icon">⚙</span> paramètres
+        <span class="icon">⚙</span> <span data-i18n="nav.settings">paramètres</span>
       </div>
       <div class="s-item" id="nav-docs" onclick="setView('docs')">
-        <span class="icon">?</span> documentation
+        <span class="icon">?</span> <span data-i18n="nav.docs">documentation</span>
       </div>
     </nav>
     <div class="s-footer">
@@ -1180,7 +1180,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
         <span id="sidebar-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
         <span class="s-plan-badge" id="sidebar-plan">free</span>
       </div>
-      <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:center;font-size:10px">déconnexion</button>
+      <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:center;font-size:10px" data-i18n="nav.logout">déconnexion</button>
     </div>
   </aside>
 
@@ -1190,13 +1190,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
       <div class="topbar-title" id="page-title">dashboard</div>
       <div class="search-wrap">
         <span class="search-icon">⌕</span>
-        <input class="search-input" id="search" placeholder="filtrer monitors..." oninput="filterMonitors()">
+        <input class="search-input" id="search" data-i18n-ph="top.search" placeholder="filtrer les services..." oninput="filterMonitors()">
         <span class="search-kbd">/</span>
       </div>
       <div class="topbar-right">
         <div class="live" id="live-indicator"><div class="live-dot"></div> <span id="live-ts">live</span></div>
         <button class="btn btn-ghost" onclick="refreshAll()" title="Rafraîchir (R)">↻</button>
-        <button class="btn btn-primary" onclick="openModal()">+ monitor</button>
+        <button class="btn btn-primary" onclick="openModal()" data-i18n="top.newMonitor">+ monitor</button>
       </div>
     </div>
 
@@ -1207,26 +1207,26 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
         <div id="alert-banner"></div>
         <div id="mttr-strip" class="mttr-strip" style="display:none"></div>
         <div class="stats" id="stats-row">
-          <div class="stat stat-ok"><div class="stat-label">ok</div><div class="stat-val" id="s-ok">0</div><div class="stat-sub" id="s-total">/ 0 monitors</div></div>
-          <div class="stat stat-fail"><div class="stat-label">failed</div><div class="stat-val" id="s-fail">0</div><div class="stat-sub">alertes actives</div></div>
-          <div class="stat stat-late"><div class="stat-label">late</div><div class="stat-val" id="s-late">0</div><div class="stat-sub">grace dépassée</div></div>
-          <div class="stat stat-uptime"><div class="stat-label">uptime 24h</div><div class="stat-val" id="s-uptime">100%</div><div class="stat-sub">% succès</div></div>
-          <div class="stat stat-ai"><div class="stat-label">analyses ia</div><div class="stat-val" id="s-ai">0</div><div class="stat-sub">dernières 24h</div></div>
+          <div class="stat stat-ok"><div class="stat-label" data-i18n="stat.ok">ok</div><div class="stat-val" id="s-ok">0</div><div class="stat-sub" id="s-total">/ 0</div></div>
+          <div class="stat stat-fail"><div class="stat-label" data-i18n="stat.failed">en échec</div><div class="stat-val" id="s-fail">0</div><div class="stat-sub" data-i18n="stat.sub.activeAlerts">alertes actives</div></div>
+          <div class="stat stat-late"><div class="stat-label" data-i18n="stat.late">en retard</div><div class="stat-val" id="s-late">0</div><div class="stat-sub" data-i18n="stat.sub.graceExceeded">grâce dépassée</div></div>
+          <div class="stat stat-uptime"><div class="stat-label" data-i18n="stat.uptime">uptime 24h</div><div class="stat-val" id="s-uptime">100%</div><div class="stat-sub" data-i18n="stat.sub.successPct">% succès</div></div>
+          <div class="stat stat-ai"><div class="stat-label" data-i18n="stat.ai">analyses ia</div><div class="stat-val" id="s-ai">0</div><div class="stat-sub" data-i18n="stat.sub.last24h">dernières 24h</div></div>
         </div>
         <div class="grid">
           <div class="panel">
             <div class="ph">
-              <div class="ph-title">services <span class="ph-count" id="m-count-dash">—</span></div>
+              <div class="ph-title"><span data-i18n="panel.services">services</span> <span class="ph-count" id="m-count-dash">—</span></div>
               <div class="ph-right">
-                <button class="btn btn-ghost" id="f-all" onclick="setFilter('all')" style="font-size:9px;padding:2px 7px">tous</button>
-                <button class="btn btn-ghost" id="f-alerts" onclick="setFilter('alerts')" style="font-size:9px;padding:2px 7px">alertes</button>
+                <button class="btn btn-ghost" id="f-all" onclick="setFilter('all')" style="font-size:10px;padding:2px 7px" data-i18n="filter.all">tous</button>
+                <button class="btn btn-ghost" id="f-alerts" onclick="setFilter('alerts')" style="font-size:10px;padding:2px 7px" data-i18n="filter.alerts">alertes</button>
               </div>
             </div>
-            <div id="monitors-list"><div class="empty">chargement...</div></div>
+            <div id="monitors-list"><div class="empty">…</div></div>
           </div>
           <div class="panel log-panel" style="min-height:400px">
-            <div class="ph"><div class="ph-title">activité <span style="color:var(--text3)">récente</span></div><div class="live"><div class="live-dot"></div></div></div>
-            <div class="log-body" id="log-body"><div class="empty">chargement...</div></div>
+            <div class="ph"><div class="ph-title"><span data-i18n="panel.activity">activité</span> <span style="color:var(--text3)" data-i18n="panel.recent">récente</span></div><div class="live"><div class="live-dot"></div></div></div>
+            <div class="log-body" id="log-body"><div class="empty">…</div></div>
           </div>
         </div>
       </div>
@@ -1235,13 +1235,13 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
       <div class="view" id="view-monitors">
         <div class="panel">
           <div class="ph">
-            <div class="ph-title">tous les services <span class="ph-count" id="m-count-full">—</span></div>
+            <div class="ph-title"><span data-i18n="panel.allServices">tous les services</span> <span class="ph-count" id="m-count-full">—</span></div>
             <div class="ph-right">
-              <button class="btn btn-ghost" id="f-all-f" onclick="setFilter('all','full')" style="font-size:9px;padding:2px 7px">tous</button>
-              <button class="btn btn-ghost" id="f-alerts-f" onclick="setFilter('alerts','full')" style="font-size:9px;padding:2px 7px">alertes</button>
+              <button class="btn btn-ghost" id="f-all-f" onclick="setFilter('all','full')" style="font-size:10px;padding:2px 7px" data-i18n="filter.all">tous</button>
+              <button class="btn btn-ghost" id="f-alerts-f" onclick="setFilter('alerts','full')" style="font-size:10px;padding:2px 7px" data-i18n="filter.alerts">alertes</button>
             </div>
           </div>
-          <div id="monitors-list-full"><div class="empty">chargement...</div></div>
+          <div id="monitors-list-full"><div class="empty">…</div></div>
         </div>
       </div>
 
@@ -1249,109 +1249,119 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
       <div class="view" id="view-logs">
         <div class="panel" style="min-height:500px;display:flex;flex-direction:column">
           <div class="ph">
-            <div class="ph-title">journal d'activité <span class="ph-count" id="log-count">—</span></div>
+            <div class="ph-title"><span data-i18n="logs.title">journal d'activité</span> <span class="ph-count" id="log-count">—</span></div>
             <div class="ph-right" style="gap:8px">
-              <input class="search-input" id="log-search" placeholder="filtrer par job..." oninput="filterLogs()"
+              <input class="search-input" id="log-search" data-i18n-ph="logs.search" placeholder="filtrer par service..." oninput="filterLogs()"
                      style="width:160px;padding-left:10px">
-              <button class="btn btn-ghost lf-btn active" id="lf-all"  onclick="setLogFilter('all')"  style="font-size:9px;padding:3px 8px">tous</button>
-              <button class="btn btn-ghost lf-btn" id="lf-fail" onclick="setLogFilter('fail')" style="font-size:9px;padding:3px 8px">échecs</button>
-              <button class="btn btn-ghost lf-btn" id="lf-ai"   onclick="setLogFilter('ai')"   style="font-size:9px;padding:3px 8px">analysés IA</button>
-              <div class="live"><div class="live-dot"></div> live</div>
+              <button class="btn btn-ghost lf-btn active" id="lf-all"  onclick="setLogFilter('all')"  style="font-size:10px;padding:3px 8px" data-i18n="logs.all">tous</button>
+              <button class="btn btn-ghost lf-btn" id="lf-fail" onclick="setLogFilter('fail')" style="font-size:10px;padding:3px 8px" data-i18n="logs.failures">échecs</button>
+              <button class="btn btn-ghost lf-btn" id="lf-ai"   onclick="setLogFilter('ai')"   style="font-size:10px;padding:3px 8px" data-i18n="logs.aiAnalyzed">analysés ia</button>
+              <div class="live"><div class="live-dot"></div> <span data-i18n="live">en direct</span></div>
             </div>
           </div>
-          <div class="log-body" id="log-body-full" style="flex:1;min-height:400px"><div class="empty">chargement...</div></div>
+          <div class="log-body" id="log-body-full" style="flex:1;min-height:400px"><div class="empty">…</div></div>
         </div>
       </div>
 
       <!-- SETTINGS VIEW -->
       <div class="view" id="view-settings">
         <div class="settings-section">
-          <div class="settings-title">⚙ compte</div>
+          <div class="settings-title" data-i18n="set.account">compte</div>
           <div class="settings-row">
-            <span class="settings-label">Email</span>
+            <span class="settings-label" data-i18n="set.email">Email</span>
             <span class="settings-val" id="set-email">—</span>
           </div>
           <div class="settings-row">
-            <span class="settings-label">Plan</span>
+            <span class="settings-label" data-i18n="set.plan">Offre</span>
             <span class="settings-val" id="set-plan">—</span>
           </div>
           <div class="settings-row">
-            <span class="settings-label">Monitors actifs</span>
+            <span class="settings-label" data-i18n="set.activeMonitors">Services actifs</span>
             <span class="settings-val" id="set-monitors">—</span>
           </div>
           <div class="settings-row">
-            <span class="settings-label">Clé API</span>
+            <span class="settings-label" data-i18n="set.apiKey">Clé API</span>
             <span class="settings-val" style="display:flex;align-items:center;gap:6px">
               <span id="set-key-hidden">••••••••••••••••</span>
-              <button class="key-copy" onclick="toggleApiKey()">afficher</button>
-              <button class="key-copy" onclick="copyText(window._rawApiKey||'','clé API copiée')">copier</button>
+              <button class="key-copy" onclick="toggleApiKey()" data-i18n="set.show">afficher</button>
+              <button class="key-copy" onclick="copyText(window._rawApiKey||'','clé API copiée')" data-i18n="set.copy">copier</button>
+            </span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label" data-i18n="lang.label">Langue</span>
+            <span class="settings-val">
+              <select class="field-input field-select" id="set-lang" onchange="setLang(this.value)" style="padding:4px 8px;font-size:11px">
+                <option value="">Auto</option>
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+              </select>
             </span>
           </div>
         </div>
 
         <div class="settings-section">
-          <div class="settings-title">🔔 notifications</div>
+          <div class="settings-title" data-i18n="set.notifications">notifications</div>
           <div class="settings-row">
             <div>
-              <div class="settings-label">Webhook Slack</div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">URL de votre Incoming Webhook Slack</div>
+              <div class="settings-label" data-i18n="set.slack">Webhook Slack</div>
+              <div class="field-hint" data-i18n="set.slackHint">URL de votre Incoming Webhook Slack</div>
             </div>
           </div>
           <div class="settings-input-row">
             <input class="field-input" id="set-slack" placeholder="https://hooks.slack.com/services/...">
-            <button class="btn btn-ghost" onclick="saveSlack()">sauvegarder</button>
+            <button class="btn btn-ghost" onclick="saveSlack()" data-i18n="set.save">enregistrer</button>
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
-              <div class="settings-label">Webhook générique</div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Reçoit le JSON d'alerte (Discord, Teams, PagerDuty, n8n...)</div>
+              <div class="settings-label" data-i18n="set.generic">Webhook générique</div>
+              <div class="field-hint" data-i18n="set.genericHint">Reçoit le JSON d'alerte (Discord, Teams, PagerDuty, n8n...)</div>
             </div>
           </div>
           <div class="settings-input-row">
             <input class="field-input" id="set-webhook" placeholder="https://...">
-            <button class="btn btn-ghost" onclick="saveWebhook()">sauvegarder</button>
+            <button class="btn btn-ghost" onclick="saveWebhook()" data-i18n="set.save">enregistrer</button>
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
-              <div class="settings-label">Timezone</div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Affichage des heures dans votre fuseau</div>
+              <div class="settings-label" data-i18n="set.timezone">Fuseau horaire</div>
+              <div class="field-hint" data-i18n="set.timezoneHint">Affichage des heures dans votre fuseau</div>
             </div>
           </div>
           <div class="settings-input-row">
             <select class="field-input field-select" id="set-tz" onchange="saveTz()">
-              <option value="">Automatique (navigateur)</option>
+              <option value="" data-i18n="set.tzAuto">Automatique (navigateur)</option>
             </select>
           </div>
         </div>
 
         <div class="settings-section" id="trial-section" style="display:none">
-          <div class="settings-title">⚡ passer pro</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
-            Essayez les fonctionnalités Pro pendant 14 jours gratuitement : monitors illimités, alertes Slack, analyses IA avancées.
+          <div class="settings-title" data-i18n="set.trial">passer à l'offre pro</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6" data-i18n="set.trialDesc">
+            Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, analyses IA avancées.
           </div>
-          <button class="btn btn-primary" onclick="startTrial()">Démarrer l'essai gratuit 14 jours →</button>
+          <button class="btn btn-primary" onclick="startTrial()" data-i18n="set.startTrial">Démarrer l'essai 14 jours →</button>
         </div>
 
         <div class="settings-section">
-          <div class="settings-title">🔺 escalade automatique</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-            Si une alerte n'est pas acquittée après le délai, CronGuard notifie un second contact (on-call, manager...).
+          <div class="settings-title" data-i18n="set.escalation">escalade automatique</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6" data-i18n="set.escalationDesc">
+            Si une alerte n'est pas acquittée après le délai, un second contact est notifié (astreinte, manager...).
           </div>
           <div class="settings-row">
             <div>
-              <div class="settings-label">Délai avant escalade</div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Minutes d'inaction avant notification d'escalade</div>
+              <div class="settings-label" data-i18n="set.escDelay">Délai avant escalade</div>
+              <div class="field-hint" data-i18n="set.escDelayHint">Minutes d'inaction avant la notification d'escalade</div>
             </div>
           </div>
           <div class="settings-input-row" style="align-items:center">
             <input class="field-input" id="set-esc-delay" type="number" placeholder="30" min="1" max="1440" style="max-width:100px">
-            <span style="font-size:11px;color:var(--text3)">minutes</span>
-            <button class="btn btn-ghost" onclick="saveEscalation()" style="margin-left:auto">sauvegarder</button>
+            <span style="font-size:11px;color:var(--text3)" data-i18n="set.minutes">minutes</span>
+            <button class="btn btn-ghost" onclick="saveEscalation()" style="margin-left:auto" data-i18n="set.save">enregistrer</button>
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
-              <div class="settings-label">Email d'escalade</div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Reçoit l'email si l'alerte n'est pas acquittée</div>
+              <div class="settings-label" data-i18n="set.escEmail">Email d'escalade</div>
+              <div class="field-hint" data-i18n="set.escEmailHint">Reçoit l'email si l'alerte reste non acquittée</div>
             </div>
           </div>
           <div class="settings-input-row">
@@ -1359,46 +1369,46 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
-              <div class="settings-label">Webhook d'escalade</div>
-              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">PagerDuty, Opsgenie, Discord, n8n...</div>
+              <div class="settings-label" data-i18n="set.escWebhook">Webhook d'escalade</div>
+              <div class="field-hint" data-i18n="set.escWebhookHint">PagerDuty, Opsgenie, Discord, n8n...</div>
             </div>
           </div>
           <div class="settings-input-row">
             <input class="field-input" id="set-esc-webhook" placeholder="https://...">
-            <button class="btn btn-ghost" onclick="saveEscalation()">sauvegarder</button>
+            <button class="btn btn-ghost" onclick="saveEscalation()" data-i18n="set.save">enregistrer</button>
           </div>
         </div>
 
         <div class="settings-section">
-          <div class="settings-title">🛡 fenêtres de maintenance</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-            Silencez automatiquement les alertes pendant les maintenances planifiées (cron récurrent).
+          <div class="settings-title" data-i18n="set.maintenance">fenêtres de maintenance</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6" data-i18n="set.maintenanceDesc">
+            Silence automatiquement les alertes pendant les maintenances planifiées (cron récurrent).
           </div>
-          <div id="maint-windows-list" style="margin-bottom:12px"><div style="font-size:12px;color:var(--text3)">chargement...</div></div>
+          <div id="maint-windows-list" style="margin-bottom:12px"><div style="font-size:12px;color:var(--text3)">…</div></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-ghost" onclick="openMaintenanceModal()">+ ajouter une fenêtre</button>
+            <button class="btn btn-ghost" onclick="openMaintenanceModal()" data-i18n="set.addWindow">+ ajouter une fenêtre</button>
           </div>
         </div>
 
         <div class="settings-section">
-          <div class="settings-title">👥 équipe</div>
+          <div class="settings-title" data-i18n="set.team">équipe</div>
           <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
-            Invitez des membres avec des rôles différents : <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">viewer · member · admin · owner</span>
+            <span data-i18n="set.teamDesc">Invitez des membres avec différents rôles :</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">viewer · member · admin · owner</span>
           </div>
-          <div id="team-members-list" style="margin-bottom:12px"><div style="font-size:12px;color:var(--text3)">chargement...</div></div>
+          <div id="team-members-list" style="margin-bottom:12px"><div style="font-size:12px;color:var(--text3)">…</div></div>
           <div id="team-invites-list" style="margin-bottom:12px"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-ghost" onclick="openInviteModal()">+ inviter un membre</button>
+            <button class="btn btn-ghost" onclick="openInviteModal()" data-i18n="set.inviteMember">+ inviter un membre</button>
           </div>
         </div>
 
         <div class="settings-section">
-          <div class="settings-title">📊 page de statut publique</div>
-          <div style="font-size:12px;color:var(--text2);margin-bottom:10px">
-            Partagez le statut de vos monitors. URL accessible sans authentification.
+          <div class="settings-title" data-i18n="set.statusPage">page de statut publique</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6" data-i18n="set.statusPageDesc">
+            Partagez le statut de vos services. URL accessible sans authentification.
           </div>
           <div style="font-size:11px;font-family:var(--mono);color:var(--text3)">
-            Format : <span style="color:var(--green)" id="set-status-url">—</span>
+            <span data-i18n="set.format">Format</span> : <span style="color:var(--green)" id="set-status-url">—</span>
           </div>
         </div>
       </div>
@@ -1622,11 +1632,11 @@ GET  /health                      # Santé de l'API
           </span>
         </div>
 
-        <div id="analyses-list"><div class="empty">chargement...</div></div>
+        <div id="analyses-list"><div class="empty">…</div></div>
 
         <div style="margin-top:16px;text-align:center">
-          <button class="btn btn-ghost" onclick="setView('playground')" style="border-color:rgba(52,211,153,.25);color:var(--green)">
-            ⚡ Tester le LLM en direct →
+          <button class="btn btn-ghost" onclick="setView('playground')" style="border-color:rgba(52,211,153,.25);color:var(--green)" data-i18n="pg.testCta">
+            Tester le LLM en direct →
           </button>
         </div>
       </div>
@@ -1636,8 +1646,8 @@ GET  /health                      # Santé de l'API
         <div class="pg-view-header">
           <div class="pg-view-icon">⚡</div>
           <div>
-            <div class="pg-view-title">IA Playground</div>
-            <div class="pg-view-sub">Testez l'analyse LLM en temps réel sur n'importe quels logs de cron job.</div>
+            <div class="pg-view-title" data-i18n="pg.title">Playground IA</div>
+            <div class="pg-view-sub" data-i18n="pg.sub">Testez l'analyse LLM en temps réel sur n'importe quels logs de cron job.</div>
             <div class="pg-benchmark">
               <span class="pg-bench-pill">100% parsable</span>
               <span class="pg-bench-pill">81% catégorie exacte</span>
@@ -1649,16 +1659,16 @@ GET  /health                      # Santé de l'API
         </div>
 
         <div class="playground" style="margin-bottom:0;border-radius:var(--radius-lg)">
-          <div style="margin-bottom:10px;font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Scénarios prédéfinis :</div>
+          <div style="margin-bottom:10px;font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em" data-i18n="pg.scenarios">Scénarios prédéfinis :</div>
           <div class="quick-errors" id="quick-errors"></div>
 
           <div class="playground-form" style="margin-top:14px">
             <div class="field">
-              <label class="field-label">Nom du job</label>
+              <label class="field-label" data-i18n="pg.jobName">Nom du job</label>
               <input class="field-input" id="pg-job" value="mon-cron-job">
             </div>
             <div class="field">
-              <label class="field-label">Environnement</label>
+              <label class="field-label" data-i18n="pg.env">Environnement</label>
               <select class="field-select" id="pg-env">
                 <option value="production">production</option>
                 <option value="staging">staging</option>
@@ -1666,21 +1676,17 @@ GET  /health                      # Santé de l'API
               </select>
             </div>
             <div class="field">
-              <label class="field-label">Exit code</label>
+              <label class="field-label" data-i18n="pg.exitCode">Code de sortie</label>
               <input class="field-input" id="pg-exit" type="number" value="1">
             </div>
           </div>
           <div class="playground-logs">
-            <label class="field-label">Logs d'erreur</label>
-            <textarea id="pg-logs" placeholder="Collez ici les logs d'erreur de votre cron job...
-Exemple :
-ERROR: Connection refused 127.0.0.1:5432
-  at Pool.connect (pg/lib/pool.js:45:11)
-  errno: ECONNREFUSED"></textarea>
+            <label class="field-label" data-i18n="pg.logsLabel">Logs d'erreur</label>
+            <textarea id="pg-logs" data-i18n-ph="pg.logsPh" placeholder="Collez ici les logs d'erreur de votre cron job..."></textarea>
           </div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
-            <button class="btn btn-primary" onclick="runPreview()" style="padding:8px 18px;font-size:13px">⚡ Analyser maintenant</button>
-            <button class="btn btn-ghost" onclick="clearPreview()">Effacer</button>
+            <button class="btn btn-primary" onclick="runPreview()" style="padding:8px 18px;font-size:13px" data-i18n="pg.analyze">Analyser maintenant</button>
+            <button class="btn btn-ghost" onclick="clearPreview()" data-i18n="pg.clear">Effacer</button>
           </div>
           <div class="playground-spinner" id="pg-spinner">
             <div class="pending-spin"></div>
@@ -1695,6 +1701,170 @@ ERROR: Connection refused 127.0.0.1:5432
 </div>
 
 <script>
+// ─── i18n ─────────────────────────────────────────────────────────────────────
+// Langue auto depuis le navigateur (override possible via localStorage cg_lang).
+const I18N = {
+  fr: {
+    'nav.monitoring':'monitoring','nav.dashboard':'tableau de bord','nav.services':'services',
+    'nav.logs':'journal','nav.analyses':'analyses ia','nav.playground':'playground ia',
+    'nav.account':'compte','nav.settings':'paramètres','nav.docs':'documentation','nav.logout':'déconnexion',
+    'title.dashboard':'tableau de bord','title.services':'services','title.logs':'journal',
+    'title.analyses':'analyses ia','title.settings':'paramètres','title.docs':'documentation','title.playground':'playground ia',
+    'top.search':'filtrer les services...','top.newMonitor':'+ monitor',
+    'stat.ok':'ok','stat.failed':'en échec','stat.late':'en retard','stat.uptime':'uptime 24h','stat.ai':'analyses ia',
+    'stat.sub.activeAlerts':'alertes actives','stat.sub.graceExceeded':'grâce dépassée',
+    'stat.sub.successPct':'% succès','stat.sub.last24h':'dernières 24h',
+    'panel.services':'services','filter.all':'tous','filter.alerts':'alertes',
+    'panel.activity':'activité','panel.recent':'récente','panel.allServices':'tous les services',
+    'logs.title':'journal d\'activité','logs.search':'filtrer par service...','logs.all':'tous',
+    'logs.failures':'échecs','logs.aiAnalyzed':'analysés ia','live':'en direct',
+    'set.account':'compte','set.email':'Email','set.plan':'Offre','set.activeMonitors':'Services actifs',
+    'set.apiKey':'Clé API','set.show':'afficher','set.hide':'masquer','set.copy':'copier','set.save':'enregistrer',
+    'set.notifications':'notifications','set.slack':'Webhook Slack','set.slackHint':'URL de votre Incoming Webhook Slack',
+    'set.generic':'Webhook générique','set.genericHint':'Reçoit le JSON d\'alerte (Discord, Teams, PagerDuty, n8n...)',
+    'set.timezone':'Fuseau horaire','set.timezoneHint':'Affichage des heures dans votre fuseau','set.tzAuto':'Automatique (navigateur)',
+    'set.escalation':'escalade automatique','set.escalationDesc':'Si une alerte n\'est pas acquittée après le délai, un second contact est notifié (astreinte, manager...).',
+    'set.escDelay':'Délai avant escalade','set.escDelayHint':'Minutes d\'inaction avant la notification d\'escalade','set.minutes':'minutes',
+    'set.escEmail':'Email d\'escalade','set.escEmailHint':'Reçoit l\'email si l\'alerte reste non acquittée',
+    'set.escWebhook':'Webhook d\'escalade','set.escWebhookHint':'PagerDuty, Opsgenie, Discord, n8n...',
+    'set.maintenance':'fenêtres de maintenance','set.maintenanceDesc':'Silence automatiquement les alertes pendant les maintenances planifiées (cron récurrent).',
+    'set.addWindow':'+ ajouter une fenêtre','set.noWindows':'Aucune fenêtre configurée.','set.active':'active','set.allMonitors':'tous les services','set.remove':'retirer',
+    'set.team':'équipe','set.teamDesc':'Invitez des membres avec différents rôles :','set.noMembers':'Aucun membre pour l\'instant.',
+    'set.invitedBy':'invité par','set.pending':'En attente','set.expires':'expire','set.cancel':'annuler','set.inviteMember':'+ inviter un membre',
+    'set.trial':'passer à l\'offre pro','set.trialDesc':'Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, analyses IA avancées.','set.startTrial':'Démarrer l\'essai 14 jours →',
+    'set.statusPage':'page de statut publique','set.statusPageDesc':'Partagez le statut de vos services. URL accessible sans authentification.','set.format':'Format',
+    'mod.new.title':'nouveau service','mod.new.sub':'Vous recevrez une ping_key à ajouter à la fin de votre script.',
+    'mod.new.name':'Nom','mod.new.namePh':'backup-postgres, etl-nightly, sync-invoices','mod.new.env':'Environnement',
+    'mod.new.grace':'Délai de grâce (s)','mod.new.graceHint':'délai avant l\'alerte « en retard »','mod.new.schedule':'Planning cron','mod.new.schedulePh':'0 2 * * *  (optionnel)',
+    'mod.new.recMin':'Records min','mod.new.recMax':'Records max','mod.cancel':'annuler','mod.new.create':'créer →',
+    'mod.ok.title':'service créé','mod.ok.sub':'Ajoutez ceci à la fin de votre script cron :','mod.close':'fermer',
+    'mod.edit.title':'modifier le service','mod.edit.name':'Nom','mod.edit.active':'Service actif','mod.edit.save':'enregistrer →',
+    'mod.inv.title':'inviter un membre','mod.inv.sub':'Un lien d\'acceptation sera généré. Aucun mot de passe — l\'accès se fait par clé API.',
+    'mod.inv.email':'Email','mod.inv.emailPh':'collegue@entreprise.com','mod.inv.role':'Rôle',
+    'mod.inv.viewer':'viewer — lecture seule','mod.inv.member':'member — acquitter / snooze','mod.inv.admin':'admin — créer / modifier les services',
+    'mod.inv.link':'Lien d\'acceptation (valable 7 jours) :','mod.inv.copyLink':'copier le lien','mod.inv.send':'envoyer →',
+    'mod.mw.title':'fenêtre de maintenance','mod.mw.sub':'Les alertes seront silencieuses pendant cette plage récurrente.',
+    'mod.mw.label':'Libellé','mod.mw.labelPh':'Maintenance nuit · Déploiement hebdo...','mod.mw.cron':'Expression cron',
+    'mod.mw.cronPh':'0 2 * * 0  (tous les dimanches à 2h)','mod.mw.cronHint':'5 champs : minute heure jour-mois mois jour-semaine',
+    'mod.mw.duration':'Durée (minutes)','mod.mw.monitor':'Service (optionnel)','mod.mw.allMonitors':'Tous les services','mod.mw.create':'créer →',
+    'empty.mon.title':'Aucun service configuré','empty.mon.desc':'Ajoutez un ping à la fin de votre script cron. CronGuard vous alerte si le job ne s\'exécute pas dans sa fenêtre de grâce.',
+    'empty.mon.createFirst':'+ Créer mon premier service','empty.mon.seeDocs':'Voir la documentation →',
+    'empty.mon.s1t':'1. Créer','empty.mon.s1d':'Obtenez une ping_key unique','empty.mon.s2t':'2. Intégrer','empty.mon.s2d':'curl -X POST /ping/KEY','empty.mon.s3t':'3. Recevoir','empty.mon.s3d':'Alerte + analyse IA auto',
+    'empty.an.intro':'L\'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :','empty.an.cta':'Tester l\'analyse IA maintenant →',
+    'empty.alerts':'aucune alerte active','empty.noResult':'aucun résultat pour',
+    'pg.title':'Playground IA','pg.sub':'Testez l\'analyse LLM en temps réel sur n\'importe quels logs de cron job.',
+    'pg.scenarios':'Scénarios prédéfinis :','pg.jobName':'Nom du job','pg.env':'Environnement','pg.exitCode':'Code de sortie',
+    'pg.logsLabel':'Logs d\'erreur','pg.logsPh':'Collez ici les logs d\'erreur de votre cron job...','pg.analyze':'Analyser maintenant','pg.clear':'Effacer','pg.testCta':'Tester le LLM en direct →',
+    'env.production':'production','env.staging':'staging','env.development':'development',
+    'auth.tagline':'Supervision de cron jobs avec analyse IA','auth.apiUrl':'URL de l\'API','auth.login':'→ Connexion','auth.errInvalid':'clé invalide ou API inaccessible','auth.errKey':'clé requise',
+    'empty.loading':'…','toast.refreshed':'Actualisé','toast.copied':'copié',
+    'pill.ok':'ok','pill.late':'retard','pill.failed':'échec','pill.pause':'pause','pill.unknown':'inconnu',
+    'ab.failing':'en échec','ab.late':'en retard','ab.investigate':'cliquez un service pour investiguer',
+    'mttr.incidents':'Incidents / 30j','mttr.incidentsSub':'service(s) touché(s)','mttr.avgMttr':'MTTR moyen','mttr.avgMttrSub':'temps de rétablissement',
+    'mttr.downtime':'Indispo. totale','mttr.downtimeSub':'cumulée sur 30 jours','mttr.dataLoss':'Perte de données','mttr.dataLossSub':'impact confirmé',
+    'ansum.analyses':'analyses','ansum.analysesSub':'total récent','ansum.todo':'à traiter','ansum.todoSub':'high + critical',
+    'ansum.topCat':'catégorie n°1','ansum.cases':'cas','ansum.resolution':'résolution','ansum.resolutionSub':'min en moyenne',
+    'an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres',
+    'impact.none':'Aucun incident résolu sur les 30 derniers jours.','impact.recurring':'Récurrents','impact.header':'Impact · 30 derniers jours',
+    'impact.incidents':'incidents','impact.affected':'service(s) touché(s)','impact.mttr':'MTTR moyen','impact.mttrSub':'temps de rétablissement',
+    'impact.downtime':'indispo. totale','impact.downtimeSub':'cumulée','impact.dataLoss':'perte de données','impact.dataLossSub':'impact confirmé',
+    'sample.intro':'L\'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :',
+    'sample.time':'il y a 2 min','sample.impact':'impact possible','sample.fix':'résolution estimée :',
+    'sample.cause':'Connexion PostgreSQL refusée — le service postgres est arrêté ou inaccessible sur le port 5432',
+    'sample.action':'Vérifier que le service PostgreSQL est démarré :','sample.prevention':'Ajouter un healthcheck PostgreSQL avant le backup, surveiller pg_isready',
+    'sample.checks':'Vérifications immédiates','sample.disk':'Vérifier l\'espace disque :','sample.cta':'Tester l\'analyse IA maintenant →',
+    'never':'jamais','now':'à l\'instant','pending':'Analyse IA en cours...',
+    'lang.label':'Langue',
+  },
+  en: {
+    'nav.monitoring':'monitoring','nav.dashboard':'dashboard','nav.services':'services',
+    'nav.logs':'activity','nav.analyses':'ai analyses','nav.playground':'ai playground',
+    'nav.account':'account','nav.settings':'settings','nav.docs':'documentation','nav.logout':'sign out',
+    'title.dashboard':'dashboard','title.services':'services','title.logs':'activity',
+    'title.analyses':'ai analyses','title.settings':'settings','title.docs':'documentation','title.playground':'ai playground',
+    'top.search':'filter services...','top.newMonitor':'+ monitor',
+    'stat.ok':'ok','stat.failed':'failed','stat.late':'late','stat.uptime':'uptime 24h','stat.ai':'ai analyses',
+    'stat.sub.activeAlerts':'active alerts','stat.sub.graceExceeded':'grace exceeded',
+    'stat.sub.successPct':'% success','stat.sub.last24h':'last 24h',
+    'panel.services':'services','filter.all':'all','filter.alerts':'alerts',
+    'panel.activity':'activity','panel.recent':'recent','panel.allServices':'all services',
+    'logs.title':'activity log','logs.search':'filter by service...','logs.all':'all',
+    'logs.failures':'failures','logs.aiAnalyzed':'ai analyzed','live':'live',
+    'set.account':'account','set.email':'Email','set.plan':'Plan','set.activeMonitors':'Active services',
+    'set.apiKey':'API key','set.show':'show','set.hide':'hide','set.copy':'copy','set.save':'save',
+    'set.notifications':'notifications','set.slack':'Slack webhook','set.slackHint':'Your Slack Incoming Webhook URL',
+    'set.generic':'Generic webhook','set.genericHint':'Receives the alert JSON (Discord, Teams, PagerDuty, n8n...)',
+    'set.timezone':'Timezone','set.timezoneHint':'How times are displayed in your zone','set.tzAuto':'Automatic (browser)',
+    'set.escalation':'automatic escalation','set.escalationDesc':'If an alert is not acknowledged within the delay, a second contact is notified (on-call, manager...).',
+    'set.escDelay':'Escalation delay','set.escDelayHint':'Minutes of inaction before the escalation notification','set.minutes':'minutes',
+    'set.escEmail':'Escalation email','set.escEmailHint':'Receives the email if the alert stays unacknowledged',
+    'set.escWebhook':'Escalation webhook','set.escWebhookHint':'PagerDuty, Opsgenie, Discord, n8n...',
+    'set.maintenance':'maintenance windows','set.maintenanceDesc':'Automatically silence alerts during planned maintenance (recurring cron).',
+    'set.addWindow':'+ add a window','set.noWindows':'No window configured.','set.active':'active','set.allMonitors':'all services','set.remove':'remove',
+    'set.team':'team','set.teamDesc':'Invite members with different roles:','set.noMembers':'No members yet.',
+    'set.invitedBy':'invited by','set.pending':'Pending','set.expires':'expires','set.cancel':'cancel','set.inviteMember':'+ invite a member',
+    'set.trial':'upgrade to pro','set.trialDesc':'Try the Pro features for 14 days: unlimited services, Slack alerts, advanced AI analyses.','set.startTrial':'Start 14-day trial →',
+    'set.statusPage':'public status page','set.statusPageDesc':'Share your services status. URL accessible without authentication.','set.format':'Format',
+    'mod.new.title':'new service','mod.new.sub':'You will receive a ping_key to add at the end of your script.',
+    'mod.new.name':'Name','mod.new.namePh':'backup-postgres, etl-nightly, sync-invoices','mod.new.env':'Environment',
+    'mod.new.grace':'Grace period (s)','mod.new.graceHint':'delay before the "late" alert','mod.new.schedule':'Cron schedule','mod.new.schedulePh':'0 2 * * *  (optional)',
+    'mod.new.recMin':'Records min','mod.new.recMax':'Records max','mod.cancel':'cancel','mod.new.create':'create →',
+    'mod.ok.title':'service created','mod.ok.sub':'Add this at the end of your cron script:','mod.close':'close',
+    'mod.edit.title':'edit service','mod.edit.name':'Name','mod.edit.active':'Service active','mod.edit.save':'save →',
+    'mod.inv.title':'invite a member','mod.inv.sub':'An acceptance link will be generated. No password — access is via API key.',
+    'mod.inv.email':'Email','mod.inv.emailPh':'colleague@company.com','mod.inv.role':'Role',
+    'mod.inv.viewer':'viewer — read only','mod.inv.member':'member — acknowledge / snooze','mod.inv.admin':'admin — create / edit services',
+    'mod.inv.link':'Acceptance link (valid 7 days):','mod.inv.copyLink':'copy link','mod.inv.send':'send →',
+    'mod.mw.title':'maintenance window','mod.mw.sub':'Alerts will be silent during this recurring window.',
+    'mod.mw.label':'Label','mod.mw.labelPh':'Night maintenance · Weekly deploy...','mod.mw.cron':'Cron expression',
+    'mod.mw.cronPh':'0 2 * * 0  (every Sunday at 2am)','mod.mw.cronHint':'5 fields: minute hour day-of-month month day-of-week',
+    'mod.mw.duration':'Duration (minutes)','mod.mw.monitor':'Service (optional)','mod.mw.allMonitors':'All services','mod.mw.create':'create →',
+    'empty.mon.title':'No service configured','empty.mon.desc':'Add a ping at the end of your cron script. CronGuard alerts you if the job does not run within its grace window.',
+    'empty.mon.createFirst':'+ Create my first service','empty.mon.seeDocs':'See documentation →',
+    'empty.mon.s1t':'1. Create','empty.mon.s1d':'Get a unique ping_key','empty.mon.s2t':'2. Integrate','empty.mon.s2d':'curl -X POST /ping/KEY','empty.mon.s3t':'3. Receive','empty.mon.s3d':'Alert + auto AI analysis',
+    'empty.an.intro':'The AI automatically analyzes every cron job failure. Here is an example of what you will receive:','empty.an.cta':'Test the AI analysis now →',
+    'empty.alerts':'no active alerts','empty.noResult':'no result for',
+    'pg.title':'AI Playground','pg.sub':'Test the LLM analysis in real time on any cron job logs.',
+    'pg.scenarios':'Preset scenarios:','pg.jobName':'Job name','pg.env':'Environment','pg.exitCode':'Exit code',
+    'pg.logsLabel':'Error logs','pg.logsPh':'Paste your cron job error logs here...','pg.analyze':'Analyze now','pg.clear':'Clear','pg.testCta':'Test the LLM live →',
+    'env.production':'production','env.staging':'staging','env.development':'development',
+    'auth.tagline':'Cron job monitoring with AI analysis','auth.apiUrl':'API URL','auth.login':'→ Sign in','auth.errInvalid':'invalid key or API unreachable','auth.errKey':'key required',
+    'empty.loading':'…','toast.refreshed':'Refreshed','toast.copied':'copied',
+    'pill.ok':'ok','pill.late':'late','pill.failed':'failed','pill.pause':'paused','pill.unknown':'unknown',
+    'ab.failing':'failing','ab.late':'late','ab.investigate':'click a service to investigate',
+    'mttr.incidents':'Incidents / 30d','mttr.incidentsSub':'service(s) affected','mttr.avgMttr':'Avg MTTR','mttr.avgMttrSub':'time to recovery',
+    'mttr.downtime':'Total downtime','mttr.downtimeSub':'over 30 days','mttr.dataLoss':'Data loss','mttr.dataLossSub':'confirmed impact',
+    'ansum.analyses':'analyses','ansum.analysesSub':'recent total','ansum.todo':'to handle','ansum.todoSub':'high + critical',
+    'ansum.topCat':'top category','ansum.cases':'cases','ansum.resolution':'resolution','ansum.resolutionSub':'avg minutes',
+    'an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters',
+    'impact.none':'No incident resolved in the last 30 days.','impact.recurring':'Recurring','impact.header':'Impact · last 30 days',
+    'impact.incidents':'incidents','impact.affected':'service(s) affected','impact.mttr':'avg MTTR','impact.mttrSub':'time to recovery',
+    'impact.downtime':'total downtime','impact.downtimeSub':'cumulative','impact.dataLoss':'data loss','impact.dataLossSub':'confirmed impact',
+    'sample.intro':'The AI automatically analyzes every cron job failure. Here is an example of what you will receive:',
+    'sample.time':'2 min ago','sample.impact':'possible impact','sample.fix':'estimated resolution:',
+    'sample.cause':'PostgreSQL connection refused — the postgres service is stopped or unreachable on port 5432',
+    'sample.action':'Check that the PostgreSQL service is running:','sample.prevention':'Add a PostgreSQL healthcheck before the backup, monitor pg_isready',
+    'sample.checks':'Immediate checks','sample.disk':'Check disk space:','sample.cta':'Test the AI analysis now →',
+    'never':'never','now':'just now','pending':'AI analysis in progress...',
+    'lang.label':'Language',
+  },
+}
+let LANG = localStorage.getItem('cg_lang')
+  || ((navigator.language || 'en').toLowerCase().startsWith('fr') ? 'fr' : 'en')
+function t(k) { return (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k }
+function applyI18n(root = document) {
+  root.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.getAttribute('data-i18n')) })
+  root.querySelectorAll('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.getAttribute('data-i18n-ph')) })
+  const pt = document.getElementById('page-title')
+  if (pt && typeof currentView !== 'undefined') pt.textContent = t('title.' + currentView)
+  document.documentElement.lang = LANG
+}
+function setLang(val) {
+  if (val) localStorage.setItem('cg_lang', val)
+  else     localStorage.removeItem('cg_lang')
+  location.reload()   // re-rend tout le chrome + les vues dynamiques proprement
+}
+
 // ─── State ────────────────────────────────────────────────────────────────────
 let BASE_URL      = localStorage.getItem('cg_url') || 'http://localhost:3000'
 let API_KEY       = localStorage.getItem('cg_key') || ''
@@ -1794,14 +1964,14 @@ function toast(msg, type='info', ms=3000) {
 async function login() {
   const key = document.getElementById('auth-key').value.trim()
   const url = document.getElementById('auth-url').value.trim().replace(/\/$/, '') || 'http://localhost:3000'
-  if (!key) { document.getElementById('auth-err').textContent = 'clé requise'; return }
+  if (!key) { document.getElementById('auth-err').textContent = t('auth.errKey'); return }
   API_KEY = key; BASE_URL = url
   try {
     const r = await fetch(url+'/dashboard/overview', { headers: { 'X-API-Key': key } })
     if (!r.ok) throw new Error()
     localStorage.setItem('cg_key', key); localStorage.setItem('cg_url', url)
     boot()
-  } catch { document.getElementById('auth-err').textContent = 'clé invalide ou API inaccessible' }
+  } catch { document.getElementById('auth-err').textContent = t('auth.errInvalid') }
 }
 
 function logout() {
@@ -1881,18 +2051,18 @@ function renderAlertBanner(list) {
   const late   = list.filter(m => m.last_status==='late' && !(m.paused_until && new Date(m.paused_until)>new Date()))
   if (!failed.length && !late.length) { el.innerHTML = ''; return }
   const cls   = failed.length ? 'crit' : 'warn'
-  const icon  = failed.length ? '🚨' : '⚠️'
+  const dot   = failed.length ? 'var(--red)' : 'var(--amber)'
   const parts = []
-  if (failed.length) parts.push(`${failed.length} en échec`)
-  if (late.length)   parts.push(`${late.length} en retard`)
+  if (failed.length) parts.push(`${failed.length} ${t('ab.failing')}`)
+  if (late.length)   parts.push(`${late.length} ${t('ab.late')}`)
   const chips = [
-    ...failed.map(m => `<span class="ab-chip fail" onclick="openDrawer('${m.id}')" title="cliquer pour détail">${esc(m.name)}</span>`),
-    ...late.map(m   => `<span class="ab-chip late" onclick="openDrawer('${m.id}')" title="cliquer pour détail">${esc(m.name)}</span>`)
+    ...failed.map(m => `<span class="ab-chip fail" onclick="openDrawer('${m.id}')">${esc(m.name)}</span>`),
+    ...late.map(m   => `<span class="ab-chip late" onclick="openDrawer('${m.id}')">${esc(m.name)}</span>`)
   ].join('')
   el.innerHTML = `<div class="alert-banner ${cls}">
-    <div class="ab-icon">${icon}</div>
+    <div class="ab-icon"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${dot};box-shadow:0 0 8px ${dot}"></span></div>
     <div class="ab-body">
-      <div class="ab-title">${parts.join(' · ')} — cliquez un job pour investiguer</div>
+      <div class="ab-title">${parts.join(' · ')} — ${t('ab.investigate')}</div>
       <div class="ab-items">${chips}</div>
     </div>
   </div>`
@@ -1961,24 +2131,24 @@ function renderImpact(d) {
       ms.style.display = 'flex'
       ms.innerHTML = `
         <div class="mttr-card">
-          <div class="mttr-label">Incidents / 30j</div>
+          <div class="mttr-label">${t('mttr.incidents')}</div>
           <div class="mttr-val">${d.incidents}</div>
-          <div class="mttr-sub">${d.affectedMonitors} job(s) touché(s)</div>
+          <div class="mttr-sub">${d.affectedMonitors} ${t('mttr.incidentsSub')}</div>
         </div>
         <div class="mttr-card">
-          <div class="mttr-label">MTTR moyen</div>
+          <div class="mttr-label">${t('mttr.avgMttr')}</div>
           <div class="mttr-val" style="color:var(--amber)">${fmtMs(d.avgMttrMs)}</div>
-          <div class="mttr-sub">temps de rétablissement</div>
+          <div class="mttr-sub">${t('mttr.avgMttrSub')}</div>
         </div>
         <div class="mttr-card">
-          <div class="mttr-label">Downtime total</div>
+          <div class="mttr-label">${t('mttr.downtime')}</div>
           <div class="mttr-val">${fmtMs(d.totalDowntimeMs)}</div>
-          <div class="mttr-sub">cumulé sur 30 jours</div>
+          <div class="mttr-sub">${t('mttr.downtimeSub')}</div>
         </div>
         <div class="mttr-card">
-          <div class="mttr-label">Perte données</div>
+          <div class="mttr-label">${t('mttr.dataLoss')}</div>
           <div class="mttr-val" style="color:${d.dataLoss?'var(--red)':'var(--green)'}">${d.dataLoss||0}</div>
-          <div class="mttr-sub">impact confirmé</div>
+          <div class="mttr-sub">${t('mttr.dataLossSub')}</div>
         </div>`
     } else {
       ms.style.display = 'none'
@@ -1987,19 +2157,19 @@ function renderImpact(d) {
 
   const el = document.getElementById('impact-strip'); if (!el) return
   if (!d.incidents) {
-    el.innerHTML = `<div style="font-size:11px;font-family:var(--mono);color:var(--text3);padding:4px 0">✓ Aucun incident résolu sur les 30 derniers jours.</div>`
+    el.innerHTML = `<div style="font-size:11px;font-family:var(--mono);color:var(--text3);padding:4px 0">${t('impact.none')}</div>`
     return
   }
   const rec = d.recurring?.length
-    ? `<div style="margin-top:10px;font-size:11px;color:var(--text2)">🔁 Récurrents : ${d.recurring.map(r=>`<b style="color:var(--text)">${esc(r.name)}</b> ×${r.n}`).join(' · ')}</div>`
+    ? `<div style="margin-top:10px;font-size:11px;color:var(--text2)">${t('impact.recurring')} : ${d.recurring.map(r=>`<b style="color:var(--text)">${esc(r.name)}</b> ×${r.n}`).join(' · ')}</div>`
     : ''
   el.innerHTML = `
-    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Impact · 30 derniers jours</div>
+    <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">${t('impact.header')}</div>
     <div class="stats" style="grid-template-columns:repeat(4,1fr);margin:0">
-      <div class="stat stat-fail"><div class="stat-label">incidents</div><div class="stat-val">${d.incidents}</div><div class="stat-sub">${d.affectedMonitors} job(s) touché(s)</div></div>
-      <div class="stat stat-ai"><div class="stat-label">MTTR moyen</div><div class="stat-val" style="font-size:22px">${fmtMs(d.avgMttrMs)}</div><div class="stat-sub">temps de rétablissement</div></div>
-      <div class="stat stat-late"><div class="stat-label">downtime total</div><div class="stat-val" style="font-size:22px">${fmtMs(d.totalDowntimeMs)}</div><div class="stat-sub">cumulé</div></div>
-      <div class="stat ${d.dataLoss?'stat-fail':'stat-ok'}"><div class="stat-label">perte données</div><div class="stat-val">${d.dataLoss}</div><div class="stat-sub">impact confirmé</div></div>
+      <div class="stat stat-fail"><div class="stat-label">${t('impact.incidents')}</div><div class="stat-val">${d.incidents}</div><div class="stat-sub">${d.affectedMonitors} ${t('impact.affected')}</div></div>
+      <div class="stat stat-ai"><div class="stat-label">${t('impact.mttr')}</div><div class="stat-val" style="font-size:22px">${fmtMs(d.avgMttrMs)}</div><div class="stat-sub">${t('impact.mttrSub')}</div></div>
+      <div class="stat stat-late"><div class="stat-label">${t('impact.downtime')}</div><div class="stat-val" style="font-size:22px">${fmtMs(d.totalDowntimeMs)}</div><div class="stat-sub">${t('impact.downtimeSub')}</div></div>
+      <div class="stat ${d.dataLoss?'stat-fail':'stat-ok'}"><div class="stat-label">${t('impact.dataLoss')}</div><div class="stat-val">${d.dataLoss}</div><div class="stat-sub">${t('impact.dataLossSub')}</div></div>
     </div>${rec}`
 }
 
@@ -2022,27 +2192,27 @@ function renderMonitors(target) {
     .filter(m => currentFilter !== 'alerts' || (m.last_status !== 'ok' && m.last_status !== 'unknown'))
 
   if (!list.length) {
-    if (q) { el.innerHTML = `<div class="empty">aucun résultat pour "${q}"</div>`; return }
-    if (currentFilter === 'alerts') { el.innerHTML = `<div class="empty" style="color:var(--green)">✓ aucune alerte active</div>`; return }
+    if (q) { el.innerHTML = `<div class="empty">${t('empty.noResult')} "${esc(q)}"</div>`; return }
+    if (currentFilter === 'alerts') { el.innerHTML = `<div class="empty" style="color:var(--green)">${t('empty.alerts')}</div>`; return }
     el.innerHTML = `<div style="padding:32px 24px;text-align:center">
-      <div style="font-size:32px;margin-bottom:16px;opacity:.4">⬡</div>
-      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">Aucun monitor configuré</div>
+      <div style="font-size:32px;margin-bottom:16px;opacity:.35;color:var(--text3)">⬡</div>
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">${t('empty.mon.title')}</div>
       <div style="font-size:12px;color:var(--text2);max-width:320px;margin:0 auto 20px;line-height:1.7">
-        Ajoutez un ping à la fin de votre script cron. CronGuard vous alerte si le job ne s'exécute pas dans sa fenêtre de grâce.
+        ${t('empty.mon.desc')}
       </div>
       <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="openModal()">+ Créer mon premier monitor</button>
-        <button class="btn btn-ghost" onclick="setView('docs')">Voir la documentation →</button>
+        <button class="btn btn-primary" onclick="openModal()">${t('empty.mon.createFirst')}</button>
+        <button class="btn btn-ghost" onclick="setView('docs')">${t('empty.mon.seeDocs')}</button>
       </div>
       <div style="margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:480px;margin-left:auto;margin-right:auto">
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;font-size:10px;color:var(--text3);font-family:var(--mono)">
-          <div style="color:var(--green);font-weight:600;margin-bottom:4px">1. Créer</div>Obtenez une ping_key unique
+          <div style="color:var(--green);font-weight:600;margin-bottom:4px">${t('empty.mon.s1t')}</div>${t('empty.mon.s1d')}
         </div>
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;font-size:10px;color:var(--text3);font-family:var(--mono)">
-          <div style="color:var(--blue);font-weight:600;margin-bottom:4px">2. Intégrer</div>curl -X POST /ping/KEY
+          <div style="color:var(--blue);font-weight:600;margin-bottom:4px">${t('empty.mon.s2t')}</div>${t('empty.mon.s2d')}
         </div>
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;font-size:10px;color:var(--text3);font-family:var(--mono)">
-          <div style="color:var(--purple);font-weight:600;margin-bottom:4px">3. Recevoir</div>Alerte + analyse IA auto
+          <div style="color:var(--purple);font-weight:600;margin-bottom:4px">${t('empty.mon.s3t')}</div>${t('empty.mon.s3d')}
         </div>
       </div>
     </div>`
@@ -2054,7 +2224,7 @@ function renderMonitors(target) {
     const isPaused = m.paused_until && new Date(m.paused_until) > new Date()
     const dotCls  = isPaused ? 'd-pause' : {ok:'d-ok',late:'d-late',failed:'d-fail'}[st] || 'd-unk'
     const pillCls = isPaused ? 'pill-pause' : {ok:'pill-ok',late:'pill-late',failed:'pill-fail'}[st] || 'pill-unk'
-    const pillTxt = isPaused ? '⏸ pause' : {ok:'ok',late:'late',failed:'failed'}[st] || '?'
+    const pillTxt = isPaused ? t('pill.pause') : {ok:t('pill.ok'),late:t('pill.late'),failed:t('pill.failed')}[st] || t('pill.unknown')
     const pings   = m.recent_pings || []
     const durs    = pings.filter(p => p.duration_ms > 0).map(p => p.duration_ms)
     const maxDur  = Math.max(...durs, 1)
@@ -2070,13 +2240,13 @@ function renderMonitors(target) {
     const durAnom = lastDur && avgDur && lastDur > avgDur*2.5
     const envCls  = {production:'env-p',staging:'env-s',development:'env-d'}[m.env]||'env-d'
     const isActive = activeMonitor?.id === m.id ? ' active-row' : ''
-    const lastPing = m.last_ping_at ? ago(m.last_ping_at) : 'jamais'
+    const lastPing = m.last_ping_at ? ago(m.last_ping_at) : t('never')
     // Health score
     const score   = healthScore(m)
     const hColor  = healthColor(score)
     // Pending analysis indicator
     const isPending = pendingAnalysis.has(m.id)
-    const pendingHtml = isPending ? '<span class="pending-spin" title="Analyse IA en cours..."></span>' : ''
+    const pendingHtml = isPending ? `<span class="pending-spin" title="${t('pending')}"></span>` : ''
     return `<div class="m-row${isActive}" onclick="openDrawer('${m.id}')">
       <div class="m-dot ${dotCls}"></div>
       <div>
@@ -2206,12 +2376,12 @@ function renderAnalyses() {
     || new Date(b.created_at) - new Date(a.created_at))
 
   document.getElementById('an-info').textContent =
-    `${list.length}${list.length!==analysesData.length ? '/'+analysesData.length : ''} diagnostic${list.length!==1?'s':''} · ${activeModel}`
+    `${list.length}${list.length!==analysesData.length ? '/'+analysesData.length : ''} ${list.length!==1?t('an.info.diags'):t('an.info.diag')} · ${activeModel}`
 
   if (!analysesData.length) {
     el.innerHTML = `<div style="padding:24px">
       <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7">
-        L'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :
+        ${t('sample.intro')}
       </div>
       <div class="an-item acc-high" style="opacity:.75;pointer-events:none;margin-bottom:16px">
         <div class="an-header">
@@ -2219,27 +2389,27 @@ function renderAnalyses() {
           <div class="an-meta">
             <span class="an-confidence conf-high">high</span>
             <span class="sev-pill sev-high">high</span>
-            <span class="an-time">il y a 2min · llama3.2:3b</span>
+            <span class="an-time">${t('sample.time')} · llama3.2:3b</span>
           </div>
         </div>
-        <div class="an-meta-row"><span class="data-impact impact-possible">? impact possible</span><span class="fix-time">résolution estimée : <span>~15 min</span></span></div>
-        <div class="an-cause">🔍 Connexion PostgreSQL refusée — le service postgres est arrêté ou inaccessible sur le port 5432</div>
-        <div class="an-action">→ Vérifier que le service PostgreSQL est démarré : <code>systemctl status postgresql</code></div>
-        <div class="an-prevention">🛡 Ajouter un healthcheck PostgreSQL avant le backup, monitorer pg_isready</div>
+        <div class="an-meta-row"><span class="data-impact impact-possible">${t('sample.impact')}</span><span class="fix-time">${t('sample.fix')} <span>~15 min</span></span></div>
+        <div class="an-cause">🔍 ${t('sample.cause')}</div>
+        <div class="an-action">→ ${t('sample.action')} <code>systemctl status postgresql</code></div>
+        <div class="an-prevention">🛡 ${t('sample.prevention')}</div>
         <div style="margin-top:8px">
-          <div class="an-checks-label">Vérifications immédiates</div>
+          <div class="an-checks-label">${t('sample.checks')}</div>
           <div class="an-check-item">systemctl status postgresql</div>
           <div class="an-check-item">pg_isready -h localhost -p 5432</div>
-          <div class="an-check-item">Vérifier l'espace disque : df -h /var/lib/postgresql</div>
+          <div class="an-check-item">${t('sample.disk')} df -h /var/lib/postgresql</div>
         </div>
       </div>
       <div style="text-align:center">
-        <button class="btn btn-primary" onclick="setView('playground')">⚡ Tester l'analyse IA maintenant →</button>
+        <button class="btn btn-primary" onclick="setView('playground')">${t('sample.cta')}</button>
       </div>
     </div>`
     return
   }
-  if (!list.length) { el.innerHTML = '<div class="empty">aucune analyse ne correspond aux filtres</div>'; return }
+  if (!list.length) { el.innerHTML = `<div class="empty">${t('an.none')}</div>`; return }
 
   el.innerHTML = list.map((a, i) => {
     const d          = typeof a.diagnosis==='string' ? parse(a.diagnosis) : a.diagnosis
@@ -2359,7 +2529,7 @@ async function openDrawer(id) {
                : `<button class="d-btn" onclick="pauseMonitor('${id}')">⏹ pause 2h</button>`}
     <button class="d-btn danger" onclick="confirmDelete('${id}','${esc(m.name)}')">✕ supprimer</button>`
 
-  document.getElementById('d-body').innerHTML = '<div class="empty">chargement...</div>'
+  document.getElementById('d-body').innerHTML = '<div class="empty">…</div>'
   document.getElementById('drawer-overlay').classList.add('open')
   document.getElementById('drawer').classList.add('open')
 
@@ -2614,8 +2784,8 @@ function setView(view) {
   currentView = view
   document.querySelectorAll('.s-item').forEach(n => n.classList.remove('active'))
   const nav = document.getElementById('nav-'+view); if (nav) nav.classList.add('active')
-  const titles = {dashboard:'dashboard',monitors:'services',logs:'journal',analyses:'analyses ia',settings:'paramètres',docs:'documentation',playground:'ia playground'}
-  document.getElementById('page-title').textContent = titles[view]||view
+  const titleKey = {dashboard:'title.dashboard',monitors:'title.services',logs:'title.logs',analyses:'title.analyses',settings:'title.settings',docs:'title.docs',playground:'title.playground'}
+  document.getElementById('page-title').textContent = t(titleKey[view] || 'title.'+view)
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
   const vp = document.getElementById('view-'+view); if (vp) vp.classList.add('active')
   if (view==='logs')      loadLogs('full')
@@ -2650,9 +2820,9 @@ function clearAnFilter() {
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 function ago(iso) {
-  if (!iso) return 'jamais'
+  if (!iso) return t('never')
   const d = Date.now() - new Date(iso).getTime()
-  if (d < 10000)   return 'à l\'instant'
+  if (d < 10000)   return t('now')
   if (d < 60000)   return `${Math.round(d/1000)}s`
   if (d < 3600000) return `${Math.round(d/60000)}m`
   if (d < 86400000) return `${Math.round(d/3600000)}h`
@@ -2780,7 +2950,7 @@ async function loadSettings() {
     window._rawApiKey = API_KEY
     document.getElementById('set-email').textContent    = c.email || '—'
     document.getElementById('set-plan').textContent     = c.plan || 'free'
-    document.getElementById('set-monitors').textContent = `${c.monitor_count || 0} actifs`
+    document.getElementById('set-monitors').textContent = `${c.monitor_count || 0}`
     if (c.plan === 'free') document.getElementById('trial-section').style.display = ''
     document.getElementById('set-status-url').textContent = `${BASE_URL}/status/{monitor_id}`
 
@@ -2789,6 +2959,8 @@ async function loadSettings() {
     if (c.escalation_email)     document.getElementById('set-esc-email').value   = c.escalation_email
     if (c.escalation_webhook)   document.getElementById('set-esc-webhook').value = c.escalation_webhook
     if (c.escalation_after_min) document.getElementById('set-esc-delay').value   = c.escalation_after_min
+    const langSel = document.getElementById('set-lang')
+    if (langSel) langSel.value = localStorage.getItem('cg_lang') || ''
     loadTeamMembers()
     loadMaintenanceWindows()
 
@@ -2860,17 +3032,17 @@ async function loadMaintenanceWindows() {
   const el = document.getElementById('maint-windows-list'); if (!el) return
   try {
     const wins = await api('/maintenance-windows')
-    if (!wins.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">Aucune fenêtre configurée.</div>'; return }
+    if (!wins.length) { el.innerHTML = `<div style="font-size:12px;color:var(--text3)">${t('set.noWindows')}</div>`; return }
     el.innerHTML = wins.map(w => `
       <div class="settings-row">
         <div>
           <div class="settings-label" style="display:flex;align-items:center;gap:6px">
             ${esc(w.label || w.cron_expr)}
-            ${w.active_now ? '<span style="font-size:9px;color:var(--green);font-family:var(--mono)">● active</span>' : ''}
+            ${w.active_now ? `<span style="font-size:9px;color:var(--green);font-family:var(--mono)">● ${t('set.active')}</span>` : ''}
           </div>
-          <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${esc(w.cron_expr)} · ${w.duration_min}min${w.monitor_id?'':' · tous les monitors'}</div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${esc(w.cron_expr)} · ${w.duration_min}min${w.monitor_id?'':' · '+t('set.allMonitors')}</div>
         </div>
-        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="deleteMaintenanceWindow('${w.id}')">retirer</button>
+        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="deleteMaintenanceWindow('${w.id}')">${t('set.remove')}</button>
       </div>`).join('')
   } catch(e) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">—</div>' }
 }
@@ -2886,7 +3058,7 @@ async function deleteMaintenanceWindow(id) {
 function openMaintenanceModal() {
   // Peuple le select monitor
   const sel = document.getElementById('mw-monitor')
-  sel.innerHTML = '<option value="">Tous les monitors</option>' +
+  sel.innerHTML = `<option value="">${t('mod.mw.allMonitors')}</option>` +
     monitors.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('')
   document.getElementById('mw-err').textContent = ''
   document.getElementById('maint-modal-bg').classList.remove('hidden')
@@ -2912,17 +3084,17 @@ async function loadTeamMembers() {
   const el = document.getElementById('team-members-list'); if (!el) return
   try {
     const members = await api('/team/members')
-    if (!members.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">Aucun membre pour l\'instant.</div>'; return }
+    if (!members.length) { el.innerHTML = `<div style="font-size:12px;color:var(--text3)">${t('set.noMembers')}</div>`; return }
     el.innerHTML = members.map(m => `
       <div class="settings-row">
         <div>
           <div class="settings-label">${esc(m.email)}</div>
           <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">
             <span style="color:${m.role==='admin'?'var(--amber)':m.role==='owner'?'var(--green)':'var(--text3)'}">${m.role}</span>
-            ${m.invited_by ? ` · invité par ${esc(m.invited_by)}` : ''}
+            ${m.invited_by ? ` · ${t('set.invitedBy')} ${esc(m.invited_by)}` : ''}
           </div>
         </div>
-        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="removeTeamMember('${m.id}')">retirer</button>
+        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="removeTeamMember('${m.id}')">${t('set.remove')}</button>
       </div>`).join('')
   } catch(e) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">—</div>' }
 
@@ -2931,14 +3103,14 @@ async function loadTeamMembers() {
   try {
     const invites = await api('/team/invitations')
     if (!invites.length) { iel.innerHTML = ''; return }
-    iel.innerHTML = `<div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 6px">En attente (${invites.length})</div>` +
+    iel.innerHTML = `<div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 6px">${t('set.pending')} (${invites.length})</div>` +
       invites.map(i => `
         <div class="settings-row" style="opacity:.7">
           <div>
             <div class="settings-label" style="color:var(--text2)">${esc(i.email)}</div>
-            <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${i.role} · expire ${fmtDateTime(i.expires_at)}</div>
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${i.role} · ${t('set.expires')} ${fmtDateTime(i.expires_at)}</div>
           </div>
-          <button class="btn btn-ghost" style="font-size:10px" onclick="cancelInvite('${i.id}')">annuler</button>
+          <button class="btn btn-ghost" style="font-size:10px" onclick="cancelInvite('${i.id}')">${t('set.cancel')}</button>
         </div>`).join('')
   } catch(e) { iel.innerHTML = '' }
 }
@@ -3263,10 +3435,10 @@ function renderAnSummary(analyses) {
   const fixTimes = analyses.filter(a => a.fix_minutes > 0).map(a => a.fix_minutes)
   const avgFix = fixTimes.length ? Math.round(fixTimes.reduce((a,b)=>a+b,0)/fixTimes.length) : 0
   el.innerHTML = `
-    <div class="stat stat-ai"><div class="stat-label">analyses</div><div class="stat-val">${total}</div><div class="stat-sub">total récent</div></div>
-    <div class="stat stat-fail"><div class="stat-label">à traiter</div><div class="stat-val">${urgent}</div><div class="stat-sub">high + critical</div></div>
-    <div class="stat stat-uptime"><div class="stat-label">catégorie #1</div><div class="stat-val" style="font-size:18px">${topCat?topCat[0]:'—'}</div><div class="stat-sub">${topCat?topCat[1]+' cas':''}</div></div>
-    <div class="stat stat-late"><div class="stat-label">résolution</div><div class="stat-val">${avgFix||'—'}</div><div class="stat-sub">min en moyenne</div></div>`
+    <div class="stat stat-ai"><div class="stat-label">${t('ansum.analyses')}</div><div class="stat-val">${total}</div><div class="stat-sub">${t('ansum.analysesSub')}</div></div>
+    <div class="stat stat-fail"><div class="stat-label">${t('ansum.todo')}</div><div class="stat-val">${urgent}</div><div class="stat-sub">${t('ansum.todoSub')}</div></div>
+    <div class="stat stat-uptime"><div class="stat-label">${t('ansum.topCat')}</div><div class="stat-val" style="font-size:18px">${topCat?topCat[0]:'—'}</div><div class="stat-sub">${topCat?topCat[1]+' '+t('ansum.cases'):''}</div></div>
+    <div class="stat stat-late"><div class="stat-label">${t('ansum.resolution')}</div><div class="stat-val">${avgFix||'—'}</div><div class="stat-sub">${t('ansum.resolutionSub')}</div></div>`
 }
 
 function renderQualityMetrics(analyses) {
@@ -3334,6 +3506,9 @@ function renderQualityMetrics(analyses) {
 function updateDocUrls() {
   document.querySelectorAll('[id^="doc-url"]').forEach(el => { el.textContent = BASE_URL })
 }
+
+// Traduit le chrome statique (auth overlay + sidebar + settings + modals) au chargement
+applyI18n()
 
 if (API_KEY) {
   document.getElementById('auth-key').value = API_KEY
