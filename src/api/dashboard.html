@@ -772,6 +772,54 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 }
 .sidebar-backdrop.show{display:block}
 
+/* ─── Alert banner ───────────────────────────────────────────────────────── */
+.alert-banner{
+  border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px;
+  display:flex;align-items:flex-start;gap:12px;
+  border:1px solid;animation:toast-in .2s ease;
+}
+.alert-banner.crit{background:rgba(248,113,113,.07);border-color:rgba(248,113,113,.25)}
+.alert-banner.warn{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.2)}
+.ab-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.ab-body{flex:1;min-width:0}
+.ab-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.ab-items{display:flex;flex-wrap:wrap;gap:6px}
+.ab-chip{font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:20px;cursor:pointer;transition:opacity .15s}
+.ab-chip:hover{opacity:.8}
+.ab-chip.fail{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.ab-chip.late{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,.2)}
+
+/* ─── MTTR strip ─────────────────────────────────────────────────────────── */
+.mttr-strip{display:flex;gap:10px;margin-bottom:16px}
+.mttr-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 16px;flex:1;box-shadow:var(--shadow-sm)}
+.mttr-label{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.mttr-val{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--text)}
+.mttr-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* ─── Playground view ────────────────────────────────────────────────────── */
+.pg-view-header{
+  display:flex;align-items:center;gap:12px;margin-bottom:20px;
+  padding-bottom:16px;border-bottom:1px solid var(--border);
+}
+.pg-view-icon{
+  width:40px;height:40px;border-radius:var(--radius-lg);
+  background:linear-gradient(135deg,rgba(52,211,153,.15),rgba(96,165,250,.1));
+  border:1px solid rgba(52,211,153,.25);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  box-shadow:0 0 16px rgba(52,211,153,.1);
+}
+.pg-view-title{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.pg-view-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.pg-benchmark{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;
+}
+.pg-bench-pill{
+  font-size:10px;font-family:var(--mono);font-weight:600;
+  padding:3px 10px;border-radius:20px;
+  background:rgba(52,211,153,.1);color:var(--green);
+  border:1px solid rgba(52,211,153,.2);
+}
+
 /* ─── Empty states ───────────────────────────────────────────────────────── */
 .empty{
   padding:40px 24px;text-align:center;
@@ -1028,6 +1076,70 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
   </div>
 </div>
 
+<!-- Modal invite équipe -->
+<div class="modal-bg hidden" id="invite-modal-bg">
+  <div class="modal">
+    <div class="modal-title">// inviter un membre</div>
+    <div class="modal-sub">Un lien d'acceptation sera généré. Aucun mot de passe requis — l'accès se fait via clé API.</div>
+    <div class="field">
+      <label class="field-label">Email *</label>
+      <input class="field-input" id="inv-email" type="email" placeholder="colleague@company.com">
+    </div>
+    <div class="field">
+      <label class="field-label">Rôle</label>
+      <select class="field-select" id="inv-role">
+        <option value="viewer">viewer — lecture seule</option>
+        <option value="member" selected>member — acknowledge / snooze</option>
+        <option value="admin">admin — créer / modifier monitors</option>
+      </select>
+    </div>
+    <div class="field-err" id="inv-err"></div>
+    <div id="inv-success" style="display:none;margin-top:12px">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono)">Lien d'acceptation (valable 7 jours) :</div>
+      <div class="key-box" id="inv-link" style="font-size:10px;word-break:break-all"></div>
+      <button class="btn btn-ghost" onclick="copyText(document.getElementById('inv-link').dataset.url,'lien copié !')">copier le lien</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeInviteModal()">fermer</button>
+      <button class="btn btn-primary" id="inv-btn" onclick="sendInvite()">envoyer →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal fenêtre maintenance -->
+<div class="modal-bg hidden" id="maint-modal-bg">
+  <div class="modal">
+    <div class="modal-title">// fenêtre de maintenance</div>
+    <div class="modal-sub">Les alertes seront silencieuses pendant cette plage récurrente.</div>
+    <div class="field">
+      <label class="field-label">Label</label>
+      <input class="field-input" id="mw-label" placeholder="Maintenance nuit · Déploiement hebdo...">
+    </div>
+    <div class="field">
+      <label class="field-label">Expression cron *</label>
+      <input class="field-input" id="mw-cron" placeholder="0 2 * * 0  (tous les dimanches à 2h)">
+      <div class="field-hint">5 champs : minute heure jour-mois mois jour-semaine</div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label">Durée (minutes)</label>
+        <input class="field-input" id="mw-duration" type="number" value="60" min="1" max="1440">
+      </div>
+      <div class="field">
+        <label class="field-label">Monitor (optionnel)</label>
+        <select class="field-select" id="mw-monitor">
+          <option value="">Tous les monitors</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-err" id="mw-err"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeMaintenanceModal()">annuler</button>
+      <button class="btn btn-primary" onclick="createMaintenanceWindow()">créer →</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast container -->
 <div class="toast-container" id="toasts"></div>
 
@@ -1051,6 +1163,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
       </div>
       <div class="s-item" id="nav-analyses" onclick="setView('analyses')">
         <span class="icon">✦</span> analyses ia
+      </div>
+      <div class="s-item" id="nav-playground" onclick="setView('playground')">
+        <span class="icon">⚡</span> ia playground
       </div>
       <div class="s-section">compte</div>
       <div class="s-item" id="nav-settings" onclick="setView('settings')">
@@ -1079,7 +1194,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
         <span class="search-kbd">/</span>
       </div>
       <div class="topbar-right">
-        <div class="live"><div class="live-dot"></div> live</div>
+        <div class="live" id="live-indicator"><div class="live-dot"></div> <span id="live-ts">live</span></div>
         <button class="btn btn-ghost" onclick="refreshAll()" title="Rafraîchir (R)">↻</button>
         <button class="btn btn-primary" onclick="openModal()">+ monitor</button>
       </div>
@@ -1089,12 +1204,14 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 
       <!-- DASHBOARD VIEW -->
       <div class="view active" id="view-dashboard">
+        <div id="alert-banner"></div>
+        <div id="mttr-strip" class="mttr-strip" style="display:none"></div>
         <div class="stats" id="stats-row">
-          <div class="stat stat-ok"><div class="stat-label">ok</div><div class="stat-val" id="s-ok">—</div><div class="stat-sub" id="s-total">—</div></div>
-          <div class="stat stat-fail"><div class="stat-label">échec</div><div class="stat-val" id="s-fail">—</div><div class="stat-sub">alertes actives</div></div>
-          <div class="stat stat-late"><div class="stat-label">en retard</div><div class="stat-val" id="s-late">—</div><div class="stat-sub">grace dépassée</div></div>
-          <div class="stat stat-uptime"><div class="stat-label">uptime 24h</div><div class="stat-val" id="s-uptime">—</div><div class="stat-sub">% succès</div></div>
-          <div class="stat stat-ai"><div class="stat-label">analyses ia</div><div class="stat-val" id="s-ai">—</div><div class="stat-sub">dernières 24h</div></div>
+          <div class="stat stat-ok"><div class="stat-label">ok</div><div class="stat-val" id="s-ok">0</div><div class="stat-sub" id="s-total">/ 0 monitors</div></div>
+          <div class="stat stat-fail"><div class="stat-label">failed</div><div class="stat-val" id="s-fail">0</div><div class="stat-sub">alertes actives</div></div>
+          <div class="stat stat-late"><div class="stat-label">late</div><div class="stat-val" id="s-late">0</div><div class="stat-sub">grace dépassée</div></div>
+          <div class="stat stat-uptime"><div class="stat-label">uptime 24h</div><div class="stat-val" id="s-uptime">100%</div><div class="stat-sub">% succès</div></div>
+          <div class="stat stat-ai"><div class="stat-label">analyses ia</div><div class="stat-val" id="s-ai">0</div><div class="stat-sub">dernières 24h</div></div>
         </div>
         <div class="grid">
           <div class="panel">
@@ -1213,6 +1330,66 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
             Essayez les fonctionnalités Pro pendant 14 jours gratuitement : monitors illimités, alertes Slack, analyses IA avancées.
           </div>
           <button class="btn btn-primary" onclick="startTrial()">Démarrer l'essai gratuit 14 jours →</button>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">🔺 escalade automatique</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+            Si une alerte n'est pas acquittée après le délai, CronGuard notifie un second contact (on-call, manager...).
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Délai avant escalade</div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Minutes d'inaction avant notification d'escalade</div>
+            </div>
+          </div>
+          <div class="settings-input-row" style="align-items:center">
+            <input class="field-input" id="set-esc-delay" type="number" placeholder="30" min="1" max="1440" style="max-width:100px">
+            <span style="font-size:11px;color:var(--text3)">minutes</span>
+            <button class="btn btn-ghost" onclick="saveEscalation()" style="margin-left:auto">sauvegarder</button>
+          </div>
+          <div class="settings-row" style="margin-top:12px">
+            <div>
+              <div class="settings-label">Email d'escalade</div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">Reçoit l'email si l'alerte n'est pas acquittée</div>
+            </div>
+          </div>
+          <div class="settings-input-row">
+            <input class="field-input" id="set-esc-email" placeholder="oncall@company.com" type="email">
+          </div>
+          <div class="settings-row" style="margin-top:12px">
+            <div>
+              <div class="settings-label">Webhook d'escalade</div>
+              <div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px">PagerDuty, Opsgenie, Discord, n8n...</div>
+            </div>
+          </div>
+          <div class="settings-input-row">
+            <input class="field-input" id="set-esc-webhook" placeholder="https://...">
+            <button class="btn btn-ghost" onclick="saveEscalation()">sauvegarder</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">🛡 fenêtres de maintenance</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+            Silencez automatiquement les alertes pendant les maintenances planifiées (cron récurrent).
+          </div>
+          <div id="maint-windows-list" style="margin-bottom:12px"><div style="font-size:12px;color:var(--text3)">chargement...</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="openMaintenanceModal()">+ ajouter une fenêtre</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-title">👥 équipe</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">
+            Invitez des membres avec des rôles différents : <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">viewer · member · admin · owner</span>
+          </div>
+          <div id="team-members-list" style="margin-bottom:12px"><div style="font-size:12px;color:var(--text3)">chargement...</div></div>
+          <div id="team-invites-list" style="margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="openInviteModal()">+ inviter un membre</button>
+          </div>
         </div>
 
         <div class="settings-section">
@@ -1383,7 +1560,7 @@ GET  /health                      # Santé de l'API
             <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">R</code> Rafraîchir</div><div class="docs-card-desc">Recharge toutes les données</div></div>
             <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">/</code> Rechercher</div><div class="docs-card-desc">Focus sur le champ de recherche</div></div>
             <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">Esc</code> Fermer</div><div class="docs-card-desc">Ferme le drawer ou la modale</div></div>
-            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">1–6</code> Navigation</div><div class="docs-card-desc">Dashboard · Services · Logs · Analyses · Paramètres · Docs</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">1–7</code> Navigation</div><div class="docs-card-desc">Dashboard · Services · Logs · Analyses · Paramètres · Docs · IA Playground</div></div>
           </div>
         </div>
       </div>
@@ -1397,7 +1574,7 @@ GET  /health                      # Santé de l'API
         <div class="stats" id="an-summary" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px"></div>
 
         <!-- Métriques détaillées (toggle) -->
-        <div class="quality-grid" id="quality-grid" style="display:none">
+        <div class="quality-grid" id="quality-grid">
           <div class="q-card">
             <div class="q-title">Catégories</div>
             <div id="cat-bars"></div>
@@ -1440,59 +1617,77 @@ GET  /health                      # Santé de l'API
           <input class="search-input" id="an-search" placeholder="rechercher cause / job..." oninput="filterAnalyses()" style="width:180px;padding-left:10px">
           <span id="an-filter-badge" class="an-filter-badge" style="display:none" onclick="clearAnFilter()">— <span id="an-filter-name"></span> ✕</span>
           <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
-            <button class="btn btn-ghost" id="toggle-metrics" onclick="toggleMetrics()" style="font-size:10px;padding:3px 8px">📊 détails</button>
+            <button class="btn btn-ghost" id="toggle-metrics" onclick="toggleMetrics()" style="font-size:10px;padding:3px 8px">📊 masquer</button>
             <span style="font-size:9px;font-family:var(--mono);color:var(--text3)" id="an-info">—</span>
           </span>
         </div>
 
         <div id="analyses-list"><div class="empty">chargement...</div></div>
 
-        <!-- Playground (outil de calibration, replié) -->
-        <details class="pg-collapse">
-          <summary>🧪 Tester le LLM <span style="font-weight:400;color:var(--text3);font-size:11px">— playground de calibration</span></summary>
-          <div class="playground" id="llm-playground">
-            <div class="playground-sub">Collez n'importe quels logs de cron job pour voir ce que l'analyse IA produit en temps réel.</div>
+        <div style="margin-top:16px;text-align:center">
+          <button class="btn btn-ghost" onclick="setView('playground')" style="border-color:rgba(52,211,153,.25);color:var(--green)">
+            ⚡ Tester le LLM en direct →
+          </button>
+        </div>
+      </div>
 
-            <div style="margin-bottom:8px;font-size:10px;color:var(--text3);font-family:var(--mono)">Scénarios prédéfinis :</div>
-            <div class="quick-errors" id="quick-errors"></div>
-
-            <div class="playground-form">
-              <div class="field">
-                <label class="field-label">Nom du job</label>
-                <input class="field-input" id="pg-job" value="mon-cron-job">
-              </div>
-              <div class="field">
-                <label class="field-label">Environnement</label>
-                <select class="field-select" id="pg-env">
-                  <option value="production">production</option>
-                  <option value="staging">staging</option>
-                  <option value="development">development</option>
-                </select>
-              </div>
-              <div class="field">
-                <label class="field-label">Exit code</label>
-                <input class="field-input" id="pg-exit" type="number" value="1">
-              </div>
+      <!-- PLAYGROUND VIEW -->
+      <div class="view" id="view-playground">
+        <div class="pg-view-header">
+          <div class="pg-view-icon">⚡</div>
+          <div>
+            <div class="pg-view-title">IA Playground</div>
+            <div class="pg-view-sub">Testez l'analyse LLM en temps réel sur n'importe quels logs de cron job.</div>
+            <div class="pg-benchmark">
+              <span class="pg-bench-pill">100% parsable</span>
+              <span class="pg-bench-pill">81% catégorie exacte</span>
+              <span class="pg-bench-pill">96% sévérité ±1</span>
+              <span class="pg-bench-pill">~15s / analyse</span>
+              <span class="pg-bench-pill" id="pg-model-pill" style="background:rgba(96,165,250,.1);color:var(--blue);border-color:rgba(96,165,250,.2)">llama3.2:3b</span>
             </div>
-            <div class="playground-logs">
-              <label class="field-label">Logs d'erreur</label>
-              <textarea id="pg-logs" placeholder="Collez ici les logs d'erreur de votre cron job...
-Exemple:
+          </div>
+        </div>
+
+        <div class="playground" style="margin-bottom:0;border-radius:var(--radius-lg)">
+          <div style="margin-bottom:10px;font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em">Scénarios prédéfinis :</div>
+          <div class="quick-errors" id="quick-errors"></div>
+
+          <div class="playground-form" style="margin-top:14px">
+            <div class="field">
+              <label class="field-label">Nom du job</label>
+              <input class="field-input" id="pg-job" value="mon-cron-job">
+            </div>
+            <div class="field">
+              <label class="field-label">Environnement</label>
+              <select class="field-select" id="pg-env">
+                <option value="production">production</option>
+                <option value="staging">staging</option>
+                <option value="development">development</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-label">Exit code</label>
+              <input class="field-input" id="pg-exit" type="number" value="1">
+            </div>
+          </div>
+          <div class="playground-logs">
+            <label class="field-label">Logs d'erreur</label>
+            <textarea id="pg-logs" placeholder="Collez ici les logs d'erreur de votre cron job...
+Exemple :
 ERROR: Connection refused 127.0.0.1:5432
   at Pool.connect (pg/lib/pool.js:45:11)
   errno: ECONNREFUSED"></textarea>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
-              <button class="btn btn-primary" onclick="runPreview()">⚡ Analyser maintenant</button>
-              <button class="btn btn-ghost" onclick="clearPreview()">Effacer</button>
-            </div>
-            <div class="playground-spinner" id="pg-spinner">
-              <div class="pending-spin"></div>
-              <span id="pg-spinner-text">Analyse en cours (15-30s selon le modèle)...</span>
-            </div>
-            <div class="playground-result" id="pg-result"></div>
           </div>
-        </details>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
+            <button class="btn btn-primary" onclick="runPreview()" style="padding:8px 18px;font-size:13px">⚡ Analyser maintenant</button>
+            <button class="btn btn-ghost" onclick="clearPreview()">Effacer</button>
+          </div>
+          <div class="playground-spinner" id="pg-spinner">
+            <div class="pending-spin"></div>
+            <span id="pg-spinner-text">Analyse en cours (15-30s selon le modèle)...</span>
+          </div>
+          <div class="playground-result" id="pg-result"></div>
+        </div>
       </div>
 
     </div>
@@ -1514,6 +1709,15 @@ let editMonitorId = null
 let timer         = null
 let TZ            = localStorage.getItem('cg_tz') || ''
 const pendingAnalysis = new Set() // monitor IDs avec analyse en attente
+
+// Live refresh timestamp
+let lastRefresh   = null
+setInterval(() => {
+  const el = document.getElementById('live-ts')
+  if (!el || !lastRefresh) return
+  const s = Math.round((Date.now() - lastRefresh) / 1000)
+  el.textContent = s < 5 ? 'live' : `MàJ ${s}s`
+}, 2000)
 
 // Journal
 let logsData      = []
@@ -1614,6 +1818,7 @@ async function boot() {
   fetch(BASE_URL+'/health').then(r=>r.json()).then(h=>{ if(h.model) window._activeModel=h.model }).catch(()=>{})
   await refreshAll()
   loadClientInfo()
+  loadImpact()
   timer = setInterval(refreshAll, 15000)
 }
 
@@ -1636,6 +1841,7 @@ async function loadOverview() {
     const b = document.getElementById('alert-badge')
     b.textContent = alerts; b.style.display = alerts ? '' : 'none'
     document.title = alerts ? `(${alerts}) CronGuard` : 'CronGuard'
+    lastRefresh = Date.now()
   } catch(e) { console.error(e) }
 }
 
@@ -1664,7 +1870,32 @@ async function loadMonitors() {
     document.getElementById('m-count-full').textContent = monitors.length
     renderMonitors('dash')
     renderMonitors('full')
+    renderAlertBanner(monitors)
   } catch(e) { toast('Erreur chargement monitors: '+e.message, 'err') }
+}
+
+function renderAlertBanner(list) {
+  const el = document.getElementById('alert-banner')
+  if (!el) return
+  const failed = list.filter(m => (m.last_status==='failed'||m.last_status==='fail') && !(m.paused_until && new Date(m.paused_until)>new Date()))
+  const late   = list.filter(m => m.last_status==='late' && !(m.paused_until && new Date(m.paused_until)>new Date()))
+  if (!failed.length && !late.length) { el.innerHTML = ''; return }
+  const cls   = failed.length ? 'crit' : 'warn'
+  const icon  = failed.length ? '🚨' : '⚠️'
+  const parts = []
+  if (failed.length) parts.push(`${failed.length} en échec`)
+  if (late.length)   parts.push(`${late.length} en retard`)
+  const chips = [
+    ...failed.map(m => `<span class="ab-chip fail" onclick="openDrawer('${m.id}')" title="cliquer pour détail">${esc(m.name)}</span>`),
+    ...late.map(m   => `<span class="ab-chip late" onclick="openDrawer('${m.id}')" title="cliquer pour détail">${esc(m.name)}</span>`)
+  ].join('')
+  el.innerHTML = `<div class="alert-banner ${cls}">
+    <div class="ab-icon">${icon}</div>
+    <div class="ab-body">
+      <div class="ab-title">${parts.join(' · ')} — cliquez un job pour investiguer</div>
+      <div class="ab-items">${chips}</div>
+    </div>
+  </div>`
 }
 
 async function loadLogs(target) {
@@ -1723,8 +1954,39 @@ async function loadImpact() {
 }
 
 function renderImpact(d) {
+  // MTTR strip dans le dashboard
+  const ms = document.getElementById('mttr-strip')
+  if (ms) {
+    if (d.incidents) {
+      ms.style.display = 'flex'
+      ms.innerHTML = `
+        <div class="mttr-card">
+          <div class="mttr-label">Incidents / 30j</div>
+          <div class="mttr-val">${d.incidents}</div>
+          <div class="mttr-sub">${d.affectedMonitors} job(s) touché(s)</div>
+        </div>
+        <div class="mttr-card">
+          <div class="mttr-label">MTTR moyen</div>
+          <div class="mttr-val" style="color:var(--amber)">${fmtMs(d.avgMttrMs)}</div>
+          <div class="mttr-sub">temps de rétablissement</div>
+        </div>
+        <div class="mttr-card">
+          <div class="mttr-label">Downtime total</div>
+          <div class="mttr-val">${fmtMs(d.totalDowntimeMs)}</div>
+          <div class="mttr-sub">cumulé sur 30 jours</div>
+        </div>
+        <div class="mttr-card">
+          <div class="mttr-label">Perte données</div>
+          <div class="mttr-val" style="color:${d.dataLoss?'var(--red)':'var(--green)'}">${d.dataLoss||0}</div>
+          <div class="mttr-sub">impact confirmé</div>
+        </div>`
+    } else {
+      ms.style.display = 'none'
+    }
+  }
+
   const el = document.getElementById('impact-strip'); if (!el) return
-  if (!d.incidents) {                                  // aucun incident résolu → message positif
+  if (!d.incidents) {
     el.innerHTML = `<div style="font-size:11px;font-family:var(--mono);color:var(--text3);padding:4px 0">✓ Aucun incident résolu sur les 30 derniers jours.</div>`
     return
   }
@@ -1760,7 +2022,30 @@ function renderMonitors(target) {
     .filter(m => currentFilter !== 'alerts' || (m.last_status !== 'ok' && m.last_status !== 'unknown'))
 
   if (!list.length) {
-    el.innerHTML = `<div class="empty">${q ? 'aucun résultat pour "'+q+'"' : currentFilter==='alerts' ? '✓ aucune alerte active' : 'aucun monitor — cliquez + monitor'}</div>`
+    if (q) { el.innerHTML = `<div class="empty">aucun résultat pour "${q}"</div>`; return }
+    if (currentFilter === 'alerts') { el.innerHTML = `<div class="empty" style="color:var(--green)">✓ aucune alerte active</div>`; return }
+    el.innerHTML = `<div style="padding:32px 24px;text-align:center">
+      <div style="font-size:32px;margin-bottom:16px;opacity:.4">⬡</div>
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">Aucun monitor configuré</div>
+      <div style="font-size:12px;color:var(--text2);max-width:320px;margin:0 auto 20px;line-height:1.7">
+        Ajoutez un ping à la fin de votre script cron. CronGuard vous alerte si le job ne s'exécute pas dans sa fenêtre de grâce.
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="openModal()">+ Créer mon premier monitor</button>
+        <button class="btn btn-ghost" onclick="setView('docs')">Voir la documentation →</button>
+      </div>
+      <div style="margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:480px;margin-left:auto;margin-right:auto">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;font-size:10px;color:var(--text3);font-family:var(--mono)">
+          <div style="color:var(--green);font-weight:600;margin-bottom:4px">1. Créer</div>Obtenez une ping_key unique
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;font-size:10px;color:var(--text3);font-family:var(--mono)">
+          <div style="color:var(--blue);font-weight:600;margin-bottom:4px">2. Intégrer</div>curl -X POST /ping/KEY
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;font-size:10px;color:var(--text3);font-family:var(--mono)">
+          <div style="color:var(--purple);font-weight:600;margin-bottom:4px">3. Recevoir</div>Alerte + analyse IA auto
+        </div>
+      </div>
+    </div>`
     return
   }
 
@@ -1769,7 +2054,7 @@ function renderMonitors(target) {
     const isPaused = m.paused_until && new Date(m.paused_until) > new Date()
     const dotCls  = isPaused ? 'd-pause' : {ok:'d-ok',late:'d-late',failed:'d-fail'}[st] || 'd-unk'
     const pillCls = isPaused ? 'pill-pause' : {ok:'pill-ok',late:'pill-late',failed:'pill-fail'}[st] || 'pill-unk'
-    const pillTxt = isPaused ? '⏸ pause' : {ok:'ok',late:'retard',failed:'échec'}[st] || '?'
+    const pillTxt = isPaused ? '⏸ pause' : {ok:'ok',late:'late',failed:'failed'}[st] || '?'
     const pings   = m.recent_pings || []
     const durs    = pings.filter(p => p.duration_ms > 0).map(p => p.duration_ms)
     const maxDur  = Math.max(...durs, 1)
@@ -1923,7 +2208,37 @@ function renderAnalyses() {
   document.getElementById('an-info').textContent =
     `${list.length}${list.length!==analysesData.length ? '/'+analysesData.length : ''} diagnostic${list.length!==1?'s':''} · ${activeModel}`
 
-  if (!analysesData.length) { el.innerHTML = '<div class="empty">aucune analyse IA pour le moment</div>'; return }
+  if (!analysesData.length) {
+    el.innerHTML = `<div style="padding:24px">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.7">
+        L'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :
+      </div>
+      <div class="an-item acc-high" style="opacity:.75;pointer-events:none;margin-bottom:16px">
+        <div class="an-header">
+          <div class="an-job"><span class="an-cat cat-database">database</span> backup-postgres ✕</div>
+          <div class="an-meta">
+            <span class="an-confidence conf-high">high</span>
+            <span class="sev-pill sev-high">high</span>
+            <span class="an-time">il y a 2min · llama3.2:3b</span>
+          </div>
+        </div>
+        <div class="an-meta-row"><span class="data-impact impact-possible">? impact possible</span><span class="fix-time">résolution estimée : <span>~15 min</span></span></div>
+        <div class="an-cause">🔍 Connexion PostgreSQL refusée — le service postgres est arrêté ou inaccessible sur le port 5432</div>
+        <div class="an-action">→ Vérifier que le service PostgreSQL est démarré : <code>systemctl status postgresql</code></div>
+        <div class="an-prevention">🛡 Ajouter un healthcheck PostgreSQL avant le backup, monitorer pg_isready</div>
+        <div style="margin-top:8px">
+          <div class="an-checks-label">Vérifications immédiates</div>
+          <div class="an-check-item">systemctl status postgresql</div>
+          <div class="an-check-item">pg_isready -h localhost -p 5432</div>
+          <div class="an-check-item">Vérifier l'espace disque : df -h /var/lib/postgresql</div>
+        </div>
+      </div>
+      <div style="text-align:center">
+        <button class="btn btn-primary" onclick="setView('playground')">⚡ Tester l'analyse IA maintenant →</button>
+      </div>
+    </div>`
+    return
+  }
   if (!list.length) { el.innerHTML = '<div class="empty">aucune analyse ne correspond aux filtres</div>'; return }
 
   el.innerHTML = list.map((a, i) => {
@@ -2299,15 +2614,16 @@ function setView(view) {
   currentView = view
   document.querySelectorAll('.s-item').forEach(n => n.classList.remove('active'))
   const nav = document.getElementById('nav-'+view); if (nav) nav.classList.add('active')
-  const titles = {dashboard:'dashboard',monitors:'services',logs:'journal',analyses:'analyses ia',settings:'paramètres',docs:'documentation'}
+  const titles = {dashboard:'dashboard',monitors:'services',logs:'journal',analyses:'analyses ia',settings:'paramètres',docs:'documentation',playground:'ia playground'}
   document.getElementById('page-title').textContent = titles[view]||view
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
   const vp = document.getElementById('view-'+view); if (vp) vp.classList.add('active')
-  if (view==='logs')    loadLogs('full')
-  if (view==='analyses') { loadImpact(); loadAnalyses(anLocked?anMonitor?.id:null); initQuickErrors() }
-  if (view==='monitors') renderMonitors('full')
-  if (view==='settings') { loadSettings(); updateDocUrls() }
-  if (view==='docs')     updateDocUrls()
+  if (view==='logs')      loadLogs('full')
+  if (view==='analyses')  { loadImpact(); loadAnalyses(anLocked?anMonitor?.id:null); initQuickErrors() }
+  if (view==='playground'){ initQuickErrors(); const m = window._activeModel; if(m) { const p=document.getElementById('pg-model-pill'); if(p) p.textContent=m } }
+  if (view==='monitors')  renderMonitors('full')
+  if (view==='settings')  { loadSettings(); updateDocUrls() }
+  if (view==='docs')      updateDocUrls()
 }
 
 // ─── Filters ──────────────────────────────────────────────────────────────────
@@ -2378,11 +2694,14 @@ document.addEventListener('keydown', e => {
   if (e.key==='4') setView('analyses')
   if (e.key==='5') setView('settings')
   if (e.key==='6') setView('docs')
+  if (e.key==='7') setView('playground')
 })
 
 document.getElementById('auth-key').addEventListener('keydown', e => { if(e.key==='Enter') login() })
 document.getElementById('modal-bg').addEventListener('click', e => { if(e.target===document.getElementById('modal-bg')) closeModal() })
 document.getElementById('edit-modal-bg').addEventListener('click', e => { if(e.target===document.getElementById('edit-modal-bg')) closeEditModal() })
+document.getElementById('invite-modal-bg').addEventListener('click', e => { if(e.target===document.getElementById('invite-modal-bg')) closeInviteModal() })
+document.getElementById('maint-modal-bg').addEventListener('click', e => { if(e.target===document.getElementById('maint-modal-bg')) closeMaintenanceModal() })
 
 // ─── Edit monitor ─────────────────────────────────────────────────────────────
 function openEditModal(m) {
@@ -2465,8 +2784,13 @@ async function loadSettings() {
     if (c.plan === 'free') document.getElementById('trial-section').style.display = ''
     document.getElementById('set-status-url').textContent = `${BASE_URL}/status/{monitor_id}`
 
-    if (c.slack_webhook) document.getElementById('set-slack').value = c.slack_webhook
-    if (c.webhook_url)   document.getElementById('set-webhook').value = c.webhook_url
+    if (c.slack_webhook)        document.getElementById('set-slack').value       = c.slack_webhook
+    if (c.webhook_url)          document.getElementById('set-webhook').value     = c.webhook_url
+    if (c.escalation_email)     document.getElementById('set-esc-email').value   = c.escalation_email
+    if (c.escalation_webhook)   document.getElementById('set-esc-webhook').value = c.escalation_webhook
+    if (c.escalation_after_min) document.getElementById('set-esc-delay').value   = c.escalation_after_min
+    loadTeamMembers()
+    loadMaintenanceWindows()
 
     // Peuple le select timezone
     const tzSelect = document.getElementById('set-tz')
@@ -2514,6 +2838,145 @@ async function startTrial() {
     loadSettings()
     loadClientInfo()
   } catch(e) { toast(e.message, 'err') }
+}
+
+// ─── Escalation ───────────────────────────────────────────────────────────────
+async function saveEscalation() {
+  const email   = document.getElementById('set-esc-email').value.trim()
+  const webhook = document.getElementById('set-esc-webhook').value.trim()
+  const delay   = parseInt(document.getElementById('set-esc-delay').value) || 30
+  try {
+    await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({
+      escalation_email:   email   || '',
+      escalation_webhook: webhook || '',
+      escalation_after_min: delay,
+    })})
+    toast('Escalade sauvegardée', 'ok')
+  } catch(e) { toast(e.message, 'err') }
+}
+
+// ─── Maintenance windows ───────────────────────────────────────────────────────
+async function loadMaintenanceWindows() {
+  const el = document.getElementById('maint-windows-list'); if (!el) return
+  try {
+    const wins = await api('/maintenance-windows')
+    if (!wins.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">Aucune fenêtre configurée.</div>'; return }
+    el.innerHTML = wins.map(w => `
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" style="display:flex;align-items:center;gap:6px">
+            ${esc(w.label || w.cron_expr)}
+            ${w.active_now ? '<span style="font-size:9px;color:var(--green);font-family:var(--mono)">● active</span>' : ''}
+          </div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${esc(w.cron_expr)} · ${w.duration_min}min${w.monitor_id?'':' · tous les monitors'}</div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="deleteMaintenanceWindow('${w.id}')">retirer</button>
+      </div>`).join('')
+  } catch(e) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">—</div>' }
+}
+
+async function deleteMaintenanceWindow(id) {
+  try {
+    await api(`/maintenance-windows/${id}`, { method: 'DELETE' })
+    toast('Fenêtre supprimée', 'ok')
+    loadMaintenanceWindows()
+  } catch(e) { toast(e.message, 'err') }
+}
+
+function openMaintenanceModal() {
+  // Peuple le select monitor
+  const sel = document.getElementById('mw-monitor')
+  sel.innerHTML = '<option value="">Tous les monitors</option>' +
+    monitors.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join('')
+  document.getElementById('mw-err').textContent = ''
+  document.getElementById('maint-modal-bg').classList.remove('hidden')
+}
+function closeMaintenanceModal() { document.getElementById('maint-modal-bg').classList.add('hidden') }
+
+async function createMaintenanceWindow() {
+  const cron     = document.getElementById('mw-cron').value.trim()
+  const duration = parseInt(document.getElementById('mw-duration').value) || 60
+  const label    = document.getElementById('mw-label').value.trim()
+  const monId    = document.getElementById('mw-monitor').value || null
+  if (!cron) { document.getElementById('mw-err').textContent = 'Expression cron requise'; return }
+  try {
+    await api('/maintenance-windows', { method: 'POST', body: JSON.stringify({ cron_expr: cron, duration_min: duration, label, monitor_id: monId || undefined }) })
+    toast('Fenêtre créée', 'ok')
+    closeMaintenanceModal()
+    loadMaintenanceWindows()
+  } catch(e) { document.getElementById('mw-err').textContent = e.message }
+}
+
+// ─── Team / RBAC ───────────────────────────────────────────────────────────────
+async function loadTeamMembers() {
+  const el = document.getElementById('team-members-list'); if (!el) return
+  try {
+    const members = await api('/team/members')
+    if (!members.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">Aucun membre pour l\'instant.</div>'; return }
+    el.innerHTML = members.map(m => `
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">${esc(m.email)}</div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">
+            <span style="color:${m.role==='admin'?'var(--amber)':m.role==='owner'?'var(--green)':'var(--text3)'}">${m.role}</span>
+            ${m.invited_by ? ` · invité par ${esc(m.invited_by)}` : ''}
+          </div>
+        </div>
+        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="removeTeamMember('${m.id}')">retirer</button>
+      </div>`).join('')
+  } catch(e) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">—</div>' }
+
+  // Invitations en attente
+  const iel = document.getElementById('team-invites-list'); if (!iel) return
+  try {
+    const invites = await api('/team/invitations')
+    if (!invites.length) { iel.innerHTML = ''; return }
+    iel.innerHTML = `<div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin:10px 0 6px">En attente (${invites.length})</div>` +
+      invites.map(i => `
+        <div class="settings-row" style="opacity:.7">
+          <div>
+            <div class="settings-label" style="color:var(--text2)">${esc(i.email)}</div>
+            <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${i.role} · expire ${fmtDateTime(i.expires_at)}</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:10px" onclick="cancelInvite('${i.id}')">annuler</button>
+        </div>`).join('')
+  } catch(e) { iel.innerHTML = '' }
+}
+
+async function removeTeamMember(id) {
+  try { await api(`/team/members/${id}`, { method: 'DELETE' }); toast('Membre retiré', 'ok'); loadTeamMembers() }
+  catch(e) { toast(e.message, 'err') }
+}
+
+async function cancelInvite(id) {
+  try { await api(`/team/invitations/${id}`, { method: 'DELETE' }); toast('Invitation annulée', 'ok'); loadTeamMembers() }
+  catch(e) { toast(e.message, 'err') }
+}
+
+function openInviteModal() {
+  document.getElementById('inv-email').value = ''
+  document.getElementById('inv-err').textContent = ''
+  document.getElementById('inv-success').style.display = 'none'
+  document.getElementById('inv-btn').style.display = ''
+  document.getElementById('invite-modal-bg').classList.remove('hidden')
+}
+function closeInviteModal() { document.getElementById('invite-modal-bg').classList.add('hidden') }
+
+async function sendInvite() {
+  const email = document.getElementById('inv-email').value.trim()
+  const role  = document.getElementById('inv-role').value
+  if (!email) { document.getElementById('inv-err').textContent = 'Email requis'; return }
+  try {
+    const r = await api('/team/invite', { method: 'POST', body: JSON.stringify({ email, role }) })
+    const linkEl = document.getElementById('inv-link')
+    linkEl.textContent = r.accept_url
+    linkEl.dataset.url = r.accept_url
+    document.getElementById('inv-success').style.display = ''
+    document.getElementById('inv-btn').style.display = 'none'
+    document.getElementById('inv-err').textContent = ''
+    toast('Invitation créée', 'ok')
+    loadTeamMembers()
+  } catch(e) { document.getElementById('inv-err').textContent = e.message }
 }
 
 // ─── Docs ─────────────────────────────────────────────────────────────────────
@@ -2672,8 +3135,20 @@ async function runPreview() {
   document.getElementById('pg-spinner').classList.add('show')
   document.getElementById('pg-result').classList.remove('show')
   const spinnerTxt = document.getElementById('pg-spinner-text')
-  if (spinnerTxt) spinnerTxt.textContent =
-    `Analyse en cours avec ${window._activeModel||'LLM'} — 30-60s au premier appel...`
+  const model = window._activeModel || 'LLM'
+  const steps = [
+    `Tokenisation des logs (${logs.length} chars)...`,
+    `Envoi au modèle ${model}...`,
+    'Identification de la cause racine...',
+    'Génération des recommandations...',
+    'Finalisation...',
+  ]
+  let stepIdx = 0
+  if (spinnerTxt) spinnerTxt.textContent = steps[0]
+  const stepTimer = setInterval(() => {
+    stepIdx = Math.min(stepIdx + 1, steps.length - 1)
+    if (spinnerTxt) spinnerTxt.textContent = steps[stepIdx]
+  }, 7000)
 
   try {
     const r = await api('/monitors/analyze/preview', {
@@ -2716,6 +3191,7 @@ async function runPreview() {
       toast(e.message, 'err')
     }
   } finally {
+    clearInterval(stepTimer)
     document.getElementById('pg-spinner').classList.remove('show')
   }
 }
@@ -2765,7 +3241,7 @@ function clearPreview() {
 }
 
 // ─── Métriques qualité ────────────────────────────────────────────────────────
-let metricsVisible = false
+let metricsVisible = true
 
 function toggleMetrics() {
   metricsVisible = !metricsVisible
