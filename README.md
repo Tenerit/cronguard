@@ -40,6 +40,16 @@ Then open **http://localhost:3000/dashboard** and log in with API key `cg_demo_d
 
 The demo boots Postgres, Redis and Ollama, migrates the schema, seeds 9 monitors with realistic failure scenarios (disk full, OOM kill, deadlock, rate limit, data corruption…) and pulls the LLM model in the background. No `.env`, no setup.
 
+### Zero-install demo (static, read-only)
+
+Want to *look* before running anything? `dashboard.html` has a built-in read-only demo mode driven by embedded fixtures — **no backend, no database**. Open it with `?demo=1`:
+
+```
+.../dashboard.html?demo=1
+```
+
+It auto-loads sample monitors, AI analyses, MTTR/impact and a working **AI playground** (canned responses), all client-side. Host the single file on any static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages) — or serve it from a subdomain starting with `demo.` to enable it automatically. Mutations are disabled; it's a safe public showcase.
+
 ---
 
 ## How it compares

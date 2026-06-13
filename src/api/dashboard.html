@@ -1003,6 +1003,34 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .stab:hover{color:var(--text2);background:var(--bg3)}
 .stab.active{color:var(--green);border-bottom-color:var(--green)}
 .stab-off{display:none!important}
+
+/* ─── Bannière démo (lecture seule) ───────────────────────────────────────── */
+.demo-banner{
+  display:none;position:fixed;top:0;left:0;right:0;height:36px;z-index:600;
+  align-items:center;justify-content:center;gap:14px;
+  background:linear-gradient(90deg, rgba(52,211,153,.16), rgba(96,165,250,.16));
+  border-bottom:1px solid var(--border2);backdrop-filter:blur(8px);
+  font-family:var(--sans);font-size:12px;color:var(--text);padding:0 14px;
+}
+.demo-banner b{color:var(--green)}
+.demo-banner .db-note{color:var(--text2);font-size:11px}
+.demo-banner .db-cta{
+  font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;cursor:pointer;
+  border:1px solid rgba(52,211,153,.4);background:var(--green-dim);color:var(--green);
+}
+.demo-banner .db-cta:hover{background:rgba(52,211,153,.18)}
+body.is-demo .demo-banner{display:flex}
+body.is-demo .app{height:calc(100vh - 36px);margin-top:36px}
+/* Lecture seule : on masque les déclencheurs de mutation, on garde lecture + playground */
+body.is-demo .m-actions,
+body.is-demo .d-actions,
+body.is-demo button[data-i18n="top.newMonitor"],
+body.is-demo #view-settings .settings-input-row button,
+body.is-demo #view-settings .settings-section .btn-primary,
+body.is-demo button[onclick="openInviteModal()"],
+body.is-demo button[onclick="openMaintenanceModal()"],
+body.is-demo #trial-section{display:none!important}
+@media (max-width:768px){ body.is-demo .demo-banner .db-note{display:none} }
 </style>
 <script>
 /* Applique le thème avant le rendu pour éviter tout flash (FOUC) */
@@ -1010,6 +1038,12 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
 </script>
 </head>
 <body>
+
+<!-- Bannière démo (affichée uniquement en mode démo) -->
+<div class="demo-banner" id="demo-banner">
+  <span><b data-i18n="demo.tag">DÉMO</b> <span class="db-note" data-i18n="demo.note">données fictives · lecture seule</span></span>
+  <button class="db-cta" onclick="setView('docs')" data-i18n="demo.cta">Installer chez vous →</button>
+</div>
 
 <!-- Auth -->
 <div class="auth-overlay" id="auth-overlay" role="dialog" aria-modal="true" aria-label="CronGuard — connexion">
@@ -1901,6 +1935,7 @@ const I18N = {
     'conf.high':'Haute','conf.medium':'Moyenne','conf.low':'Faible','conf.highSub':'Cause explicite dans les logs','conf.mediumSub':'Inférée depuis le contexte','conf.lowSub':'Hypothèse basée sur le pattern',
     'a11y.menu':'Ouvrir le menu','a11y.refresh':'Rafraîchir les données','a11y.search':'Filtrer les services','a11y.closeDrawer':'Fermer le panneau','a11y.closeModal':'Fermer la fenêtre',
     'a11y.themeLight':'Passer en thème clair','a11y.themeDark':'Passer en thème sombre',
+    'demo.tag':'DÉMO','demo.note':'données fictives · lecture seule','demo.cta':'Installer chez vous →','demo.readonly':'Mode démo — lecture seule. Installez CronGuard pour agir.',
     'lang.label':'Langue',
   },
   en: {
@@ -2011,6 +2046,7 @@ const I18N = {
     'conf.high':'High','conf.medium':'Medium','conf.low':'Low','conf.highSub':'Cause explicit in the logs','conf.mediumSub':'Inferred from context','conf.lowSub':'Hypothesis based on the pattern',
     'a11y.menu':'Open menu','a11y.refresh':'Refresh data','a11y.search':'Filter services','a11y.closeDrawer':'Close panel','a11y.closeModal':'Close dialog',
     'a11y.themeLight':'Switch to light theme','a11y.themeDark':'Switch to dark theme',
+    'demo.tag':'DEMO','demo.note':'sample data · read-only','demo.cta':'Self-host it →','demo.readonly':'Demo mode — read-only. Install CronGuard to take action.',
     'lang.label':'Language',
   },
 }
@@ -2048,6 +2084,140 @@ function toggleTheme() {
   THEME = THEME === 'light' ? 'dark' : 'light'
   localStorage.setItem('cg_theme', THEME)
   applyTheme()
+}
+
+// ─── Démo hostée (lecture seule, fixtures, aucun backend) ─────────────────────
+// Activée par ?demo dans l'URL ou un hostname commençant par "demo.".
+// Permet d'héberger dashboard.html n'importe où (static) comme démo cliquable.
+const DEMO = /(?:[?&])demo\b/.test(location.search) || /^demo\./.test(location.hostname)
+
+const D_NOW = Date.now()
+const dISO  = (minAgo) => new Date(D_NOW - minAgo * 60000).toISOString()
+function dSeries(n, { fail = [], late = [], base = 2500, jitter = 600, step = 55 } = {}) {
+  const arr = []
+  for (let i = 0; i < n; i++) {
+    let status = fail.includes(i) ? 'failed' : late.includes(i) ? 'late' : 'success'
+    const duration_ms = status === 'success' ? Math.round(base + Math.random() * jitter)
+      : status === 'late' ? Math.round(base * 3.2) : 0
+    arr.push({ status, duration_ms, pinged_at: dISO(i * step + 2),
+      records: status === 'success' ? Math.round(5000 + Math.random() * 3000) : 0 })
+  }
+  return arr   // index 0 = plus récent
+}
+
+const DEMO_MON = [
+  { id:'d1', name:'backup-postgres', env:'production', last_status:'ok',     schedule:'0 2 * * *',  grace_period:300, ping_key:'cg_demo_bkp', avg_duration_7d:2900, recent_pings:dSeries(16,{base:2800}) },
+  { id:'d2', name:'etl-warehouse',   env:'production', last_status:'failed', schedule:'0 */4 * * *',grace_period:600, ping_key:'cg_demo_etl', avg_duration_7d:4300, recent_pings:dSeries(16,{fail:[0,6],base:4200}) },
+  { id:'d3', name:'sync-invoices',   env:'production', last_status:'late',   schedule:'*/30 * * * *',grace_period:300, ping_key:'cg_demo_inv', avg_duration_7d:5800, recent_pings:dSeries(16,{late:[0],base:6000}) },
+  { id:'d4', name:'reindex-search',  env:'staging',    last_status:'ok',     schedule:'0 4 * * *',  grace_period:900, ping_key:'cg_demo_idx', avg_duration_7d:1800, recent_pings:dSeries(16,{base:1750}) },
+  { id:'d5', name:'send-digests',    env:'production', last_status:'ok',     schedule:'0 8 * * *',  grace_period:300, ping_key:'cg_demo_dig', avg_duration_7d:950,  recent_pings:dSeries(16,{base:900}) },
+  { id:'d6', name:'cleanup-sessions',env:'production', last_status:'ok',     schedule:'0 * * * *',  grace_period:180, ping_key:'cg_demo_cln', avg_duration_7d:1200, recent_pings:dSeries(16,{fail:[8],base:1150}) },
+].map(m => ({ ...m, last_ping_at: dISO(2), paused_until:null, expected_min:null, expected_max:null }))
+
+const DEMO_AN = [
+  { id:'a1', monitor_id:'d2', monitorName:'etl-warehouse', env:'production', alert_type:'fail', model_used:'llama3.2:3b', created_at:dISO(3), from_cache:false,
+    confidence:'high', data_impact:'possible', fix_minutes:15, severity:'high', category:'network',
+    ping_exit_code:1, ping_output:'ConnectionError: connect ECONNREFUSED 10.0.1.45:5439\\nAll retries exhausted. Records: 0/847392',
+    correlated_monitors:['sync-invoices'],
+    diag:{ cause:'Connexion au warehouse Redshift refusée (ECONNREFUSED 10.0.1.45:5439) — l\'hôte est injoignable, 0/847392 enregistrements traités',
+      action:'Vérifier que le security group autorise le port 5439 depuis le worker ETL, puis relancer le job',
+      prevention:'Ajouter un healthcheck TCP sur 10.0.1.45:5439 avant le run + retry exponentiel borné',
+      checks:['nc -zv 10.0.1.45 5439','aws ec2 describe-security-groups','vérifier le statut du cluster Redshift'],
+      severity:'high', category:'network' } },
+  { id:'a2', monitor_id:'d6', monitorName:'cleanup-sessions', env:'production', alert_type:'fail', model_used:'llama3.2:3b', created_at:dISO(60*8), from_cache:false,
+    confidence:'high', data_impact:'none', fix_minutes:10, severity:'medium', category:'database',
+    ping_exit_code:1, ping_output:'ERROR: deadlock detected\\nProcess 12345 waits for ShareLock on transaction 88472',
+    correlated_monitors:[],
+    diag:{ cause:'Deadlock PostgreSQL entre deux transactions concurrentes sur user_sessions — la transaction a été annulée (ROLLBACK)',
+      action:'Relancer le job ; le deadlock est transitoire. Ordonner les UPDATE par clé pour éviter la récurrence',
+      prevention:'Traiter les sessions par batch ordonné sur session_id, réduire la taille de transaction',
+      checks:['SELECT * FROM pg_stat_activity WHERE wait_event_type=\'Lock\'','vérifier les index sur user_sessions'],
+      severity:'medium', category:'database' } },
+  { id:'a3', monitor_id:'d3', monitorName:'sync-invoices', env:'production', alert_type:'timeout', model_used:'llama3.2:3b', created_at:dISO(28), from_cache:false,
+    confidence:'medium', data_impact:'possible', fix_minutes:30, severity:'high', category:'dependency',
+    ping_exit_code:124, ping_output:'StripeRateLimitError: Too Many Requests\\n statusCode: 429\\n retry-after: 29',
+    correlated_monitors:[],
+    diag:{ cause:'API Stripe en rate-limit (429) — le job dépasse sa fenêtre de grâce avant d\'avoir fini, sync partielle',
+      action:'Respecter l\'en-tête retry-after (29s) et baisser la concurrence des appels Stripe',
+      prevention:'File d\'attente avec backoff + idempotency keys ; étaler la sync sur la nuit',
+      checks:['vérifier x-ratelimit-remaining dans les réponses Stripe','réduire BATCH_SIZE'],
+      severity:'high', category:'dependency' } },
+].map(a => ({ ...a, diagnosis: JSON.stringify(a.diag), checks: a.diag.checks }))
+
+const DEMO_CLIENT = { id:'demo', email:'demo@cronguard.dev', plan:'pro', slack_webhook:null, webhook_url:null,
+  escalation_after_min:30, escalation_email:null, escalation_webhook:null, monitor_count:DEMO_MON.length, created_at:dISO(60*24*42) }
+const DEMO_TEAM = [
+  { id:'t1', email:'demo@cronguard.dev', role:'owner', invited_by:null },
+  { id:'t2', email:'sre@cronguard.dev',  role:'admin', invited_by:'demo@cronguard.dev' },
+  { id:'t3', email:'view@cronguard.dev', role:'viewer',invited_by:'demo@cronguard.dev' },
+]
+const DEMO_MAINT = [
+  { id:'m1', label:'Maintenance hebdo', cron_expr:'0 3 * * 0', duration_min:60, active:true, monitor_id:null, active_now:false },
+]
+const DEMO_IMPACT = { incidents:7, affectedMonitors:3, avgMttrMs:11*60000, totalDowntimeMs:96*60000, dataLoss:1,
+  recurring:[{ name:'etl-warehouse', n:3 }, { name:'sync-invoices', n:2 }] }
+
+function demoOverview() {
+  const c = { ok:0, failed:0, late:0, unknown:0 }
+  DEMO_MON.forEach(m => { c[m.last_status === 'ok' ? 'ok' : m.last_status] = (c[m.last_status==='ok'?'ok':m.last_status]||0)+1 })
+  return { monitors:{ ok:c.ok, failed:c.failed, late:c.late, unknown:c.unknown, total:DEMO_MON.length }, ai:{ today:DEMO_AN.length }, alerts:[] }
+}
+function demoLogs() {
+  const rows = []
+  DEMO_MON.forEach(m => m.recent_pings.slice(0,4).forEach(p => {
+    const an = DEMO_AN.find(a => a.monitor_id === m.id)
+    rows.push({ monitor_id:m.id, monitor_name:m.name, env:m.env, status:p.status, duration_ms:p.duration_ms,
+      records:p.records, pinged_at:p.pinged_at, exit_code:p.status==='failed'?1:0,
+      diagnosis:(p.status!=='success' && an)?an.diagnosis:null })
+  }))
+  return rows.sort((a,b) => new Date(b.pinged_at) - new Date(a.pinged_at)).slice(0,40)
+}
+function demoPreview(body) {
+  const logs = (body.logs||'').toLowerCase()
+  const pick =
+    /econnrefused|refused|unreachable|dns/.test(logs) ? DEMO_AN[0].diag :
+    /deadlock|lock|postgres|sql/.test(logs)           ? DEMO_AN[1].diag :
+    /429|rate.?limit|stripe|api/.test(logs)           ? DEMO_AN[2].diag :
+    /oom|out of memory|killed|137/.test(logs)         ? { cause:'Processus tué par l\'OOM killer (exit 137) — mémoire épuisée en cours de run', action:'Augmenter la limite mémoire du conteneur ou traiter par lots plus petits', prevention:'Streamer au lieu de tout charger en mémoire ; fixer un cap mémoire', checks:['dmesg | grep -i oom','docker stats'], severity:'high', category:'resources' } :
+    { cause:'Échec du job — cause inférée depuis les logs fournis', action:'Inspecter la dernière erreur et relancer', prevention:'Ajouter des logs structurés et un retry borné', checks:['relire les 50 dernières lignes','vérifier le code de sortie'], severity:'medium', category:'unknown' }
+  return { ...pick, confidence:'high', data_impact:'possible', fix_minutes:pick.fix_minutes||15,
+    model:'llama3.2:3b (démo)', tokensIn:312, tokensOut:148, fromCache:false, _meta:{ logs_length:(body.logs||'').length } }
+}
+
+async function demoApi(path, opts={}) {
+  const method = (opts.method || 'GET').toUpperCase()
+  const body   = opts.body ? JSON.parse(opts.body) : {}
+  // Playground : vraie latence simulée pour montrer le spinner
+  if (path.startsWith('/monitors/analyze/preview')) {
+    await new Promise(r => setTimeout(r, 1400 + Math.random()*1200))
+    return demoPreview(body)
+  }
+  // Écritures désactivées en démo
+  if (method !== 'GET') { toast(t('demo.readonly'), 'info'); return { ok:true, demo:true } }
+
+  if (path.startsWith('/dashboard/overview')) return demoOverview()
+  if (path.startsWith('/dashboard/logs'))     return demoLogs()
+  if (path.startsWith('/dashboard/analyses'))  return DEMO_AN
+  if (path.startsWith('/dashboard/impact'))    return DEMO_IMPACT
+  if (path.startsWith('/clients/me'))          return DEMO_CLIENT
+  if (path.startsWith('/maintenance-windows')) return DEMO_MAINT
+  if (path.startsWith('/team/members'))        return DEMO_TEAM
+  if (path.startsWith('/team/invitations'))    return []
+  if (path === '/monitors')                    return DEMO_MON
+  const histM = path.match(/^\/monitors\/(\w+)\/history/)
+  if (histM) { const m = DEMO_MON.find(x => x.id === histM[1]); return (m?.recent_pings||[]).map(p => ({ ...p, output:null, exit_code:p.status==='failed'?1:0 })) }
+  const anM = path.match(/^\/monitors\/(\w+)\/analyses/)
+  if (anM) return DEMO_AN.filter(a => a.monitor_id === anM[1])
+  const oneM = path.match(/^\/monitors\/(\w+)$/)
+  if (oneM) return DEMO_MON.find(x => x.id === oneM[1]) || {}
+  return []
+}
+
+function startDemo() {
+  API_KEY = 'cg_demo_readonly'; BASE_URL = 'https://cron.your-server.io'   // affichage curl/docs ; api() court-circuite vers demoApi
+  window._activeModel = 'llama3.2:3b (démo)'
+  document.body.classList.add('is-demo')
+  boot()
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -2128,6 +2298,7 @@ function calcTrend(history) {
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function api(path, opts={}) {
+  if (DEMO) return demoApi(path, opts)   // démo hostée : fixtures, aucun backend
   const r = await fetch(BASE_URL+path, {
     ...opts, headers: { 'X-API-Key': API_KEY, 'Content-Type': 'application/json', ...opts.headers }
   })
@@ -2171,7 +2342,7 @@ async function boot() {
   document.getElementById('app').style.display = 'grid'
   updateDocUrls()
   showSkeletons()
-  fetch(BASE_URL+'/health').then(r=>r.json()).then(h=>{ if(h.model) window._activeModel=h.model }).catch(()=>{})
+  if (!DEMO) fetch(BASE_URL+'/health').then(r=>r.json()).then(h=>{ if(h.model) window._activeModel=h.model }).catch(()=>{})
   await refreshAll()
   loadClientInfo()
   loadImpact()
@@ -3805,7 +3976,9 @@ const _trapObs = new MutationObserver(_syncFocusTrap)
 _trapObs.observe(document.body, { childList: true })   // del-confirm créé/retiré dynamiquement
 _syncFocusTrap()
 
-if (API_KEY) {
+if (DEMO) {
+  startDemo()
+} else if (API_KEY) {
   document.getElementById('auth-key').value = API_KEY
   document.getElementById('auth-url').value = BASE_URL
   boot()
