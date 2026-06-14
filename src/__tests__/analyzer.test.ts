@@ -48,6 +48,9 @@ beforeEach(() => {
   process.env.LLM_MODEL    = 'qwen3:8b'
   // S'assure que LOCAL_LLM = false pendant les tests (on teste le vrai flow)
   process.env.DATABASE_URL = 'postgres://test'
+  // Provider par défaut = OpenAI-compatible ; les tests Anthropic le surchargent
+  delete process.env.LLM_PROVIDER
+  delete process.env.LLM_API_KEY
 })
 
 describe('analyzeFailure()', () => {
@@ -161,6 +164,71 @@ describe('analyzeFailure()', () => {
       cache[`llm:client:${baseCtx.clientId}:rph`] = '50'  // above limit of 10
       const result = await analyzeFailure(baseCtx)
       expect(result).toBeNull()
+    })
+  })
+
+  describe('Anthropic native provider', () => {
+    function mockAnthropicResponse(text: string) {
+      mockedAxios.post.mockResolvedValueOnce({
+        data: {
+          content: [{ type: 'text', text }],
+          usage:   { input_tokens: 200, output_tokens: 60 },
+          model:   'claude-haiku-4-5',
+        },
+      })
+    }
+
+    it('uses /messages + x-api-key + system top-level, parses content[0].text', async () => {
+      process.env.LLM_BASE_URL = 'https://api.anthropic.com/v1'
+      process.env.LLM_API_KEY  = 'sk-ant-test'
+      process.env.LLM_MODEL    = 'claude-haiku-4-5'
+      mockAnthropicResponse('{"cause":"DB refused","action":"check pg","severity":"high"}')
+
+      const result = await analyzeFailure(baseCtx)
+
+      expect(result).not.toBeNull()
+      expect(result!.cause).toBe('DB refused')
+      expect(result!.tokensIn).toBe(200)       // input_tokens
+      expect(result!.tokensOut).toBe(60)       // output_tokens
+      expect(result!.model).toBe('claude-haiku-4-5')
+
+      const [url, body, config] = mockedAxios.post.mock.calls[0] as any
+      expect(url).toMatch(/\/messages$/)
+      expect(url).not.toContain('chat/completions')
+      expect(body.system).toContain('SRE')             // SYSTEM prompt en top-level
+      expect(body.messages).toHaveLength(1)            // 1 seul message user
+      expect(body.messages[0].role).toBe('user')
+      expect(config.headers['x-api-key']).toBe('sk-ant-test')
+      expect(config.headers['anthropic-version']).toBeDefined()
+      expect(config.headers.Authorization).toBeUndefined()
+    })
+
+    it('LLM_PROVIDER=anthropic forces native shape on any base URL', async () => {
+      process.env.LLM_BASE_URL = 'https://gateway.internal/v1'
+      process.env.LLM_PROVIDER = 'anthropic'
+      process.env.LLM_API_KEY  = 'k'
+      mockAnthropicResponse('{"cause":"x","action":"y","severity":"low"}')
+
+      await analyzeFailure({ ...baseCtx, jobName: 'forced-anthropic' })
+
+      const [url, , config] = mockedAxios.post.mock.calls[0] as any
+      expect(url).toMatch(/\/messages$/)
+      expect(config.headers['x-api-key']).toBe('k')
+    })
+
+    it('still uses /chat/completions + Bearer for OpenAI-compatible providers', async () => {
+      process.env.LLM_BASE_URL = 'https://openrouter.ai/api/v1'
+      process.env.LLM_API_KEY  = 'or-key'
+      process.env.LLM_MODEL    = 'anthropic/claude-haiku-4-5'  // Claude via OpenRouter = OpenAI shape
+      mockLLMResponse('{"cause":"net","action":"retry","severity":"medium"}')
+
+      await analyzeFailure({ ...baseCtx, jobName: 'openrouter-claude' })
+
+      const [url, body, config] = mockedAxios.post.mock.calls[0] as any
+      expect(url).toContain('/chat/completions')
+      expect(body.system).toBeUndefined()                       // pas de system top-level
+      expect(body.messages.some((m: any) => m.role === 'system')).toBe(true)
+      expect(config.headers.Authorization).toBe('Bearer or-key')
     })
   })
 })

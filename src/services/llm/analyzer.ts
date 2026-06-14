@@ -265,12 +265,26 @@ async function isRateLimited(clientId: string): Promise<boolean> {
 
 export function llmHeaders(): Record<string, string> {
   const key = process.env.LLM_API_KEY
-  return key ? { Authorization: `Bearer ${key}` } : {}
+  if (!key) return {}
+  // Anthropic natif : x-api-key + anthropic-version (PAS de Bearer)
+  if (isAnthropic()) return { 'x-api-key': key, 'anthropic-version': '2023-06-01' }
+  return { Authorization: `Bearer ${key}` }
 }
 
 // Indique si on cible un provider cloud (clé API présente) plutôt qu'Ollama local
 export function isCloudLLM(): boolean {
   return !!process.env.LLM_API_KEY
+}
+
+// Détecte l'API Anthropic NATIVE (api.anthropic.com) — qui n'est PAS OpenAI-compatible :
+// endpoint /v1/messages, header x-api-key, `system` au top-level, réponse content[0].text.
+// Forçable via LLM_PROVIDER=anthropic|openai, sinon auto-détecté depuis LLM_BASE_URL.
+// (Claude via OpenRouter reste OpenAI-compatible → ne PAS marquer anthropic.)
+export function isAnthropic(): boolean {
+  const p = (process.env.LLM_PROVIDER ?? '').toLowerCase()
+  if (p === 'anthropic') return true
+  if (p === 'openai')    return false
+  return /api\.anthropic\.com/i.test(process.env.LLM_BASE_URL ?? '')
 }
 
 export async function analyzeFailure(
@@ -295,22 +309,32 @@ export async function analyzeFailure(
   const maxTokens = parseInt(process.env.LLM_MAX_TOKENS ?? '512')
   const timeout   = timeoutMs ?? parseInt(process.env.LLM_TIMEOUT_MS ?? '60000')
 
-  try {
-    const response = await axios.post(
-      `${process.env.LLM_BASE_URL}/chat/completions`,
-      {
-        model:       process.env.LLM_MODEL ?? 'llama3.2:3b',
-        max_tokens:  maxTokens,
-        temperature: 0.15,
+  const model      = process.env.LLM_MODEL ?? 'llama3.2:3b'
+  const userPrompt = buildPrompt(ctx, clean, redactedCount)
+  const anthropic  = isAnthropic()
+
+  // Anthropic natif : /v1/messages, `system` top-level, 1 message user.
+  // Sinon OpenAI-compatible : /chat/completions, system en message.
+  const url = anthropic
+    ? `${process.env.LLM_BASE_URL}/messages`
+    : `${process.env.LLM_BASE_URL}/chat/completions`
+  const body = anthropic
+    ? { model, max_tokens: maxTokens, temperature: 0.15, system: SYSTEM,
+        messages: [{ role: 'user', content: userPrompt }] }
+    : { model, max_tokens: maxTokens, temperature: 0.15,
         messages: [
           { role: 'system', content: SYSTEM },
-          { role: 'user',   content: buildPrompt(ctx, clean, redactedCount) },
-        ],
-      },
-      { timeout, headers: llmHeaders() }
-    )
+          { role: 'user',   content: userPrompt },
+        ] }
 
-    const raw    = response.data.choices?.[0]?.message?.content ?? ''
+  try {
+    const response = await axios.post(url, body, { timeout, headers: llmHeaders() })
+    const data = response.data
+
+    // Normalise la réponse selon le provider
+    const raw = anthropic
+      ? (data.content?.[0]?.text ?? '')
+      : (data.choices?.[0]?.message?.content ?? '')
     const parsed = parseResponse(raw)
     if (!parsed) { logger.warn('[LLM] Réponse invalide', { raw: raw.slice(0, 150) }); return null }
 
@@ -318,9 +342,9 @@ export async function analyzeFailure(
       ...parsed,
       fromCache:          false,
       correlatedMonitors: ctx.correlatedFailures,
-      tokensIn:           response.data.usage?.prompt_tokens,
-      tokensOut:          response.data.usage?.completion_tokens,
-      model:              response.data.model ?? process.env.LLM_MODEL!,
+      tokensIn:           anthropic ? data.usage?.input_tokens  : data.usage?.prompt_tokens,
+      tokensOut:          anthropic ? data.usage?.output_tokens : data.usage?.completion_tokens,
+      model:              data.model ?? model,
     }
 
     await Promise.all([toCache(hash, result), onSuccess()])

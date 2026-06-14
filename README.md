@@ -175,10 +175,20 @@ setting `LLM_API_KEY` enables auth and switches to cloud mode:
 # OpenAI
 LLM_BASE_URL=https://api.openai.com/v1   LLM_MODEL=gpt-4o-mini        LLM_API_KEY=sk-...
 # OpenRouter (Claude, etc.)
-LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=anthropic/claude-3.5-haiku LLM_API_KEY=sk-or-...
+LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=anthropic/claude-haiku-4-5 LLM_API_KEY=sk-or-...
 # Groq (Llama 70B, very fast)
 LLM_BASE_URL=https://api.groq.com/openai/v1 LLM_MODEL=llama-3.3-70b-versatile  LLM_API_KEY=gsk_...
 ```
+
+Anthropic's native API (`api.anthropic.com`) isn't OpenAI-compatible, so it's handled
+directly — auto-detected from the URL (or force `LLM_PROVIDER=anthropic`):
+
+```bash
+LLM_BASE_URL=https://api.anthropic.com/v1 LLM_MODEL=claude-haiku-4-5 LLM_API_KEY=sk-ant-...
+```
+
+> Cloud models send your logs off-box — this breaks the no-egress guarantee. Keep it
+> opt-in; local Ollama stays the privacy-preserving default.
 
 The context pipeline (7-day history, cross-job correlations, timing patterns,
 few-shot from your feedback) stays identical — only the model changes.
