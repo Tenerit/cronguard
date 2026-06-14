@@ -58,6 +58,18 @@ app.use('/webhooks', billingRouter)
 
 app.use(express.json({ limit: '64kb' }))
 
+// Identité courante (clé API OU SSO forward-auth) — permet au dashboard de
+// détecter une session SSO et de sauter l'écran de saisie de clé.
+app.get('/auth/whoami', apiLimiter, requireApiKey, (_req, res) => {
+  res.json({
+    clientId: res.locals.clientId,
+    role:     res.locals.role,
+    plan:     res.locals.plan,
+    email:    res.locals.email ?? null,
+    via:      res.locals.authVia ?? 'apikey',
+  })
+})
+
 app.use('/auth',     billingRouter)
 app.use('/billing',  billingRouter)
 app.use('/ping',     pingRouter)

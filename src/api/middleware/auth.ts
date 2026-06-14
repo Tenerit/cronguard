@@ -10,9 +10,30 @@ export function hasRole(actual: Role, minimum: Role): boolean {
   return ROLE_RANK[actual] >= ROLE_RANK[minimum]
 }
 
+// Gate d'authentification. Clé API d'abord ; à défaut, SSO forward-auth (si activé).
 export async function requireApiKey(req: Request, res: Response, next: NextFunction) {
   const key = (req.headers['x-api-key'] ?? req.query.apiKey) as string
-  if (!key) return res.status(401).json({ error: 'Missing X-API-Key header' })
+
+  // Pas de clé → tenter le SSO par reverse-proxy de confiance (opt-in, voir sso.ts)
+  if (!key) {
+    const { ssoEnabled, ssoEmail, resolveSsoUser } = await import('./sso')
+    if (ssoEnabled()) {
+      const email = ssoEmail(req)
+      if (email) {
+        const id = await resolveSsoUser(email)
+        if (id) {
+          res.locals.clientId = id.clientId
+          res.locals.plan     = id.plan
+          res.locals.role     = id.role
+          res.locals.email    = id.email
+          res.locals.authVia  = 'sso'
+          return next()
+        }
+        return res.status(403).json({ error: 'SSO identity not authorized' })
+      }
+    }
+    return res.status(401).json({ error: 'Missing X-API-Key header' })
+  }
 
   try {
     // 1. Owner key (clients.api_key)

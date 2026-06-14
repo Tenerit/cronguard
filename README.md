@@ -158,6 +158,23 @@ Optionally protected with `METRICS_TOKEN` (`Authorization: Bearer <token>` or `?
 
 ---
 
+## Authentication & SSO
+
+By default, access is by **API key** (`X-API-Key`) with role-based access (`viewer < member < admin < owner`) and link-based team invites — no passwords, no sessions.
+
+For enterprise deployments, CronGuard supports **SSO via forward-auth**: put it behind your existing SSO reverse-proxy (oauth2-proxy, Authelia, Pomerium, Cloudflare Access, or your corporate SAML/OIDC gateway). The proxy authenticates the user and injects their email; CronGuard maps it to a team member and role. **The app never talks to an IdP itself** — keeping the no-egress guarantee intact, ideal for air-gapped/regulated environments.
+
+```bash
+SSO_ENABLED=true
+SSO_TRUSTED_PROXIES=10.0.0.10        # or SSO_SHARED_SECRET=... (at least one — fail-closed)
+SSO_EMAIL_HEADER=X-Forwarded-Email   # header your proxy injects
+SSO_ALLOWED_DOMAINS=corp.com         # JIT-provision these domains as viewers (never owner)
+```
+
+The dashboard, served from behind the proxy, detects the SSO session (`/auth/whoami`) and skips the API-key prompt. The identity header is only trusted from the configured proxy IP or with a matching shared secret.
+
+---
+
 ## LLM model
 
 Default: **llama3.2:3b** through local Ollama (free, private, non-reasoning → fast on CPU).

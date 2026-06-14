@@ -4151,12 +4151,31 @@ const _trapObs = new MutationObserver(_syncFocusTrap)
 _trapObs.observe(document.body, { childList: true })   // del-confirm créé/retiré dynamiquement
 _syncFocusTrap()
 
+// SSO forward-auth : si le dashboard est servi derrière le proxy SSO du client,
+// /auth/whoami (même origine) renvoie l'identité injectée → on boot sans clé.
+async function trySSO() {
+  try {
+    const r = await fetch('/auth/whoami', { headers: { 'Content-Type': 'application/json' } })
+    if (!r.ok) return false
+    const me = await r.json()
+    if (me && me.via === 'sso') {
+      API_KEY = ''; BASE_URL = ''          // même origine, identité via le proxy
+      window._ssoEmail = me.email || null
+      boot()
+      return true
+    }
+  } catch { /* pas de SSO → écran de connexion classique */ }
+  return false
+}
+
 if (DEMO) {
   startDemo()
 } else if (API_KEY) {
   document.getElementById('auth-key').value = API_KEY
   document.getElementById('auth-url').value = BASE_URL
   boot()
+} else {
+  trySSO()   // si échec, l'écran de saisie de clé reste affiché
 }
 </script>
 </body>
