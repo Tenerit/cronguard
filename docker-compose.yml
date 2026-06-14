@@ -8,7 +8,7 @@ services:
       - "3000:3000"
     env_file: .env
     environment:
-      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      DATABASE_URL: postgres://cronguard:${POSTGRES_PASSWORD}@postgres:5432/cronguard
       REDIS_URL:    redis://redis:6379
       LLM_BASE_URL: http://ollama:11434/v1
     depends_on:
@@ -27,7 +27,7 @@ services:
     command: node dist/workers/analysis.worker.js
     env_file: .env
     environment:
-      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      DATABASE_URL: postgres://cronguard:${POSTGRES_PASSWORD}@postgres:5432/cronguard
       REDIS_URL:    redis://redis:6379
       LLM_BASE_URL: http://ollama:11434/v1
     depends_on:
@@ -45,7 +45,7 @@ services:
     command: node dist/workers/timeout.checker.js
     env_file: .env
     environment:
-      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      DATABASE_URL: postgres://cronguard:${POSTGRES_PASSWORD}@postgres:5432/cronguard
       REDIS_URL:    redis://redis:6379
     depends_on:
       postgres: { condition: service_healthy }
@@ -62,7 +62,7 @@ services:
     command: node dist/workers/retention.worker.js
     env_file: .env
     environment:
-      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      DATABASE_URL: postgres://cronguard:${POSTGRES_PASSWORD}@postgres:5432/cronguard
       REDIS_URL:    redis://redis:6379
     depends_on:
       postgres: { condition: service_healthy }
@@ -74,7 +74,7 @@ services:
     command: node dist/workers/self-monitor.worker.js
     env_file: .env
     environment:
-      DATABASE_URL: postgres://cronguard:secret@postgres:5432/cronguard
+      DATABASE_URL: postgres://cronguard:${POSTGRES_PASSWORD}@postgres:5432/cronguard
       REDIS_URL:    redis://redis:6379
     depends_on:
       postgres: { condition: service_healthy }
@@ -89,7 +89,8 @@ services:
     environment:
       POSTGRES_DB:       cronguard
       POSTGRES_USER:     cronguard
-      POSTGRES_PASSWORD: secret
+      # Pas de défaut faible en prod : échoue si POSTGRES_PASSWORD n'est pas dans .env
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définissez un POSTGRES_PASSWORD fort dans .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
