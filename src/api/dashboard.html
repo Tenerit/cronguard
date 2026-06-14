@@ -1010,6 +1010,33 @@ body.is-demo button[onclick="openInviteModal()"],
 body.is-demo button[onclick="openMaintenanceModal()"],
 body.is-demo #trial-section{display:none!important}
 
+/* ─── Visite guidée (onboarding) ──────────────────────────────────────────── */
+.tour-overlay{position:fixed;inset:0;z-index:700;display:none}
+body.tour-on .tour-overlay{display:block}
+body.tour-center .tour-overlay{background:rgba(0,0,0,.62)}
+.tour-ring{
+  position:fixed;border-radius:10px;border:2px solid var(--green);pointer-events:none;
+  box-shadow:0 0 0 9999px rgba(0,0,0,.62), 0 0 18px rgba(52,211,153,.5);
+  transition:top .25s ease,left .25s ease,width .25s ease,height .25s ease;z-index:701;
+}
+body.tour-center .tour-ring{display:none}
+.tour-pop{
+  position:fixed;z-index:702;width:300px;max-width:calc(100vw - 28px);
+  background:linear-gradient(180deg,#181b33 0%,#141628 100%);
+  border:1px solid var(--border2);border-radius:var(--radius-lg);padding:18px;
+  box-shadow:var(--shadow-lg);animation:toast-in .2s ease;
+}
+.tour-step{font-size:10px;font-family:var(--mono);color:var(--green);letter-spacing:.08em;margin-bottom:6px}
+.tour-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:-.01em}
+.tour-body{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:14px}
+.tour-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tour-dots{display:flex;gap:5px}
+.tour-dot{width:6px;height:6px;border-radius:50%;background:var(--bg4);transition:background .2s}
+.tour-dot.on{background:var(--green)}
+.tour-skip{font-size:11px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px}
+.tour-skip:hover{color:var(--text2)}
+.tour-actions{display:flex;gap:6px}
+
 /* ─── Mobile responsive (placé en fin de feuille pour gagner la cascade) ───── */
 @media (max-width: 768px) {
   .app{grid-template-columns:1fr}
@@ -1064,6 +1091,24 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
 <div class="demo-banner" id="demo-banner">
   <span><b data-i18n="demo.tag">DÉMO</b> <span class="db-note" data-i18n="demo.note">données fictives · lecture seule</span></span>
   <button class="db-cta" onclick="setView('docs')" data-i18n="demo.cta">Installer chez vous →</button>
+</div>
+
+<!-- Visite guidée (onboarding) -->
+<div class="tour-overlay" id="tour-overlay" onclick="event.target===this && endTour()" role="dialog" aria-modal="true" aria-label="Visite guidée">
+  <div class="tour-ring" id="tour-ring"></div>
+  <div class="tour-pop" id="tour-pop">
+    <div class="tour-step" id="tour-step">1 / 6</div>
+    <div class="tour-title" id="tour-title">—</div>
+    <div class="tour-body" id="tour-body">—</div>
+    <div class="tour-nav">
+      <div class="tour-dots" id="tour-dots"></div>
+      <div class="tour-actions">
+        <button class="tour-skip" onclick="endTour()" id="tour-skip" data-i18n="tour.skip">Passer</button>
+        <button class="btn btn-ghost" onclick="tourPrev()" id="tour-prev" style="font-size:11px;padding:5px 10px" data-i18n="tour.back">Précédent</button>
+        <button class="btn btn-primary" onclick="tourNext()" id="tour-next" style="font-size:11px;padding:5px 12px" data-i18n="tour.next">Suivant</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Auth -->
@@ -1561,6 +1606,9 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
 
       <!-- DOCS VIEW -->
       <div class="view" id="view-docs">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+          <button class="btn btn-ghost" onclick="startTour(true)" style="font-size:11px" data-i18n="tour.replay">Relancer la visite guidée</button>
+        </div>
         <div class="docs-section">
           <div class="docs-h2" data-i18n="docs.qs">démarrage rapide</div>
           <div class="docs-p" data-i18n="docs.qsP">Ajoutez un ping à la fin de votre script cron. C'est tout. Si le script ne ping pas dans sa fenêtre de grâce, CronGuard vous alerte.</div>
@@ -1957,6 +2005,13 @@ const I18N = {
     'a11y.menu':'Ouvrir le menu','a11y.refresh':'Rafraîchir les données','a11y.search':'Filtrer les services','a11y.closeDrawer':'Fermer le panneau','a11y.closeModal':'Fermer la fenêtre',
     'a11y.themeLight':'Passer en thème clair','a11y.themeDark':'Passer en thème sombre',
     'demo.tag':'DÉMO','demo.note':'données fictives · lecture seule','demo.cta':'Installer chez vous →','demo.readonly':'Mode démo — lecture seule. Installez CronGuard pour agir.',
+    'tour.next':'Suivant','tour.back':'Précédent','tour.skip':'Passer','tour.done':'Terminer','tour.replay':'Relancer la visite guidée',
+    'tour.welcome.t':'Bienvenue sur CronGuard','tour.welcome.b':'En 30 secondes : comment surveiller vos cron jobs et laisser l\'IA expliquer les pannes. Vous pouvez passer à tout moment.',
+    'tour.services.t':'Vos services','tour.services.b':'Chaque cron surveillé apparaît ici avec son statut, sa tendance de durée et son score de santé. Cliquez une ligne pour le détail.',
+    'tour.create.t':'Créer un monitor','tour.create.b':'Vous obtenez une ping_key unique à coller en fin de script. Le cron ping CronGuard ; pas de ping = alerte.',
+    'tour.overview.t':'Vue d\'ensemble','tour.overview.b':'Statuts agrégés, uptime, et le bandeau Impact (MTTR / downtime sur 30j) — la valeur prouvée, pas juste des alertes.',
+    'tour.ai.t':'Analyses IA','tour.ai.b':'À chaque panne, un LLM local analyse les logs : cause racine, action corrective et vérifications. Vos données ne quittent jamais le serveur.',
+    'tour.playground.t':'Playground IA','tour.playground.b':'Collez n\'importe quels logs et voyez l\'analyse en direct. Essai-avant-achat, sans rien installer.',
     'lang.label':'Langue',
   },
   en: {
@@ -2068,6 +2123,13 @@ const I18N = {
     'a11y.menu':'Open menu','a11y.refresh':'Refresh data','a11y.search':'Filter services','a11y.closeDrawer':'Close panel','a11y.closeModal':'Close dialog',
     'a11y.themeLight':'Switch to light theme','a11y.themeDark':'Switch to dark theme',
     'demo.tag':'DEMO','demo.note':'sample data · read-only','demo.cta':'Self-host it →','demo.readonly':'Demo mode — read-only. Install CronGuard to take action.',
+    'tour.next':'Next','tour.back':'Back','tour.skip':'Skip','tour.done':'Done','tour.replay':'Replay the guided tour',
+    'tour.welcome.t':'Welcome to CronGuard','tour.welcome.b':'In 30 seconds: how to monitor your cron jobs and let the AI explain failures. You can skip anytime.',
+    'tour.services.t':'Your services','tour.services.b':'Every monitored cron shows up here with its status, duration trend and health score. Click a row for details.',
+    'tour.create.t':'Create a monitor','tour.create.b':'You get a unique ping_key to drop at the end of your script. The cron pings CronGuard; no ping = alert.',
+    'tour.overview.t':'Overview','tour.overview.b':'Aggregated statuses, uptime, and the Impact strip (MTTR / downtime over 30d) — proven value, not just alerts.',
+    'tour.ai.t':'AI analyses','tour.ai.b':'On every failure a local LLM analyzes the logs: root cause, corrective action and checks. Your data never leaves the server.',
+    'tour.playground.t':'AI Playground','tour.playground.b':'Paste any logs and watch the analysis live. Try-before-buy, with nothing to install.',
     'lang.label':'Language',
   },
 }
@@ -2368,6 +2430,7 @@ async function boot() {
   loadClientInfo()
   loadImpact()
   timer = setInterval(refreshAll, 15000)
+  setTimeout(() => startTour(), 700)   // visite guidée au premier lancement (no-op si déjà vue)
 }
 
 // ─── Skeletons de chargement (premier rendu) ─────────────────────────────────
@@ -3213,6 +3276,97 @@ function setSettingsTab(tab) {
   const c = document.querySelector('.content'); if (c) c.scrollTop = 0
 }
 
+// ─── Visite guidée (onboarding first-run) ─────────────────────────────────────
+const TOUR = [
+  { key:'welcome', view:'dashboard' },
+  { key:'services',  sel:'#nav-monitors',  view:'dashboard' },
+  { key:'create',    sel:'button[data-i18n="top.newMonitor"]' },
+  { key:'overview',  sel:'#stats-row',     view:'dashboard' },
+  { key:'ai',        sel:'#nav-analyses' },
+  { key:'playground',sel:'#nav-playground' },
+]
+let tourIdx = 0
+
+function tourVisible(sel) {
+  if (!sel) return true
+  const el = document.querySelector(sel)
+  if (!el) return false
+  const r = el.getBoundingClientRect()
+  return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden'
+}
+function tourStepsAvailable() { return TOUR.filter(s => tourVisible(s.sel)) }
+
+function startTour(force) {
+  if (!force && localStorage.getItem('cg_onboarded')) return
+  if (!tourStepsAvailable().length) return
+  tourIdx = 0
+  document.body.classList.add('tour-on')
+  showTourStep()
+}
+function endTour() {
+  localStorage.setItem('cg_onboarded', '1')
+  document.body.classList.remove('tour-on', 'tour-center')
+  window.removeEventListener('resize', positionTour)
+  document.querySelector('.content')?.removeEventListener('scroll', positionTour)
+}
+function tourNext() {
+  let i = tourIdx + 1
+  while (i < TOUR.length && !tourVisible(TOUR[i].sel)) i++
+  if (i >= TOUR.length) { endTour(); return }
+  tourIdx = i; showTourStep()
+}
+function tourPrev() {
+  let i = tourIdx - 1
+  while (i >= 0 && !tourVisible(TOUR[i].sel)) i--
+  if (i < 0) return
+  tourIdx = i; showTourStep()
+}
+function showTourStep() {
+  const step = TOUR[tourIdx]
+  if (step.view && currentView !== step.view) setView(step.view)
+  // Libellés
+  const steps = tourStepsAvailable()
+  const pos   = steps.indexOf(step) + 1
+  document.getElementById('tour-step').textContent  = `${pos} / ${steps.length}`
+  document.getElementById('tour-title').textContent = t(`tour.${step.key}.t`)
+  document.getElementById('tour-body').textContent  = t(`tour.${step.key}.b`)
+  document.getElementById('tour-prev').style.visibility = (tourIdx === 0) ? 'hidden' : 'visible'
+  document.getElementById('tour-next').textContent =
+    (tourIdx >= TOUR.length - 1 || steps.indexOf(step) === steps.length - 1) ? t('tour.done') : t('tour.next')
+  // Points
+  document.getElementById('tour-dots').innerHTML =
+    steps.map((s) => `<div class="tour-dot ${s === step ? 'on' : ''}"></div>`).join('')
+  // Position
+  requestAnimationFrame(positionTour)
+  window.addEventListener('resize', positionTour)
+  document.querySelector('.content')?.addEventListener('scroll', positionTour)
+}
+function positionTour() {
+  const step = TOUR[tourIdx]
+  const ring = document.getElementById('tour-ring')
+  const pop  = document.getElementById('tour-pop')
+  const el   = step.sel ? document.querySelector(step.sel) : null
+  if (!el || !tourVisible(step.sel)) {
+    // Étape centrée (welcome ou cible absente)
+    document.body.classList.add('tour-center')
+    pop.style.top  = '50%'; pop.style.left = '50%'; pop.style.transform = 'translate(-50%,-50%)'
+    return
+  }
+  document.body.classList.remove('tour-center')
+  const r = el.getBoundingClientRect()
+  const pad = 6
+  ring.style.top = (r.top - pad) + 'px'; ring.style.left = (r.left - pad) + 'px'
+  ring.style.width = (r.width + pad*2) + 'px'; ring.style.height = (r.height + pad*2) + 'px'
+  pop.style.transform = 'none'
+  const pw = pop.offsetWidth || 300, ph = pop.offsetHeight || 160, gap = 14
+  let left = r.left, top = r.bottom + gap
+  if (top + ph > innerHeight - 10) top = Math.max(10, r.top - ph - gap)   // pas la place dessous → dessus
+  if (r.right + gap + pw < innerWidth - 10 && r.width < 260) { left = r.right + gap; top = r.top }  // sinon à droite
+  left = Math.min(Math.max(10, left), innerWidth - pw - 10)
+  top  = Math.min(Math.max(10, top),  innerHeight - ph - 10)
+  pop.style.left = left + 'px'; pop.style.top = top + 'px'
+}
+
 // ─── Filters ──────────────────────────────────────────────────────────────────
 function setFilter(f, target) {
   currentFilter = f
@@ -3283,6 +3437,7 @@ document.addEventListener('keydown', e => {
   if (e.key==='r'||e.key==='R') { e.preventDefault(); refreshAll(); toast(t('toast.refreshed'),'ok') }
   if (e.key==='/'){ e.preventDefault(); document.getElementById('search').focus() }
   if (e.key==='Escape') {
+    if (document.body.classList.contains('tour-on')) { endTour(); return }
     const delC = document.getElementById('del-confirm')
     if (delC) delC.remove()
     else if (document.getElementById('drawer').classList.contains('open')) closeDrawer()
