@@ -1,3 +1,5 @@
+import { createHash } from 'crypto'
+
 // ─── Sanitisation des logs avant envoi au LLM ───────────────────────────────
 // Protège les données sensibles de tes clients
 // Le modèle interne ne voit jamais de credentials, IPs privées, ou tokens
@@ -61,14 +63,39 @@ export function sanitizeLogs(raw: string): SanitizeResult {
   return { clean, redactedCount, patterns: patternsHit }
 }
 
-// Génère un hash stable pour la déduplication
+// ─── Empreinte d'erreur (cache fingerprint) ───────────────────────────────────
+// Neutralise les jetons volatils (timestamps, PID, UUID, IP, n° de ligne, gros
+// nombres) AVANT de hasher → un même bug rejoué avec un timestamp/PID différent
+// produit la MÊME empreinte → cache hit au lieu d'un appel LLM redondant (~15s).
+// On garde les mots-clés d'erreur et les codes courts (exit code, HTTP 429/500).
+export function fingerprintLogs(logs: string): string {
+  return logs
+    .toLowerCase()
+    // timestamps ISO + dates + heures
+    .replace(/\d{4}-\d{2}-\d{2}[t ]\d{2}:\d{2}:\d{2}(\.\d+)?(z|[+-]\d{2}:?\d{2})?/g, '<ts>')
+    .replace(/\b\d{2}:\d{2}:\d{2}(\.\d+)?\b/g, '<ts>')
+    .replace(/\b\d{4}-\d{2}-\d{2}\b/g, '<date>')
+    // uuids
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/g, '<uuid>')
+    // adresses hex / pointeurs mémoire
+    .replace(/\b0x[0-9a-f]+\b/g, '<hex>')
+    // ip(:port)
+    .replace(/\b\d{1,3}(\.\d{1,3}){3}(:\d+)?\b/g, '<ip>')
+    // pid / process / thread / worker ids
+    .replace(/\b(pid|process|thread|worker)([\s:#=]+)\d+/g, '$1$2<pid>')
+    // n° de ligne:colonne dans les stacks (:123:45) + "line 123"
+    .replace(/:\d+:\d+\b/g, ':<line>')
+    .replace(/\bline\s+\d+/g, 'line <line>')
+    // longues séquences de chiffres (compteurs, offsets) — garde les courts (codes)
+    .replace(/\b\d{5,}\b/g, '<n>')
+    .replace(/[ \t]+/g, ' ')
+    .trim()
+}
+
+// Génère un hash stable pour la déduplication (cache). Basé sur l'empreinte
+// normalisée (et non le log brut) + le nom du job. sha256 tronqué = collisions
+// négligeables (l'ancien hash 32-bit en avait beaucoup).
 export function hashError(jobName: string, logs: string): string {
-  // Hash simple basé sur les 200 premiers chars du log sanitisé
-  const key = `${jobName}::${logs.slice(0, 200)}`
-  let hash = 0
-  for (let i = 0; i < key.length; i++) {
-    hash = ((hash << 5) - hash) + key.charCodeAt(i)
-    hash |= 0
-  }
-  return Math.abs(hash).toString(16)
+  const fp = fingerprintLogs(logs).slice(0, 600)
+  return createHash('sha256').update(`${jobName}::${fp}`).digest('hex').slice(0, 24)
 }

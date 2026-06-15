@@ -1,4 +1,4 @@
-import { sanitizeLogs, hashError } from '../services/sanitizer'
+import { sanitizeLogs, hashError, fingerprintLogs } from '../services/sanitizer'
 
 describe('sanitizeLogs', () => {
 
@@ -141,5 +141,42 @@ describe('hashError', () => {
     const hash = hashError('test', 'msg')
     expect(hash).toMatch(/^[0-9a-f]+$/)
     expect(hash.length).toBeGreaterThan(0)
+  })
+
+  // ─── Fingerprint : variantes volatiles → même empreinte (cache hit) ──────────
+  it('same error with a different timestamp → same hash', () => {
+    const a = 'etl-warehouse'
+    expect(hashError(a, '2026-06-14T02:00:01Z ERROR ECONNREFUSED 10.0.1.45:5439'))
+      .toBe(hashError(a, '2026-06-15T09:33:48Z ERROR ECONNREFUSED 10.0.1.45:5439'))
+  })
+
+  it('same error with different PID / line numbers → same hash', () => {
+    const j = 'cleanup'
+    expect(hashError(j, 'deadlock detected pid 12345 at db.js:134:28'))
+      .toBe(hashError(j, 'deadlock detected pid 88472 at db.js:991:12'))
+  })
+
+  it('same error from a different host IP → same hash', () => {
+    const j = 'sync'
+    expect(hashError(j, 'connect ECONNREFUSED 10.0.1.45:5439'))
+      .toBe(hashError(j, 'connect ECONNREFUSED 192.168.9.2:5439'))
+  })
+
+  it('genuinely different errors still differ after normalization', () => {
+    const j = 'job'
+    expect(hashError(j, 'ECONNREFUSED at 02:00:01'))
+      .not.toBe(hashError(j, 'out of memory at 02:00:01'))
+  })
+
+  it('fingerprintLogs neutralises volatile tokens', () => {
+    const fp = fingerprintLogs('2026-06-14T02:00:01Z pid 12345 uuid 550e8400-e29b-41d4-a716-446655440000 at x.js:10:5 ip 10.0.0.1:5432 count 9847211')
+    expect(fp).toContain('<ts>')
+    expect(fp).toContain('<pid>')
+    expect(fp).toContain('<uuid>')
+    expect(fp).toContain('<line>')
+    expect(fp).toContain('<ip>')
+    expect(fp).toContain('<n>')
+    expect(fp).not.toContain('12345')
+    expect(fp).not.toContain('550e8400')
   })
 })
