@@ -1455,6 +1455,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <button class="stab" data-stab-btn="alerts" onclick="setSettingsTab('alerts')" data-i18n="set.tab.alerts">Alertes</button>
           <button class="stab" data-stab-btn="team" onclick="setSettingsTab('team')" data-i18n="set.tab.team">Équipe</button>
           <button class="stab" data-stab-btn="status" onclick="setSettingsTab('status')" data-i18n="set.tab.status">Statut</button>
+          <button class="stab" data-stab-btn="audit" onclick="setSettingsTab('audit')" data-i18n="set.tab.audit">Audit</button>
         </div>
         <div class="settings-section" data-stab="account">
           <div class="settings-title" data-i18n="set.account">compte</div>
@@ -1601,6 +1602,14 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <div style="font-size:11px;font-family:var(--mono);color:var(--text3)">
             <span data-i18n="set.format">Format</span> : <span style="color:var(--green)" id="set-status-url">—</span>
           </div>
+        </div>
+
+        <div class="settings-section" data-stab="audit">
+          <div class="settings-title" data-i18n="set.audit">journal d'audit</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6" data-i18n="set.auditDesc">
+            Qui a fait quoi, quand, et depuis quelle IP. Acteur = email SSO ou clé API. Conservé 90 jours.
+          </div>
+          <div id="audit-list"><div style="font-size:12px;color:var(--text3)">…</div></div>
         </div>
       </div>
 
@@ -1925,7 +1934,8 @@ const I18N = {
     'set.invitedBy':'invité par','set.pending':'En attente','set.expires':'expire','set.cancel':'annuler','set.inviteMember':'+ inviter un membre',
     'set.trial':'passer à l\'offre pro','set.trialDesc':'Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, analyses IA avancées.','set.startTrial':'Démarrer l\'essai 14 jours →',
     'set.statusPage':'page de statut publique','set.statusPageDesc':'Partagez le statut de vos services. URL accessible sans authentification.','set.format':'Format',
-    'set.tab.account':'Compte','set.tab.notifications':'Notifications','set.tab.alerts':'Alertes','set.tab.team':'Équipe','set.tab.status':'Statut',
+    'set.tab.account':'Compte','set.tab.notifications':'Notifications','set.tab.alerts':'Alertes','set.tab.team':'Équipe','set.tab.status':'Statut','set.tab.audit':'Audit',
+    'set.audit':'journal d\'audit','set.auditDesc':'Qui a fait quoi, quand, et depuis quelle IP. Acteur = email SSO ou clé API. Conservé 90 jours.','audit.empty':'Aucune action enregistrée.','audit.denied':'Réservé aux admins.',
     'mod.new.title':'nouveau service','mod.new.sub':'Vous recevrez une ping_key à ajouter à la fin de votre script.',
     'mod.new.name':'Nom','mod.new.namePh':'backup-postgres, etl-nightly, sync-invoices','mod.new.env':'Environnement',
     'mod.new.grace':'Délai de grâce (s)','mod.new.graceHint':'délai avant l\'alerte « en retard »','mod.new.schedule':'Planning cron','mod.new.schedulePh':'0 2 * * *  (optionnel)',
@@ -2043,7 +2053,8 @@ const I18N = {
     'set.invitedBy':'invited by','set.pending':'Pending','set.expires':'expires','set.cancel':'cancel','set.inviteMember':'+ invite a member',
     'set.trial':'upgrade to pro','set.trialDesc':'Try the Pro features for 14 days: unlimited services, Slack alerts, advanced AI analyses.','set.startTrial':'Start 14-day trial →',
     'set.statusPage':'public status page','set.statusPageDesc':'Share your services status. URL accessible without authentication.','set.format':'Format',
-    'set.tab.account':'Account','set.tab.notifications':'Notifications','set.tab.alerts':'Alerts','set.tab.team':'Team','set.tab.status':'Status',
+    'set.tab.account':'Account','set.tab.notifications':'Notifications','set.tab.alerts':'Alerts','set.tab.team':'Team','set.tab.status':'Status','set.tab.audit':'Audit',
+    'set.audit':'audit log','set.auditDesc':'Who did what, when, and from which IP. Actor = SSO email or API key. Kept for 90 days.','audit.empty':'No action recorded yet.','audit.denied':'Admins only.',
     'mod.new.title':'new service','mod.new.sub':'You will receive a ping_key to add at the end of your script.',
     'mod.new.name':'Name','mod.new.namePh':'backup-postgres, etl-nightly, sync-invoices','mod.new.env':'Environment',
     'mod.new.grace':'Grace period (s)','mod.new.graceHint':'delay before the "late" alert','mod.new.schedule':'Cron schedule','mod.new.schedulePh':'0 2 * * *  (optional)',
@@ -3274,6 +3285,34 @@ function setSettingsTab(tab) {
   document.querySelectorAll('[data-stab]').forEach(s =>
     s.classList.toggle('stab-off', s.getAttribute('data-stab') !== tab))
   const c = document.querySelector('.content'); if (c) c.scrollTop = 0
+  if (tab === 'audit') loadAudit()
+}
+
+// ─── Journal d'audit (Enterprise) ─────────────────────────────────────────────
+async function loadAudit() {
+  const el = document.getElementById('audit-list'); if (!el) return
+  try {
+    const rows = await api('/clients/audit?limit=100')
+    if (!rows.length) { el.innerHTML = `<div style="font-size:12px;color:var(--text3)">${t('audit.empty')}</div>`; return }
+    el.innerHTML = rows.map(r => {
+      const meta = (() => { try { return r.meta && r.meta !== '{}' ? JSON.stringify(typeof r.meta==='string'?JSON.parse(r.meta):r.meta) : '' } catch { return '' } })()
+      return `<div class="settings-row" style="align-items:flex-start">
+        <div style="min-width:0">
+          <div class="settings-label" style="font-family:var(--mono);font-size:11px">
+            <span style="color:var(--green)">${esc(r.action)}</span>
+            ${r.resource_id ? `<span style="color:var(--text3)"> ${esc(r.resource)}:${esc(String(r.resource_id).slice(0,8))}</span>` : ''}
+          </div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px">
+            ${esc(r.actor || '—')}${r.ip ? ' · '+esc(r.ip) : ''}${meta ? ' · '+esc(meta).slice(0,80) : ''}
+          </div>
+        </div>
+        <span style="font-size:10px;font-family:var(--mono);color:var(--text3);white-space:nowrap;flex-shrink:0">${fmtDateTime(r.created_at)}</span>
+      </div>`
+    }).join('')
+  } catch(e) {
+    const denied = /^403/.test(e.message)
+    el.innerHTML = `<div style="font-size:12px;color:var(--text3)">${denied ? t('audit.denied') : '—'}</div>`
+  }
 }
 
 // ─── Visite guidée (onboarding first-run) ─────────────────────────────────────

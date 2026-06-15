@@ -3,8 +3,22 @@ import { z }      from 'zod'
 import { db }     from '../../db'
 import { asyncHandler } from '../middleware/async-handler'
 import { requireRole }  from '../middleware/ownership'
+import { audit }        from '../middleware/audit'
 
 export const clientsRouter = Router()
+
+// ─── GET /clients/audit — journal d'audit complet du client (admin+) ──────────
+// Qui a fait quoi (acteur = email SSO ou mode d'auth), quand, depuis quelle IP.
+clientsRouter.get('/audit', requireRole('admin'), asyncHandler(async (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit as string ?? '100'), 200)
+  const { rows } = await db.query(`
+    SELECT actor, action, resource, resource_id, meta, ip, created_at
+    FROM audit_logs
+    WHERE client_id = $1
+    ORDER BY created_at DESC LIMIT $2
+  `, [res.locals.clientId, limit])
+  res.json(rows)
+}))
 
 clientsRouter.get('/me', asyncHandler(async (req, res) => {
   const { rows: [client] } = await db.query(`
@@ -60,5 +74,6 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
     escWebhookGiven,                 // $10
     d.escalation_after_min ?? null,  // $11
   ])
+  await audit(res, 'settings.updated', 'client', res.locals.clientId, { fields: Object.keys(d) })
   res.json(client)
 }))

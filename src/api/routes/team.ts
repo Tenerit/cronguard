@@ -3,6 +3,7 @@ import { z }      from 'zod'
 import { db }     from '../../db'
 import { asyncHandler } from '../middleware/async-handler'
 import { requireRole }  from '../middleware/ownership'
+import { audit }        from '../middleware/audit'
 
 export const teamRouter = Router()
 
@@ -69,6 +70,7 @@ teamRouter.post('/invite', requireRole('owner'), asyncHandler(async (req, res) =
     RETURNING id, email, role, token, expires_at, created_at
   `, [res.locals.clientId, email, role, owner?.email ?? 'unknown'])
 
+  await audit(res, 'team.invited', 'member', inv.id, { email, role })
   const appUrl = process.env.APP_URL ?? 'http://localhost:3000'
   res.status(201).json({
     ...inv,
@@ -119,6 +121,7 @@ teamRouter.delete('/members/:id', requireRole('owner'), asyncHandler(async (req,
     [req.params.id, res.locals.clientId]
   )
   if (!rowCount) return res.status(404).json({ error: 'not_found' })
+  await audit(res, 'team.member_removed', 'member', req.params.id)
   res.status(204).end()
 }))
 
@@ -130,5 +133,6 @@ teamRouter.delete('/invitations/:id', requireRole('owner'), asyncHandler(async (
     WHERE id = $1 AND client_id = $2 AND accepted_at IS NULL
   `, [req.params.id, res.locals.clientId])
   if (!rowCount) return res.status(404).json({ error: 'not_found' })
+  await audit(res, 'team.invite_cancelled', 'invitation', req.params.id)
   res.status(204).end()
 }))

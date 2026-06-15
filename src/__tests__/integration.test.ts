@@ -185,6 +185,7 @@ beforeAll(async () => {
     CREATE TABLE audit_logs (
       id          TEXT PRIMARY KEY,
       client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,
+      actor       TEXT,
       action      TEXT NOT NULL,
       resource    TEXT NOT NULL,
       resource_id TEXT,

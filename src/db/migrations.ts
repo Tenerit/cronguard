@@ -312,6 +312,11 @@ async function v12(client: {query(sql: string, params?: unknown[]): Promise<unkn
   await client.query(`CREATE INDEX IF NOT EXISTS idx_team_members_key   ON team_members(api_key)`)
 }
 
+// ─── V13 : Acteur dans l'audit log (qui a agi — email SSO ou clé API) ─────────
+async function v13(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS actor TEXT`)
+}
+
 export async function runMigrations() {
   const client = await db.connect()
   try {
@@ -328,8 +333,9 @@ export async function runMigrations() {
     await v10(client)
     await v11(client)
     await v12(client)
+    await v13(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v12)')
+    logger.info('[DB] Migrations terminées (v1 → v13)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

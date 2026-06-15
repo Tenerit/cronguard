@@ -80,6 +80,7 @@ monitorsRouter.post('/', requireRole('admin'), asyncHandler(async (req, res) => 
   `, [res.locals.clientId, parsed.data.name, parsed.data.schedule,
       parsed.data.grace_period, parsed.data.expected_min, parsed.data.expected_max, parsed.data.env])
 
+  await audit(res, 'monitor.created', 'monitor', monitor.id, { name: monitor.name, env: monitor.env })
   res.status(201).json(monitor)
 }))
 
@@ -100,6 +101,7 @@ monitorsRouter.patch('/:id', requireRole('admin'), ownsMonitor, asyncHandler(asy
     `UPDATE monitors SET ${set} WHERE id = $1 RETURNING id, name, active, last_status, env`,
     [req.params.id, ...values]
   )
+  await audit(res, 'monitor.updated', 'monitor', req.params.id, { fields: fields.map(([k]) => k) })
   res.json(updated)
 }))
 
@@ -107,6 +109,7 @@ monitorsRouter.patch('/:id', requireRole('admin'), ownsMonitor, asyncHandler(asy
 
 monitorsRouter.delete('/:id', requireRole('admin'), ownsMonitor, asyncHandler(async (req, res) => {
   await db.query(`DELETE FROM monitors WHERE id = $1`, [req.params.id])
+  await audit(res, 'monitor.deleted', 'monitor', req.params.id)
   res.json({ ok: true })
 }))
 
@@ -147,6 +150,7 @@ monitorsRouter.get('/:id/analyses', ownsMonitor, asyncHandler(async (req, res) =
 
 monitorsRouter.post('/:id/acknowledge', requireRole('member'), ownsMonitor, asyncHandler(async (req, res) => {
   await acknowledgeAlert(req.params.id)
+  await audit(res, 'monitor.acknowledged', 'monitor', req.params.id)
   res.json({ ok: true, status: 'acknowledged' })
 }))
 
@@ -155,6 +159,7 @@ monitorsRouter.post('/:id/acknowledge', requireRole('member'), ownsMonitor, asyn
 monitorsRouter.post('/:id/snooze', requireRole('member'), ownsMonitor, asyncHandler(async (req, res) => {
   const minutes = Math.min(Math.max(parseInt(req.body?.minutes ?? '60'), 5), 1440)
   await snoozeAlert(req.params.id, minutes)
+  await audit(res, 'monitor.snoozed', 'monitor', req.params.id, { minutes })
   res.json({ ok: true, status: 'snoozed', minutes, until: new Date(Date.now() + minutes * 60000) })
 }))
 
@@ -169,7 +174,7 @@ monitorsRouter.post('/:id/pause', requireRole('admin'), ownsMonitor, asyncHandle
     `UPDATE monitors SET paused_until = $2 WHERE id = $1`,
     [req.params.id, until]
   )
-  await audit(res.locals.clientId, 'monitor.paused', 'monitor', req.params.id, req, { minutes, until })
+  await audit(res, 'monitor.paused', 'monitor', req.params.id, { minutes, until })
 
   res.json({ ok: true, pausedUntil: until, minutes })
 }))
@@ -181,7 +186,7 @@ monitorsRouter.post('/:id/resume', requireRole('admin'), ownsMonitor, asyncHandl
     `UPDATE monitors SET paused_until = NULL WHERE id = $1`,
     [req.params.id]
   )
-  await audit(res.locals.clientId, 'monitor.resumed', 'monitor', req.params.id, req)
+  await audit(res, 'monitor.resumed', 'monitor', req.params.id)
   res.json({ ok: true })
 }))
 
@@ -217,7 +222,7 @@ monitorsRouter.post('/:id/test', ownsMonitor, asyncHandler(async (req, res) => {
     client: { email: monitor.email, slackWebhook: monitor.slack_webhook, webhookUrl: monitor.webhook_url },
   })
 
-  await audit(res.locals.clientId, 'monitor.test', 'monitor', req.params.id, req)
+  await audit(res, 'monitor.test', 'monitor', req.params.id)
   res.json({ ok: true, message: 'Test alert sent to email and Slack.' })
 }))
 
@@ -225,7 +230,7 @@ monitorsRouter.post('/:id/test', ownsMonitor, asyncHandler(async (req, res) => {
 
 monitorsRouter.get('/:id/audit', ownsMonitor, asyncHandler(async (req, res) => {
   const { rows } = await db.query(`
-    SELECT action, meta, ip, created_at
+    SELECT action, actor, meta, ip, created_at
     FROM audit_logs
     WHERE client_id = $1 AND resource = 'monitor' AND resource_id = $2
     ORDER BY created_at DESC LIMIT 50

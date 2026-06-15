@@ -3,6 +3,7 @@ import { z }      from 'zod'
 import { db }     from '../../db'
 import { asyncHandler }  from '../middleware/async-handler'
 import { isWindowActive } from '../../services/maintenance'
+import { audit }         from '../middleware/audit'
 
 export const maintenanceRouter = Router()
 
@@ -66,6 +67,7 @@ maintenanceRouter.post('/', asyncHandler(async (req, res) => {
     RETURNING id, label, cron_expr, duration_min, monitor_id, active, created_at
   `, [res.locals.clientId, d.monitor_id ?? null, d.label, d.cron_expr, d.duration_min, d.active])
 
+  await audit(res, 'maintenance.created', 'maintenance_window', created.id, { cron: d.cron_expr, monitor_id: d.monitor_id ?? null })
   res.status(201).json(created)
 }))
 
@@ -107,10 +109,11 @@ maintenanceRouter.patch('/:id', asyncHandler(async (req, res) => {
 // DELETE /maintenance-windows/:id
 maintenanceRouter.delete('/:id', asyncHandler(async (req, res) => {
   const { rowCount } = await db.query(
-    `DELETE FROM maintenance_windows WHERE id = $1 AND client_id = $2`,
+    `DELETE FROM maintenance_windows WHERE id = $1 AND client_id = $2`,  /* audited below */
     [req.params.id, res.locals.clientId]
   )
   if (!rowCount) return res.status(404).json({ error: 'not_found' })
+  await audit(res, 'maintenance.deleted', 'maintenance_window', req.params.id)
   res.status(204).end()
 }))
 
