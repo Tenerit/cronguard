@@ -6,6 +6,7 @@ import { Worker, Job }   from 'bullmq'
 import { db }            from '../db'
 import { logger }        from '../config/logger'
 import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
+import { recallSimilar } from '../services/llm/incident-memory'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
 import { sendAlert, sendRecovery } from '../services/alerts'
 import { hashError }     from '../services/sanitizer'
@@ -251,12 +252,18 @@ function createPingWorker() {
       WHERE a.monitor_id=$1 AND a.user_feedback='positive' AND p.output IS NOT NULL
       ORDER BY a.created_at DESC LIMIT 2
     `, [monitorId])
-    const fewShotExamples = fewShotRows.map((r: {diagnosis: string; logs: string}) => {
-      try {
-        const diag = JSON.parse(r.diagnosis)
-        return { logs: (r.logs ?? '').slice(0, 200), cause: diag.cause, action: diag.action, category: diag.category ?? 'unknown' }
-      } catch { return null }
-    }).filter((x): x is NonNullable<typeof x> => x !== null)
+    let fewShotExamples: Array<{ logs: string; cause: string; action: string; category: string }> =
+      fewShotRows.map((r: {diagnosis: string; logs: string}) => {
+        try {
+          const diag = JSON.parse(r.diagnosis)
+          return { logs: (r.logs ?? '').slice(0, 200), cause: diag.cause, action: diag.action, category: diag.category ?? 'unknown' }
+        } catch { return null }
+      }).filter((x): x is NonNullable<typeof x> => x !== null)
+
+    // Mémoire d'incidents : few-shot par SIMILARITÉ (cross-monitor) plutôt que récence.
+    // No-op si MEMORY_ENABLED≠true → on garde le few-shot par récence ci-dessus.
+    const recalled = await recallSimilar(clientId, output ?? '', 2)
+    if (recalled.length) fewShotExamples = recalled
 
     await getAnalysisQueue().add('analyze', {
       monitorId, clientId, pingId: ping.id,

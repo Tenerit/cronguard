@@ -212,6 +212,10 @@ LLM_BASE_URL=https://api.anthropic.com/v1 LLM_MODEL=claude-haiku-4-5 LLM_API_KEY
 The context pipeline (7-day history, cross-job correlations, timing patterns,
 few-shot from your feedback) stays identical — only the model changes.
 
+### Incident memory (optional)
+
+Set `MEMORY_ENABLED=true` to turn the feedback loop into a real memory: every analysis you mark 👍 is embedded (locally, via Ollama `nomic-embed-text` — no egress) and, on the next failure, the most **similar** past incidents across all your jobs are retrieved as few-shot examples (cosine similarity), instead of just the most recent. The cache also dedupes by a normalized error fingerprint (timestamps/PIDs/UUIDs/IPs stripped), so a recurring error is answered from cache instead of re-calling the model. No pgvector required — embeddings live in a `real[]` column and ranking is done in-app.
+
 ---
 
 ## Useful commands

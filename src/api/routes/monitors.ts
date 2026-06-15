@@ -6,6 +6,7 @@ import { asyncHandler }                  from '../middleware/async-handler'
 import { audit }                         from '../middleware/audit'
 import { acknowledgeAlert, snoozeAlert } from '../../services/alerts/dedup'
 import { sendAlert }                     from '../../services/alerts'
+import { rememberIncident }              from '../../services/llm/incident-memory'
 
 export const monitorsRouter = Router()
 
@@ -247,10 +248,11 @@ monitorsRouter.post('/analyses/:analysisId/feedback', asyncHandler(async (req, r
   if (!['positive', 'negative'].includes(feedback))
     return res.status(400).json({ error: "feedback doit être 'positive' ou 'negative'" })
 
-  // Vérifie que l'analyse appartient au client
+  // Vérifie que l'analyse appartient au client (et récupère les logs pour la mémoire)
   const { rows: [analysis] } = await db.query(`
-    SELECT a.id FROM analyses a
-    JOIN monitors m ON m.id = a.monitor_id
+    SELECT a.id, p.output AS logs FROM analyses a
+    JOIN monitors m      ON m.id = a.monitor_id
+    LEFT JOIN pings p    ON p.id = a.ping_id
     WHERE a.id = $1 AND m.client_id = $2
   `, [analysisId, res.locals.clientId])
 
@@ -260,6 +262,9 @@ monitorsRouter.post('/analyses/:analysisId/feedback', asyncHandler(async (req, r
     `UPDATE analyses SET user_feedback = $2 WHERE id = $1`,
     [analysisId, feedback]
   )
+
+  // Validé 👍 → mémorise l'incident (embedding) pour le few-shot par similarité (no-op si MEMORY off)
+  if (feedback === 'positive') await rememberIncident(analysisId, analysis.logs ?? '')
 
   res.json({ ok: true, feedback })
 }))
