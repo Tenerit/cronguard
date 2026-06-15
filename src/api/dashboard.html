@@ -1477,6 +1477,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
               <span id="set-key-hidden">••••••••••••••••</span>
               <button class="key-copy" onclick="toggleApiKey()" data-i18n="set.show">afficher</button>
               <button class="key-copy" onclick="copyText(window._rawApiKey||'',t('toast.apiKeyCopied'))" data-i18n="set.copy">copier</button>
+              <button class="key-copy" style="border-color:rgba(248,113,113,.3);color:var(--red)" onclick="rotateApiKey()" data-i18n="set.rotate">rotation</button>
             </span>
           </div>
           <div class="settings-row">
@@ -1936,6 +1937,7 @@ const I18N = {
     'set.statusPage':'page de statut publique','set.statusPageDesc':'Partagez le statut de vos services. URL accessible sans authentification.','set.format':'Format',
     'set.tab.account':'Compte','set.tab.notifications':'Notifications','set.tab.alerts':'Alertes','set.tab.team':'Équipe','set.tab.status':'Statut','set.tab.audit':'Audit',
     'set.audit':'journal d\'audit','set.auditDesc':'Qui a fait quoi, quand, et depuis quelle IP. Acteur = email SSO ou clé API. Conservé 90 jours.','audit.empty':'Aucune action enregistrée.','audit.denied':'Réservé aux admins.',
+    'set.rotate':'rotation','confirm.rotate':'Régénérer la clé API du compte ? L\'ancienne sera invalidée immédiatement — mettez à jour vos scripts/CI.','confirm.rotateMember':'Régénérer la clé de ce membre ? Son ancienne clé cessera de fonctionner.','toast.keyRotated':'Nouvelle clé API active. Mettez à jour vos intégrations.','toast.keyRotatedCopied':'Nouvelle clé du membre copiée — transmettez-la.',
     'mod.new.title':'nouveau service','mod.new.sub':'Vous recevrez une ping_key à ajouter à la fin de votre script.',
     'mod.new.name':'Nom','mod.new.namePh':'backup-postgres, etl-nightly, sync-invoices','mod.new.env':'Environnement',
     'mod.new.grace':'Délai de grâce (s)','mod.new.graceHint':'délai avant l\'alerte « en retard »','mod.new.schedule':'Planning cron','mod.new.schedulePh':'0 2 * * *  (optionnel)',
@@ -2055,6 +2057,7 @@ const I18N = {
     'set.statusPage':'public status page','set.statusPageDesc':'Share your services status. URL accessible without authentication.','set.format':'Format',
     'set.tab.account':'Account','set.tab.notifications':'Notifications','set.tab.alerts':'Alerts','set.tab.team':'Team','set.tab.status':'Status','set.tab.audit':'Audit',
     'set.audit':'audit log','set.auditDesc':'Who did what, when, and from which IP. Actor = SSO email or API key. Kept for 90 days.','audit.empty':'No action recorded yet.','audit.denied':'Admins only.',
+    'set.rotate':'rotate','confirm.rotate':'Regenerate the account API key? The old one is invalidated immediately — update your scripts/CI.','confirm.rotateMember':'Regenerate this member\'s key? Their old key stops working.','toast.keyRotated':'New API key active. Update your integrations.','toast.keyRotatedCopied':'Member\'s new key copied — share it with them.',
     'mod.new.title':'new service','mod.new.sub':'You will receive a ping_key to add at the end of your script.',
     'mod.new.name':'Name','mod.new.namePh':'backup-postgres, etl-nightly, sync-invoices','mod.new.env':'Environment',
     'mod.new.grace':'Grace period (s)','mod.new.graceHint':'delay before the "late" alert','mod.new.schedule':'Cron schedule','mod.new.schedulePh':'0 2 * * *  (optional)',
@@ -3571,6 +3574,29 @@ function toggleApiKey() {
   }
 }
 
+// Rotation de la clé du compte (owner). Invalide l'ancienne → on stocke la nouvelle.
+async function rotateApiKey() {
+  if (!confirm(t('confirm.rotate'))) return
+  try {
+    const r = await api('/clients/rotate-key', { method: 'POST' })
+    API_KEY = r.api_key
+    localStorage.setItem('cg_key', API_KEY)
+    window._rawApiKey = API_KEY
+    const el = document.getElementById('set-key-hidden')
+    if (el) el.textContent = API_KEY
+    toast(t('toast.keyRotated'), 'ok', 6000)
+  } catch(e) { toast(e.message, 'err') }
+}
+
+// Rotation de la clé d'un membre (owner). La nouvelle clé est copiée pour transmission.
+async function rotateMemberKey(id) {
+  if (!confirm(t('confirm.rotateMember'))) return
+  try {
+    const r = await api(`/team/members/${id}/rotate-key`, { method: 'POST' })
+    copyText(r.api_key, t('toast.keyRotatedCopied'))
+  } catch(e) { toast(e.message, 'err') }
+}
+
 async function loadSettings() {
   try {
     const c = await api('/clients/me')
@@ -3721,7 +3747,10 @@ async function loadTeamMembers() {
             ${m.invited_by ? ` · ${t('set.invitedBy')} ${esc(m.invited_by)}` : ''}
           </div>
         </div>
-        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="removeTeamMember('${m.id}')">${t('set.remove')}</button>
+        <span style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn btn-ghost" style="font-size:10px" onclick="rotateMemberKey('${m.id}')">${t('set.rotate')}</button>
+          <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="removeTeamMember('${m.id}')">${t('set.remove')}</button>
+        </span>
       </div>`).join('')
   } catch(e) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">—</div>' }
 

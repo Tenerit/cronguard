@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z }      from 'zod'
 import { db }     from '../../db'
+import { randomUUID } from 'crypto'
 import { asyncHandler } from '../middleware/async-handler'
 import { requireRole }  from '../middleware/ownership'
 import { audit }        from '../middleware/audit'
@@ -123,6 +124,19 @@ teamRouter.delete('/members/:id', requireRole('owner'), asyncHandler(async (req,
   if (!rowCount) return res.status(404).json({ error: 'not_found' })
   await audit(res, 'team.member_removed', 'member', req.params.id)
   res.status(204).end()
+}))
+
+// ─── POST /team/members/:id/rotate-key — régénère la clé d'un membre (owner) ──
+
+teamRouter.post('/members/:id/rotate-key', requireRole('owner'), asyncHandler(async (req, res) => {
+  const key = 'cg_live_' + randomUUID().replace(/-/g, '')
+  const { rows: [m] } = await db.query(
+    `UPDATE team_members SET api_key = $3 WHERE id = $1 AND client_id = $2 RETURNING email`,
+    [req.params.id, res.locals.clientId, key]
+  )
+  if (!m) return res.status(404).json({ error: 'not_found' })
+  await audit(res, 'team.key_rotated', 'member', req.params.id, { email: m.email })
+  res.json({ email: m.email, api_key: key })
 }))
 
 // ─── DELETE /team/invitations/:id — annule une invitation en attente ──────────

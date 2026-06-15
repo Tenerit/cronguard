@@ -1,11 +1,30 @@
 import { Router } from 'express'
 import { z }      from 'zod'
+import { randomUUID } from 'crypto'
 import { db }     from '../../db'
 import { asyncHandler } from '../middleware/async-handler'
 import { requireRole }  from '../middleware/ownership'
 import { audit }        from '../middleware/audit'
 
 export const clientsRouter = Router()
+
+// Nouvelle clé API : préfixe lisible + UUID sans tirets
+function newApiKey(): string {
+  return 'cg_live_' + randomUUID().replace(/-/g, '')
+}
+
+// ─── POST /clients/rotate-key — régénère la clé du compte (owner) ─────────────
+// Invalide immédiatement l'ancienne clé. Le client DOIT stocker la nouvelle.
+clientsRouter.post('/rotate-key', requireRole('owner'), asyncHandler(async (_req, res) => {
+  const key = newApiKey()
+  const { rows: [c] } = await db.query(
+    `UPDATE clients SET api_key = $2 WHERE id = $1 RETURNING id`,
+    [res.locals.clientId, key]
+  )
+  if (!c) return res.status(404).json({ error: 'not_found' })
+  await audit(res, 'client.key_rotated', 'client', res.locals.clientId)
+  res.json({ api_key: key })
+}))
 
 // ─── GET /clients/audit — journal d'audit complet du client (admin+) ──────────
 // Qui a fait quoi (acteur = email SSO ou mode d'auth), quand, depuis quelle IP.
