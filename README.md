@@ -144,7 +144,9 @@ notification ("✅ resolved", with downtime duration) when the job goes green ag
 |---------|---------------|
 | Email | `SMTP_*` variables |
 | Slack | incoming webhook — Settings › Notifications |
-| Generic webhook | custom URL (Discord, Teams, PagerDuty, n8n…) — receives the alert/recovery JSON |
+| Generic webhook | custom URL (Discord, Teams, PagerDuty, n8n…) — receives the alert/recovery/escalation JSON |
+
+Outbound generic webhooks can be **HMAC-signed** for authenticity: set `WEBHOOK_SIGNING_SECRET` and each request carries `X-CronGuard-Signature: sha256=<hmac>` over `<X-CronGuard-Timestamp>.<raw body>`. Receivers recompute it (constant-time compare) and reject stale timestamps to prevent replay. Slack uses its own scheme and is left untouched.
 
 ---
 

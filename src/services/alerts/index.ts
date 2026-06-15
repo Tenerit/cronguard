@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer'
 import axios      from 'axios'
-import { logger } from '../../config/logger'
+import { logger }       from '../../config/logger'
+import { signWebhook }  from '../webhook-signature'
 import type { AnalysisResult } from '../llm/analyzer'
 
 // Lazy : créé seulement au premier envoi, pas au chargement du module
@@ -200,7 +201,11 @@ export async function sendWebhookAlert(payload: AlertPayload) {
     timestamp:     new Date().toISOString(),
   }
   try {
-    await axios.post(webhookUrl, body, { timeout: 5000 })
+    const json = JSON.stringify(body)
+    await axios.post(webhookUrl, json, {
+      timeout: 5000,
+      headers: { 'Content-Type': 'application/json', ...signWebhook(json) },
+    })
     logger.info('[Alert] Webhook sent', { job: payload.jobName })
   } catch (err) {
     logger.error('[Alert] Webhook failed', { err })
@@ -262,11 +267,15 @@ export async function sendRecovery(p: RecoveryPayload) {
 
   const webhook = async () => {
     if (!p.client.webhookUrl) return
-    await axios.post(p.client.webhookUrl, {
+    const json = JSON.stringify({
       event: 'recovery', job: p.jobName, env: p.env,
       downtime_ms: p.downMs ?? null, status_page: p.statusPageUrl,
       timestamp: new Date().toISOString(),
-    }, { timeout: 5000 })
+    })
+    await axios.post(p.client.webhookUrl, json, {
+      timeout: 5000,
+      headers: { 'Content-Type': 'application/json', ...signWebhook(json) },
+    })
   }
 
   const results = await Promise.allSettled([slack(), email(), webhook()])
@@ -327,7 +336,7 @@ export async function sendEscalation(p: EscalationPayload) {
 
   const webhook = async () => {
     if (!p.escalationWebhook) return
-    await axios.post(p.escalationWebhook, {
+    const json = JSON.stringify({
       event:        'escalation',
       job:          p.jobName,
       env:          p.env,
@@ -340,7 +349,11 @@ export async function sendEscalation(p: EscalationPayload) {
       down_duration: down,
       status_page:  p.statusPageUrl,
       timestamp:    new Date().toISOString(),
-    }, { timeout: 5000 })
+    })
+    await axios.post(p.escalationWebhook, json, {
+      timeout: 5000,
+      headers: { 'Content-Type': 'application/json', ...signWebhook(json) },
+    })
     logger.info('[Alert] Escalation webhook sent', { job: p.jobName, down })
   }
 
