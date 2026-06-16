@@ -164,6 +164,45 @@ describe('analyzeFailure()', () => {
       expect(logs.length).toBeGreaterThan(0)
       delete process.env.LLM_LOG_BUDGET
     })
+
+    function sentUser(): string {
+      const sentPrompt = mockedAxios.post.mock.calls[0][1] as any
+      return sentPrompt.messages.find((m: any) => m.role === 'user')?.content ?? ''
+    }
+    const twoShots = [
+      { logs: 'a', cause: 'ca', action: 'aa', category: 'database' as const },
+      { logs: 'b', cause: 'cb', action: 'ab', category: 'network'  as const },
+    ]
+
+    it('caps few-shot examples via LLM_FEWSHOT_MAX', async () => {
+      process.env.LLM_FEWSHOT_MAX = '1'
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      await analyzeFailure({ ...baseCtx, jobName: 'fs-cap', fewShotExamples: twoShots })
+
+      const user = sentUser()
+      expect(user).toContain('✓ cause: ca')   // 1st kept
+      expect(user).not.toContain('✓ cause: cb')// 2nd dropped
+      delete process.env.LLM_FEWSHOT_MAX
+    })
+
+    it('drops the few-shot block entirely when LLM_FEWSHOT_MAX=0', async () => {
+      process.env.LLM_FEWSHOT_MAX = '0'
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      await analyzeFailure({ ...baseCtx, jobName: 'fs-off', fewShotExamples: twoShots })
+
+      expect(sentUser()).not.toContain('<exemples_validés_par_utilisateur>')
+      delete process.env.LLM_FEWSHOT_MAX
+    })
+
+    it('truncates the runbook via LLM_RUNBOOK_BUDGET', async () => {
+      process.env.LLM_RUNBOOK_BUDGET = '20'
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      await analyzeFailure({ ...baseCtx, jobName: 'rb-cap', notes: 'X'.repeat(200) })
+
+      const block = sentUser().split('<runbook_opérateur>')[1]?.split('</runbook_opérateur>')[0] ?? ''
+      expect(block.replace(/\n/g, '').length).toBeLessThanOrEqual(20)
+      delete process.env.LLM_RUNBOOK_BUDGET
+    })
   })
 
   describe('Circuit breaker integration', () => {

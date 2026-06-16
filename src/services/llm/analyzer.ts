@@ -227,11 +227,12 @@ function buildPrompt(ctx: JobContext, logs: string, redacted: number): string {
 
   meta.push('└─')
 
-  // Few-shot examples
+  // Few-shot examples (nombre réglable — chaque exemple ≈ 100-150 tok d'input)
   let fewShot = ''
-  if (ctx.fewShotExamples?.length) {
+  const fewShotMax = Math.max(0, parseInt(process.env.LLM_FEWSHOT_MAX ?? '2'))
+  if (ctx.fewShotExamples?.length && fewShotMax > 0) {
     fewShot = '\n\n<exemples_validés_par_utilisateur>\n'
-    for (const ex of ctx.fewShotExamples.slice(0, 2)) {
+    for (const ex of ctx.fewShotExamples.slice(0, fewShotMax)) {
       fewShot += `Logs: "${ex.logs.slice(0, 150).replace(/\n/g, ' ')}"\n`
       fewShot += `✓ cause: ${ex.cause}\n`
       fewShot += `✓ action: ${ex.action}\n`
@@ -241,10 +242,11 @@ function buildPrompt(ctx: JobContext, logs: string, redacted: number): string {
   }
 
   // Runbook / notes opérateur : connaissance métier fournie par le client sur ce job.
-  // Haute priorité — à utiliser pour orienter la cause/action si pertinent.
+  // Haute priorité — à utiliser pour orienter la cause/action si pertinent. Cap réglable.
   let runbook = ''
-  if (ctx.notes?.trim()) {
-    runbook = `\n\n<runbook_opérateur>\n${ctx.notes.trim().slice(0, 800)}\n</runbook_opérateur>`
+  const runbookBudget = Math.max(0, parseInt(process.env.LLM_RUNBOOK_BUDGET ?? '800'))
+  if (ctx.notes?.trim() && runbookBudget > 0) {
+    runbook = `\n\n<runbook_opérateur>\n${ctx.notes.trim().slice(0, runbookBudget)}\n</runbook_opérateur>`
   }
 
   return `${meta.join('\n')}${fewShot}${runbook}
