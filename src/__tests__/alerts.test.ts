@@ -13,6 +13,12 @@ jest.mock('nodemailer', () => ({
 jest.mock('axios')
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
+// La garde anti-SSRF résout le hostname du webhook ; on le fait pointer vers une
+// IP publique pour que les envois passent (sinon dns réel = flaky/offline).
+jest.mock('dns', () => ({
+  promises: { lookup: jest.fn().mockResolvedValue([{ address: '93.184.216.34', family: 4 }]) },
+}))
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const basePayload: AlertPayload = {

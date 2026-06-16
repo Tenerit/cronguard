@@ -261,6 +261,7 @@ Workers
 - Log sanitization (9 patterns: JWT, API keys, URLs with creds…)
 - Prompt-injection hardening (logs isolated in XML inside the prompt)
 - SQL injection (column whitelist on PATCH)
+- Outbound-webhook SSRF guard (cloud-metadata/loopback/link-local always blocked; DNS-rebinding checked on the resolved IP; RFC1918 opt-in via `WEBHOOK_BLOCK_PRIVATE`)
 
 ---
 

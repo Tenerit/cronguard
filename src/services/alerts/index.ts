@@ -2,6 +2,7 @@ import nodemailer from 'nodemailer'
 import axios      from 'axios'
 import { logger }       from '../../config/logger'
 import { signWebhook }  from '../webhook-signature'
+import { isSafeWebhookTarget } from '../webhook-guard'
 import type { AnalysisResult } from '../llm/analyzer'
 
 // Lazy : créé seulement au premier envoi, pas au chargement du module
@@ -106,6 +107,7 @@ export async function sendSlackAlert(payload: AlertPayload) {
     }],
   })
 
+  if (!(await isSafeWebhookTarget(slackWebhook))) return
   try {
     await axios.post(slackWebhook, { blocks }, { timeout: 5000 })
     logger.info('[Alert] Slack sent', { job: payload.jobName, repeat: isRepeat })
@@ -183,6 +185,7 @@ export async function sendEmailAlert(payload: AlertPayload) {
 export async function sendWebhookAlert(payload: AlertPayload) {
   const { webhookUrl } = payload.client
   if (!webhookUrl) return
+  if (!(await isSafeWebhookTarget(webhookUrl))) return
 
   const body = {
     event:         'alert',
@@ -240,6 +243,7 @@ export async function sendRecovery(p: RecoveryPayload) {
 
   const slack = async () => {
     if (!p.client.slackWebhook) return
+    if (!(await isSafeWebhookTarget(p.client.slackWebhook))) return
     await axios.post(p.client.slackWebhook, {
       blocks: [
         { type: 'header', text: { type: 'plain_text', text: `✅ Rétabli : ${p.jobName}`, emoji: true } },
@@ -267,6 +271,7 @@ export async function sendRecovery(p: RecoveryPayload) {
 
   const webhook = async () => {
     if (!p.client.webhookUrl) return
+    if (!(await isSafeWebhookTarget(p.client.webhookUrl))) return
     const json = JSON.stringify({
       event: 'recovery', job: p.jobName, env: p.env,
       downtime_ms: p.downMs ?? null, status_page: p.statusPageUrl,
@@ -336,6 +341,7 @@ export async function sendEscalation(p: EscalationPayload) {
 
   const webhook = async () => {
     if (!p.escalationWebhook) return
+    if (!(await isSafeWebhookTarget(p.escalationWebhook))) return
     const json = JSON.stringify({
       event:        'escalation',
       job:          p.jobName,

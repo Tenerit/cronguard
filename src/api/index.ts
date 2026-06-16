@@ -153,6 +153,9 @@ app.get('/status/:monitorId', (req, res) => {
 // ─── Health & Error ───────────────────────────────────────────────────────────
 
 app.get('/metrics', metricsHandler)
+if (!process.env.METRICS_TOKEN) {
+  logger.warn('[Metrics] /metrics non protégé (METRICS_TOKEN absent) — n\'exposez ce port que sur réseau interne, ou définissez METRICS_TOKEN')
+}
 
 app.get('/health', async (_, res) => {
   try {
