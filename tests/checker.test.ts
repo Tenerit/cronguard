@@ -167,6 +167,28 @@ describe('Cron-aware late detection', () => {
   })
 })
 
+// ─── Warm-up slowdown (miroir du garde SQL SLOW_MIN_SAMPLES) ──────────────────
+// Le checker ne déclenche "slowdown" que si la baseline repose sur ≥ N succès.
+const SLOW_MIN_SAMPLES = 5
+function baselineMature(successSamples: number, min = SLOW_MIN_SAMPLES): boolean {
+  return successSamples >= min
+}
+function shouldFireSlow(durationMs: number, avgDuration: number, samples: number): boolean {
+  return baselineMature(samples) && isAnomalySlow(durationMs, avgDuration)
+}
+
+describe('Slowdown warm-up (anti faux-positif)', () => {
+  it('ne déclenche pas sur une baseline immature, même à 2.5×', () => {
+    expect(shouldFireSlow(250_000, 100_000, 2)).toBe(false)   // monitor neuf
+  })
+  it('déclenche une fois assez de succès accumulés', () => {
+    expect(shouldFireSlow(250_000, 100_000, 5)).toBe(true)
+  })
+  it('exige toujours le facteur d’anomalie même avec baseline mature', () => {
+    expect(shouldFireSlow(150_000, 100_000, 20)).toBe(false)  // 1.5× < 2.5×
+  })
+})
+
 // ─── Détection hung (miroir de hungThreshold dans timeout.checker) ────────────
 const HUNG_FLOOR_MS = 120_000, HUNG_NO_BASELINE_MS = 3_600_000
 function hungThreshold(avgDur) {

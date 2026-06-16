@@ -14,6 +14,10 @@ import { getAllActiveWindows, isMonitorInMaintenance, MaintenanceWindow } from '
 
 const INTERVAL       = 60_000
 const ANOMALY_FACTOR = 2.5
+// Warm-up anti-faux-positifs : ne déclenche une alerte "slowdown" que si la baseline
+// repose sur assez de succès passés. Sur 1-2 échantillons la moyenne est instable →
+// un job neuf ou naturellement variable génère du bruit (= fatigue d'alerte semaine 1).
+const SLOW_MIN_SAMPLES = Math.max(1, parseInt(process.env.SLOW_WARMUP_SAMPLES ?? '5'))
 
 async function check() {
   const windows = await getAllActiveWindows()
@@ -109,8 +113,13 @@ async function checkSlow(windows: Map<string, MaintenanceWindow[]>): Promise<num
         WHERE monitor_id=p.monitor_id AND status='success'
           AND pinged_at > NOW()-INTERVAL '7 days' AND id!=p.id
       )
+      AND (
+        SELECT COUNT(*) FROM pings
+        WHERE monitor_id=p.monitor_id AND status='success'
+          AND pinged_at > NOW()-INTERVAL '7 days' AND id!=p.id
+      ) >= $2
       AND NOT EXISTS (SELECT 1 FROM analyses WHERE ping_id=p.id)
-  `, [ANOMALY_FACTOR])
+  `, [ANOMALY_FACTOR, SLOW_MIN_SAMPLES])
   let count = 0
   for (const p of rows) {
     if (isMonitorInMaintenance(p.monitor_id, windows.get(p.client_id) ?? [])) {
