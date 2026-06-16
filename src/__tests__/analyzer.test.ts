@@ -127,6 +127,45 @@ describe('analyzeFailure()', () => {
     })
   })
 
+  describe('Token budget — log input capping', () => {
+    function sentLogs(): string {
+      const sentPrompt = mockedAxios.post.mock.calls[0][1] as any
+      const userContent: string = sentPrompt.messages.find((m: any) => m.role === 'user')?.content ?? ''
+      return userContent.split('<logs_analysés>')[1]?.split('</logs_analysés>')[0] ?? ''
+    }
+
+    it('deduplicates repeated error lines (log spam) before sending', async () => {
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      const spam = Array(50).fill('ERROR: connection refused on db host').join('\n')
+      await analyzeFailure({ ...baseCtx, jobName: 'spam-job', logs: spam })
+
+      const occurrences = sentLogs().split('connection refused').length - 1
+      expect(occurrences).toBe(1)                  // 50 copies → 1
+    })
+
+    it('caps an over-long single line instead of sending it whole', async () => {
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      const huge = 'ERROR failed: ' + 'X'.repeat(1000)
+      await analyzeFailure({ ...baseCtx, jobName: 'huge-line', logs: huge })
+
+      const logs = sentLogs()
+      expect(logs).not.toContain('X'.repeat(500))  // not the full 1000-char blob
+      expect(logs).toContain('…')                  // troncature
+    })
+
+    it('respects LLM_LOG_BUDGET total cap (still sends ≥1 line)', async () => {
+      process.env.LLM_LOG_BUDGET = '300'
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      const many = Array.from({ length: 40 }, (_, i) => `ERROR distinct failure number ${i} on subsystem`).join('\n')
+      await analyzeFailure({ ...baseCtx, jobName: 'budget-job', logs: many })
+
+      const logs = sentLogs().trim()
+      expect(logs.length).toBeLessThanOrEqual(360)  // ~budget + une ligne de marge
+      expect(logs.length).toBeGreaterThan(0)
+      delete process.env.LLM_LOG_BUDGET
+    })
+  })
+
   describe('Circuit breaker integration', () => {
     it('returns null when circuit is open', async () => {
       // Open the circuit

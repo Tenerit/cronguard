@@ -218,6 +218,8 @@ Set `MEMORY_ENABLED=true` to turn the feedback loop into a real memory: every an
 
 You can also give each monitor a **runbook / notes** field (in its edit dialog) — known gotchas, dependencies, who to wake. It's injected into the prompt so the analysis is grounded in your operational context.
 
+**Token budget.** Before sending logs to the model, CronGuard deduplicates repeated error lines (a job spewing the same line 100× adds cost, not signal), caps over-long single lines, and bounds the total log slice — tunable with `LLM_LOG_BUDGET` (characters, default `2400`). This trims input tokens on every analysis, local and cloud alike. The biggest saver stays the cache: a recurring error (same fingerprint) is answered for free without calling the model at all.
+
 ---
 
 ## Useful commands

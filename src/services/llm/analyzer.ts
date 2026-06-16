@@ -86,7 +86,14 @@ function extractLogSignals(raw: string): {
   const HIGH_VALUE = /error|exception|fail|fatal|critical|traceback|panic|killed|oom|denied|refused|timeout|deadlock|duplicate|constraint|violation|cannot|could not|unable|not found|permission|unauthorized|segfault|abort/i
   const NOISE      = /^(debug|trace|\s*at\s+[a-z]|info:?\s+ok|\d{4}-\d{2}-\d{2}.*\[info\])/i
 
-  const errorLines   = lines.filter(l => HIGH_VALUE.test(l) && !NOISE.test(l))
+  // Dédup : un job qui crache 100× « connection refused » gaspille des tokens sans
+  // ajouter de signal. On garde la 1re occurrence de chaque ligne (ordre préservé).
+  const seen = new Set<string>()
+  const errorLines = lines.filter(l => {
+    if (!HIGH_VALUE.test(l) || NOISE.test(l)) return false
+    if (seen.has(l)) return false
+    seen.add(l); return true
+  })
   const stackLines   = lines.filter(l => /^\s+at\s|Traceback|File ".+", line/i.test(l))
   const hasStack     = stackLines.length > 0
 
@@ -94,6 +101,20 @@ function extractLogSignals(raw: string): {
   const relevant = errorLines.length > 0
     ? errorLines.slice(0, 15)
     : lines.slice(-15)
+
+  // Budget tokens : borne la portion logs du prompt (seule partie non bornée).
+  // Coupe chaque ligne trop longue (gros JSON/stacktrace une-ligne) puis plafonne
+  // le total. Garde toujours ≥1 ligne. Réglable via LLM_LOG_BUDGET (chars, ~3.7c/tok).
+  const MAX_LINE  = 240
+  const MAX_TOTAL = Math.max(200, parseInt(process.env.LLM_LOG_BUDGET ?? '2400'))
+  const capped: string[] = []
+  let total = 0
+  for (const line of relevant) {
+    const l = line.length > MAX_LINE ? line.slice(0, MAX_LINE) + '…' : line
+    if (total + l.length + 1 > MAX_TOTAL && capped.length > 0) break
+    capped.push(l)
+    total += l.length + 1
+  }
 
   // Détection de pattern
   let errorType: string | undefined
@@ -109,7 +130,7 @@ function extractLogSignals(raw: string): {
   else if (/not found|no such file|404|does not exist/.test(allText)) errorType = 'INTROUVABLE'
   else if (/certificate|ssl|tls|x509/.test(allText)) errorType = 'TLS'
 
-  return { keyLines: relevant.join('\n'), errorType, hasStack }
+  return { keyLines: capped.join('\n'), errorType, hasStack }
 }
 
 // ─── Prompts ──────────────────────────────────────────────────────────────────
