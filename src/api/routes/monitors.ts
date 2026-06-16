@@ -17,9 +17,10 @@ const MonitorSchema = z.object({
   expected_min: z.number().int().nonnegative().optional(),
   expected_max: z.number().int().nonnegative().optional(),
   env:          z.enum(['development','staging','production']).default('production'),
+  notes:        z.string().max(2000).optional(),
 })
 
-const PATCHABLE = new Set(['name','schedule','grace_period','expected_min','expected_max','env','active'])
+const PATCHABLE = new Set(['name','schedule','grace_period','expected_min','expected_max','env','active','notes'])
 
 // ─── GET /monitors ────────────────────────────────────────────────────────────
 
@@ -27,7 +28,7 @@ monitorsRouter.get('/', asyncHandler(async (req, res) => {
   const { rows } = await db.query(`
     SELECT
       m.id, m.name, m.schedule, m.grace_period, m.last_ping_at,
-      m.last_status, m.env, m.active, m.expected_min, m.expected_max,
+      m.last_status, m.env, m.active, m.expected_min, m.expected_max, m.notes,
       COALESCE(
         json_agg(json_build_object('status',p.status,'duration_ms',p.duration_ms)
           ORDER BY p.pinged_at DESC) FILTER (WHERE p.id IS NOT NULL), '[]'
@@ -75,11 +76,12 @@ monitorsRouter.post('/', requireRole('admin'), asyncHandler(async (req, res) => 
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
 
   const { rows: [monitor] } = await db.query(`
-    INSERT INTO monitors (client_id, name, schedule, grace_period, expected_min, expected_max, env)
-    VALUES ($1,$2,$3,$4,$5,$6,$7)
+    INSERT INTO monitors (client_id, name, schedule, grace_period, expected_min, expected_max, env, notes)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
     RETURNING id, ping_key, name, env, schedule, grace_period, last_status
   `, [res.locals.clientId, parsed.data.name, parsed.data.schedule,
-      parsed.data.grace_period, parsed.data.expected_min, parsed.data.expected_max, parsed.data.env])
+      parsed.data.grace_period, parsed.data.expected_min, parsed.data.expected_max, parsed.data.env,
+      parsed.data.notes ?? null])
 
   await audit(res, 'monitor.created', 'monitor', monitor.id, { name: monitor.name, env: monitor.env })
   res.status(201).json(monitor)

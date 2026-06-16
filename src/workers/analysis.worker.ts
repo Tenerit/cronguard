@@ -110,7 +110,7 @@ function createPingWorker() {
     }
 
     const { rows: [ctx] } = await db.query(`
-      SELECT m.name, m.schedule, m.env, m.expected_min, m.expected_max,
+      SELECT m.name, m.schedule, m.env, m.expected_min, m.expected_max, m.notes,
              c.email, c.slack_webhook,
              (SELECT pinged_at FROM pings WHERE monitor_id=m.id AND status='success' ORDER BY pinged_at DESC LIMIT 1) AS last_success,
              (SELECT AVG(duration_ms) FROM pings WHERE monitor_id=m.id AND status='success' ORDER BY pinged_at DESC LIMIT 20) AS avg_dur
@@ -267,7 +267,7 @@ function createPingWorker() {
 
     await getAnalysisQueue().add('analyze', {
       monitorId, clientId, pingId: ping.id,
-      jobName: ctx.name, env: ctx.env, schedule: ctx.schedule,
+      jobName: ctx.name, env: ctx.env, schedule: ctx.schedule, notes: ctx.notes ?? undefined,
       lastSuccess: ctx.last_success?.toISOString(),
       durationMs, avgDuration: Math.round(ctx.avg_dur ?? 0),
       records, expectedMin: ctx.expected_min, expectedMax: ctx.expected_max,
@@ -313,7 +313,7 @@ function createAnalysisWorker() {
     const analysis = await analyzeFailure({
       jobName:     ctx.jobName, clientId: ctx.clientId, monitorId: ctx.monitorId,
       env:         ctx.env,
-      schedule:    ctx.schedule, lastSuccess: ctx.lastSuccess,
+      schedule:    ctx.schedule, lastSuccess: ctx.lastSuccess, notes: ctx.notes,
       duration:    ctx.durationMs, avgDuration: ctx.avgDuration,
       exitCode:    ctx.exitCode, records: ctx.records,
       expectedMin: ctx.expectedMin, expectedMax: ctx.expectedMax,

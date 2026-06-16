@@ -1247,6 +1247,11 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
       </div>
     </div>
     <div class="field">
+      <label class="field-label" data-i18n="mod.edit.notes">Runbook / notes (injecté à l'analyse IA)</label>
+      <textarea class="field-input" id="em-notes" rows="3" style="resize:vertical;font-family:var(--mono);font-size:11px" data-i18n-ph="mod.edit.notesPh" placeholder="Gotchas connus, dépendances, qui réveiller, liens runbook…"></textarea>
+      <div class="field-hint" data-i18n="mod.edit.notesHint">Le LLM s'en sert pour orienter la cause et l'action. Max 2000 caractères.</div>
+    </div>
+    <div class="field">
       <label class="field-label" style="display:flex;align-items:center;gap:6px">
         <input type="checkbox" id="em-active"> <span data-i18n="mod.edit.active">Service actif</span>
       </label>
@@ -1944,6 +1949,7 @@ const I18N = {
     'mod.new.recMin':'Records min','mod.new.recMax':'Records max','mod.cancel':'annuler','mod.new.create':'créer →',
     'mod.ok.title':'service créé','mod.ok.sub':'Ajoutez ceci à la fin de votre script cron :','mod.close':'fermer',
     'mod.edit.title':'modifier le service','mod.edit.name':'Nom','mod.edit.active':'Service actif','mod.edit.save':'enregistrer →',
+    'mod.edit.notes':'Runbook / notes (injecté à l\'analyse IA)','mod.edit.notesPh':'Gotchas connus, dépendances, qui réveiller, liens runbook…','mod.edit.notesHint':'Le LLM s\'en sert pour orienter la cause et l\'action. Max 2000 caractères.',
     'mod.inv.title':'inviter un membre','mod.inv.sub':'Un lien d\'acceptation sera généré. Aucun mot de passe — l\'accès se fait par clé API.',
     'mod.inv.email':'Email','mod.inv.emailPh':'collegue@entreprise.com','mod.inv.role':'Rôle',
     'mod.inv.viewer':'viewer — lecture seule','mod.inv.member':'member — acquitter / snooze','mod.inv.admin':'admin — créer / modifier les services',
@@ -2064,6 +2070,7 @@ const I18N = {
     'mod.new.recMin':'Records min','mod.new.recMax':'Records max','mod.cancel':'cancel','mod.new.create':'create →',
     'mod.ok.title':'service created','mod.ok.sub':'Add this at the end of your cron script:','mod.close':'close',
     'mod.edit.title':'edit service','mod.edit.name':'Name','mod.edit.active':'Service active','mod.edit.save':'save →',
+    'mod.edit.notes':'Runbook / notes (fed to the AI analysis)','mod.edit.notesPh':'Known gotchas, dependencies, who to wake, runbook links…','mod.edit.notesHint':'The LLM uses it to steer the cause and action. Max 2000 chars.',
     'mod.inv.title':'invite a member','mod.inv.sub':'An acceptance link will be generated. No password — access is via API key.',
     'mod.inv.email':'Email','mod.inv.emailPh':'colleague@company.com','mod.inv.role':'Role',
     'mod.inv.viewer':'viewer — read only','mod.inv.member':'member — acknowledge / snooze','mod.inv.admin':'admin — create / edit services',
@@ -3514,6 +3521,7 @@ function openEditModal(m) {
   document.getElementById('em-emin').value     = m.expected_min != null ? m.expected_min : ''
   document.getElementById('em-emax').value     = m.expected_max != null ? m.expected_max : ''
   document.getElementById('em-active').checked = m.active !== false
+  document.getElementById('em-notes').value    = m.notes || ''
   document.getElementById('em-err').textContent = ''
   document.getElementById('edit-modal-bg').classList.remove('hidden')
   setTimeout(() => document.getElementById('em-name').focus(), 50)
@@ -3533,11 +3541,12 @@ async function saveMonitor() {
   const emin     = document.getElementById('em-emin').value ? parseInt(document.getElementById('em-emin').value) : null
   const emax     = document.getElementById('em-emax').value ? parseInt(document.getElementById('em-emax').value) : null
   const active   = document.getElementById('em-active').checked
+  const notes    = document.getElementById('em-notes').value.trim().slice(0, 2000)
   if (!name) { document.getElementById('em-err').textContent = t('err.nameReq'); return }
   try {
     await api(`/monitors/${editMonitorId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ name, env, grace_period: grace, schedule, expected_min: emin, expected_max: emax, active })
+      body: JSON.stringify({ name, env, grace_period: grace, schedule, expected_min: emin, expected_max: emax, active, notes })
     })
     toast(t('toast.updated'), 'ok')
     closeEditModal()

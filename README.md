@@ -216,6 +216,8 @@ few-shot from your feedback) stays identical — only the model changes.
 
 Set `MEMORY_ENABLED=true` to turn the feedback loop into a real memory: every analysis you mark 👍 is embedded (locally, via Ollama `nomic-embed-text` — no egress) and, on the next failure, the most **similar** past incidents across all your jobs are retrieved as few-shot examples (cosine similarity), instead of just the most recent. The cache also dedupes by a normalized error fingerprint (timestamps/PIDs/UUIDs/IPs stripped), so a recurring error is answered from cache instead of re-calling the model. No pgvector required — embeddings live in a `real[]` column and ranking is done in-app.
 
+You can also give each monitor a **runbook / notes** field (in its edit dialog) — known gotchas, dependencies, who to wake. It's injected into the prompt so the analysis is grounded in your operational context.
+
 ---
 
 ## Useful commands

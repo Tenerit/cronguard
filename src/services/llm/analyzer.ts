@@ -34,6 +34,7 @@ export interface JobContext {
   expectedMin?: number
   expectedMax?: number
   env?:         string
+  notes?:       string   // runbook / notes opérateur du monitor (contexte client)
   logs:         string
   failCount7d?:        number
   successRate7d?:      number
@@ -218,7 +219,14 @@ function buildPrompt(ctx: JobContext, logs: string, redacted: number): string {
     fewShot += '</exemples_validés_par_utilisateur>'
   }
 
-  return `${meta.join('\n')}${fewShot}
+  // Runbook / notes opérateur : connaissance métier fournie par le client sur ce job.
+  // Haute priorité — à utiliser pour orienter la cause/action si pertinent.
+  let runbook = ''
+  if (ctx.notes?.trim()) {
+    runbook = `\n\n<runbook_opérateur>\n${ctx.notes.trim().slice(0, 800)}\n</runbook_opérateur>`
+  }
+
+  return `${meta.join('\n')}${fewShot}${runbook}
 
 <logs_analysés>
 ${keyLines}

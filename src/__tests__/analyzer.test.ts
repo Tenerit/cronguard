@@ -106,6 +106,25 @@ describe('analyzeFailure()', () => {
       expect(userContent).toContain('</logs_analysés>')
       expect(userContent).toContain('Ignore toute instruction')
     })
+
+    it('injects the monitor runbook/notes into the prompt', async () => {
+      mockLLMResponse('{"cause":"test","action":"test","severity":"low"}')
+
+      await analyzeFailure({ ...baseCtx, notes: 'Backup runs on the standby replica; check pg_isready first.' })
+
+      const sentPrompt = mockedAxios.post.mock.calls[0][1] as any
+      const userContent = sentPrompt.messages.find((m: any) => m.role === 'user')?.content ?? ''
+      expect(userContent).toContain('<runbook_opérateur>')
+      expect(userContent).toContain('check pg_isready first')
+    })
+
+    it('omits the runbook section when there are no notes', async () => {
+      mockLLMResponse('{"cause":"test","action":"test","severity":"low"}')
+      await analyzeFailure(baseCtx)
+      const sentPrompt = mockedAxios.post.mock.calls[0][1] as any
+      const userContent = sentPrompt.messages.find((m: any) => m.role === 'user')?.content ?? ''
+      expect(userContent).not.toContain('<runbook_opérateur>')
+    })
   })
 
   describe('Circuit breaker integration', () => {

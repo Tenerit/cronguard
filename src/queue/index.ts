@@ -41,6 +41,7 @@ export interface AnalysisJob {
   jobName:          string
   env:              string
   schedule?:        string
+  notes?:           string
   lastSuccess?:     string
   durationMs?:      number
   avgDuration?:     number
