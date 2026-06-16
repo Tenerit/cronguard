@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { db }     from '../../db'
+import { redis }  from '../../config/redis'
 import { logger } from '../../config/logger'
 
 // ─── Export Prometheus ────────────────────────────────────────────────────────
@@ -24,12 +25,27 @@ export async function metricsHandler(req: Request, res: Response) {
   }
 
   try {
-    const [byStatus, alerts, pings24, analyses24] = await Promise.all([
+    const [byStatus, alerts, pings24, analyses24, analysisGaps] = await Promise.all([
       db.query(`SELECT last_status, COUNT(*)::int AS n FROM monitors WHERE active = true GROUP BY last_status`),
       db.query(`SELECT COUNT(*)::int AS n FROM alert_states WHERE status = 'firing'`),
       db.query(`SELECT COUNT(*)::int AS n FROM pings    WHERE pinged_at  > NOW() - INTERVAL '24 hours'`),
       db.query(`SELECT COUNT(*)::int AS n FROM analyses WHERE created_at > NOW() - INTERVAL '24 hours'`),
+      // Pannes d'analyse silencieuses : pings échoués (>5min, le worker a eu le temps)
+      // sans ligne analyses → le LLM ne produit rien sans le dire. Surface pour alerting.
+      db.query(`SELECT COUNT(*)::int AS n FROM pings p
+                WHERE p.status != 'success'
+                  AND p.pinged_at > NOW() - INTERVAL '24 hours'
+                  AND p.pinged_at < NOW() - INTERVAL '5 minutes'
+                  AND NOT EXISTS (SELECT 1 FROM analyses a WHERE a.ping_id = p.id)`),
     ])
+
+    // Dead-man / stall (Redis, cross-process) : âge du heartbeat worker + profondeur
+    // de la queue d'analyse. Si le worker meurt, le heartbeat vieillit et la queue
+    // gonfle → Prometheus alerte (sinon le monitoring s'arrête en silence).
+    let heartbeatAge = 999999  // sentinelle « pas de heartbeat » → déclenche l'alerte
+    let queueDepth   = 0
+    try { const hb = await redis.get('worker:heartbeat'); if (hb) heartbeatAge = Math.max(0, Math.round((Date.now() - Number(hb)) / 1000)) } catch { /* redis down → sentinelle */ }
+    try { queueDepth = await redis.llen('bull:llm-analysis:waiting') } catch { /* idem */ }
 
     const statusCounts: Record<string, number> = { ok: 0, late: 0, failed: 0, unknown: 0 }
     for (const r of byStatus.rows) statusCounts[r.last_status] = (statusCounts[r.last_status] ?? 0) + r.n
@@ -59,6 +75,18 @@ export async function metricsHandler(req: Request, res: Response) {
       '# HELP cronguard_analyses_24h Analyses IA produites sur 24h',
       '# TYPE cronguard_analyses_24h gauge',
       line('cronguard_analyses_24h', analyses24.rows[0]?.n ?? 0),
+
+      '# HELP cronguard_analysis_failures_24h Pings échoués (>5min) sans analyse IA produite',
+      '# TYPE cronguard_analysis_failures_24h gauge',
+      line('cronguard_analysis_failures_24h', analysisGaps.rows[0]?.n ?? 0),
+
+      '# HELP cronguard_analysis_queue_depth Jobs d\'analyse en attente (gonfle si le worker est mort)',
+      '# TYPE cronguard_analysis_queue_depth gauge',
+      line('cronguard_analysis_queue_depth', queueDepth),
+
+      '# HELP cronguard_worker_heartbeat_age_seconds Âge du dernier heartbeat worker (dead-man — alerter si > 600)',
+      '# TYPE cronguard_worker_heartbeat_age_seconds gauge',
+      line('cronguard_worker_heartbeat_age_seconds', heartbeatAge),
     ]
 
     res.type('text/plain; version=0.0.4').send(out.join('\n') + '\n')
