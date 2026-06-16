@@ -2,18 +2,18 @@ name: CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [master, main]
   pull_request:
-    branches: [main]
+    branches: [master, main]
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # ─── 1. Tests + lint ─────────────────────────────────────────────────────────
+  # ─── 1. Tests unitaires + lint (mocks : pg-mem, Redis, LLM) ───────────────────
   test:
-    name: Test
+    name: Test (unit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,18 +29,76 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
-      - name: Run tests
+      - name: Run jest
         run: npm test
+
+      - name: Run vitest
+        run: npx vitest run
 
       - name: Security audit
         run: npm audit --audit-level=high
 
-  # ─── 2. Build Docker image ───────────────────────────────────────────────────
+  # ─── 2. Intégration RÉELLE — Postgres + Redis (pas de mock) ───────────────────
+  # Tue le risque « vert tout-mocké » : les vraies migrations SQL s'appliquent sur
+  # un vrai Postgres (pg-mem ne le garantit pas — cf. dérive de schéma), et le seed
+  # exerce le schéma + la connectivité Redis de bout en bout. Pas d'Ollama (trop
+  # lourd en CI) — le LLM est testé séparément par le harness d'éval.
+  integration:
+    name: Integration (real Postgres + Redis)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cronguard
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: cronguard
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U cronguard"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://cronguard:ci@localhost:5432/cronguard
+      REDIS_URL:    redis://localhost:6379
+      LLM_BASE_URL: http://localhost:11434/v1   # non appelé par migrate/seed
+      SEED_API_KEY: cg_demo_dockerdemo123456
+      NODE_ENV:     test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (compile migrations + seed)
+        run: npm run build
+
+      - name: Apply real migrations on Postgres
+        run: npm run db:migrate
+
+      - name: Seed against real Postgres + Redis
+        run: npm run seed
+
+      - name: Smoke — schema reachable + seeded
+        run: |
+          node -e "const {Pool}=require('pg');const p=new Pool({connectionString:process.env.DATABASE_URL});p.query('SELECT count(*)::int AS n FROM monitors').then(r=>{if(r.rows[0].n<1)throw new Error('no monitors seeded');console.log('✓ '+r.rows[0].n+' monitors seeded on real Postgres');return p.end();}).catch(e=>{console.error(e);process.exit(1);});"
+
+  # ─── 3. Build Docker image ───────────────────────────────────────────────────
   build:
     name: Build & Push
     runs-on: ubuntu-latest
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [test, integration]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     permissions:
       contents: read
       packages: write
@@ -70,12 +128,12 @@ jobs:
           cache-from: type=gha
           cache-to:   type=gha,mode=max
 
-  # ─── 3. Deploy ───────────────────────────────────────────────────────────────
+  # ─── 4. Deploy ───────────────────────────────────────────────────────────────
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     environment: production
 
     steps:
