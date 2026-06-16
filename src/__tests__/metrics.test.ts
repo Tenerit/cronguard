@@ -32,9 +32,13 @@ beforeEach(() => {
 })
 
 describe('GET /metrics — ops gauges', () => {
-  it('exposes the silent-failure surfaces (gaps, queue depth, heartbeat age)', async () => {
-    mockRedis.get.mockResolvedValueOnce(String(Date.now() - 30_000)) // heartbeat 30s ago
-    mockRedis.llen.mockResolvedValueOnce(4)
+  it('exposes the silent-failure surfaces (gaps, queue depth, heartbeat, notify fails)', async () => {
+    mockRedis.get.mockImplementation(async (k: string) => {
+      if (k === 'worker:heartbeat')           return String(Date.now() - 30_000) // 30s ago
+      if (k === 'metrics:notify_fail:email')  return '3'
+      return null
+    })
+    mockRedis.llen.mockResolvedValue(4)
 
     const res = fakeRes()
     await metricsHandler(req, res)
@@ -43,17 +47,20 @@ describe('GET /metrics — ops gauges', () => {
     expect(body).toContain('cronguard_analysis_failures_24h 7')
     expect(body).toContain('cronguard_analysis_queue_depth 4')
     expect(body).toMatch(/cronguard_worker_heartbeat_age_seconds (2[0-9]|3[0-9])/) // ~30s
+    expect(body).toContain('cronguard_notification_failures_total{channel="email"} 3')
+    expect(body).toContain('cronguard_notification_failures_total{channel="slack"} 0')
   })
 
-  it('emits the heartbeat sentinel when Redis is unreachable (dead-man fires)', async () => {
-    mockRedis.get.mockRejectedValueOnce(new Error('redis down'))
-    mockRedis.llen.mockRejectedValueOnce(new Error('redis down'))
+  it('emits the heartbeat sentinel + zeroed counters when Redis is unreachable', async () => {
+    mockRedis.get.mockRejectedValue(new Error('redis down'))
+    mockRedis.llen.mockRejectedValue(new Error('redis down'))
 
     const res = fakeRes()
     await metricsHandler(req, res)
 
     expect(res._body).toContain('cronguard_worker_heartbeat_age_seconds 999999')
     expect(res._body).toContain('cronguard_analysis_queue_depth 0')
+    expect(res._body).toContain('cronguard_notification_failures_total{channel="webhook"} 0')
   })
 
   it('401s when METRICS_TOKEN is set and the token is wrong', async () => {

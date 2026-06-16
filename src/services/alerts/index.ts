@@ -3,7 +3,15 @@ import axios      from 'axios'
 import { logger }       from '../../config/logger'
 import { signWebhook }  from '../webhook-signature'
 import { isSafeWebhookTarget } from '../webhook-guard'
+import { redis }        from '../../config/redis'
 import type { AnalysisResult } from '../llm/analyzer'
+
+// Compteur cross-process des échecs de LIVRAISON de notification. Exposé en /metrics
+// (cronguard_notification_failures_total) → un canal qui tombe en silence (SMTP mal
+// configuré, webhook injoignable) devient visible/alertable, pas seulement loggé.
+function bumpNotifyFail(channel: 'email' | 'slack' | 'webhook'): void {
+  redis.incr(`metrics:notify_fail:${channel}`).catch(() => { /* best-effort, non bloquant */ })
+}
 
 // Lazy : créé seulement au premier envoi, pas au chargement du module
 // Évite le crash si SMTP n'est pas configuré (optionnel en dev)
@@ -113,6 +121,7 @@ export async function sendSlackAlert(payload: AlertPayload) {
     logger.info('[Alert] Slack sent', { job: payload.jobName, repeat: isRepeat })
   } catch (err) {
     logger.error('[Alert] Slack failed', { err })
+    bumpNotifyFail('slack')
   }
 }
 
@@ -175,6 +184,7 @@ export async function sendEmailAlert(payload: AlertPayload) {
     logger.info('[Alert] Email sent', { to: payload.client.email, job: payload.jobName })
   } catch (err) {
     logger.error('[Alert] Email failed', { err })
+    bumpNotifyFail('email')
   }
 }
 
@@ -212,6 +222,7 @@ export async function sendWebhookAlert(payload: AlertPayload) {
     logger.info('[Alert] Webhook sent', { job: payload.jobName })
   } catch (err) {
     logger.error('[Alert] Webhook failed', { err })
+    bumpNotifyFail('webhook')
   }
 }
 

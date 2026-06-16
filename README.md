@@ -158,6 +158,12 @@ curl http://localhost:3000/metrics    # Prometheus format (monitors, alerts, pin
 
 Optionally protected with `METRICS_TOKEN` (`Authorization: Bearer <token>` or `?token=`).
 
+**Self-watch metrics** (alert on these — a monitoring tool that dies silently is worthless):
+- `cronguard_worker_heartbeat_age_seconds` — dead-man; alert if `> 600` (worker dead).
+- `cronguard_analysis_queue_depth` — balloons if the analysis worker stalls.
+- `cronguard_analysis_failures_24h` — failed pings with no AI analysis produced.
+- `cronguard_notification_failures_total{channel}` — alert deliveries that failed (bad SMTP, dead webhook) instead of dying in the logs.
+
 ---
 
 ## Authentication & SSO

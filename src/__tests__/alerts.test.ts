@@ -19,6 +19,10 @@ jest.mock('dns', () => ({
   promises: { lookup: jest.fn().mockResolvedValue([{ address: '93.184.216.34', family: 4 }]) },
 }))
 
+// bumpNotifyFail incrémente un compteur Redis sur échec → mock pour éviter une vraie
+// connexion ioredis (handle ouvert) pendant les tests d'alerte.
+jest.mock('../config/redis', () => ({ redis: { incr: jest.fn().mockResolvedValue(1) } }))
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const basePayload: AlertPayload = {

@@ -47,6 +47,17 @@ export async function metricsHandler(req: Request, res: Response) {
     try { const hb = await redis.get('worker:heartbeat'); if (hb) heartbeatAge = Math.max(0, Math.round((Date.now() - Number(hb)) / 1000)) } catch { /* redis down → sentinelle */ }
     try { queueDepth = await redis.llen('bull:llm-analysis:waiting') } catch { /* idem */ }
 
+    // Échecs de livraison de notification (counter cumulé, incrémenté par les workers).
+    const notifyFail: Record<string, number> = { email: 0, slack: 0, webhook: 0 }
+    try {
+      const [e, s, w] = await Promise.all([
+        redis.get('metrics:notify_fail:email'),
+        redis.get('metrics:notify_fail:slack'),
+        redis.get('metrics:notify_fail:webhook'),
+      ])
+      notifyFail.email = Number(e ?? 0); notifyFail.slack = Number(s ?? 0); notifyFail.webhook = Number(w ?? 0)
+    } catch { /* redis down → 0 */ }
+
     const statusCounts: Record<string, number> = { ok: 0, late: 0, failed: 0, unknown: 0 }
     for (const r of byStatus.rows) statusCounts[r.last_status] = (statusCounts[r.last_status] ?? 0) + r.n
     const activeTotal = Object.values(statusCounts).reduce((a, b) => a + b, 0)
@@ -87,6 +98,10 @@ export async function metricsHandler(req: Request, res: Response) {
       '# HELP cronguard_worker_heartbeat_age_seconds Âge du dernier heartbeat worker (dead-man — alerter si > 600)',
       '# TYPE cronguard_worker_heartbeat_age_seconds gauge',
       line('cronguard_worker_heartbeat_age_seconds', heartbeatAge),
+
+      '# HELP cronguard_notification_failures_total Échecs de livraison de notification (cumulé) par canal',
+      '# TYPE cronguard_notification_failures_total counter',
+      ...Object.entries(notifyFail).map(([channel, n]) => line('cronguard_notification_failures_total', n, { channel })),
     ]
 
     res.type('text/plain; version=0.0.4').send(out.join('\n') + '\n')
