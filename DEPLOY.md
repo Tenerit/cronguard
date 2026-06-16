@@ -99,7 +99,7 @@ fly machine run . \
 apt update && apt install -y docker.io docker-compose-plugin nginx certbot python3-certbot-nginx
 
 # Clone le projet
-git clone https://github.com/ton-user/cronguard.git
+git clone https://github.com/Tenerit/cronguard.git
 cd cronguard
 cp .env.example .env
 nano .env  # remplis les variables

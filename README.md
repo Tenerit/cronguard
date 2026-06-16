@@ -32,7 +32,7 @@ One alert is a notification. The other is a head start on the fix.
 ## Try it in one command
 
 ```bash
-git clone https://github.com/your-user/cronguard && cd cronguard
+git clone https://github.com/Tenerit/cronguard && cd cronguard
 docker compose -f docker-compose.demo.yml up
 ```
 
@@ -76,7 +76,7 @@ CronGuard is not trying to out-feature Healthchecks on integrations. It does one
 ## Full setup (3 minutes)
 
 ```bash
-git clone https://github.com/your-user/cronguard
+git clone https://github.com/Tenerit/cronguard
 cd cronguard
 ./setup.sh        # installs, configures, migrates, downloads the LLM model
 make dev          # starts API + workers

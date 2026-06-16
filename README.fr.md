@@ -10,7 +10,7 @@ Un job plante ? Tu sais pourquoi en 2 secondes, sans regarder un seul log.
 ## Démarrage en 3 minutes
 
 ```bash
-git clone https://github.com/ton-user/cronguard
+git clone https://github.com/Tenerit/cronguard
 cd cronguard
 ./setup.sh        # installe, configure, migre, télécharge le modèle LLM
 make dev          # lance l'API + workers
@@ -19,6 +19,7 @@ make open         # ouvre le dashboard
 ```
 
 C'est tout. Le setup détecte ton environnement et configure tout automatiquement.
+Sans `bash` (Windows) → `node setup.js` ou `.\setup.ps1` ; détails dans [DEMARRAGE.md](DEMARRAGE.md).
 
 ---
 
