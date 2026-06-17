@@ -5,6 +5,35 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ---
 
+## [1.4.0] — 2026-06 — Fiabilité, sécurité & coût token
+
+### Ajouté
+- **Auto-surveillance Prometheus** (`/metrics`) — un outil de monitoring qui meurt en silence ne sert à rien :
+  - `cronguard_worker_heartbeat_age_seconds` (dead-man — alerter si > 600)
+  - `cronguard_analysis_queue_depth` (gonfle si le worker d'analyse est mort/stallé)
+  - `cronguard_analysis_failures_24h` (pings échoués sans analyse IA produite)
+  - `cronguard_notification_failures_total{channel}` (alertes non livrées : SMTP/webhook KO)
+- **CI d'intégration réel** : job GitHub Actions avec **vrais** Postgres + Redis (applique les vraies
+  migrations, seed, smoke) en plus des tests unitaires mockés ; CI tourne désormais sur `master` et lance jest **et** vitest.
+- **Budget de tokens du prompt** (coût LLM) : dédup des lignes d'erreur répétées, cap par ligne,
+  plafond total `LLM_LOG_BUDGET`, few-shot `LLM_FEWSHOT_MAX` et runbook `LLM_RUNBOOK_BUDGET` réglables.
+- **400 tests** (298 jest + 102 vitest).
+
+### Sécurité
+- **Garde anti-SSRF** sur les webhooks sortants : loopback / link-local / métadonnées cloud
+  (169.254.169.254) toujours bloqués, vérif sur l'IP résolue (anti DNS-rebinding) ; RFC1918 bloquable
+  via `WEBHOOK_BLOCK_PRIVATE` (laissé permissif par défaut pour l'ICP air-gapped).
+- **CSP durcie** (était désactivée) : bloque object/base-tag/clickjacking/form cross-origin, Google Fonts allowlistée.
+- **CVE dépendances** corrigées (`form-data` high, `nodemailer` moderate) → prod 0 vulnérabilité.
+- **`/metrics`** : avertissement au démarrage s'il est exposé sans `METRICS_TOKEN`.
+
+### Corrigé
+- **Faux positifs « slowdown » semaine 1** : warm-up — pas d'alerte tant que la baseline ne repose pas
+  sur ≥ `SLOW_WARMUP_SAMPLES` (défaut 5) succès. Tue la fatigue d'alerte sur monitor neuf/variable.
+- URLs `git clone` de la doc pointées vers le vrai dépôt ; guide Windows (`DEMARRAGE.md`) lié.
+
+---
+
 ## [1.3.0] — 2026-06 — Analyse IA enrichie
 
 ### Ajouté
