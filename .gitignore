@@ -18,6 +18,7 @@ coverage
 # Outils locaux / éditeurs
 .claude
 CLAUDE.md
+GTM.md
 .vscode
 .idea
 .DS_Store
