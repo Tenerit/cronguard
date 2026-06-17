@@ -13,6 +13,7 @@ import { db, initDb } from '../db'
 import { redis }  from '../config/redis'
 import { logger } from '../config/logger'
 
+import { CSP_DIRECTIVES }  from './csp'
 import { requireApiKey }  from './middleware/auth'
 import { metricsHandler } from './routes/metrics'
 import { pingRouter }     from './routes/ping'
@@ -34,7 +35,12 @@ function startServer() {
 
 // ─── Middlewares globaux ──────────────────────────────────────────────────────
 
-app.use(helmet({ contentSecurityPolicy: false }))
+// CSP : durcissement defense-in-depth. Directives dans ./csp (testées sans boot).
+// 'unsafe-inline' conservé pour script/style (handlers inline du dashboard) ; les
+// vecteurs durs (object/base/frame/form) sont bloqués. Voir csp.ts pour le détail.
+app.use(helmet({
+  contentSecurityPolicy: { useDefaults: false, directives: CSP_DIRECTIVES },
+}))
 app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false)
 app.use(cors({
   origin:       process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3000'],
