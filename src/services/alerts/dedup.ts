@@ -1,5 +1,6 @@
 import { db }     from '../../db'
 import { logger } from '../../config/logger'
+import { parseDiagnosis } from '../llm/diagnosis'
 
 // ─── Deduplication des alertes ────────────────────────────────────────────────
 // Règles :
@@ -196,9 +197,9 @@ export async function checkEscalations(): Promise<EscalationTarget[]> {
     escalation_email?: string; escalation_webhook?: string
     last_analysis?: { diagnosis?: string; severity?: string } | null
   }) => {
-    let parsedAnalysis = null
+    let parsedAnalysis: ReturnType<typeof parseDiagnosis> | null = null
     if (r.last_analysis?.diagnosis) {
-      try { parsedAnalysis = JSON.parse(r.last_analysis.diagnosis as unknown as string) } catch { /* noop */ }
+      parsedAnalysis = parseDiagnosis(r.last_analysis.diagnosis as unknown as string, 'dedup-lastanalysis')
     }
     return {
       monitorId:          r.monitor_id,

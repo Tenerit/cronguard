@@ -2,6 +2,7 @@ import { db }     from '../../db'
 import { logger } from '../../config/logger'
 import { sanitizeLogs, fingerprintLogs } from '../sanitizer'
 import { embed, cosine, memoryEnabled } from './embeddings'
+import { parseDiagnosis } from './diagnosis'
 import type { FewShotExample, ErrorCategory } from './analyzer'
 
 // ─── Mémoire d'incidents (RAG few-shot par similarité) ────────────────────────
@@ -52,13 +53,11 @@ export async function recallSimilar(clientId: string, logs: string, k = 2): Prom
       .sort((a: { s: number }, b: { s: number }) => b.s - a.s)
       .slice(0, k)
       .map(({ r }: { r: { diagnosis: string; logs: string } }) => {
-        try {
-          const d = JSON.parse(r.diagnosis)
-          return { logs: (r.logs ?? '').slice(0, 200), cause: d.cause, action: d.action,
-                   category: (d.category ?? 'unknown') as ErrorCategory } as FewShotExample
-        } catch { return null }
+        const d = parseDiagnosis(r.diagnosis, 'recall')
+        return { logs: (r.logs ?? '').slice(0, 200), cause: d.cause, action: d.action,
+                 category: (d.category ?? 'unknown') as ErrorCategory } as FewShotExample
       })
-      .filter((x: FewShotExample | null): x is FewShotExample => x !== null)
+      .filter((x: FewShotExample) => !!x.cause && !!x.action)
   } catch (err) {
     logger.warn('[Memory] recall failed', { err })
     return []

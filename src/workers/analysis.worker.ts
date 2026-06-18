@@ -7,6 +7,7 @@ import { db }            from '../db'
 import { logger }        from '../config/logger'
 import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
 import { recallSimilar } from '../services/llm/incident-memory'
+import { parseDiagnosis } from '../services/llm/diagnosis'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
 import { sendAlert, sendRecovery } from '../services/alerts'
 import { hashError }     from '../services/sanitizer'
@@ -93,7 +94,7 @@ function createPingWorker() {
           FROM analyses WHERE monitor_id = $1 ORDER BY created_at DESC LIMIT 1
         `, [monitorId])
         let rootCause: string | null = null
-        if (la?.diagnosis) { try { rootCause = JSON.parse(la.diagnosis).cause ?? null } catch { /* texte brut */ rootCause = String(la.diagnosis).slice(0, 300) } }
+        if (la?.diagnosis) rootCause = parseDiagnosis(la.diagnosis, 'repeat-rootcause').cause || null
 
         await db.query(`
           INSERT INTO incidents (monitor_id, started_at, resolved_at, duration_ms,
@@ -263,11 +264,9 @@ function createPingWorker() {
     `, [monitorId])
     let fewShotExamples: Array<{ logs: string; cause: string; action: string; category: string }> =
       fewShotRows.map((r: {diagnosis: string; logs: string}) => {
-        try {
-          const diag = JSON.parse(r.diagnosis)
-          return { logs: (r.logs ?? '').slice(0, 200), cause: diag.cause, action: diag.action, category: diag.category ?? 'unknown' }
-        } catch { return null }
-      }).filter((x): x is NonNullable<typeof x> => x !== null)
+        const diag = parseDiagnosis(r.diagnosis, 'fewshot')
+        return { logs: (r.logs ?? '').slice(0, 200), cause: diag.cause, action: diag.action, category: diag.category ?? 'unknown' }
+      }).filter(ex => !!ex.cause && !!ex.action)   // écarte les blobs corrompus/incomplets
 
     // Mémoire d'incidents : few-shot par SIMILARITÉ (cross-monitor) plutôt que récence.
     // No-op si MEMORY_ENABLED≠true → on garde le few-shot par récence ci-dessus.

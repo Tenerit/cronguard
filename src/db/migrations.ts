@@ -329,10 +329,17 @@ async function v15(client: {query(sql: string, params?: unknown[]): Promise<unkn
   await client.query(`ALTER TABLE monitors ADD COLUMN IF NOT EXISTS notes TEXT`)
 }
 
+// Clé stable du verrou consultatif des migrations (arbitraire mais fixe).
+const MIGRATION_LOCK_KEY = 947_218_314
+
 export async function runMigrations() {
   const client = await db.connect()
   try {
     await client.query('BEGIN')
+    // Sérialise les migrations entre les 4 process qui bootent en parallèle
+    // (api + analysis/timeout/retention workers) → pas de course sur le DDL.
+    // `_xact_` = relâché automatiquement au COMMIT/ROLLBACK (aucune fuite de verrou).
+    await client.query('SELECT pg_advisory_xact_lock($1)', [MIGRATION_LOCK_KEY])
     await v1(client)
     await v2(client)
     await v3(client)

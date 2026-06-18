@@ -9,6 +9,7 @@
  */
 import { db }     from '../db'
 import { logger } from '../config/logger'
+import { parseDiagnosis } from './llm/diagnosis'
 import nodemailer  from 'nodemailer'
 
 interface ClientReport {
@@ -92,14 +93,12 @@ async function buildReport(clientId: string, email: string): Promise<ClientRepor
   const weeklyUptime = totalPings > 0 ? Math.round(successPings / totalPings * 100) : 100
 
   const parsedIncidents: IncidentSummary[] = incidents.map((i: IncidentRow) => {
-    let diagRaw: unknown = i.diagnosis
-    try { diagRaw = JSON.parse(i.diagnosis) } catch {}
-    const diag = diagRaw as Record<string, string> | string
+    const diag = parseDiagnosis(i.diagnosis, 'weekly-report')
     return {
       jobName:  i.job_name,
       env:      i.env,
-      cause:    typeof diag === 'object' ? (diag as Record<string, string>).cause  : String(diag),
-      action:   typeof diag === 'object' ? (diag as Record<string, string>).action : '—',
+      cause:    diag.cause || '—',
+      action:   diag.action || '—',
       severity: i.severity,
       failedAt: new Date(i.failed_at).toLocaleString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' }),
     }
