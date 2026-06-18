@@ -16,24 +16,33 @@ import { writeHeartbeat } from './self-monitor.worker'
 
 const APP_URL = process.env.APP_URL ?? 'http://localhost:3000'
 
-// ─── Drain des queues AVANT de créer les workers ──────────────────────────────
-// Évite de traiter des jobs stale (après reseed, suppression de monitors...)
+// ─── Hygiène des queues AVANT de créer les workers ────────────────────────────
+// NON destructif par défaut : on préserve les jobs en attente (un restart ne doit
+// pas perdre le travail en vol). Reset complet seulement via DRAIN_QUEUES_ON_BOOT.
 
 async function drainQueuesFirst(): Promise<void> {
   try {
     const pq = getPingQueue()
     const aq = getAnalysisQueue()
+    // Défaut : purge uniquement les jobs déjà TERMINÉS (sans risque). On ne `drain()`
+    // PAS les jobs en attente — c'était la cause de pertes d'analyses à chaque restart.
+    // Les jobs stale (monitor/client supprimé) sont déjà ignorés par les guards des
+    // consumers. Les 'failed' sont conservés (inspection — pas de DLQ dédiée).
     await Promise.all([
-      pq.drain(),  // supprime les jobs en attente
-      aq.drain(),
-      pq.clean(0, 1000, 'failed'),    // supprime les jobs échoués
-      aq.clean(0, 1000, 'failed'),
-      pq.clean(0, 1000, 'completed'), // supprime les jobs terminés
+      pq.clean(0, 1000, 'completed'),
       aq.clean(0, 1000, 'completed'),
     ])
-    logger.debug('[Workers] Queues vidées avant démarrage')
+    // Reset destructif EXPLICITE (reseed / dev) : vide aussi les jobs en attente + failed.
+    if (process.env.DRAIN_QUEUES_ON_BOOT === 'true') {
+      await Promise.all([
+        pq.drain(), aq.drain(),
+        pq.clean(0, 1000, 'failed'), aq.clean(0, 1000, 'failed'),
+      ])
+      logger.warn('[Workers] DRAIN_QUEUES_ON_BOOT=true → jobs en attente vidés')
+    }
+    logger.debug('[Workers] Hygiène queues OK (jobs en attente préservés)')
   } catch (e) {
-    logger.warn('[Workers] Drain échoué (non bloquant)', { err: (e as Error).message })
+    logger.warn('[Workers] Nettoyage queue échoué (non bloquant)', { err: (e as Error).message })
   }
 }
 

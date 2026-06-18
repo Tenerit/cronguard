@@ -112,7 +112,7 @@ async function setup() {
 
   // Modèle LLM
   const env       = fs.readFileSync('.env', 'utf8')
-  const llmModel  = (env.match(/LLM_MODEL=(.+)/) || [])[1]?.trim() || 'qwen3:8b'
+  const llmModel  = (env.match(/LLM_MODEL=(.+)/) || [])[1]?.trim() || 'llama3.2:3b'
   const modelBase = llmModel.split(':')[0]
   const list      = run('docker compose exec -T ollama ollama list')
   if (!list.out.includes(modelBase)) {

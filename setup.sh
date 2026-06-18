@@ -60,7 +60,7 @@ docker compose exec -T postgres pg_isready -U cronguard &>/dev/null && ok "Postg
 
 node dist/db/migrations.js 2>/dev/null && ok "Migrations OK" || warn "Migrations déjà à jour"
 
-LLM_MODEL=$(grep "^LLM_MODEL" .env 2>/dev/null | cut -d= -f2 | tr -d '"' || echo "qwen3:8b")
+LLM_MODEL=$(grep "^LLM_MODEL" .env 2>/dev/null | cut -d= -f2 | tr -d '"' || echo "llama3.2:3b")
 if docker compose exec -T ollama ollama list 2>/dev/null | grep -q "${LLM_MODEL%%:*}"; then
   ok "Modèle LLM déjà présent"
 else

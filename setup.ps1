@@ -51,7 +51,7 @@ if (Test-Path ".env") {
 DATABASE_URL=postgres://cronguard:secret@localhost:5432/cronguard
 REDIS_URL=redis://localhost:6379
 LLM_BASE_URL=http://localhost:11434/v1
-LLM_MODEL=qwen3:8b
+LLM_MODEL=llama3.2:3b
 PORT=3000
 NODE_ENV=development
 APP_URL=http://localhost:3000
@@ -131,7 +131,7 @@ $envContent = Get-Content ".env" -Raw -ErrorAction SilentlyContinue
 if ($envContent -match "LLM_MODEL=(.+)") {
     $llmModel = $matches[1].Trim()
 } else {
-    $llmModel = "qwen3:8b"
+    $llmModel = "llama3.2:3b"
 }
 $modelBase = $llmModel.Split(":")[0]
 

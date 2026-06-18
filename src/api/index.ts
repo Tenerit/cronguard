@@ -57,6 +57,14 @@ const apiLimiter = rateLimit({
   message: { error: 'Rate limit exceeded' },
 })
 
+// Limiteur strict, keyé par IP, pour les routes sensibles potentiellement non-authentifiées
+// (auth/SSO, billing) → anti-bruteforce / abus. Plus serré que l'API limiter clé-API.
+const authLimiter = rateLimit({
+  windowMs: 60_000, max: 30,
+  keyGenerator: (req) => req.ip ?? 'unknown',
+  message: { error: 'Trop de requêtes' },
+})
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 // Stripe webhook : raw body AVANT express.json()
@@ -76,8 +84,8 @@ app.get('/auth/whoami', apiLimiter, requireApiKey, (_req, res) => {
   })
 })
 
-app.use('/auth',     billingRouter)
-app.use('/billing',  billingRouter)
+app.use('/auth',     authLimiter, billingRouter)
+app.use('/billing',  authLimiter, billingRouter)
 app.use('/ping',     pingRouter)
 
 // ─── Pages HTML (avant les routers API qui demandent auth) ────────────────────
