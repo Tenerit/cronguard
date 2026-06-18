@@ -68,6 +68,13 @@ else
   docker compose exec -T ollama ollama pull "$LLM_MODEL" && ok "Modèle LLM téléchargé"
 fi
 
+# Modèle d'embeddings — moat « mémoire d'incidents » (MEMORY_ENABLED on par défaut, ~274 MB).
+if ! grep -qi "^MEMORY_ENABLED=false" .env 2>/dev/null; then
+  docker compose exec -T ollama ollama pull nomic-embed-text >/dev/null 2>&1 \
+    && ok "Modèle d'embeddings (mémoire) prêt" \
+    || warn "nomic-embed-text non téléchargé — la mémoire d'incidents restera inactive (MEMORY_ENABLED=false pour la couper)"
+fi
+
 # ── Seed ──────────────────────────────────────────────────────────────────────
 step "5/5 — Données de démo"
 npm run seed --silent 2>/dev/null && ok "Compte démo créé" || warn "Seed ignoré"

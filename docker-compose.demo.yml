@@ -17,6 +17,7 @@ x-demo-env: &demo-env
   REDIS_URL:    redis://redis:6379
   LLM_BASE_URL: http://ollama:11434/v1
   LLM_MODEL:    llama3.2:3b
+  MEMORY_ENABLED: "true"          # moat activé : few-shot par similarité (embeddings locaux)
   NODE_ENV:     development
 
 services:
@@ -70,8 +71,9 @@ services:
   # One-shot : télécharge le modèle LLM (en parallèle du boot, ~2 GB)
   ollama-pull:
     image: ollama/ollama:latest
-    entrypoint: ["ollama"]
-    command: ["pull", "llama3.2:3b"]
+    # Pull du modèle d'analyse + du modèle d'embeddings (moat mémoire d'incidents, ~274 MB).
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["ollama pull llama3.2:3b && ollama pull nomic-embed-text"]
     environment:
       OLLAMA_HOST: http://ollama:11434
     depends_on:

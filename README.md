@@ -4,6 +4,10 @@
 
 Self-hosted, AI-powered failure analysis. A job fails, CronGuard reads the logs and hands you the root cause, the fix, and how to prevent it. In seconds, without opening a single log file.
 
+**Who it's for:** ops / SRE / data teams in **regulated or air-gapped** environments — where critical crons (backups, ETL, billing sync) can't ship their logs to a third-party SaaS. The AI runs **locally**; nothing leaves your infra.
+
+**▶ See it now — zero install.** Open the dashboard in read-only demo mode (full UI + AI playground, no backend, no signup): **[live demo](https://YOUR-DEMO-URL.example/dashboard.html?demo=1)** ← *host `src/api/dashboard.html` on any static host (Netlify/Pages) and drop the URL here; or open it locally with `?demo=1`.* The static demo's AI replies are **pre-recorded samples** — run it for real (below) to see live `llama3.2` analysis.
+
 🇫🇷 [Version française](README.fr.md)
 
 ---
@@ -29,7 +33,17 @@ One alert is a notification. The other is a head start on the fix.
 
 ---
 
-## Try it in one command
+## See it without installing anything
+
+`dashboard.html` has a built-in read-only demo — embedded fixtures, **no backend, no database, no signup**. Open it with `?demo=1`:
+
+```
+.../dashboard.html?demo=1
+```
+
+Sample monitors, AI analyses, MTTR/impact and a working **AI playground** (pre-recorded replies), all client-side. Host the single file on any static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages), or serve it from a `demo.*` subdomain to auto-enable. Mutations are disabled — a safe public showcase.
+
+## Run it for real — one command
 
 ```bash
 git clone https://github.com/Tenerit/cronguard && cd cronguard
@@ -38,17 +52,7 @@ docker compose -f docker-compose.demo.yml up
 
 Then open **http://localhost:3000/dashboard** and log in with API key `cg_demo_dockerdemo123456`.
 
-The demo boots Postgres, Redis and Ollama, migrates the schema, seeds 9 monitors with realistic failure scenarios (disk full, OOM kill, deadlock, rate limit, data corruption…) and pulls the LLM model in the background. No `.env`, no setup.
-
-### Zero-install demo (static, read-only)
-
-Want to *look* before running anything? `dashboard.html` has a built-in read-only demo mode driven by embedded fixtures — **no backend, no database**. Open it with `?demo=1`:
-
-```
-.../dashboard.html?demo=1
-```
-
-It auto-loads sample monitors, AI analyses, MTTR/impact and a working **AI playground** (canned responses), all client-side. Host the single file on any static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages) — or serve it from a subdomain starting with `demo.` to enable it automatically. Mutations are disabled; it's a safe public showcase.
+The demo boots Postgres, Redis and Ollama, migrates the schema, seeds 9 monitors with realistic failure scenarios (disk full, OOM kill, deadlock, rate limit, data corruption…) and pulls the LLM model in the background. No `.env`, no setup. First boot pulls ~2 GB (model) — give it a few minutes; the playground shows a "model loading" state until ready.
 
 ---
 
@@ -70,6 +74,19 @@ It auto-loads sample monitors, AI analyses, MTTR/impact and a working **AI playg
 | License | MIT | BSD-3 | proprietary |
 
 CronGuard is not trying to out-feature Healthchecks on integrations. It does one thing they don't: **it reads the logs so you don't have to.**
+
+---
+
+## Pricing
+
+**Self-hosted: free, forever (MIT).** Every feature ships in the open-source build — local AI analysis, alerts, escalation, maintenance windows, RBAC, SSO forward-auth, audit log, key rotation, status pages, Prometheus metrics. **No feature gates.**
+
+| | For | Price |
+|---|---|---|
+| **Self-host** | You run it — full features, your infra, zero egress. | **Free (MIT)** |
+| **Managed / Support** | We host & operate it, or back your self-host with SLA support. | Contact — [open an issue](https://github.com/Tenerit/cronguard/issues) |
+
+Revenue is hosting and support, not locked features. The thing you'd pay for (running PG + Redis + Ollama + the workers) is exactly what self-hosters who *want* the no-egress guarantee already choose to run.
 
 ---
 
@@ -228,7 +245,7 @@ few-shot from your feedback) stays identical — only the model changes.
 
 ### Incident memory (optional)
 
-Set `MEMORY_ENABLED=true` to turn the feedback loop into a real memory: every analysis you mark 👍 is embedded (locally, via Ollama `nomic-embed-text` — no egress) and, on the next failure, the most **similar** past incidents across all your jobs are retrieved as few-shot examples (cosine similarity), instead of just the most recent. The cache also dedupes by a normalized error fingerprint (timestamps/PIDs/UUIDs/IPs stripped), so a recurring error is answered from cache instead of re-calling the model. No pgvector required — embeddings live in a `real[]` column and ranking is done in-app.
+Incident memory is **on by default** (`MEMORY_ENABLED=true`; `setup.*` and the Docker demo pull the embedding model). Every analysis you mark 👍 is embedded (locally, via Ollama `nomic-embed-text` — no egress, ~274 MB) and, on the next failure, the most **similar** past incidents across all your jobs are retrieved as few-shot examples (cosine similarity), instead of just the most recent. This is the moat: it compounds with use and never leaves your box. The cache also dedupes by a normalized error fingerprint (timestamps/PIDs/UUIDs/IPs stripped), so a recurring error is answered from cache instead of re-calling the model. No pgvector required — embeddings live in a `real[]` column, ranking is done in-app. Set `MEMORY_ENABLED=false` to drop the embedding model on a minimal/air-gapped box; if the model is absent the embed call fails cleanly (no-op, no breakage).
 
 You can also give each monitor a **runbook / notes** field (in its edit dialog) — known gotchas, dependencies, who to wake. It's injected into the prompt so the analysis is grounded in your operational context.
 

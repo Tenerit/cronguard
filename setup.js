@@ -122,6 +122,13 @@ async function setup() {
     dl.ok ? ok('Modèle LLM téléchargé') : warn('LLM non disponible — retentez avec : npm run llm:pull')
   } else { ok(`Modèle LLM présent (${llmModel})`) }
 
+  // Modèle d'embeddings — moat « mémoire d'incidents » (ON par défaut, ~274 MB).
+  if (!/^MEMORY_ENABLED=false/im.test(env)) {
+    const emb = run('docker compose exec -T ollama ollama pull nomic-embed-text')
+    emb.ok ? ok('Modèle d\'embeddings (mémoire) prêt')
+           : warn('nomic-embed-text non téléchargé — mémoire d\'incidents inactive (MEMORY_ENABLED=false pour la couper)')
+  }
+
   // ── 5. Données de démo ───────────────────────────────────────────────────
   step(5, 'Données de démonstration')
 
