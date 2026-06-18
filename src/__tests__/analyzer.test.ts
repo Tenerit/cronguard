@@ -203,6 +203,17 @@ describe('analyzeFailure()', () => {
       expect(block.replace(/\n/g, '').length).toBeLessThanOrEqual(20)
       delete process.env.LLM_RUNBOOK_BUDGET
     })
+
+    it('LLM_RAW_LOGS=true disables the regex preprocessing (model-only eval mode)', async () => {
+      process.env.LLM_RAW_LOGS = 'true'
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      await analyzeFailure({ ...baseCtx, jobName: 'raw-mode', logs: 'ERROR: connection refused at db host\nexit 1' })
+
+      const sentPrompt = mockedAxios.post.mock.calls[0][1] as any
+      const user: string = sentPrompt.messages.find((m: any) => m.role === 'user')?.content ?? ''
+      expect(user).not.toContain('Pattern détecté')   // détection regex désactivée
+      delete process.env.LLM_RAW_LOGS
+    })
   })
 
   describe('Circuit breaker integration', () => {

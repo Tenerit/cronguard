@@ -19,6 +19,7 @@ coverage
 .claude
 CLAUDE.md
 GTM.md
+eval/real-cases.ts
 .vscode
 .idea
 .DS_Store

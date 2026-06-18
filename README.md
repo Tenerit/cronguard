@@ -188,10 +188,18 @@ The dashboard, served from behind the proxy, detects the SSO session (`/auth/who
 Default: **llama3.2:3b** through local Ollama (free, private, non-reasoning → fast on CPU).
 No log ever leaves your infrastructure.
 
-**Benchmark** — 26 real-world failure scenarios ([eval/](eval/), `npm run eval`), default model on CPU:
+**Benchmark (lab set)** — 26 curated failure scenarios ([eval/](eval/), `npm run eval`), default model on CPU:
 **100%** valid structured output · **81%** exact root-cause category · **96%** severity within one rank · ~15s per analysis.
-Most misses are genuinely ambiguous boundaries (is a disk-full `pg_dump` failure *database* or *resources*?).
-The fixtures and scoring are in the repo — rerun it, or point `LLM_API_KEY` at a stronger model and compare.
+These fixtures are deliberately unambiguous, so treat this as an **upper bound, not a field number** — it measures the model on clean cases we authored.
+
+**Measure it on YOUR logs (the number that matters).** The harness reports **mean ± std over N runs** and takes an independent real-incident set:
+```bash
+npx tsx eval/run.ts --runs 5                       # 5 runs on the lab set → mean ± std
+cp eval/real-cases.example.ts eval/real-cases.ts   # paste ~20 of your real incident logs + expected labels
+npx tsx eval/run.ts --set real --runs 5            # the honest score; exits non-zero if category < 75%
+LLM_RAW_LOGS=true npx tsx eval/run.ts --runs 5      # model alone, no regex preprocessing (isolates each contribution)
+```
+Don't trust our headline — point `LLM_API_KEY` at a stronger model, or run `--set real` and judge on your own data.
 
 For higher quality, point to any **OpenAI-compatible** endpoint —
 setting `LLM_API_KEY` enables auth and switches to cloud mode:

@@ -82,6 +82,12 @@ function extractLogSignals(raw: string): {
 
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
 
+  // Mode "raw" (LLM_RAW_LOGS=true) : désactive l'extraction par regex (sélection des
+  // lignes à haute valeur + détection de pattern). Sert UNIQUEMENT à l'éval, pour
+  // mesurer ce que le préprocessing apporte vs le modèle seul. Le budget tokens
+  // (dédup/cap) reste actif. Ne PAS activer en prod (la qualité chute).
+  const rawMode = process.env.LLM_RAW_LOGS === 'true'
+
   // Lignes à haute valeur : erreurs, exceptions, messages clés
   const HIGH_VALUE = /error|exception|fail|fatal|critical|traceback|panic|killed|oom|denied|refused|timeout|deadlock|duplicate|constraint|violation|cannot|could not|unable|not found|permission|unauthorized|segfault|abort/i
   const NOISE      = /^(debug|trace|\s*at\s+[a-z]|info:?\s+ok|\d{4}-\d{2}-\d{2}.*\[info\])/i
@@ -89,7 +95,7 @@ function extractLogSignals(raw: string): {
   // Dédup : un job qui crache 100× « connection refused » gaspille des tokens sans
   // ajouter de signal. On garde la 1re occurrence de chaque ligne (ordre préservé).
   const seen = new Set<string>()
-  const errorLines = lines.filter(l => {
+  const errorLines = rawMode ? [] : lines.filter(l => {
     if (!HIGH_VALUE.test(l) || NOISE.test(l)) return false
     if (seen.has(l)) return false
     seen.add(l); return true
@@ -116,9 +122,9 @@ function extractLogSignals(raw: string): {
     total += l.length + 1
   }
 
-  // Détection de pattern
+  // Détection de pattern (désactivée en mode raw pour isoler la contribution du modèle)
   let errorType: string | undefined
-  const allText = raw.toLowerCase()
+  const allText = rawMode ? '' : raw.toLowerCase()
   if (/connection refused|econnrefused|could not connect|no route to host/.test(allText)) errorType = 'CONNEXION_REFUSÉE'
   else if (/timeout|timed out|deadline exceeded/.test(allText)) errorType = 'TIMEOUT'
   else if (/too many connections|max_connections|pool exhausted|connection limit/.test(allText)) errorType = 'POOL_ÉPUISÉ'

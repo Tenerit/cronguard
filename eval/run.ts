@@ -1,16 +1,25 @@
 /**
  * Harness d'évaluation de l'analyseur LLM.
  *
- * Envoie chaque cas de eval/cases.ts à analyzeFailure et score :
+ * Score chaque cas via analyzeFailure :
  *   - catégorie : exact match (métrique principale)
  *   - sévérité  : exacte, et "proche" (±1 rang — low<medium<high<critical)
  *   - taux de réponses parsables (non-null)
  *
+ * Mesure RIGOUREUSE (anti « benchmark de labo ») :
+ *   - N exécutions → moyenne ± écart-type par métrique (variance du modèle).
+ *   - Jeu indépendant de VRAIS logs via --set real (eval/real-cases.ts).
+ *   - Verdict vs seuil (EVAL_THRESHOLD, défaut 0.75) sur la catégorie exacte.
+ *
  * Prérequis : Redis + LLM joignables (mêmes variables d'env que l'app).
  *
  * Usage :
- *   npx tsx eval/run.ts               # les 26 cas
- *   npx tsx eval/run.ts --limit 5     # les 5 premiers (smoke test)
+ *   npx tsx eval/run.ts                    # 1 run, jeu labo (eval/cases.ts)
+ *   npx tsx eval/run.ts --runs 5           # 5 runs → moyenne ± écart-type
+ *   npx tsx eval/run.ts --set real --runs 5  # 5 runs sur tes vrais logs
+ *   npx tsx eval/run.ts --limit 5          # smoke test (5 premiers cas)
+ *   LLM_RAW_LOGS=true npx tsx eval/run.ts --runs 5   # sans préprocessing regex
+ *                                            (mesure modèle seul vs +regex)
  *
  * Résultats : tableau console + eval/results.json
  */
@@ -19,94 +28,133 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { redis } from '../src/config/redis'
 import { analyzeFailure, Severity } from '../src/services/llm/analyzer'
-import { CASES } from './cases'
+import type { EvalCase } from './cases'
 
 const SEV_RANK: Record<Severity, number> = { low: 0, medium: 1, high: 2, critical: 3 }
 const TIMEOUT_MS = Number(process.env.EVAL_TIMEOUT_MS || 120_000)
+const THRESHOLD  = Number(process.env.EVAL_THRESHOLD || 0.75)
 
-interface CaseResult {
-  name:        string
-  expected:    { category: string; severity: string }
-  got:         { category: string; severity: string } | null
-  categoryOk:  boolean
-  severityOk:  boolean
-  severityNear: boolean
-  ms:          number
+function argVal(flag: string): string | undefined {
+  const i = process.argv.indexOf(flag)
+  return i !== -1 ? process.argv[i + 1] : undefined
+}
+
+interface RunScore { parsable: number; category_exact: number; severity_exact: number; severity_near: number; avg_latency_ms: number }
+
+async function loadCases(set: string): Promise<EvalCase[]> {
+  if (set === 'real') {
+    try {
+      // specifier typé `string` (pas littéral) → TS ne tente pas de résoudre le module
+      // au build (eval/real-cases.ts est gitignored / absent par défaut).
+      const spec: string = './real-cases'
+      const mod = await import(spec) as { REAL_CASES?: EvalCase[]; default?: EvalCase[] }
+      const real = (mod.REAL_CASES ?? mod.default) as EvalCase[]
+      if (!real?.length) throw new Error('REAL_CASES vide')
+      return real
+    } catch {
+      console.error(
+        '\n❌ --set real : eval/real-cases.ts introuvable ou vide.\n' +
+        '   Copie eval/real-cases.example.ts → eval/real-cases.ts et colle ~20 VRAIS\n' +
+        '   logs d\'incidents (anonymisés) avec leur catégorie/sévérité attendues.\n' +
+        '   C\'est CE chiffre (pas le labo) qui valide le claim de précision.\n')
+      process.exit(2)
+    }
+  }
+  return (await import('./cases')).CASES
+}
+
+// Un run = un passage complet du jeu. runIdx rend le jobName (donc la clé de cache
+// par empreinte) unique par run → vrais appels LLM à chaque run = variance réelle.
+async function runOnce(cases: EvalCase[], runIdx: number): Promise<{ score: RunScore; perCase: Array<{ name: string; ok: boolean; got: string | null }> }> {
+  await redis.del('llm:circuit_breaker')
+  const tag = `${Date.now().toString(36)}-r${runIdx}`
+  let parsable = 0, catOk = 0, sevOk = 0, sevNear = 0, msSum = 0, msN = 0
+  const perCase: Array<{ name: string; ok: boolean; got: string | null }> = []
+
+  for (const c of cases) {
+    const t0 = Date.now()
+    const res = await analyzeFailure(
+      { jobName: `eval-${tag}-${c.name}`, clientId: 'eval', monitorId: 'eval', exitCode: c.exitCode, env: 'production', logs: c.logs },
+      TIMEOUT_MS, { skipRateLimit: true },
+    )
+    const ms = Date.now() - t0
+    if (res) { parsable++; msSum += ms; msN++ }
+    const categoryOk = res?.category === c.category
+    if (categoryOk) catOk++
+    if (res?.severity === c.severity) sevOk++
+    if (res && Math.abs(SEV_RANK[res.severity] - SEV_RANK[c.severity]) <= 1) sevNear++
+    perCase.push({ name: c.name, ok: categoryOk, got: res?.category ?? null })
+  }
+  const n = cases.length
+  return {
+    score: {
+      parsable: parsable / n, category_exact: catOk / n, severity_exact: sevOk / n,
+      severity_near: sevNear / n, avg_latency_ms: msN ? Math.round(msSum / msN) : 0,
+    },
+    perCase,
+  }
+}
+
+function meanStd(xs: number[]): { mean: number; std: number } {
+  const mean = xs.reduce((a, b) => a + b, 0) / xs.length
+  const std  = xs.length > 1
+    ? Math.sqrt(xs.reduce((a, b) => a + (b - mean) ** 2, 0) / (xs.length - 1))
+    : 0
+  return { mean, std }
 }
 
 async function main() {
-  const limitArg = process.argv.indexOf('--limit')
-  const limit = limitArg !== -1 ? Number(process.argv[limitArg + 1]) : CASES.length
-  const cases = CASES.slice(0, limit)
+  const set   = argVal('--set') ?? 'lab'
+  const runs  = Math.max(1, Number(argVal('--runs') ?? 1))
+  const limit = Number(argVal('--limit') ?? 0)
+  let cases   = await loadCases(set)
+  if (limit > 0) cases = cases.slice(0, limit)
 
-  // Run isolé : pas de cache partagé entre runs, breaker remis à zéro
-  const runId = Date.now().toString(36)
-  await redis.del('llm:circuit_breaker')
+  const rawMode = process.env.LLM_RAW_LOGS === 'true'
+  console.log(`\nEval — set:${set} · ${cases.length} cas · ${runs} run(s) · modèle:${process.env.LLM_MODEL || 'llama3.2:3b'}` +
+    `${rawMode ? ' · RAW (sans regex)' : ''}\n`)
 
-  console.log(`\nEval analyzer — ${cases.length} cas · modèle: ${process.env.LLM_MODEL || 'llama3.2:3b'} · timeout: ${TIMEOUT_MS}ms\n`)
-
-  const results: CaseResult[] = []
-
-  for (const [i, c] of cases.entries()) {
-    const t0 = Date.now()
-    const res = await analyzeFailure({
-      jobName:  `eval-${runId}-${c.name}`,
-      clientId: 'eval',
-      monitorId: 'eval',
-      exitCode: c.exitCode,
-      env:      'production',
-      logs:     c.logs,
-    }, TIMEOUT_MS, { skipRateLimit: true })
-    const ms = Date.now() - t0
-
-    const got = res ? { category: res.category, severity: res.severity } : null
-    const categoryOk   = got?.category === c.category
-    const severityOk   = got?.severity === c.severity
-    const severityNear = !!got && Math.abs(SEV_RANK[got.severity as Severity] - SEV_RANK[c.severity]) <= 1
-
-    results.push({ name: c.name, expected: { category: c.category, severity: c.severity }, got, categoryOk, severityOk, severityNear, ms })
-
-    const mark = !got ? '∅' : categoryOk ? '✓' : '✗'
-    console.log(
-      `${String(i + 1).padStart(2)}/${cases.length} ${mark} ${c.name.padEnd(28)} ` +
-      `cat: ${c.category.padEnd(10)} → ${(got?.category ?? 'NULL').padEnd(10)} ` +
-      `sev: ${c.severity.padEnd(8)} → ${(got?.severity ?? 'NULL').padEnd(8)} ${(ms / 1000).toFixed(1)}s`
-    )
+  const scores: RunScore[] = []
+  for (let r = 1; r <= runs; r++) {
+    const { score } = await runOnce(cases, r)
+    scores.push(score)
+    console.log(`  run ${r}/${runs} · cat ${(score.category_exact * 100).toFixed(0)}% · ` +
+      `sev ${(score.severity_exact * 100).toFixed(0)}% · ±1 ${(score.severity_near * 100).toFixed(0)}% · ` +
+      `parsable ${(score.parsable * 100).toFixed(0)}% · ${(score.avg_latency_ms / 1000).toFixed(1)}s`)
   }
 
-  const answered  = results.filter(r => r.got)
-  const catOk     = results.filter(r => r.categoryOk)
-  const sevOk     = results.filter(r => r.severityOk)
-  const sevNear   = results.filter(r => r.severityNear)
-  const avgMs     = answered.length ? answered.reduce((s, r) => s + r.ms, 0) / answered.length : 0
-  const pct = (n: number) => `${(100 * n / results.length).toFixed(0)}%`
+  const agg = (k: keyof RunScore) => meanStd(scores.map(s => s[k]))
+  const cat = agg('category_exact'), sev = agg('severity_exact'), near = agg('severity_near'), pars = agg('parsable')
+  const fmt = (m: { mean: number; std: number }) => `${(m.mean * 100).toFixed(1)}% ± ${(m.std * 100).toFixed(1)}`
 
-  console.log(`\n${'─'.repeat(64)}`)
-  console.log(`  Réponses parsables : ${answered.length}/${results.length}  (${pct(answered.length)})`)
-  console.log(`  Catégorie exacte   : ${catOk.length}/${results.length}  (${pct(catOk.length)})   ← métrique principale`)
-  console.log(`  Sévérité exacte    : ${sevOk.length}/${results.length}  (${pct(sevOk.length)})`)
-  console.log(`  Sévérité ±1 rang   : ${sevNear.length}/${results.length}  (${pct(sevNear.length)})`)
-  console.log(`  Latence moyenne    : ${(avgMs / 1000).toFixed(1)}s`)
-  console.log('─'.repeat(64))
+  console.log(`\n${'─'.repeat(66)}`)
+  console.log(`  Catégorie exacte : ${fmt(cat)}   ← métrique principale`)
+  console.log(`  Sévérité exacte  : ${fmt(sev)}`)
+  console.log(`  Sévérité ±1 rang : ${fmt(near)}`)
+  console.log(`  Parsable         : ${fmt(pars)}`)
+  const pass = cat.mean >= THRESHOLD
+  console.log(`\n  Verdict : catégorie ${fmt(cat)} vs seuil ${(THRESHOLD * 100).toFixed(0)}% → ` +
+    `${pass ? '✅ le claim TIENT' : '⚠️ SOUS le seuil → reformuler le claim'}`)
+  if (set === 'lab') console.log('  ⚠️  Jeu LABO (fixtures maison). Le claim public exige --set real sur de VRAIS logs.')
+  console.log('─'.repeat(66))
 
   const out = {
     date: new Date().toISOString(),
+    set, runs, raw_mode: rawMode,
     model: process.env.LLM_MODEL || 'llama3.2:3b',
-    cases: results.length,
-    scores: {
-      parsable:       answered.length / results.length,
-      category_exact: catOk.length / results.length,
-      severity_exact: sevOk.length / results.length,
-      severity_near:  sevNear.length / results.length,
-      avg_latency_ms: Math.round(avgMs),
+    cases: cases.length,
+    threshold: THRESHOLD,
+    passes_threshold: pass,
+    aggregate: {
+      category_exact: cat, severity_exact: sev, severity_near: near, parsable: pars,
     },
-    results,
+    per_run: scores,
   }
   fs.writeFileSync(path.join(__dirname, 'results.json'), JSON.stringify(out, null, 2))
   console.log(`  → eval/results.json\n`)
 
   await redis.quit()
-  process.exit(0)
+  process.exit(pass ? 0 : 1)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })
