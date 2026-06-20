@@ -69,6 +69,12 @@ describe('ssoEmail() — trust hardening (fail-closed)', () => {
     expect(ssoEmail(req({ 'x-forwarded-email': 'a@corp.com', 'x-cronguard-sso-secret': 'nope' }))).toBeNull()
   })
 
+  it('rejects a same-length wrong secret (exercises the constant-time compare)', () => {
+    process.env.SSO_ENABLED = 'true'
+    process.env.SSO_SHARED_SECRET = 's3cr3t-value'
+    expect(ssoEmail(req({ 'x-forwarded-email': 'a@corp.com', 'x-cronguard-sso-secret': 'XXXXXX-XXXXX' }))).toBeNull()
+  })
+
   it('trusts via source IP allowlist', () => {
     process.env.SSO_ENABLED = 'true'
     process.env.SSO_TRUSTED_PROXIES = '10.0.0.9, 10.0.0.10'

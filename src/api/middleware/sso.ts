@@ -1,4 +1,5 @@
 import { Request } from 'express'
+import { timingSafeEqual } from 'crypto'
 import { db }     from '../../db'
 import { logger } from '../../config/logger'
 import { Role }   from './auth'
@@ -52,7 +53,10 @@ function fromTrustedProxy(req: Request): boolean {
   if (secret) {
     const hdr = (process.env.SSO_SECRET_HEADER ?? 'x-cronguard-sso-secret').toLowerCase()
     const got = req.headers[hdr]
-    if (typeof got === 'string' && got.length === secret.length && got === secret) return true
+    // Compare en temps constant (anti timing-attack sur le secret partagé).
+    // timingSafeEqual exige des buffers de même longueur → garde de longueur d'abord.
+    if (typeof got === 'string' && got.length === secret.length &&
+        timingSafeEqual(Buffer.from(got), Buffer.from(secret))) return true
   }
   if (ipList.length) {
     const remote = normIp(req.socket?.remoteAddress)

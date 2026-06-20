@@ -8,7 +8,9 @@ import { llmHeaders } from './analyzer'
 // Désactivé → renvoie null partout, comportement inchangé.
 
 export function memoryEnabled(): boolean {
-  return process.env.MEMORY_ENABLED === 'true'
+  // ON par défaut (le moat) : actif sauf si explicitement coupé via MEMORY_ENABLED=false.
+  // Si le modèle d'embed est absent, embed() échoue proprement (null) → no-op, pas de casse.
+  return process.env.MEMORY_ENABLED !== 'false'
 }
 
 function embedBaseUrl(): string {
