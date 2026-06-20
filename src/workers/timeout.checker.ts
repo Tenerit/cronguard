@@ -216,7 +216,18 @@ function slowLog(p: MonitorRow & {duration_ms?: number; pinged_at?: string}): st
 }
 
 logger.info('[Checker] Started — 60s interval')
-check()
+
+// Garde anti-chevauchement : sous charge (centaines de monitors, requêtes corrélées),
+// un tick peut dépasser 60s. Sans garde, `setInterval` en lancerait un 2e par-dessus →
+// double charge DB pile quand ça va déjà mal. On skip le tick si le précédent tourne.
+let checking = false
+async function tick() {
+  if (checking) { logger.warn('[Checker] tick précédent encore en cours (>60s) — skip'); return }
+  checking = true
+  try { await check() } finally { checking = false }
+}
+
+tick()
 
 // Vérifie et expire les trials Pro toutes les heures
 async function expireTrials() {
@@ -239,7 +250,7 @@ setInterval(sendOnboardingReminders, 60 * 60 * 1000)
 // Rapport hebdomadaire — chaque lundi à 8h
 scheduleWeeklyReports()
 
-const timer = setInterval(check, INTERVAL)
+const timer = setInterval(tick, INTERVAL)
 
 // ─── Graceful shutdown ────────────────────────────────────────────────────────
 
