@@ -29,7 +29,9 @@ const req: any = { headers: {}, query: {} }
 beforeEach(() => {
   jest.clearAllMocks()
   delete process.env.METRICS_TOKEN
+  process.env.METRICS_PUBLIC = 'true'   // défaut = fermé ; on ouvre pour tester le rendu
 })
+afterEach(() => { delete process.env.METRICS_PUBLIC })
 
 describe('GET /metrics — ops gauges', () => {
   it('exposes the silent-failure surfaces (gaps, queue depth, heartbeat, notify fails)', async () => {
@@ -65,6 +67,14 @@ describe('GET /metrics — ops gauges', () => {
 
   it('401s when METRICS_TOKEN is set and the token is wrong', async () => {
     process.env.METRICS_TOKEN = 'secret-token'
+    const res = fakeRes()
+    await metricsHandler({ headers: {}, query: {} } as any, res)
+    expect(res._status).toBe(401)
+  })
+
+  it('is closed by default — 401 when neither token nor METRICS_PUBLIC is set', async () => {
+    delete process.env.METRICS_TOKEN
+    delete process.env.METRICS_PUBLIC
     const res = fakeRes()
     await metricsHandler({ headers: {}, query: {} } as any, res)
     expect(res._status).toBe(401)

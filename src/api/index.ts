@@ -14,6 +14,7 @@ import { redis }  from '../config/redis'
 import { logger } from '../config/logger'
 
 import { CSP_DIRECTIVES }  from './csp'
+import { escapeHtml }      from '../services/escape'
 import { requireApiKey }  from './middleware/auth'
 import { metricsHandler } from './routes/metrics'
 import { pingRouter }     from './routes/ping'
@@ -123,6 +124,10 @@ app.get('/badge/:monitorId', async (req, res) => {
 
     res.setHeader('Content-Type', 'image/svg+xml')
     res.setHeader('Cache-Control', 'no-cache, max-age=60')
+    // Le nom du monitor est contrôlé par l'utilisateur et injecté dans ce SVG servi
+    // sans auth. On l'échappe (ci-dessous) ET on bloque tout script si le badge est
+    // ouvert comme document top-level (défense en profondeur ; un SVG inline peut exécuter).
+    res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'")
     res.send(`<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="20">
   <linearGradient id="s" x2="0" y2="100%">
     <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
@@ -135,10 +140,10 @@ app.get('/badge/:monitorId', async (req, res) => {
     <rect width="${totalW}" height="20" fill="url(#s)"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11">
-    <text x="${labelW/2}" y="15" fill="#010101" fill-opacity=".3">${label}</text>
-    <text x="${labelW/2}" y="14">${label}</text>
-    <text x="${labelW+valueW/2}" y="15" fill="#010101" fill-opacity=".3">${text}</text>
-    <text x="${labelW+valueW/2}" y="14">${text}</text>
+    <text x="${labelW/2}" y="15" fill="#010101" fill-opacity=".3">${escapeHtml(label)}</text>
+    <text x="${labelW/2}" y="14">${escapeHtml(label)}</text>
+    <text x="${labelW+valueW/2}" y="15" fill="#010101" fill-opacity=".3">${escapeHtml(text)}</text>
+    <text x="${labelW+valueW/2}" y="14">${escapeHtml(text)}</text>
   </g>
 </svg>`)
   } catch {
@@ -167,8 +172,8 @@ app.get('/status/:monitorId', (req, res) => {
 // ─── Health & Error ───────────────────────────────────────────────────────────
 
 app.get('/metrics', metricsHandler)
-if (!process.env.METRICS_TOKEN) {
-  logger.warn('[Metrics] /metrics non protégé (METRICS_TOKEN absent) — n\'exposez ce port que sur réseau interne, ou définissez METRICS_TOKEN')
+if (!process.env.METRICS_TOKEN && process.env.METRICS_PUBLIC !== 'true') {
+  logger.warn('[Metrics] /metrics fermé (401) — définissez METRICS_TOKEN, ou METRICS_PUBLIC=true pour l\'exposer sur un réseau interne')
 }
 
 app.get('/health', async (_, res) => {

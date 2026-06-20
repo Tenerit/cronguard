@@ -94,6 +94,20 @@ describe('sendEmailAlert()', () => {
     expect(call.html).toContain('Analyse IA indisponible')
   })
 
+  it('HTML-escapes LLM output + job name in the email (no XSS via cause/jobName)', async () => {
+    const evil: AlertPayload = {
+      ...payloadWithAI,
+      jobName: 'job<script>1</script>',
+      analysis: { ...payloadWithAI.analysis!, cause: '<script>alert(1)</script>' },
+    }
+    await sendEmailAlert(evil)
+
+    const html = mockSendMail.mock.calls[0][0].html
+    expect(html).not.toContain('<script>alert(1)</script>')
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(html).not.toContain('job<script>1</script>')
+  })
+
   it('includes status page link', async () => {
     await sendEmailAlert(basePayload)
 

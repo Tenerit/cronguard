@@ -10,7 +10,7 @@ import { recallSimilar } from '../services/llm/incident-memory'
 import { parseDiagnosis } from '../services/llm/diagnosis'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
 import { sendAlert, sendRecovery } from '../services/alerts'
-import { hashError }     from '../services/sanitizer'
+import { hashError, sanitizeLogs } from '../services/sanitizer'
 import { getPingQueue, getAnalysisQueue, PingJob, AnalysisJob } from '../queue'
 import { getRedis }      from '../config/redis'
 import { writeHeartbeat } from './self-monitor.worker'
@@ -270,7 +270,12 @@ function createPingWorker() {
 
     // Mémoire d'incidents : few-shot par SIMILARITÉ (cross-monitor) plutôt que récence.
     // No-op si MEMORY_ENABLED≠true → on garde le few-shot par récence ci-dessus.
-    const recalled = await recallSimilar(clientId, output ?? '', 2)
+    // Si l'analyse sera servie depuis le cache exact (même empreinte d'erreur),
+    // inutile d'embed pour le recall — évite 1 appel embed par panne récurrente
+    // (métré si embeddings cloud). Même clé que analyzeFailure : jobName + logs nettoyés.
+    const fpHash   = hashError(ctx.name, sanitizeLogs(output ?? '').clean)
+    const cacheHit = await getRedis().exists(`analysis:${fpHash}`)
+    const recalled = cacheHit ? [] : await recallSimilar(clientId, output ?? '', 2)
     if (recalled.length) fewShotExamples = recalled
 
     await getAnalysisQueue().add('analyze', {
@@ -343,7 +348,7 @@ function createAnalysisWorker() {
            category,prevention,confidence,correlated_monitors,
            checks,data_impact,fix_minutes)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
-        [ctx.monitorId, ctx.pingId ?? null, hashError(ctx.jobName, ctx.logs),
+        [ctx.monitorId, ctx.pingId ?? null, hashError(ctx.jobName, sanitizeLogs(ctx.logs).clean),
          JSON.stringify({ cause: analysis.cause, action: analysis.action,
                           prevention: analysis.prevention, category: analysis.category,
                           checks: analysis.checks, data_impact: analysis.data_impact }),

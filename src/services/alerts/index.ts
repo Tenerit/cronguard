@@ -3,6 +3,7 @@ import axios      from 'axios'
 import { logger }       from '../../config/logger'
 import { signWebhook }  from '../webhook-signature'
 import { isSafeWebhookTarget } from '../webhook-guard'
+import { escapeHtml }   from '../escape'
 import { redis }        from '../../config/redis'
 import type { AnalysisResult } from '../llm/analyzer'
 
@@ -144,15 +145,15 @@ export async function sendEmailAlert(payload: AlertPayload) {
       <p style="font-weight:600;margin:0 0 8px;">🧠 Analyse IA &nbsp;
         <span style="font-size:11px;background:${catColor}22;color:${catColor};padding:2px 8px;border-radius:10px;font-family:monospace">${cat}</span>
       </p>
-      <p style="margin:0 0 4px;"><strong>Cause :</strong> ${payload.analysis!.cause}</p>
-      <p style="margin:0 0 4px;"><strong>Action :</strong> ${payload.analysis!.action}</p>
-      ${payload.analysis!.prevention ? `<p style="margin:4px 0 0;color:#4a9aa7;"><strong>Prévention :</strong> ${payload.analysis!.prevention}</p>` : ''}
+      <p style="margin:0 0 4px;"><strong>Cause :</strong> ${escapeHtml(payload.analysis!.cause)}</p>
+      <p style="margin:0 0 4px;"><strong>Action :</strong> ${escapeHtml(payload.analysis!.action)}</p>
+      ${payload.analysis!.prevention ? `<p style="margin:4px 0 0;color:#4a9aa7;"><strong>Prévention :</strong> ${escapeHtml(payload.analysis!.prevention)}</p>` : ''}
     </div>`
     : `<p style="color:#888;">Analyse IA indisponible — vérifiez les logs manuellement.</p>`
 
   const html = `
   <div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
-    <h2 style="color:#e53e3e;">${emoji} Job en échec : ${payload.jobName}</h2>
+    <h2 style="color:#e53e3e;">${emoji} Job en échec : ${escapeHtml(payload.jobName)}</h2>
     <table style="width:100%;border-collapse:collapse;margin:16px 0;">
       <tr>
         <td style="padding:8px;color:#666;">Environnement</td>
@@ -273,7 +274,7 @@ export async function sendRecovery(p: RecoveryPayload) {
       subject: `✅ Rétabli : ${p.jobName} (${p.env})`,
       html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
-        <h2 style="color:#2dba8c;">✅ Job rétabli : ${p.jobName}</h2>
+        <h2 style="color:#2dba8c;">✅ Job rétabli : ${escapeHtml(p.jobName)}</h2>
         <p style="color:#555;">Le job a de nouveau pingé avec succès${downtime ? ` après ${downtime} d'incident` : ''}.</p>
         <a href="${p.statusPageUrl}" style="display:inline-block;background:#2dba8c;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;margin-top:8px;">Voir la page de statut →</a>
       </div>`,
@@ -322,8 +323,8 @@ export async function sendEscalation(p: EscalationPayload) {
   const email = async () => {
     if (!p.escalationEmail) return
     const aiBlock = p.analysis?.cause
-      ? `<p style="margin:4px 0"><strong>Cause connue :</strong> ${p.analysis.cause}</p>
-         <p style="margin:4px 0"><strong>Action :</strong> ${p.analysis.action ?? '—'}</p>`
+      ? `<p style="margin:4px 0"><strong>Cause connue :</strong> ${escapeHtml(p.analysis.cause)}</p>
+         <p style="margin:4px 0"><strong>Action :</strong> ${escapeHtml(p.analysis.action ?? '—')}</p>`
       : `<p style="color:#888">Aucune analyse IA disponible.</p>`
 
     await getMailer().sendMail({
@@ -332,7 +333,7 @@ export async function sendEscalation(p: EscalationPayload) {
       subject,
       html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;border-top:4px solid #e53e3e;padding-top:16px;">
-        <h2 style="color:#e53e3e;margin:0 0 4px;">🚨 Escalade : ${p.jobName}</h2>
+        <h2 style="color:#e53e3e;margin:0 0 4px;">🚨 Escalade : ${escapeHtml(p.jobName)}</h2>
         <p style="color:#555;margin:0 0 16px;">
           Ce job est en échec depuis <strong>${down}</strong> et n'a pas été pris en charge
           (${p.alertCount} alerte${p.alertCount > 1 ? 's' : ''} envoyée${p.alertCount > 1 ? 's' : ''}).

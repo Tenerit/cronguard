@@ -51,11 +51,20 @@ async function enqueuePing(monitor: MonitorRow, data: PingData): Promise<'succes
     logger.warn('[Ping] Output validation failed', { records, monitorId: monitor.id })
   }
 
-  await pingQueue.add('ping', {
-    monitorId: monitor.id, clientId: monitor.client_id, status,
-    durationMs: data.duration_ms, records,
-    exitCode: data.exit_code, output: data.output,
-  })
+  try {
+    await pingQueue.add('ping', {
+      monitorId: monitor.id, clientId: monitor.client_id, status,
+      durationMs: data.duration_ms, records,
+      exitCode: data.exit_code, output: data.output,
+    })
+  } catch (e) {
+    // Redis down : le ping ne peut pas être enregistré. Loggue + rethrow → la route
+    // renvoie une erreur (fail-loud) au lieu d'un 200 silencieux qui ferait croire au
+    // cron que tout va bien alors que le ping (et son éventuel échec) est perdu.
+    logger.error('[Ping] enqueue échoué — ping NON enregistré (Redis down ?)',
+      { monitorId: monitor.id, err: (e as Error).message })
+    throw e
+  }
 
   return status
 }

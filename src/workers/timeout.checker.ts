@@ -181,13 +181,21 @@ function hungLog(m: MonitorRow, runningMs: number): string {
 }
 
 async function enqueue(m: MonitorRow, logs: string, type: string, priority: number) {
-  await analysisQueue.add(`analyze-${type}`, {
-    monitorId: m.id ?? m.monitor_id, clientId: m.client_id, pingId: m.ping_id,
-    jobName: m.name, env: m.env, schedule: m.schedule,
-    lastSuccess: m.last_success ?? m.last_ping_at,
-    durationMs: m.duration_ms, avgDuration: m.avg_dur ? Math.round(m.avg_dur) : undefined,
-    expectedMin: m.expected_min, expectedMax: m.expected_max, logs,
-  }, { priority })
+  try {
+    await analysisQueue.add(`analyze-${type}`, {
+      monitorId: m.id ?? m.monitor_id, clientId: m.client_id, pingId: m.ping_id,
+      jobName: m.name, env: m.env, schedule: m.schedule,
+      lastSuccess: m.last_success ?? m.last_ping_at,
+      durationMs: m.duration_ms, avgDuration: m.avg_dur ? Math.round(m.avg_dur) : undefined,
+      expectedMin: m.expected_min, expectedMax: m.expected_max, logs,
+    }, { priority })
+  } catch (e) {
+    // Redis/queue down : NE PAS laisser une seule erreur d'enqueue tuer le tick — sinon
+    // les autres monitors du tick ne sont jamais vérifiés et le process crash-loop.
+    // Échec BRUYANT : l'alerte détectée est perdue ce tick mais visible (pas de drop muet).
+    logger.error('[Checker] enqueue échoué — alerte NON livrée ce tick (Redis down ?)',
+      { job: m.name, type, err: (e as Error).message })
+  }
 }
 
 function lateLog(m: MonitorRow): string {

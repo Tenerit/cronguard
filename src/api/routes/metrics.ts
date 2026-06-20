@@ -16,8 +16,14 @@ function line(name: string, value: number, labels?: Record<string, string>): str
 }
 
 export async function metricsHandler(req: Request, res: Response) {
-  // Auth optionnelle par token
-  const token = process.env.METRICS_TOKEN
+  // Fermé par défaut (anti-fuite cross-tenant). Exposer = définir METRICS_TOKEN,
+  // ou METRICS_PUBLIC=true pour l'ouvrir explicitement sur un réseau interne de confiance.
+  const token    = process.env.METRICS_TOKEN
+  const isPublic = process.env.METRICS_PUBLIC === 'true'
+  if (!token && !isPublic) {
+    return res.status(401).type('text/plain')
+      .send('# /metrics fermé — définir METRICS_TOKEN, ou METRICS_PUBLIC=true (réseau interne)\n')
+  }
   if (token) {
     const bearer = req.headers.authorization?.replace(/^Bearer\s+/i, '')
     const given  = bearer ?? (req.query.token as string | undefined)
