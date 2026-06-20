@@ -2,7 +2,6 @@ import { db }     from '../../db'
 import { logger } from '../../config/logger'
 import { sanitizeLogs, fingerprintLogs } from '../sanitizer'
 import { embed, cosine, memoryEnabled } from './embeddings'
-import { parseDiagnosis } from './diagnosis'
 import type { FewShotExample, ErrorCategory } from './analyzer'
 
 // ─── Mémoire d'incidents (RAG few-shot par similarité) ────────────────────────
@@ -39,7 +38,7 @@ export async function recallSimilar(clientId: string, logs: string, k = 2): Prom
   if (!q) return []
   try {
     const { rows } = await db.query(`
-      SELECT a.diagnosis, a.embedding, p.output AS logs
+      SELECT a.cause, a.action, a.category, a.embedding, p.output AS logs
       FROM analyses a
       JOIN pings p    ON p.id = a.ping_id
       JOIN monitors m ON m.id = a.monitor_id
@@ -48,15 +47,14 @@ export async function recallSimilar(clientId: string, logs: string, k = 2): Prom
     `, [clientId, CANDIDATES])
 
     return rows
-      .map((r: { diagnosis: string; embedding: number[]; logs: string }) => ({ r, s: cosine(q, r.embedding) }))
+      .map((r: { cause: string; action: string; category: string; embedding: number[]; logs: string }) => ({ r, s: cosine(q, r.embedding) }))
       .filter((x: { s: number }) => x.s >= SIM_THRESHOLD)
       .sort((a: { s: number }, b: { s: number }) => b.s - a.s)
       .slice(0, k)
-      .map(({ r }: { r: { diagnosis: string; logs: string } }) => {
-        const d = parseDiagnosis(r.diagnosis, 'recall')
-        return { logs: (r.logs ?? '').slice(0, 200), cause: d.cause, action: d.action,
-                 category: (d.category ?? 'unknown') as ErrorCategory } as FewShotExample
-      })
+      .map(({ r }: { r: { cause: string; action: string; category: string; logs: string } }) => (
+        { logs: (r.logs ?? '').slice(0, 200), cause: r.cause, action: r.action,
+          category: (r.category ?? 'unknown') as ErrorCategory } as FewShotExample
+      ))
       .filter((x: FewShotExample) => !!x.cause && !!x.action)
   } catch (err) {
     logger.warn('[Memory] recall failed', { err })

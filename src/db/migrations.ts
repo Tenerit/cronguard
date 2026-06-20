@@ -329,6 +329,21 @@ async function v15(client: {query(sql: string, params?: unknown[]): Promise<unkn
   await client.query(`ALTER TABLE monitors ADD COLUMN IF NOT EXISTS notes TEXT`)
 }
 
+// ─── V16 : cause/action en colonnes typées (étaient seulement dans le blob JSON
+// `diagnosis`, parsé à la lecture côté serveur). Le blob reste écrit (contrat client
+// dashboard). Backfill depuis le blob existant — PG16 `IS JSON` ignore les blobs
+// dégradés (non-JSON) sans faire échouer la transaction.
+async function v16(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS cause  TEXT`)
+  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS action TEXT`)
+  await client.query(`
+    UPDATE analyses
+       SET cause  = diagnosis::jsonb->>'cause',
+           action = diagnosis::jsonb->>'action'
+     WHERE cause IS NULL AND diagnosis IS JSON
+  `)
+}
+
 // Clé stable du verrou consultatif des migrations (arbitraire mais fixe).
 const MIGRATION_LOCK_KEY = 947_218_314
 
@@ -355,8 +370,9 @@ export async function runMigrations() {
     await v13(client)
     await v14(client)
     await v15(client)
+    await v16(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v15)')
+    logger.info('[DB] Migrations terminées (v1 → v16)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

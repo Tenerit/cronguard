@@ -9,7 +9,6 @@
  */
 import { db }     from '../db'
 import { logger } from '../config/logger'
-import { parseDiagnosis } from './llm/diagnosis'
 import nodemailer  from 'nodemailer'
 
 interface ClientReport {
@@ -44,7 +43,7 @@ interface JobStat {
 // ─── Collecte des données ─────────────────────────────────────────────────────
 
 interface MonitorRow   { id: string; name: string; env: string; last_status: string; last_ping_at?: string }
-interface IncidentRow  { job_name: string; env: string; diagnosis: string; severity: string; failed_at: string }
+interface IncidentRow  { job_name: string; env: string; cause: string | null; action: string | null; severity: string; failed_at: string }
 interface StatsRow     { name: string; env: string; last_status: string; ok: string; total: string; avg_dur: number }
 
 async function buildReport(clientId: string, email: string): Promise<ClientReport | null> {
@@ -59,7 +58,7 @@ async function buildReport(clientId: string, email: string): Promise<ClientRepor
   // Incidents de la semaine avec analyses IA
   const { rows: incidents } = await db.query(`
     SELECT m.name AS job_name, m.env,
-           a.diagnosis, a.severity, a.created_at AS failed_at
+           a.cause, a.action, a.severity, a.created_at AS failed_at
     FROM analyses a
     JOIN monitors m ON m.id = a.monitor_id
     WHERE m.client_id = $1
@@ -93,12 +92,11 @@ async function buildReport(clientId: string, email: string): Promise<ClientRepor
   const weeklyUptime = totalPings > 0 ? Math.round(successPings / totalPings * 100) : 100
 
   const parsedIncidents: IncidentSummary[] = incidents.map((i: IncidentRow) => {
-    const diag = parseDiagnosis(i.diagnosis, 'weekly-report')
     return {
       jobName:  i.job_name,
       env:      i.env,
-      cause:    diag.cause || '—',
-      action:   diag.action || '—',
+      cause:    i.cause || '—',
+      action:   i.action || '—',
       severity: i.severity,
       failedAt: new Date(i.failed_at).toLocaleString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' }),
     }

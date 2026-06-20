@@ -7,7 +7,6 @@ import { db }            from '../db'
 import { logger }        from '../config/logger'
 import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
 import { recallSimilar } from '../services/llm/incident-memory'
-import { parseDiagnosis } from '../services/llm/diagnosis'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
 import { sendAlert, sendRecovery } from '../services/alerts'
 import { hashError, sanitizeLogs } from '../services/sanitizer'
@@ -90,11 +89,10 @@ function createPingWorker() {
 
         // Dernière analyse de l'incident → cause racine, sévérité, impact
         const { rows: [la] } = await db.query(`
-          SELECT id, severity, category, data_impact, diagnosis
+          SELECT id, severity, category, data_impact, cause
           FROM analyses WHERE monitor_id = $1 ORDER BY created_at DESC LIMIT 1
         `, [monitorId])
-        let rootCause: string | null = null
-        if (la?.diagnosis) rootCause = parseDiagnosis(la.diagnosis, 'repeat-rootcause').cause || null
+        const rootCause: string | null = la?.cause || null
 
         await db.query(`
           INSERT INTO incidents (monitor_id, started_at, resolved_at, duration_ms,
@@ -257,16 +255,15 @@ function createPingWorker() {
 
     // ─── Few-shot : analyses passées validées ──────────────────────────────
     const { rows: fewShotRows } = await db.query(`
-      SELECT a.diagnosis, p.output AS logs FROM analyses a
+      SELECT a.cause, a.action, a.category, p.output AS logs FROM analyses a
       JOIN pings p ON p.id = a.ping_id
       WHERE a.monitor_id=$1 AND a.user_feedback='positive' AND p.output IS NOT NULL
       ORDER BY a.created_at DESC LIMIT 2
     `, [monitorId])
     let fewShotExamples: Array<{ logs: string; cause: string; action: string; category: string }> =
-      fewShotRows.map((r: {diagnosis: string; logs: string}) => {
-        const diag = parseDiagnosis(r.diagnosis, 'fewshot')
-        return { logs: (r.logs ?? '').slice(0, 200), cause: diag.cause, action: diag.action, category: diag.category ?? 'unknown' }
-      }).filter(ex => !!ex.cause && !!ex.action)   // écarte les blobs corrompus/incomplets
+      fewShotRows.map((r: {cause: string; action: string; category: string; logs: string}) => (
+        { logs: (r.logs ?? '').slice(0, 200), cause: r.cause, action: r.action, category: r.category ?? 'unknown' }
+      )).filter(ex => !!ex.cause && !!ex.action)   // écarte les analyses incomplètes
 
     // Mémoire d'incidents : few-shot par SIMILARITÉ (cross-monitor) plutôt que récence.
     // No-op si MEMORY_ENABLED≠true → on garde le few-shot par récence ci-dessus.
@@ -346,8 +343,8 @@ function createAnalysisWorker() {
           (monitor_id,ping_id,error_hash,diagnosis,model_used,alert_type,
            severity,from_cache,tokens_in,tokens_out,
            category,prevention,confidence,correlated_monitors,
-           checks,data_impact,fix_minutes)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)`,
+           checks,data_impact,fix_minutes,cause,action)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
         [ctx.monitorId, ctx.pingId ?? null, hashError(ctx.jobName, sanitizeLogs(ctx.logs).clean),
          JSON.stringify({ cause: analysis.cause, action: analysis.action,
                           prevention: analysis.prevention, category: analysis.category,
@@ -361,6 +358,7 @@ function createAnalysisWorker() {
          analysis.checks?.length ? JSON.stringify(analysis.checks) : null,
          analysis.data_impact ?? 'none',
          analysis.fix_minutes ?? 30,
+         analysis.cause, analysis.action,
         ]
       )
     }

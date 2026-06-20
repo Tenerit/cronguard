@@ -1,6 +1,5 @@
 import { db }     from '../../db'
 import { logger } from '../../config/logger'
-import { parseDiagnosis } from '../llm/diagnosis'
 
 // ─── Deduplication des alertes ────────────────────────────────────────────────
 // Règles :
@@ -168,7 +167,7 @@ export async function checkEscalations(): Promise<EscalationTarget[]> {
       c.escalation_after_min,
       (
         SELECT row_to_json(x) FROM (
-          SELECT diagnosis, severity FROM analyses
+          SELECT cause, action, category, severity FROM analyses
           WHERE monitor_id = m.id
           ORDER BY created_at DESC LIMIT 1
         ) x
@@ -195,12 +194,12 @@ export async function checkEscalations(): Promise<EscalationTarget[]> {
     monitor_id: string; client_id: string; job_name: string; env: string
     first_fired: Date; alert_count: number
     escalation_email?: string; escalation_webhook?: string
-    last_analysis?: { diagnosis?: string; severity?: string } | null
+    last_analysis?: { cause?: string; action?: string; category?: string; severity?: string } | null
   }) => {
-    let parsedAnalysis: ReturnType<typeof parseDiagnosis> | null = null
-    if (r.last_analysis?.diagnosis) {
-      parsedAnalysis = parseDiagnosis(r.last_analysis.diagnosis as unknown as string, 'dedup-lastanalysis')
-    }
+    const la = r.last_analysis
+    const parsedAnalysis = la?.cause
+      ? { cause: la.cause, action: la.action ?? '', category: la.category }
+      : null
     return {
       monitorId:          r.monitor_id,
       clientId:           r.client_id,

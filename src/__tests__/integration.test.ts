@@ -118,6 +118,8 @@ beforeAll(async () => {
       ping_id     TEXT REFERENCES pings(id) ON DELETE SET NULL,
       error_hash  TEXT NOT NULL,
       diagnosis   TEXT NOT NULL,
+      cause       TEXT,
+      action      TEXT,
       model_used  TEXT NOT NULL,
       alert_type  TEXT NOT NULL DEFAULT 'fail',
       severity    TEXT NOT NULL DEFAULT 'medium',

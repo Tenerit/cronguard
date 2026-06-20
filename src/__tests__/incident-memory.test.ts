@@ -16,7 +16,7 @@ const mEnabled = memoryEnabled as jest.Mock
 beforeEach(() => { jest.clearAllMocks() })
 
 function candidate(emb: number[], cause: string, action: string, category: string) {
-  return { diagnosis: JSON.stringify({ cause, action, category }), embedding: emb, logs: `log ${cause}` }
+  return { cause, action, category, embedding: emb, logs: `log ${cause}` }
 }
 
 describe('recallSimilar()', () => {

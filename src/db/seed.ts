@@ -329,8 +329,8 @@ async function seed() {
         INSERT INTO analyses
           (monitor_id, ping_id, error_hash, diagnosis, model_used, alert_type,
            severity, from_cache, category, prevention, confidence,
-           checks, data_impact, fix_minutes, tokens_in, tokens_out)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+           checks, data_impact, fix_minutes, tokens_in, tokens_out, cause, action)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
       `, [
         mon.id,
         fp.id,
@@ -353,6 +353,7 @@ async function seed() {
         scenario.fix_minutes,
         320 + Math.random() * 80 | 0,
         80 + Math.random() * 40 | 0,
+        scenario.cause, scenario.action,
       ])
     }
 
