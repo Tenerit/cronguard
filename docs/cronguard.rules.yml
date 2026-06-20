@@ -1,0 +1,64 @@
+# Règles d'alerting Prometheus prêtes à l'emploi pour CronGuard.
+#
+# ⚠️ DEAD-MAN : un outil de monitoring ne peut PAS détecter sa propre mort (si l'hôte
+# tombe, son auto-surveillance tombe avec). Ces règles DOIVENT tourner sur un Prometheus
+# EXTERNE qui scrape /metrics depuis une autre machine. La règle `CronGuardScrapeDown`
+# (basée sur `up` / `absent`) est le seul vrai dead-man : elle se déclenche quand le
+# scrape lui-même échoue (hôte mort, process down, réseau coupé).
+#
+# Installation : pointez votre Prometheus sur `GET <cronguard>/metrics` (job `cronguard`,
+# avec METRICS_TOKEN en bearer si défini), puis incluez ce fichier dans `rule_files:`.
+
+groups:
+  - name: cronguard
+    rules:
+      # — Dead-man réel : le scrape échoue → l'instance (ou l'hôte) est morte.
+      - alert: CronGuardScrapeDown
+        expr: up{job="cronguard"} == 0 or absent(up{job="cronguard"})
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "CronGuard injoignable (scrape /metrics échoué)"
+          description: "L'instance ne répond plus depuis 2 min. Le monitoring lui-même est aveugle."
+
+      # — L'API/DB répond mais se signale en panne.
+      - alert: CronGuardUnhealthy
+        expr: cronguard_up == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "CronGuard se déclare en panne (DB injoignable ?)"
+
+      # — Worker d'analyse mort : le heartbeat vieillit (sentinelle 999999 si Redis down).
+      - alert: CronGuardWorkerDead
+        expr: cronguard_worker_heartbeat_age_seconds > 600
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Worker d'analyse CronGuard mort/stallé"
+          description: "Heartbeat > 600s. Plus aucune analyse/alerte n'est traitée."
+
+      # — La queue d'analyse gonfle : worker stallé ou débit insuffisant.
+      - alert: CronGuardQueueStalling
+        expr: cronguard_analysis_queue_depth > 50
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Queue d'analyse CronGuard en croissance ({{ $value }} jobs en attente)"
+
+      # — Des pings échoués ne produisent aucune analyse (LLM muet / jobs perdus).
+      - alert: CronGuardAnalysisGaps
+        expr: cronguard_analysis_failures_24h > 0
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value }} ping(s) échoué(s) sans analyse IA produite (24h)"
+
+      # — Des alertes ne sont pas livrées (SMTP/webhook KO).
+      - alert: CronGuardNotificationsFailing
+        expr: increase(cronguard_notification_failures_total[15m]) > 0
+        for: 0m
+        labels: { severity: warning }
+        annotations:
+          summary: "Échecs de livraison de notification CronGuard (canal {{ $labels.channel }})"
+          description: "Des alertes ne partent pas — vérifiez SMTP/webhook."

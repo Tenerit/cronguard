@@ -40,7 +40,7 @@ describe('GET /metrics — ops gauges', () => {
       if (k === 'metrics:notify_fail:email')  return '3'
       return null
     })
-    mockRedis.llen.mockResolvedValue(4)
+    mockRedis.llen.mockImplementation(async (k: string) => (k.includes('dlq') ? 2 : 4))
 
     const res = fakeRes()
     await metricsHandler(req, res)
@@ -48,6 +48,7 @@ describe('GET /metrics — ops gauges', () => {
     const body = res._body as string
     expect(body).toContain('cronguard_analysis_failures_24h 7')
     expect(body).toContain('cronguard_analysis_queue_depth 4')
+    expect(body).toContain('cronguard_analysis_dlq_depth 2')
     expect(body).toMatch(/cronguard_worker_heartbeat_age_seconds (2[0-9]|3[0-9])/) // ~30s
     expect(body).toContain('cronguard_notification_failures_total{channel="email"} 3')
     expect(body).toContain('cronguard_notification_failures_total{channel="slack"} 0')

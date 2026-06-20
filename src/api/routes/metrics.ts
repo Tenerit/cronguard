@@ -50,8 +50,10 @@ export async function metricsHandler(req: Request, res: Response) {
     // gonfle → Prometheus alerte (sinon le monitoring s'arrête en silence).
     let heartbeatAge = 999999  // sentinelle « pas de heartbeat » → déclenche l'alerte
     let queueDepth   = 0
+    let dlqDepth     = 0
     try { const hb = await redis.get('worker:heartbeat'); if (hb) heartbeatAge = Math.max(0, Math.round((Date.now() - Number(hb)) / 1000)) } catch { /* redis down → sentinelle */ }
     try { queueDepth = await redis.llen('bull:llm-analysis:waiting') } catch { /* idem */ }
+    try { dlqDepth   = await redis.llen('cronguard:dlq:llm-analysis') } catch { /* idem */ }
 
     // Échecs de livraison de notification (counter cumulé, incrémenté par les workers).
     const notifyFail: Record<string, number> = { email: 0, slack: 0, webhook: 0 }
@@ -100,6 +102,10 @@ export async function metricsHandler(req: Request, res: Response) {
       '# HELP cronguard_analysis_queue_depth Jobs d\'analyse en attente (gonfle si le worker est mort)',
       '# TYPE cronguard_analysis_queue_depth gauge',
       line('cronguard_analysis_queue_depth', queueDepth),
+
+      '# HELP cronguard_analysis_dlq_depth Jobs d\'analyse échoués en dead-letter (inspection/replay)',
+      '# TYPE cronguard_analysis_dlq_depth gauge',
+      line('cronguard_analysis_dlq_depth', dlqDepth),
 
       '# HELP cronguard_worker_heartbeat_age_seconds Âge du dernier heartbeat worker (dead-man — alerter si > 600)',
       '# TYPE cronguard_worker_heartbeat_age_seconds gauge',

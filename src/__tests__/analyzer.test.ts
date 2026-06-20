@@ -82,6 +82,19 @@ describe('analyzeFailure()', () => {
       expect(mockedAxios.post).toHaveBeenCalledTimes(1)
     })
 
+    it('upgrades cached severity to high when the incident is now recurrent', async () => {
+      mockLLMResponse('{"cause":"Timeout","action":"Restart","severity":"medium"}')
+
+      const first = await analyzeFailure({ ...baseCtx, jobName: 'recur-job' })
+      expect(first!.severity).toBe('medium')
+
+      // même empreinte → cache hit, mais désormais récurrent → règle "récurrent ≥ high"
+      const second = await analyzeFailure({ ...baseCtx, jobName: 'recur-job', sameErrorBefore: true })
+      expect(second!.fromCache).toBe(true)
+      expect(second!.severity).toBe('high')
+      expect(mockedAxios.post).toHaveBeenCalledTimes(1)   // pas de 2e appel LLM
+    })
+
     it('sanitizes credentials in logs before sending to LLM', async () => {
       mockLLMResponse('{"cause":"Auth failed","action":"Check credentials","severity":"high"}')
 

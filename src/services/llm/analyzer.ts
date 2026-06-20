@@ -333,7 +333,17 @@ export async function analyzeFailure(
   const hash = hashError(ctx.jobName, clean)
 
   const cached = await fromCache(hash)
-  if (cached) return cached
+  if (cached) {
+    // Le cache est keyé sur l'empreinte d'erreur, pas sur la récurrence. Un incident
+    // désormais récurrent ne doit pas hériter de la sévérité (souvent "medium") du 1er
+    // passage : on applique la règle SYSTEM "récurrent → au moins high" au moment de
+    // servir. N'augmente jamais vers le bas → sûr.
+    const RANK: Record<Severity, number> = { low: 0, medium: 1, high: 2, critical: 3 }
+    if (ctx.sameErrorBefore && RANK[cached.severity] < RANK.high) {
+      return { ...cached, severity: 'high' }
+    }
+    return cached
+  }
 
   if (await isOpen()) { logger.warn('[LLM] Circuit open'); return null }
   if (!opts?.skipRateLimit && await isRateLimited(ctx.clientId)) {

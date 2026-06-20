@@ -96,6 +96,10 @@ export function fingerprintLogs(logs: string): string {
 // normalisée (et non le log brut) + le nom du job. sha256 tronqué = collisions
 // négligeables (l'ancien hash 32-bit en avait beaucoup).
 export function hashError(jobName: string, logs: string): string {
-  const fp = fingerprintLogs(logs).slice(0, 600)
+  // Empreinte COMPLÈTE (sha256 absorbe n'importe quelle longueur). Tronquer le
+  // fingerprint à 600c faisait collisionner deux erreurs distinctes partageant un
+  // long préfixe commun (en-tête, bannière) → analyse périmée servie depuis le cache.
+  // On ne tronque que la SORTIE du hash (24 hex = 96 bits).
+  const fp = fingerprintLogs(logs)
   return createHash('sha256').update(`${jobName}::${fp}`).digest('hex').slice(0, 24)
 }

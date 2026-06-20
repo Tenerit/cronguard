@@ -181,6 +181,8 @@ Optionally protected with `METRICS_TOKEN` (`Authorization: Bearer <token>` or `?
 - `cronguard_analysis_failures_24h` — failed pings with no AI analysis produced.
 - `cronguard_notification_failures_total{channel}` — alert deliveries that failed (bad SMTP, dead webhook) instead of dying in the logs.
 
+⚠️ **A monitoring tool cannot detect its own host dying.** If the box hosting CronGuard dies, its self-watch dies with it. **Scrape `/metrics` from an *external* Prometheus** so a failed scrape (`up == 0` / `absent`) is itself the dead-man. Ready-made alert rules: [`docs/cronguard.rules.yml`](docs/cronguard.rules.yml) (drop into your `rule_files:`).
+
 ---
 
 ## Authentication & SSO

@@ -428,9 +428,23 @@ async function main() {
   const pingWorker     = createPingWorker()
   const analysisWorker = createAnalysisWorker()
 
-  // Error handlers
+  // Error handlers + DLQ léger
   for (const w of [pingWorker, analysisWorker]) {
-    w.on('failed', (job, err) => logger.error('[Worker] Job failed', { id: job?.id, err: err.message }))
+    w.on('failed', async (job, err) => {
+      logger.error('[Worker] Job failed', { id: job?.id, err: err.message })
+      // Dead-letter : on conserve le payload du job échoué (inspection / replay manuel)
+      // au lieu de le perdre dans une ligne de log. Liste Redis cappée à 1000, exposée
+      // en /metrics via cronguard_analysis_dlq_depth → alertable.
+      try {
+        if (job) {
+          const key = `cronguard:dlq:${job.queueName}`
+          await getRedis().lpush(key, JSON.stringify({
+            at: Date.now(), id: job.id, name: job.name, reason: err.message, data: job.data,
+          }))
+          await getRedis().ltrim(key, 0, 999)
+        }
+      } catch { /* best-effort — ne jamais faire échouer le handler d'erreur */ }
+    })
     w.on('error',  (err)      => logger.error('[Worker] Worker error', { err: err.message }))
   }
 

@@ -168,6 +168,12 @@ describe('hashError', () => {
       .not.toBe(hashError(j, 'out of memory at 02:00:01'))
   })
 
+  it('does not collide two errors sharing a long (>600c) common prefix', () => {
+    const banner = 'starting backup pipeline step initialise connection pool warming\n'.repeat(12) // >600c
+    expect(hashError('job', banner + 'FATAL: disk full no space left'))
+      .not.toBe(hashError('job', banner + 'FATAL: out of memory cannot allocate'))
+  })
+
   it('fingerprintLogs neutralises volatile tokens', () => {
     const fp = fingerprintLogs('2026-06-14T02:00:01Z pid 12345 uuid 550e8400-e29b-41d4-a716-446655440000 at x.js:10:5 ip 10.0.0.1:5432 count 9847211')
     expect(fp).toContain('<ts>')
