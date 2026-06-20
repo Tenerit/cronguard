@@ -180,6 +180,7 @@ Optionally protected with `METRICS_TOKEN` (`Authorization: Bearer <token>` or `?
 - `cronguard_analysis_queue_depth` — balloons if the analysis worker stalls.
 - `cronguard_analysis_failures_24h` — failed pings with no AI analysis produced.
 - `cronguard_notification_failures_total{channel}` — alert deliveries that failed (bad SMTP, dead webhook) instead of dying in the logs.
+- `cronguard_analysis_dlq_depth` — analysis jobs that exhausted retries, parked in a dead-letter queue. Inspect with `GET /clients/dlq` and re-run them with `POST /clients/dlq/replay` (admin; scoped to your tenant).
 
 ⚠️ **A monitoring tool cannot detect its own host dying.** If the box hosting CronGuard dies, its self-watch dies with it. **Scrape `/metrics` from an *external* Prometheus** so a failed scrape (`up == 0` / `absent`) is itself the dead-man. Ready-made alert rules: [`docs/cronguard.rules.yml`](docs/cronguard.rules.yml) (drop into your `rule_files:`).
 

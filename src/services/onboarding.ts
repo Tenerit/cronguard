@@ -47,9 +47,11 @@ export async function sendOnboardingReminders(): Promise<void> {
       (Date.now() - new Date(client.created_at).getTime()) / (1000 * 60 * 60 * 24)
     )
 
+    // Email en anglais : la distribution/doc est EN et l'ICP est international ;
+    // pas de locale stockée par client → EN par défaut plutôt que FR-only.
     const subject = daysSince <= 3
-      ? 'Vous n\'avez pas encore configuré CronGuard'
-      : 'Dernière chance — votre compte CronGuard vous attend'
+      ? 'You haven\'t set up CronGuard yet'
+      : 'Last call — your CronGuard account is waiting'
 
     await mailer.sendMail({
       from:    `"CronGuard" <${FROM()}>`,
@@ -57,18 +59,18 @@ export async function sendOnboardingReminders(): Promise<void> {
       subject,
       html: `
       <div style="font-family:sans-serif;max-width:480px;padding:24px">
-        <h2 style="color:#22d3a0;font-size:18px">Prêt en 60 secondes</h2>
+        <h2 style="color:#22d3a0;font-size:18px">Ready in 60 seconds</h2>
         <p style="color:#64748b">
-          Vous avez créé votre compte il y a ${daysSince} jours mais n'avez pas encore
-          connecté de cron job. Voici comment démarrer :
+          You created your account ${daysSince} days ago but haven't connected a cron
+          job yet. Here's how to get started:
         </p>
 
         <div style="background:#0f1218;border-radius:8px;padding:16px;margin:16px 0;font-family:monospace;font-size:12px;color:#22d3a0">
-          # Créer votre premier monitor<br>
+          # Create your first monitor<br>
           curl -X POST ${APP_URL()}/monitors \\<br>
-          &nbsp;&nbsp;-H "X-API-Key: VOTRE_CLE" \\<br>
-          &nbsp;&nbsp;-d '{"name":"mon-backup","env":"production"}'<br><br>
-          # Ajouter à votre cron<br>
+          &nbsp;&nbsp;-H "X-API-Key: YOUR_KEY" \\<br>
+          &nbsp;&nbsp;-d '{"name":"my-backup","env":"production"}'<br><br>
+          # Add to your cron<br>
           ./backup.sh && curl ${APP_URL()}/ping/PING_KEY \\<br>
           &nbsp;&nbsp;-d '{"status":"success"}'
         </div>
@@ -76,12 +78,12 @@ export async function sendOnboardingReminders(): Promise<void> {
         <a href="${APP_URL()}/dashboard"
            style="background:#22d3a0;color:#000;padding:10px 20px;border-radius:6px;
                   text-decoration:none;font-weight:600;display:inline-block">
-          Ouvrir le dashboard →
+          Open the dashboard →
         </a>
 
         <p style="color:#94a3b8;font-size:12px;margin-top:24px">
           <a href="${APP_URL()}/unsubscribe?email=${encodeURIComponent(client.email)}" style="color:#94a3b8">
-            Se désabonner
+            Unsubscribe
           </a>
         </p>
       </div>`,

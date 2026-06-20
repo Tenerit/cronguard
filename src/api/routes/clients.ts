@@ -5,6 +5,8 @@ import { db }     from '../../db'
 import { asyncHandler } from '../middleware/async-handler'
 import { requireRole }  from '../middleware/ownership'
 import { audit }        from '../middleware/audit'
+import { getRedis }        from '../../config/redis'
+import { getAnalysisQueue } from '../../queue'
 
 export const clientsRouter = Router()
 
@@ -37,6 +39,41 @@ clientsRouter.get('/audit', requireRole('admin'), asyncHandler(async (req, res) 
     ORDER BY created_at DESC LIMIT $2
   `, [res.locals.clientId, limit])
   res.json(rows)
+}))
+
+// ─── DLQ — jobs d'analyse échoués (capturés par le worker) ────────────────────
+// GET : inspecter ceux de CE client. POST /replay : les ré-enfiler vers l'analyse.
+// Scopé par clientId → pas d'inspection ni de replay cross-tenant.
+const DLQ_KEY = 'cronguard:dlq:llm-analysis'
+interface DlqEntry { at: number; id: string; name: string; reason: string; data: { clientId?: string; jobName?: string } }
+
+function parseDlq(rows: string[]): DlqEntry[] {
+  return rows.map(s => { try { return JSON.parse(s) as DlqEntry } catch { return null } })
+             .filter((e): e is DlqEntry => e !== null)
+}
+
+clientsRouter.get('/dlq', requireRole('admin'), asyncHandler(async (_req, res) => {
+  const mine = parseDlq(await getRedis().lrange(DLQ_KEY, 0, 999))
+    .filter(e => e.data?.clientId === res.locals.clientId)
+    .map(e => ({ at: e.at, id: e.id, name: e.name, reason: e.reason, job: e.data?.jobName }))
+  res.json({ count: mine.length, entries: mine })
+}))
+
+clientsRouter.post('/dlq/replay', requireRole('admin'), asyncHandler(async (_req, res) => {
+  const rows  = await getRedis().lrange(DLQ_KEY, 0, 999)
+  const mine  = rows.filter(s => parseDlq([s])[0]?.data?.clientId === res.locals.clientId)
+  const others = rows.filter(s => !mine.includes(s))
+
+  for (const s of mine) {
+    const e = parseDlq([s])[0]
+    if (e) await getAnalysisQueue().add('analyze', e.data)
+  }
+  // Réécrit la liste sans les entrées rejouées (conserve celles des autres tenants).
+  await getRedis().del(DLQ_KEY)
+  if (others.length) await getRedis().rpush(DLQ_KEY, ...others)
+
+  audit(res, 'dlq_replay', 'analysis', undefined, { replayed: mine.length })
+  res.json({ replayed: mine.length })
 }))
 
 clientsRouter.get('/me', asyncHandler(async (req, res) => {

@@ -2,6 +2,11 @@ import request from 'supertest'
 import express from 'express'
 import { clientsRouter } from '../api/routes/clients'
 import { teamRouter }    from '../api/routes/team'
+import { getRedis }        from '../config/redis'
+import { getAnalysisQueue } from '../queue'
+
+jest.mock('../config/redis', () => ({ getRedis: jest.fn() }))
+jest.mock('../queue', () => ({ getAnalysisQueue: jest.fn() }))
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -57,6 +62,32 @@ describe('POST /team/members/:id/rotate-key', () => {
 
   it('is owner-only (member → 403)', async () => {
     const res = await request(app('member')).post('/team/members/m-1/rotate-key')
+    expect(res.status).toBe(403)
+  })
+})
+
+describe('POST /clients/dlq/replay', () => {
+  const mine  = JSON.stringify({ at: 1, id: 'j1', name: 'analyze', reason: 'boom', data: { clientId: 'cli-1', jobName: 'backup' } })
+  const other = JSON.stringify({ at: 2, id: 'j2', name: 'analyze', reason: 'boom', data: { clientId: 'cli-2', jobName: 'etl' } })
+
+  it('replays only this client\'s failed jobs and keeps other tenants\'', async () => {
+    const add = jest.fn(); const del = jest.fn(); const rpush = jest.fn()
+    ;(getRedis as jest.Mock).mockReturnValue({ lrange: jest.fn(async () => [mine, other]), del, rpush })
+    ;(getAnalysisQueue as jest.Mock).mockReturnValue({ add })
+
+    const res = await request(app('admin')).post('/clients/dlq/replay')
+    expect(res.status).toBe(200)
+    expect(res.body.replayed).toBe(1)
+    expect(add).toHaveBeenCalledTimes(1)
+    expect(add).toHaveBeenCalledWith('analyze', expect.objectContaining({ clientId: 'cli-1' }))
+    expect(del).toHaveBeenCalledWith('cronguard:dlq:llm-analysis')
+    expect(rpush).toHaveBeenCalledWith('cronguard:dlq:llm-analysis', other) // l'autre tenant conservé
+  })
+
+  it('is admin+ (member → 403)', async () => {
+    ;(getRedis as jest.Mock).mockReturnValue({ lrange: jest.fn(async () => []), del: jest.fn(), rpush: jest.fn() })
+    ;(getAnalysisQueue as jest.Mock).mockReturnValue({ add: jest.fn() })
+    const res = await request(app('member')).post('/clients/dlq/replay')
     expect(res.status).toBe(403)
   })
 })
