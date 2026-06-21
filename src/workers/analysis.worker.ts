@@ -7,6 +7,7 @@ import { db }            from '../db'
 import { logger }        from '../config/logger'
 import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
 import { recallSimilar } from '../services/llm/incident-memory'
+import { planHasAI }     from '../config/plans'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
 import { sendAlert, sendRecovery } from '../services/alerts'
 import { hashError, sanitizeLogs } from '../services/sanitizer'
@@ -311,7 +312,7 @@ function createAnalysisWorker() {
 
     // Guard : client et monitor doivent toujours exister
     const { rows: [client] } = await db.query(
-      `SELECT email, slack_webhook, webhook_url FROM clients WHERE id=$1`, [ctx.clientId]
+      `SELECT email, slack_webhook, webhook_url, plan FROM clients WHERE id=$1`, [ctx.clientId]
     )
     if (!client) { logger.warn('[Worker] Client supprimé, job ignoré', { clientId: ctx.clientId }); return }
 
@@ -320,22 +321,26 @@ function createAnalysisWorker() {
     )
     if (!monitor) { logger.warn('[Worker] Monitor supprimé, job ignoré', { monitorId: ctx.monitorId }); return }
 
-    const analysis = await analyzeFailure({
-      jobName:     ctx.jobName, clientId: ctx.clientId, monitorId: ctx.monitorId,
-      env:         ctx.env,
-      schedule:    ctx.schedule, lastSuccess: ctx.lastSuccess, notes: ctx.notes,
-      duration:    ctx.durationMs, avgDuration: ctx.avgDuration,
-      exitCode:    ctx.exitCode, records: ctx.records,
-      expectedMin: ctx.expectedMin, expectedMax: ctx.expectedMax,
-      logs:        ctx.logs,
-      failCount7d:        ctx.failCount7d,
-      successRate7d:      ctx.successRate7d,
-      durationTrend:      ctx.durationTrend,
-      sameErrorBefore:    ctx.sameErrorBefore,
-      correlatedFailures: ctx.correlatedFailures,
-      timePattern:        ctx.timePattern,
-      fewShotExamples:    ctx.fewShotExamples as import('../services/llm/analyzer').FewShotExample[] | undefined,
-    })
+    // L'analyse IA est réservée au plan Pro sur l'offre hébergée (planHasAI gère le
+    // self-hosted où tout le monde y a droit). Free → on alerte quand même, sans IA.
+    const analysis = planHasAI(client.plan)
+      ? await analyzeFailure({
+          jobName:     ctx.jobName, clientId: ctx.clientId, monitorId: ctx.monitorId,
+          env:         ctx.env,
+          schedule:    ctx.schedule, lastSuccess: ctx.lastSuccess, notes: ctx.notes,
+          duration:    ctx.durationMs, avgDuration: ctx.avgDuration,
+          exitCode:    ctx.exitCode, records: ctx.records,
+          expectedMin: ctx.expectedMin, expectedMax: ctx.expectedMax,
+          logs:        ctx.logs,
+          failCount7d:        ctx.failCount7d,
+          successRate7d:      ctx.successRate7d,
+          durationTrend:      ctx.durationTrend,
+          sameErrorBefore:    ctx.sameErrorBefore,
+          correlatedFailures: ctx.correlatedFailures,
+          timePattern:        ctx.timePattern,
+          fewShotExamples:    ctx.fewShotExamples as import('../services/llm/analyzer').FewShotExample[] | undefined,
+        })
+      : null
 
     if (analysis) {
       await db.query(

@@ -7,6 +7,7 @@ import { audit }                         from '../middleware/audit'
 import { acknowledgeAlert, snoozeAlert } from '../../services/alerts/dedup'
 import { sendAlert }                     from '../../services/alerts'
 import { rememberIncident }              from '../../services/llm/incident-memory'
+import { monitorLimitFor }               from '../../config/plans'
 
 export const monitorsRouter = Router()
 
@@ -63,13 +64,14 @@ monitorsRouter.get('/:id', ownsMonitor, asyncHandler(async (req, res) => {
 // ─── POST /monitors ───────────────────────────────────────────────────────────
 
 monitorsRouter.post('/', requireRole('admin'), asyncHandler(async (req, res) => {
-  if (res.locals.plan === 'free') {
+  const monitorLimit = monitorLimitFor(res.locals.plan)
+  if (Number.isFinite(monitorLimit)) {
     const { rows } = await db.query(
       `SELECT COUNT(*) FROM monitors WHERE client_id = $1 AND active = true`,
       [res.locals.clientId]
     )
-    if (parseInt(rows[0].count) >= 3)
-      return res.status(403).json({ error: 'Free plan: 3 monitors max. Upgrade to Pro.' })
+    if (parseInt(rows[0].count) >= monitorLimit)
+      return res.status(403).json({ error: `Free plan: ${monitorLimit} monitors max. Upgrade to Pro for unlimited.` })
   }
 
   const parsed = MonitorSchema.safeParse(req.body)

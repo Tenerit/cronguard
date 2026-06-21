@@ -5,8 +5,25 @@ import { logger }    from '../../config/logger'
 import { sendWelcomeEmail } from '../../services/email'
 import { asyncHandler }          from '../middleware/async-handler'
 import { requestKeyReset, consumeResetToken } from '../../services/auth'
+import { FREE_MONITOR_LIMIT } from '../../config/plans'
 
 const router = express.Router()
+
+// Repasse un client au plan free et désactive ses monitors au-delà de la limite
+// free (en gardant les plus anciens). Logique partagée par les événements Stripe
+// "paiement échoué (3×)" et "abonnement annulé" — une seule source de vérité.
+async function downgradeToFree(customerId: string): Promise<void> {
+  await db.query(`UPDATE clients SET plan = 'free' WHERE stripe_id = $1`, [customerId])
+  await db.query(`
+    UPDATE monitors SET active = false
+    WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
+      AND id NOT IN (
+        SELECT id FROM monitors
+        WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
+        ORDER BY created_at ASC LIMIT $2
+      )
+  `, [customerId, FREE_MONITOR_LIMIT])
+}
 
 // Lazy : Stripe instancié seulement si la clé est présente
 // Évite le crash au démarrage quand STRIPE_SECRET_KEY n'est pas configuré (dev)
@@ -98,24 +115,7 @@ router.post(
           const attempt    = invoice.attempt_count ?? 1
 
           if (attempt >= 3) {
-            // Après 3 échecs → passage au plan free
-            await db.query(`
-              UPDATE clients SET plan = 'free'
-              WHERE stripe_id = $1
-            `, [customerId])
-
-            // Désactive les monitors au-delà de la limite free (3)
-            await db.query(`
-              UPDATE monitors SET active = false
-              WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
-                AND id NOT IN (
-                  SELECT id FROM monitors
-                  WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
-                  ORDER BY created_at ASC
-                  LIMIT 3
-                )
-            `, [customerId])
-
+            await downgradeToFree(customerId)
             logger.warn('[Stripe] Client downgraded to free after 3 failed payments', { customerId })
           }
           break
@@ -126,21 +126,7 @@ router.post(
           const sub        = event.data.object as Stripe.Subscription
           const customerId = sub.customer as string
 
-          await db.query(`
-            UPDATE clients SET plan = 'free' WHERE stripe_id = $1
-          `, [customerId])
-
-          // Garde les 3 premiers monitors actifs, désactive le reste
-          await db.query(`
-            UPDATE monitors SET active = false
-            WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
-              AND id NOT IN (
-                SELECT id FROM monitors
-                WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
-                ORDER BY created_at ASC LIMIT 3
-              )
-          `, [customerId])
-
+          await downgradeToFree(customerId)
           logger.info('[Stripe] Subscription cancelled', { customerId })
           break
         }
