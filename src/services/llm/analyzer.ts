@@ -283,9 +283,17 @@ async function isRateLimited(clientId: string): Promise<boolean> {
   const globalLimit = parseInt(process.env.LLM_GLOBAL_RATE_LIMIT ?? '30')
   const clientLimit = parseInt(process.env.LLM_RATE_LIMIT_PER_CLIENT ?? '10')
 
+  // incr PUIS expire, les deux awaités : l'expire était fire-and-forget (dans un
+  // `.then` non retourné), donc son erreur était avalée et son exécution non garantie
+  // — une clé pouvait rester sans TTL et bloquer le rate-limit indéfiniment.
+  const bump = async (key: string, ttl: number): Promise<number> => {
+    const n = await redis.incr(key)
+    await redis.expire(key, ttl)
+    return n
+  }
   const [g, c] = await Promise.all([
-    redis.incr('llm:global:rpm').then((n: number) => { redis.expire('llm:global:rpm', 60); return n }),
-    redis.incr(`llm:client:${clientId}:rph`).then((n: number) => { redis.expire(`llm:client:${clientId}:rph`, 3600); return n }),
+    bump('llm:global:rpm', 60),
+    bump(`llm:client:${clientId}:rph`, 3600),
   ])
 
   if (g > globalLimit) { logger.warn('[LLM] Global rate limit', { g }); return true }

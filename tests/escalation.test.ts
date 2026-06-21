@@ -89,10 +89,11 @@ describe('checkEscalations', () => {
     expect(ids).toContain('mon-2')
   })
 
-  it('parses last_analysis JSON diagnosis when present', async () => {
-    const analysis = { cause: 'disk full', action: 'purge old backups', prevention: 'add rotation', category: 'resources' }
+  it('maps last_analysis typed columns when present', async () => {
+    // v16: the analysis comes back as typed columns (cause/action/category/severity),
+    // not a JSON `diagnosis` blob — the SQL builds the object directly.
     const row = makeRow({
-      last_analysis: { diagnosis: JSON.stringify(analysis), severity: 'critical' } as never,
+      last_analysis: { cause: 'disk full', action: 'purge old backups', category: 'resources', severity: 'critical' } as never,
     })
     mockQuery.mockResolvedValueOnce({ rows: [row] })
     mockQuery.mockResolvedValueOnce({ rows: [] })
@@ -103,15 +104,12 @@ describe('checkEscalations', () => {
     expect(result[0].lastAnalysis?.severity).toBe('critical')
   })
 
-  it('handles invalid JSON in last_analysis gracefully', async () => {
-    const row = makeRow({
-      last_analysis: { diagnosis: 'not-json', severity: 'high' } as never,
-    })
+  it('returns null lastAnalysis when there is no analysis', async () => {
+    const row = makeRow({ last_analysis: null })
     mockQuery.mockResolvedValueOnce({ rows: [row] })
     mockQuery.mockResolvedValueOnce({ rows: [] })
 
     const result = await checkEscalations()
-    // Should not throw, lastAnalysis is null when parse fails
     expect(result[0].lastAnalysis).toBeNull()
   })
 })

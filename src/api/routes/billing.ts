@@ -191,15 +191,13 @@ router.post('/register', express.json(), async (req, res) => {
       RETURNING id, api_key, plan
     `, [email])
 
-    // Si DO NOTHING (email existe déjà), retourne le compte existant
+    // Email déjà pris : NE JAMAIS renvoyer la clé API du compte existant ici —
+    // n'importe qui devinant l'email la récupérerait (account takeover). On répond
+    // sans la clé et on renvoie vers le flux de récupération par email.
     if (!client) {
-      const { rows: [existing] } = await db.query(
-        `SELECT id, api_key, plan FROM clients WHERE email = $1`, [email]
-      )
-      return res.status(200).json({
-        apiKey:   existing.api_key,
-        plan:     existing.plan,
-        message:  'Account already exists. Use your existing API key.',
+      return res.status(409).json({
+        error:   'Account already exists',
+        message: 'Use your existing API key, or POST /auth/reset-request to have it emailed to you.',
       })
     }
 
