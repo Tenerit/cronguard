@@ -5,6 +5,47 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ---
 
+## [1.5.0] — 2026-06 — Durcissement (revue multi-expert) & dette data
+
+### Sécurité
+- **`/auth/register`** ne renvoie plus la clé API d'un compte existant (fuite corrigée).
+- **Secret SSO** comparé en **temps constant** (`crypto.timingSafeEqual`) — anti timing-attack.
+- **XSS** : échappement du nom de monitor dans le badge SVG (servi sans auth) + des sorties LLM
+  (cause/action) et du nom de job dans les emails ; CSP `default-src 'none'` sur le badge.
+- **`/metrics` fermé par défaut** (401) sauf `METRICS_TOKEN` ou `METRICS_PUBLIC=true`.
+- **Garde clé Stripe** au démarrage (clé absente / mal formée / standard-live full-access).
+
+### Fiabilité
+- **Redis down = fail-loud** : l'enqueue du checker et du ping ne perd plus l'alerte en silence
+  (le tick survit, log bruyant) au lieu de crash-looper.
+- **Migrations sérialisées** entre les 4 process (`pg_advisory_xact_lock`).
+- **DLQ** : jobs d'analyse échoués capturés (Redis) + métrique `cronguard_analysis_dlq_depth` +
+  endpoints admin `GET /clients/dlq` / `POST /clients/dlq/replay` (scopés par tenant).
+- **Auto-surveillance** : `worker_heartbeat_age_seconds` (dead-man), `analysis_queue_depth`,
+  `analysis_failures_24h`, `notification_failures_total{channel}` + règles Prometheus prêtes
+  (`docs/cronguard.rules.yml`).
+- Garde anti-chevauchement du tick checker ; restart ne purge plus les jobs en attente.
+
+### Ajouté
+- **Mémoire d'incidents ON par défaut** (le moat) — dégradation gracieuse si modèle d'embed absent.
+- **Page `/pricing`** + plans centralisés (`plans.ts`), analyse IA réservée au plan Pro.
+- **Funnel** : README demo-first, ICP explicite, section pricing.
+- **Harness d'éval rigoureux** : N runs + moyenne ± écart-type, jeu `--set real` (vrais logs),
+  mode `LLM_RAW_LOGS` (isole modèle vs préprocessing regex), verdict vs seuil.
+- **CI** : job d'intégration PostgreSQL + Redis **réels** ; build/deploy **gated sur tag**.
+
+### Corrigé / Refacto
+- **`diagnosis` cause/action → colonnes typées** (migration v16, backfill) ; le blob JSON reste
+  écrit pour le dashboard ; `parseDiagnosis` (5 callsites) supprimé.
+- **Cache** : empreinte d'erreur **complète** (fin des collisions de préfixe à 600c) ; la sévérité
+  d'un incident **récurrent** n'est plus servie périmée (règle « récurrent → ≥ high » au cache-hit).
+- **Coût** : l'embed du recall ne tourne plus sur un futur cache-hit ; clé de cache et `error_hash`
+  persisté alignés.
+- Modèle setup `qwen3:8b` → `llama3.2:3b` ; rate-limit `/auth` + `/billing` ; email onboarding en EN.
+- **307 tests jest + 102 vitest**.
+
+---
+
 ## [1.4.0] — 2026-06 — Fiabilité, sécurité & coût token
 
 ### Ajouté
