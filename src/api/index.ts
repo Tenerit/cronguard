@@ -2,8 +2,18 @@ import 'dotenv/config'
 import { validateEnv } from '../config/env'
 validateEnv()
 
-if (!process.env.STRIPE_SECRET_KEY)
-  console.warn('⚠  STRIPE_SECRET_KEY absent — paiements désactivés')
+// Garde clé Stripe : surface au boot une clé absente / mal formée (guillemets, espaces,
+// préfixe invalide) ou une clé STANDARD live (accès total). Évite un échec d'auth opaque.
+{
+  const sk = process.env.STRIPE_SECRET_KEY
+  if (!sk) {
+    console.warn('⚠  STRIPE_SECRET_KEY absent — paiements désactivés')
+  } else if (!/^(rk|sk)_(test|live)_[A-Za-z0-9]+$/.test(sk)) {
+    console.warn('⚠  STRIPE_SECRET_KEY mal formée (attendu rk_/sk_…, SANS guillemets ni espaces) — Stripe rejettera l\'auth')
+  } else if (sk.startsWith('sk_live_')) {
+    console.warn('⚠  STRIPE_SECRET_KEY = clé STANDARD live (accès total) — préférez une clé RESTREINTE rk_live_ (moindre privilège)')
+  }
+}
 
 import express   from 'express'
 import cors      from 'cors'
