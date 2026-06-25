@@ -11,6 +11,11 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+# Jeton GITHUB_TOKEN en lecture seule par défaut (moindre privilège). Le job `build`
+# ré-octroie packages:write localement — la valeur par défaut du repo ne s'applique plus.
+permissions:
+  contents: read
+
 jobs:
   # ─── 1. Tests unitaires + lint (mocks : pg-mem, Redis, LLM) ───────────────────
   test:
