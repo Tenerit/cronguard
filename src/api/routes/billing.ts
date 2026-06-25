@@ -7,7 +7,15 @@ import { asyncHandler }          from '../middleware/async-handler'
 import { requestKeyReset, consumeResetToken } from '../../services/auth'
 import { FREE_MONITOR_LIMIT } from '../../config/plans'
 
-const router = express.Router()
+// Deux routers séparés :
+//  - webhookRouter  : POST /stripe — raw body, signature Stripe, AUCUNE auth (Stripe).
+//                     Monté UNIQUEMENT sous /webhooks.
+//  - accountRouter  : register / checkout / reset / trial — monté sous /auth + /billing
+//                     DERRIÈRE le rate-limiter strict.
+// Séparés exprès : un seul router monté aux trois préfixes exposait register/reset/checkout
+// sous /webhooks (sans rate-limit) → bypass du limiteur anti-abus. Ne plus fusionner.
+const webhookRouter = express.Router()
+const accountRouter = express.Router()
 
 // Repasse un client au plan free et désactive ses monitors au-delà de la limite
 // free (en gardant les plus anciens). Logique partagée par les événements Stripe
@@ -26,12 +34,14 @@ async function downgradeToFree(customerId: string): Promise<void> {
 }
 
 // Lazy : Stripe instancié seulement si la clé est présente
-// Évite le crash au démarrage quand STRIPE_SECRET_KEY n'est pas configuré (dev)
+// Évite le crash au démarrage quand STRIPE_SECRET_KEY n'est pas configuré (dev).
+// apiVersion épinglée : sans ça, une bascule de version par défaut côté compte Stripe
+// peut changer la forme des events et casser silencieusement le parsing.
 let _stripe: Stripe | null = null
 function getStripe(): Stripe {
   if (!_stripe) {
     if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not configured')
-    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
   }
   return _stripe
 }
@@ -40,7 +50,7 @@ function getStripe(): Stripe {
 // Reçoit les événements Stripe et gère l'onboarding automatique.
 // Chaque événement est idempotent (safe à rejouer).
 
-router.post(
+webhookRouter.post(
   '/stripe',
   express.raw({ type: 'application/json' }),  // Raw body requis pour la signature
   async (req, res) => {
@@ -65,34 +75,48 @@ router.post(
 
         // ── Nouveau client (checkout complété) ────────────────────────────────
         case 'checkout.session.completed': {
-          const session = event.data.object as Stripe.Checkout.Session
-          const email   = session.customer_details?.email
-          if (!email) break
-
-          const customerId    = session.customer as string
+          const session        = event.data.object as Stripe.Checkout.Session
+          const customerId     = session.customer as string
           const subscriptionId = session.subscription as string
+          const clientId       = session.metadata?.clientId
+          const email          = session.customer_details?.email
 
-          // Crée ou met à jour le client
-          await db.query(`
-            INSERT INTO clients (email, stripe_id, plan)
-            VALUES ($1, $2, 'pro')
-            ON CONFLICT (email)
-            DO UPDATE SET stripe_id = $2, plan = 'pro'
-          `, [email, customerId])
+          // Liaison de compte : la metadata clientId (posée à la création du Checkout
+          // par /billing/checkout) FAIT FOI — l'email saisi dans Stripe peut différer
+          // de celui du compte CronGuard, ce qui créerait un compte pro orphelin.
+          // trial_ends_at remis à NULL : sinon expireTrails downgrade ensuite le payeur.
+          // Fallback email : Checkout créés hors app (dashboard Stripe / payment link).
+          let client: { id: string; email: string; api_key: string } | undefined
+          if (clientId) {
+            const { rows } = await db.query(`
+              UPDATE clients
+              SET stripe_id = $2, plan = 'pro', trial_ends_at = NULL
+              WHERE id = $1
+              RETURNING id, email, api_key
+            `, [clientId, customerId])
+            client = rows[0]
+          }
+          if (!client && email) {
+            const { rows } = await db.query(`
+              INSERT INTO clients (email, stripe_id, plan)
+              VALUES ($1, $2, 'pro')
+              ON CONFLICT (email)
+              DO UPDATE SET stripe_id = $2, plan = 'pro', trial_ends_at = NULL
+              RETURNING id, email, api_key
+            `, [email, customerId])
+            client = rows[0]
+          }
+          if (!client) break
 
           // Persiste l'abonnement
           await db.query(`
             INSERT INTO subscriptions (client_id, stripe_subscription_id, status)
-            SELECT id, $2, 'active' FROM clients WHERE email = $1
+            VALUES ($1, $2, 'active')
             ON CONFLICT (stripe_subscription_id) DO UPDATE SET status = 'active'
-          `, [email, subscriptionId])
+          `, [client.id, subscriptionId])
 
-          const { rows: [newClient] } = await db.query(
-            `SELECT api_key FROM clients WHERE email = $1`,
-            [email]
-          )
-          await sendWelcomeEmail(email, newClient?.api_key ?? '—')
-          logger.info('[Stripe] New pro client activated', { email })
+          await sendWelcomeEmail(client.email, client.api_key ?? '—')
+          logger.info('[Stripe] New pro client activated', { email: client.email })
           break
         }
 
@@ -163,7 +187,7 @@ router.post(
 // ─── POST /auth/register ──────────────────────────────────────────────────────
 // Inscription plan free → crée le compte, retourne la clé API
 
-router.post('/register', express.json(), async (req, res) => {
+accountRouter.post('/register', express.json(), async (req, res) => {
   const { email } = req.body ?? {}
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Valid email required' })
@@ -203,7 +227,7 @@ router.post('/register', express.json(), async (req, res) => {
 // ─── POST /billing/checkout ───────────────────────────────────────────────────
 // Génère un lien Stripe Checkout pour passer au plan Pro
 
-router.post('/checkout', express.json(), async (req, res) => {
+accountRouter.post('/checkout', express.json(), async (req, res) => {
   const apiKey = req.headers['x-api-key'] as string
   if (!apiKey) return res.status(401).json({ error: 'Missing API key' })
 
@@ -235,12 +259,9 @@ router.post('/checkout', express.json(), async (req, res) => {
   }
 })
 
-export default router
-
-
 // ─── POST /auth/reset-request — demande de récupération de clé ────────────────
 
-router.post('/reset-request', express.json(), asyncHandler(async (req, res) => {
+accountRouter.post('/reset-request', express.json(), asyncHandler(async (req, res) => {
   const { email } = req.body ?? {}
   if (!email) return res.status(400).json({ error: 'Email required' })
 
@@ -252,7 +273,7 @@ router.post('/reset-request', express.json(), asyncHandler(async (req, res) => {
 
 // ─── POST /auth/reset — consomme le token et retourne la clé ─────────────────
 
-router.post('/reset', express.json(), asyncHandler(async (req, res) => {
+accountRouter.post('/reset', express.json(), asyncHandler(async (req, res) => {
   const { token } = req.body ?? {}
   if (!token) return res.status(400).json({ error: 'Token required' })
 
@@ -264,7 +285,7 @@ router.post('/reset', express.json(), asyncHandler(async (req, res) => {
 
 // ─── POST /auth/start-trial — active le trial Pro 14 jours ───────────────────
 
-router.post('/start-trial', express.json(), asyncHandler(async (req, res) => {
+accountRouter.post('/start-trial', express.json(), asyncHandler(async (req, res) => {
   const apiKey = req.headers['x-api-key'] as string
   if (!apiKey) return res.status(401).json({ error: 'Missing API key' })
 
@@ -283,3 +304,5 @@ router.post('/start-trial', express.json(), asyncHandler(async (req, res) => {
   logger.info('[Trial] Started', { clientId: client.id, trialEnd })
   res.json({ plan: 'pro', trialEndsAt: trialEnd, message: '14-day Pro trial started!' })
 }))
+
+export { webhookRouter, accountRouter }

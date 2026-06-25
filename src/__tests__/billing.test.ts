@@ -72,14 +72,17 @@ process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test'
 process.env.STRIPE_PRO_PRICE_ID   = 'price_test'
 process.env.APP_URL               = 'http://localhost:3000'
 
-import billingRouter from '../api/routes/billing'
+import { webhookRouter, accountRouter } from '../api/routes/billing'
 
 function buildApp() {
   const app = express()
-  app.use('/webhooks', billingRouter)
+  // Câblage identique à la prod : webhookRouter (raw body, sans rate-limit) sous
+  // /webhooks ; accountRouter sous /auth + /billing. Les routes compte NE sont PAS
+  // exposées sous /webhooks (anti-bypass du rate-limiter).
+  app.use('/webhooks', webhookRouter)
   app.use(express.json())
-  app.use('/auth',    billingRouter)
-  app.use('/billing', billingRouter)
+  app.use('/auth',    accountRouter)
+  app.use('/billing', accountRouter)
   return app
 }
 
@@ -298,6 +301,18 @@ describe('POST /auth/start-trial — cas supplémentaires', () => {
     const res = await request(app).post('/auth/start-trial')
     expect(res.status).toBe(401)
   })
+})
+
+// ─── Régression : routes compte PAS exposées sous /webhooks ───────────────────
+// /webhooks n'a pas de rate-limiter ; n'y monter que le webhook Stripe, jamais les
+// routes compte (sinon bypass du limiteur anti-abus register/reset/checkout).
+describe('anti-bypass rate-limit : /webhooks n\'expose que /stripe', () => {
+  for (const path of ['/webhooks/register', '/webhooks/reset-request', '/webhooks/checkout', '/webhooks/start-trial']) {
+    it(`404 sur POST ${path}`, async () => {
+      const res = await request(app).post(path).send({ email: 'x@y.com' })
+      expect(res.status).toBe(404)
+    })
+  }
 })
 
 // ─── Tests supplémentaires : reset, trial, cas limites ────────────────────────

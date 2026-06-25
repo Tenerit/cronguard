@@ -13,6 +13,11 @@ validateEnv()
   } else if (sk.startsWith('sk_live_')) {
     console.warn('⚠  STRIPE_SECRET_KEY = clé STANDARD live (accès total) — préférez une clé RESTREINTE rk_live_ (moindre privilège)')
   }
+  // Clé présente sans secret webhook = TOUS les webhooks Stripe échouent (signature) :
+  // le client paie mais n'est jamais upgradé. Échec silencieux → on le surface au boot.
+  if (sk && !process.env.STRIPE_WEBHOOK_SECRET) {
+    console.warn('⚠  STRIPE_SECRET_KEY présente mais STRIPE_WEBHOOK_SECRET absent — les webhooks Stripe échoueront (400), aucun upgrade ne sera traité')
+  }
 }
 
 import express   from 'express'
@@ -33,7 +38,7 @@ import { dashboardRouter } from './routes/dashboard'
 import { clientsRouter }       from './routes/clients'
 import { maintenanceRouter }   from './routes/maintenance'
 import { teamRouter }          from './routes/team'
-import billingRouter           from './routes/billing'
+import { webhookRouter, accountRouter } from './routes/billing'
 import { PLANS, Plan }         from '../config/plans'
 
 // Vérifie la connexion DB au démarrage
@@ -79,8 +84,9 @@ const authLimiter = rateLimit({
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
-// Stripe webhook : raw body AVANT express.json()
-app.use('/webhooks', billingRouter)
+// Stripe webhook : raw body AVANT express.json(). webhookRouter ne contient QUE
+// /stripe (pas de routes compte) → rien d'exposé ici sans rate-limit.
+app.use('/webhooks', webhookRouter)
 
 app.use(express.json({ limit: '64kb' }))
 
@@ -96,8 +102,8 @@ app.get('/auth/whoami', apiLimiter, requireApiKey, (_req, res) => {
   })
 })
 
-app.use('/auth',     authLimiter, billingRouter)
-app.use('/billing',  authLimiter, billingRouter)
+app.use('/auth',     authLimiter, accountRouter)
+app.use('/billing',  authLimiter, accountRouter)
 app.use('/ping',     pingRouter)
 
 // ─── Pages HTML (avant les routers API qui demandent auth) ────────────────────

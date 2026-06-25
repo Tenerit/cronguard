@@ -231,9 +231,13 @@ tick()
 
 // Vérifie et expire les trials Pro toutes les heures
 async function expireTrials() {
+  // stripe_id IS NULL : ne JAMAIS downgrader un client qui a un abonnement Stripe.
+  // Un client passé du trial à un abonnement payant garde trial_ends_at — sans ce
+  // garde-fou, son ancienne date de trial le repasserait en free alors qu'il paie.
   const { rowCount } = await db.query(`
     UPDATE clients SET plan = 'free'
     WHERE plan = 'pro'
+      AND stripe_id IS NULL
       AND trial_ends_at IS NOT NULL
       AND trial_ends_at < NOW()
   `)
