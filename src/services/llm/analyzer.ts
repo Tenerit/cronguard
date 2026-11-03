@@ -15,6 +15,26 @@ export type Severity   = 'low' | 'medium' | 'high' | 'critical'
 export type Confidence = 'high' | 'medium' | 'low'
 export type DataImpact = 'none' | 'possible' | 'confirmed'
 
+// Schéma pour LLM_JSON_MODE=json_schema : contraint le décodage aux enums exacts (le modèle
+// ne PEUT PAS sortir une catégorie/sévérité hors-liste). Ordre des champs = ordre de génération
+// en décodage contraint → raisonnement (cause/action/…) AVANT le verdict (category/severity).
+const ANALYSIS_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['cause', 'action', 'prevention', 'checks', 'severity', 'category', 'confidence', 'data_impact', 'fix_minutes'],
+  properties: {
+    cause:       { type: 'string' },
+    action:      { type: 'string' },
+    prevention:  { type: 'string' },
+    checks:      { type: 'array', items: { type: 'string' } },
+    severity:    { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+    category:    { type: 'string', enum: ['database', 'network', 'timeout', 'resources', 'dependency', 'code', 'data', 'unknown'] },
+    confidence:  { type: 'string', enum: ['high', 'medium', 'low'] },
+    data_impact: { type: 'string', enum: ['none', 'possible', 'confirmed'] },
+    fix_minutes: { type: 'number' },
+  },
+} as const
+
 export interface FewShotExample {
   logs:     string
   cause:    string
@@ -385,17 +405,20 @@ export async function analyzeFailure(
     : `${process.env.LLM_BASE_URL}/chat/completions`
   // Sortie structurée : demande au provider de contraindre le décodage en JSON valide
   // (Ollama natif, OpenAI, Groq, Together…). Durcit la garantie « 100% parsable » et
-  // dé-risque un changement de modèle (le prochain levier). Anthropic /messages ne connaît
-  // pas response_format → branche inchangée (prompt + parse). LLM_JSON_MODE=off pour un
-  // provider OpenAI-compatible qui rejette le champ (vieux vLLM…).
-  // shortcut: mode json_object seul ; contraindre les enums (category/severity) via
-  //   json_schema est le pas suivant mais exige une matrice providers + une mesure éval.
-  const jsonMode = process.env.LLM_JSON_MODE !== 'off'
+  // dé-risque un changement de modèle. Anthropic /messages ne connaît pas response_format →
+  // branche inchangée (prompt + parse). LLM_JSON_MODE : 'json_object' (défaut, large support) ·
+  // 'json_schema' (contraint AUSSI les enums category/severity/… → impossible de sortir une
+  // étiquette hors-liste ; support plus étroit, à mesurer) · 'off' (provider qui rejette le champ).
+  const jsonMode = process.env.LLM_JSON_MODE ?? 'json_object'
+  const responseFormat =
+    jsonMode === 'off'         ? undefined
+    : jsonMode === 'json_schema' ? { type: 'json_schema', json_schema: { name: 'cronguard_analysis', strict: true, schema: ANALYSIS_SCHEMA } }
+    :                              { type: 'json_object' }
   const body = anthropic
     ? { model, max_tokens: maxTokens, temperature: 0.15, system: SYSTEM,
         messages: [{ role: 'user', content: userPrompt }] }
     : { model, max_tokens: maxTokens, temperature: 0.15,
-        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        ...(responseFormat ? { response_format: responseFormat } : {}),
         messages: [
           { role: 'system', content: SYSTEM },
           { role: 'user',   content: userPrompt },

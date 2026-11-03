@@ -243,6 +243,16 @@ describe('analyzeFailure()', () => {
       expect(body.response_format).toBeUndefined()
       delete process.env.LLM_JSON_MODE
     })
+
+    it('sends an enum-constrained json_schema when LLM_JSON_MODE=json_schema', async () => {
+      process.env.LLM_JSON_MODE = 'json_schema'
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      await analyzeFailure({ ...baseCtx, jobName: 'json-schema' })
+      const body = mockedAxios.post.mock.calls[0][1] as any
+      expect(body.response_format.type).toBe('json_schema')
+      expect(body.response_format.json_schema.schema.properties.category.enum).toContain('database')
+      delete process.env.LLM_JSON_MODE
+    })
   })
 
   describe('Circuit breaker integration', () => {

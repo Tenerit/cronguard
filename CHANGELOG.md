@@ -19,9 +19,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
 ### Ajouté
-- **Sortie structurée LLM** (`LLM_JSON_MODE`, ON par défaut) — `response_format: json_object` sur le
-  chemin OpenAI-compatible (Ollama natif, OpenAI, Groq…) : décodage contraint en JSON valide, durcit la
-  garantie « 100% parsable » et dé-risque un changement de modèle. `off` pour un provider qui le rejette.
+- **Sortie structurée LLM** (`LLM_JSON_MODE`, défaut `json_object`) — `response_format` sur le chemin
+  OpenAI-compatible (Ollama natif, OpenAI, Groq…) : décodage contraint en JSON valide, durcit la garantie
+  « 100% parsable » et dé-risque un changement de modèle. `json_schema` contraint en plus les enums
+  (category/severity/… → aucune étiquette hors-liste ; ~2× plus lent sur CPU, à activer après mesure).
+  `off` pour un provider qui rejette le champ.
 - **Red-team injection de prompt** — `npm run eval:redteam` (promptfoo) : envoie des logs piégés à
   `analyzeFailure` et vérifie que le modèle n'exécute jamais les instructions injectées.
 - **Éval multi-modèles sans clobber** — un run sur un `LLM_MODEL` non-baseline (ou `--out <path>`)
