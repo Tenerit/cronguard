@@ -21,6 +21,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   garantie « 100% parsable » et dé-risque un changement de modèle. `off` pour un provider qui le rejette.
 - **Red-team injection de prompt** — `npm run eval:redteam` (promptfoo) : envoie des logs piégés à
   `analyzeFailure` et vérifie que le modèle n'exécute jamais les instructions injectées.
+- **Éval multi-modèles sans clobber** — un run sur un `LLM_MODEL` non-baseline (ou `--out <path>`)
+  écrit `eval/results.<modèle>.json` au lieu d'écraser le `results.json` canonique (qui porte le claim
+  public). Corrige le piège qui avait fait écraser les chiffres par un run jetable. Recette documentée.
 - **Mineur de templates de logs (façon Drain)** — `src/services/llm/drain.ts`, zéro dépendance,
   ON par défaut (`LLM_TEMPLATE_MINING`, false pour retomber sur le dédup exact). Regroupe les
   VARIANTES d'un même motif (« refused db1 »/« db2 » → `[×2] refused db1 ») là où le dédup exact

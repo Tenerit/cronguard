@@ -218,8 +218,9 @@ npx tsx eval/run.ts --runs 5                       # 5 runs on the lab set → m
 cp eval/real-cases.example.ts eval/real-cases.ts   # paste ~20 of your real incident logs + expected labels
 npx tsx eval/run.ts --set real --runs 5            # the honest score; exits non-zero if category < 75%
 LLM_RAW_LOGS=true npx tsx eval/run.ts --runs 5      # model alone, no regex preprocessing (isolates each contribution)
+LLM_MODEL=qwen3.5:4b npx tsx eval/run.ts --runs 5   # try another model → writes eval/results.qwen3.5_4b.json (canonical results.json untouched)
 ```
-Don't trust our headline — point `LLM_API_KEY` at a stronger model, or run `--set real` and judge on your own data.
+Only the default model writes the canonical `eval/results.json`; any other `LLM_MODEL` lands in `eval/results.<model>.json` (or pass `--out <path>`), so a comparison run never clobbers the published numbers. Don't trust our headline — point `LLM_API_KEY` at a stronger model, or run `--set real` and judge on your own data.
 
 For higher quality, point to any **OpenAI-compatible** endpoint —
 setting `LLM_API_KEY` enables auth and switches to cloud mode:

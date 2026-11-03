@@ -32,3 +32,6 @@ node_modules
 
 # Captures d'écran UI déposées à la racine (v39_*.png, etc.) — pas des assets
 /*.png
+
+# Résultats d'éval de comparaison (modèle non-baseline) — seul results.json est suivi
+eval/results.*.json

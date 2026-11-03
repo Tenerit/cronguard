@@ -117,8 +117,10 @@ async function main() {
   let cases   = await loadCases(set)
   if (limit > 0) cases = cases.slice(0, limit)
 
+  const BASELINE_MODEL = 'llama3.2:3b'   // le modèle produit (§6) ; porte le claim public
+  const model   = process.env.LLM_MODEL || BASELINE_MODEL
   const rawMode = process.env.LLM_RAW_LOGS === 'true'
-  console.log(`\nEval — set:${set} · ${cases.length} cas · ${runs} run(s) · modèle:${process.env.LLM_MODEL || 'llama3.2:3b'}` +
+  console.log(`\nEval — set:${set} · ${cases.length} cas · ${runs} run(s) · modèle:${model}` +
     `${rawMode ? ' · RAW (sans regex)' : ''}\n`)
 
   const scores: RunScore[] = []
@@ -154,7 +156,7 @@ async function main() {
   const out = {
     date: new Date().toISOString(),
     set, runs, raw_mode: rawMode,
-    model: process.env.LLM_MODEL || 'llama3.2:3b',
+    model,
     cases: cases.length,
     threshold: THRESHOLD,
     passes_threshold: pass,
@@ -165,8 +167,16 @@ async function main() {
     },
     per_run: scores,
   }
-  fs.writeFileSync(path.join(__dirname, 'results.json'), JSON.stringify(out, null, 2))
-  console.log(`  → eval/results.json\n`)
+  // Un run sur un modèle non-baseline (comparaison) n'écrase PAS le results.json canonique
+  // qui porte le claim commercial : il atterrit dans results.<modèle>.json, sauf --out explicite.
+  const explicitOut = argVal('--out')
+  const safeName    = `results.${model.replace(/[^a-z0-9._-]+/gi, '_')}.json`
+  const outPath = explicitOut
+    ? (path.isAbsolute(explicitOut) ? explicitOut : path.resolve(process.cwd(), explicitOut))
+    : path.join(__dirname, model === BASELINE_MODEL ? 'results.json' : safeName)
+  fs.writeFileSync(outPath, JSON.stringify(out, null, 2))
+  const canonical = outPath === path.join(__dirname, 'results.json')
+  console.log(`  → ${path.relative(process.cwd(), outPath)}${canonical ? '' : '  (comparaison — results.json canonique préservé)'}\n`)
 
   await redis.quit()
   process.exit(pass ? 0 : 1)
