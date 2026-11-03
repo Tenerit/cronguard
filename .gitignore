@@ -29,3 +29,6 @@ eval/real-cases.ts
 _*.ts
 _*.json
 node_modules
+
+# Captures d'écran UI déposées à la racine (v39_*.png, etc.) — pas des assets
+/*.png
