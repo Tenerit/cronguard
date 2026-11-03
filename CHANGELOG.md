@@ -5,6 +5,20 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ---
 
+## [Unreleased]
+
+### Ajouté
+- **Mineur de templates de logs (façon Drain)** — `src/services/llm/drain.ts`, zéro dépendance,
+  ON par défaut (`LLM_TEMPLATE_MINING`, false pour retomber sur le dédup exact). Regroupe les
+  VARIANTES d'un même motif (« refused db1 »/« db2 » → `[×2] refused db1 ») là où le dédup exact
+  ne collapse que les lignes identiques → moins de tokens envoyés au LLM, et un compteur `×N` qui
+  reflète la fréquence réelle (systémique vs isolé) tout en préservant un sample concret. 7 tests.
+- **Éval : colonnes tokens** — `eval/run.ts` rapporte `avg_tokens_in`/`avg_tokens_out` (usage réel
+  du provider) + latence agrégée et le flag `template_mining`, pour mesurer le gain mining ON vs OFF
+  à jeu de cas identique.
+
+---
+
 ## [1.5.0] — 2026-06 — Durcissement (revue multi-expert) & dette data
 
 ### Sécurité

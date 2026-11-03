@@ -3,6 +3,7 @@ import { logger }     from '../../config/logger'
 import { redis }      from '../../config/redis'
 import { sanitizeLogs, hashError } from '../sanitizer'
 import { isOpen, onSuccess, onFailure } from './circuit-breaker'
+import { mineTemplates } from './drain'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -92,14 +93,23 @@ function extractLogSignals(raw: string): {
   const HIGH_VALUE = /error|exception|fail|fatal|critical|traceback|panic|killed|oom|denied|refused|timeout|deadlock|duplicate|constraint|violation|cannot|could not|unable|not found|permission|unauthorized|segfault|abort/i
   const NOISE      = /^(debug|trace|\s*at\s+[a-z]|info:?\s+ok|\d{4}-\d{2}-\d{2}.*\[info\])/i
 
-  // Dédup : un job qui crache 100× « connection refused » gaspille des tokens sans
-  // ajouter de signal. On garde la 1re occurrence de chaque ligne (ordre préservé).
-  const seen = new Set<string>()
-  const errorLines = rawMode ? [] : lines.filter(l => {
-    if (!HIGH_VALUE.test(l) || NOISE.test(l)) return false
-    if (seen.has(l)) return false
-    seen.add(l); return true
-  })
+  const candidates = rawMode ? [] : lines.filter(l => HIGH_VALUE.test(l) && !NOISE.test(l))
+
+  // Regroupement par template (façon Drain, défaut ON — LLM_TEMPLATE_MINING=false pour
+  // isoler sa contribution à l'éval, comme LLM_RAW_LOGS). Collapse les VARIANTES d'un
+  // même motif (« refused db1 »/« refused db2 » → 1 ligne « [×2] refused db1 ») là où le
+  // dédup exact ne collapse que les lignes identiques → moins de tokens, compteur =
+  // fréquence réelle (systémique vs isolé). On préserve un sample concret (le SYSTEM
+  // demande de citer les valeurs exactes). Fallback = dédup exact si mining désactivé.
+  let errorLines: string[]
+  if (candidates.length === 0) {
+    errorLines = []
+  } else if (process.env.LLM_TEMPLATE_MINING !== 'false') {
+    errorLines = mineTemplates(candidates).map(t => (t.count > 1 ? `[×${t.count}] ${t.sample}` : t.sample))
+  } else {
+    const seen = new Set<string>()
+    errorLines = candidates.filter(l => (seen.has(l) ? false : (seen.add(l), true)))
+  }
   const stackLines   = lines.filter(l => /^\s+at\s|Traceback|File ".+", line/i.test(l))
   const hasStack     = stackLines.length > 0
 
