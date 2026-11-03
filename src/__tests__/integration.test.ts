@@ -7,7 +7,8 @@
  *  - Output validation
  *  - Rate limiting
  */
-import { newDb } from 'pg-mem'
+import { newDb, DataType } from 'pg-mem'
+import { randomUUID } from 'node:crypto'
 import { Pool }      from 'pg'
 import request       from 'supertest'
 import express       from 'express'
@@ -50,6 +51,11 @@ beforeAll(async () => {
 
   // pg-mem : PostgreSQL en mémoire
   const mem  = newDb()
+  // pg-mem n'implémente pas gen_random_uuid() : on l'enregistre pour que les tables à
+  // `DEFAULT gen_random_uuid()` (audit_logs) insèrent comme sur le vrai Postgres (cf. §2).
+  mem.public.registerFunction({
+    name: 'gen_random_uuid', returns: DataType.text, impure: true, implementation: () => randomUUID(),
+  })
 
   const adapter = mem.adapters.createPg()
   pgPool = new adapter.Pool() as unknown as Pool
@@ -185,7 +191,7 @@ beforeAll(async () => {
 
   await pgPool.query(`
     CREATE TABLE audit_logs (
-      id          TEXT PRIMARY KEY,
+      id          TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
       client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,
       actor       TEXT,
       action      TEXT NOT NULL,
@@ -352,6 +358,13 @@ describe('Monitors CRUD — base de données réelle', () => {
       `SELECT name FROM monitors WHERE id = $1`, [monitor.id]
     )
     expect(rows[0].name).toBe('nom-mis-a-jour')
+
+    // La mutation doit laisser une trace d'audit (buy-driver compliance §11)
+    const { rows: audit } = await pgPool.query(
+      `SELECT action, resource_id FROM audit_logs WHERE resource_id = $1 AND action = 'monitor.updated'`,
+      [monitor.id]
+    )
+    expect(audit).toHaveLength(1)
   })
 
   it('DELETE /monitors/:id supprime en DB', async () => {
