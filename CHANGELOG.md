@@ -22,7 +22,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - **Sortie structurée LLM** (`LLM_JSON_MODE`, défaut `json_object`) — `response_format` sur le chemin
   OpenAI-compatible (Ollama natif, OpenAI, Groq…) : décodage contraint en JSON valide, durcit la garantie
   « 100% parsable » et dé-risque un changement de modèle. `json_schema` contraint en plus les enums
-  (category/severity/… → aucune étiquette hors-liste ; ~2× plus lent sur CPU, à activer après mesure).
+  (category/severity/… → aucune étiquette hors-liste) ; latence ≈ identique à chaud (mesuré ~20s, le
+  pic initial = chargement du modèle), reste opt-in car support provider plus étroit.
   `off` pour un provider qui rejette le champ.
 - **Red-team injection de prompt** — `npm run eval:redteam` (promptfoo) : envoie des logs piégés à
   `analyzeFailure` et vérifie que le modèle n'exécute jamais les instructions injectées.
@@ -45,6 +46,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   répétées. Le levier ne paie que sur de **vrais logs à spam répétitif** ; pas de chiffre labo à vendre.
 - **qwen3:4b écarté** : en mode *thinking*, ne rend aucun JSON dans `content` via `response_format`
   (réponses vides) → **llama3.2:3b confirmé** empiriquement (cf. §6).
+- **json_schema mesuré** (1 run, 26 cas) : cat 80,8% · sév 50% · **100% parsable** · **~20s (≈ json_object,
+  pas plus lent)** · tok_in 970. Pas de différence décisive de précision sur labo (1 run bruité, dans la
+  bande) → la contrainte enum = robustesse, pas un levier précision ; **défaut `json_object` conservé**
+  (support provider universel).
 
 ---
 
