@@ -11,6 +11,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - **`npm audit fix`** : axios (bypass SSRF `NO_PROXY`, ReDoS, prototype-pollution), body-parser,
   follow-redirects, qs — advisories prod critical + high purgées (axios = client des webhooks sortants).
 - **zod `^3` → `^4.6.7`** (GHSA-mrhx-c7xc-m3w5 : DoS par épuisement mémoire à la frontière de validation).
+- **nodemailer `9` → `10.3.1`** (GHSA-6vj9-mwq6-2f5v : cache DNS process-global réutilisant le
+  `servername` TLS entre transports → fuite de creds SMTP cross-tenant) + `npm audit fix` du reste
+  → **0 vulnérabilité en production**.
 - **PATCH durci** : zod 4 réinjecte les `.default()` sur `.partial()` ; un PATCH sans champ légitime
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.

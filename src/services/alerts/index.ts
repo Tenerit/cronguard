@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer'
+import nodemailer, { type Transporter } from 'nodemailer'
 import axios      from 'axios'
 import { logger }       from '../../config/logger'
 import { signWebhook }  from '../webhook-signature'
@@ -16,7 +16,7 @@ function bumpNotifyFail(channel: 'email' | 'slack' | 'webhook'): void {
 
 // Lazy : créé seulement au premier envoi, pas au chargement du module
 // Évite le crash si SMTP n'est pas configuré (optionnel en dev)
-let _mailer: nodemailer.Transporter | null = null
+let _mailer: Transporter | null = null
 
 function getMailer() {
   if (!_mailer) {
