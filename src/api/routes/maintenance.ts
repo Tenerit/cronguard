@@ -77,7 +77,11 @@ maintenanceRouter.patch('/:id', asyncHandler(async (req, res) => {
   const parsed = PatchSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
 
-  const d = parsed.data
+  // zod v4 réinjecte les .default() (label, active) sur un .partial() → un PATCH sans ces
+  // champs les écraserait en silence (COALESCE). On ne garde que les clés réellement envoyées.
+  const d = Object.fromEntries(
+    Object.entries(parsed.data).filter(([k]) => k in req.body),
+  ) as Partial<typeof parsed.data>
   if (d.cron_expr && !isValidCron(d.cron_expr)) {
     return res.status(400).json({ error: 'invalid_cron' })
   }

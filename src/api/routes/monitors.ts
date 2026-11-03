@@ -96,7 +96,10 @@ monitorsRouter.patch('/:id', requireRole('admin'), ownsMonitor, asyncHandler(asy
   const parsed = UpdateSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
 
-  const fields = Object.entries(parsed.data).filter(([k]) => PATCHABLE.has(k))
+  // `k in req.body` : zod v4 réinjecte les .default() (grace_period, env) sur un .partial(),
+  // donc un PATCH sans champ légitime écraserait la ligne avec ces défauts. On ne garde que
+  // les champs réellement envoyés par le client.
+  const fields = Object.entries(parsed.data).filter(([k]) => PATCHABLE.has(k) && k in req.body)
   if (!fields.length) return res.status(400).json({ error: 'No valid fields' })
 
   const set    = fields.map(([k], i) => `${k} = $${i + 2}`).join(', ')
