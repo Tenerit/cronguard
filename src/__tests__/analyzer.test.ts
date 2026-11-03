@@ -227,6 +227,22 @@ describe('analyzeFailure()', () => {
       expect(user).not.toContain('Pattern détecté')   // détection regex désactivée
       delete process.env.LLM_RAW_LOGS
     })
+
+    it('sends response_format json_object by default (structured output)', async () => {
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      await analyzeFailure({ ...baseCtx, jobName: 'json-on' })
+      const body = mockedAxios.post.mock.calls[0][1] as any
+      expect(body.response_format).toEqual({ type: 'json_object' })
+    })
+
+    it('omits response_format when LLM_JSON_MODE=off', async () => {
+      process.env.LLM_JSON_MODE = 'off'
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      await analyzeFailure({ ...baseCtx, jobName: 'json-off' })
+      const body = mockedAxios.post.mock.calls[0][1] as any
+      expect(body.response_format).toBeUndefined()
+      delete process.env.LLM_JSON_MODE
+    })
   })
 
   describe('Circuit breaker integration', () => {

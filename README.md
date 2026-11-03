@@ -254,6 +254,8 @@ You can also give each monitor a **runbook / notes** field (in its edit dialog) 
 
 **Token budget.** Before sending logs to the model, CronGuard groups error lines by **template** (a lightweight, dependency-free port of the Drain algorithm, on by default — `LLM_TEMPLATE_MINING`): variants of one pattern (`Connection to db1 refused`, `…db2…`, `…db3…`) collapse to a single `[×3] Connection to db1 refused` line — fewer tokens than sending three, and the `×N` count tells the model whether a failure is systemic or isolated while keeping one concrete sample. It also caps over-long single lines and bounds the total log slice — tunable with `LLM_LOG_BUDGET` (characters, default `2400`). This trims input tokens on every analysis, local and cloud alike. The biggest saver stays the cache: a recurring error (same fingerprint) is answered for free without calling the model at all.
 
+**Structured output.** On the OpenAI-compatible path (Ollama's native engine, OpenAI, Groq, …) CronGuard asks the provider to constrain decoding to valid JSON (`response_format`, on by default — `LLM_JSON_MODE`). This hardens the "100% parsable" guarantee and makes swapping in a different model safe. Set `LLM_JSON_MODE=off` for an older provider that rejects the field; the native Anthropic path is unaffected.
+
 ---
 
 ## Useful commands

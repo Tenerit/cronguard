@@ -383,10 +383,19 @@ export async function analyzeFailure(
   const url = anthropic
     ? `${process.env.LLM_BASE_URL}/messages`
     : `${process.env.LLM_BASE_URL}/chat/completions`
+  // Sortie structurée : demande au provider de contraindre le décodage en JSON valide
+  // (Ollama natif, OpenAI, Groq, Together…). Durcit la garantie « 100% parsable » et
+  // dé-risque un changement de modèle (le prochain levier). Anthropic /messages ne connaît
+  // pas response_format → branche inchangée (prompt + parse). LLM_JSON_MODE=off pour un
+  // provider OpenAI-compatible qui rejette le champ (vieux vLLM…).
+  // shortcut: mode json_object seul ; contraindre les enums (category/severity) via
+  //   json_schema est le pas suivant mais exige une matrice providers + une mesure éval.
+  const jsonMode = process.env.LLM_JSON_MODE !== 'off'
   const body = anthropic
     ? { model, max_tokens: maxTokens, temperature: 0.15, system: SYSTEM,
         messages: [{ role: 'user', content: userPrompt }] }
     : { model, max_tokens: maxTokens, temperature: 0.15,
+        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
         messages: [
           { role: 'system', content: SYSTEM },
           { role: 'user',   content: userPrompt },

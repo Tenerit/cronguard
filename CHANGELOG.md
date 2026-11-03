@@ -7,7 +7,20 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Sécurité
+- **`npm audit fix`** : axios (bypass SSRF `NO_PROXY`, ReDoS, prototype-pollution), body-parser,
+  follow-redirects, qs — advisories prod critical + high purgées (axios = client des webhooks sortants).
+- **zod `^3` → `^4.6.7`** (GHSA-mrhx-c7xc-m3w5 : DoS par épuisement mémoire à la frontière de validation).
+- **PATCH durci** : zod 4 réinjecte les `.default()` sur `.partial()` ; un PATCH sans champ légitime
+  écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
+  fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
+
 ### Ajouté
+- **Sortie structurée LLM** (`LLM_JSON_MODE`, ON par défaut) — `response_format: json_object` sur le
+  chemin OpenAI-compatible (Ollama natif, OpenAI, Groq…) : décodage contraint en JSON valide, durcit la
+  garantie « 100% parsable » et dé-risque un changement de modèle. `off` pour un provider qui le rejette.
+- **Red-team injection de prompt** — `npm run eval:redteam` (promptfoo) : envoie des logs piégés à
+  `analyzeFailure` et vérifie que le modèle n'exécute jamais les instructions injectées.
 - **Mineur de templates de logs (façon Drain)** — `src/services/llm/drain.ts`, zéro dépendance,
   ON par défaut (`LLM_TEMPLATE_MINING`, false pour retomber sur le dédup exact). Regroupe les
   VARIANTES d'un même motif (« refused db1 »/« db2 » → `[×2] refused db1 ») là où le dédup exact
