@@ -209,7 +209,7 @@ Default: **llama3.2:3b** through local Ollama (free, private, non-reasoning → 
 No log ever leaves your infrastructure.
 
 **Benchmark (lab set)** — 26 curated failure scenarios ([eval/](eval/), `npm run eval`), default model on CPU, **5-run mean ± std** ([eval/results.json](eval/results.json)):
-**100%** valid structured output · **75% ± 9%** exact root-cause category (runs ranged 69–88%) · **58% ± 3%** exact severity (**100%** within ±1 rank) · ~15s per analysis.
+**100%** valid structured output · **76% ± 7%** exact root-cause category (runs ranged 69–85%) · **57% ± 4%** exact severity (**100%** within ±1 rank) · ~20s per analysis.
 These fixtures are deliberately unambiguous, so treat this as an **upper bound, not a field number** — it measures the model on clean cases we authored, and the category score swings run-to-run (the model is non-deterministic).
 
 **Measure it on YOUR logs (the number that matters).** The harness reports **mean ± std over N runs** and takes an independent real-incident set:
@@ -253,7 +253,7 @@ Incident memory is **on by default** (`MEMORY_ENABLED=true`; `setup.*` and the D
 
 You can also give each monitor a **runbook / notes** field (in its edit dialog) — known gotchas, dependencies, who to wake. It's injected into the prompt so the analysis is grounded in your operational context.
 
-**Token budget.** Before sending logs to the model, CronGuard groups error lines by **template** (a lightweight, dependency-free port of the Drain algorithm, on by default — `LLM_TEMPLATE_MINING`): variants of one pattern (`Connection to db1 refused`, `…db2…`, `…db3…`) collapse to a single `[×3] Connection to db1 refused` line — fewer tokens than sending three, and the `×N` count tells the model whether a failure is systemic or isolated while keeping one concrete sample. It also caps over-long single lines and bounds the total log slice — tunable with `LLM_LOG_BUDGET` (characters, default `2400`). This trims input tokens on every analysis, local and cloud alike. The biggest saver stays the cache: a recurring error (same fingerprint) is answered for free without calling the model at all.
+**Token budget.** Before sending logs to the model, CronGuard groups error lines by **template** (a lightweight, dependency-free port of the Drain algorithm, on by default — `LLM_TEMPLATE_MINING`): variants of one pattern (`Connection to db1 refused`, `…db2…`, `…db3…`) collapse to a single `[×3] Connection to db1 refused` line — fewer tokens on logs with repetitive variant spam (on already-unique logs it simply matches exact dedup, no extra saving), and the `×N` count tells the model whether a failure is systemic or isolated while keeping one concrete sample. It also caps over-long single lines and bounds the total log slice — tunable with `LLM_LOG_BUDGET` (characters, default `2400`) — which trims input tokens on every analysis, local and cloud alike. The biggest saver stays the cache: a recurring error (same fingerprint) is answered for free without calling the model at all.
 
 **Structured output.** On the OpenAI-compatible path (Ollama's native engine, OpenAI, Groq, …) CronGuard asks the provider to constrain decoding to valid JSON (`response_format`, on by default — `LLM_JSON_MODE`). This hardens the "100% parsable" guarantee and makes swapping in a different model safe. Set `LLM_JSON_MODE=off` for an older provider that rejects the field; the native Anthropic path is unaffected.
 

@@ -36,6 +36,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   du provider) + latence agrégée et le flag `template_mining`, pour mesurer le gain mining ON vs OFF
   à jeu de cas identique.
 
+### Mesuré (2026-11-03, 5 runs, llama3.2:3b, code actuel)
+- **Claim catégorie tient** : 76% ± 7 (runs 69–85), sévérité 57% ± 4, **100% ±1 rang**, **100% parsable**,
+  ~20 s/analyse. `eval/results.json` rafraîchi.
+- **Mining : gain tokens ≈ 0 sur le jeu labo** (972 ON vs 971 OFF) — les fixtures ont peu de lignes
+  répétées. Le levier ne paie que sur de **vrais logs à spam répétitif** ; pas de chiffre labo à vendre.
+- **qwen3:4b écarté** : en mode *thinking*, ne rend aucun JSON dans `content` via `response_format`
+  (réponses vides) → **llama3.2:3b confirmé** empiriquement (cf. §6).
+
 ---
 
 ## [1.5.0] — 2026-06 — Durcissement (revue multi-expert) & dette data
