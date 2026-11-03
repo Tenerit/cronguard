@@ -224,6 +224,7 @@ beforeAll(async () => {
   const { monitorsRouter }  = await import('../api/routes/monitors')
   const { dashboardRouter } = await import('../api/routes/dashboard')
   const { clientsRouter }   = await import('../api/routes/clients')
+  const { maintenanceRouter } = await import('../api/routes/maintenance')
   const { requireApiKey }   = await import('../api/middleware/auth')
   const rateLimit = (await import('express-rate-limit')).default
 
@@ -233,6 +234,7 @@ beforeAll(async () => {
   app.use('/monitors',  rateLimit({ windowMs:60000, max:999 }), requireApiKey, monitorsRouter)
   app.use('/dashboard', rateLimit({ windowMs:60000, max:999 }), requireApiKey, dashboardRouter)
   app.use('/clients',   rateLimit({ windowMs:60000, max:999 }), requireApiKey, clientsRouter)
+  app.use('/maintenance-windows', rateLimit({ windowMs:60000, max:999 }), requireApiKey, maintenanceRouter)
   app.use((err: Error, _req: any, res: any, _next: any) => {
     res.status(500).json({ error: err.message })
   })
@@ -567,5 +569,48 @@ describe('Clients — profil et paramètres', () => {
       `SELECT slack_webhook FROM clients WHERE id = $1`, [client.id]
     )
     expect(rows[0].slack_webhook).toBe('https://hooks.slack.com/test')
+  })
+})
+
+describe('Maintenance windows — PATCH ne doit pas réinjecter les defaults (zod 4)', () => {
+  async function createWindow(clientId: string) {
+    const id = `w-${Date.now()}-${Math.floor(Math.random()*99999)}`
+    const { rows: [w] } = await pgPool.query(
+      `INSERT INTO maintenance_windows (id, client_id, label, cron_expr, duration_min, active)
+       VALUES ($1,$2,'nightly-etl','0 2 * * *',90,false) RETURNING *`,
+      [id, clientId]
+    )
+    return w
+  }
+
+  it('PATCH avec seulement des champs inconnus ne réécrit pas label/active', async () => {
+    const client = await createTestClient()
+    const w = await createWindow(client.id)
+    const res = await request(app)
+      .patch(`/maintenance-windows/${w.id}`)
+      .set('X-API-Key', client.api_key)
+      .send({ hacker: 'x', client_id: 'stolen' })
+    expect(res.status).toBe(200)
+    // label/active DOIVENT rester inchangés (pas réinitialisés par les .default() du schéma)
+    const { rows } = await pgPool.query(
+      `SELECT label, active FROM maintenance_windows WHERE id = $1`, [w.id]
+    )
+    expect(rows[0].label).toBe('nightly-etl')
+    expect(rows[0].active).toBe(false)   // la fenêtre ne doit PAS être réactivée en silence
+  })
+
+  it('PATCH applique bien le seul champ envoyé', async () => {
+    const client = await createTestClient()
+    const w = await createWindow(client.id)
+    await request(app)
+      .patch(`/maintenance-windows/${w.id}`)
+      .set('X-API-Key', client.api_key)
+      .send({ label: 'renamed' })
+    const { rows } = await pgPool.query(
+      `SELECT label, active, duration_min FROM maintenance_windows WHERE id = $1`, [w.id]
+    )
+    expect(rows[0].label).toBe('renamed')
+    expect(rows[0].active).toBe(false)        // inchangé
+    expect(rows[0].duration_min).toBe(90)     // inchangé
   })
 })
