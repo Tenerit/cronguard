@@ -85,10 +85,10 @@ beforeAll(async () => {
 
   await pgPool.query(`
     CREATE TABLE monitors (
-      id           TEXT PRIMARY KEY,
+      id           TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
       client_id    TEXT,
       name         TEXT NOT NULL,
-      ping_key     TEXT UNIQUE NOT NULL,
+      ping_key     TEXT UNIQUE NOT NULL DEFAULT gen_random_uuid(),
       schedule     TEXT,
       grace_period INT NOT NULL DEFAULT 300,
       expected_min INT,
@@ -100,6 +100,7 @@ beforeAll(async () => {
       last_status  TEXT DEFAULT 'unknown',
       last_start_at TIMESTAMPTZ,
       hung_alerted BOOLEAN DEFAULT false,
+      notes        TEXT,
       created_at   TIMESTAMPTZ DEFAULT NOW()
     )
   `)
@@ -324,10 +325,19 @@ describe('Monitors CRUD — base de données réelle', () => {
     expect(res.body.name).toBe(monitor.name)
   })
 
-  it('POST /monitors — validation Zod fonctionne (grace_period invalide → 400)', async () => {
-    // Note: pg-mem ne supporte pas gen_random_uuid() DEFAULT — le 201 est testé sur vrai Postgres
-    // On teste ici que la validation Zod rejette les payloads invalides
+  it('POST /monitors crée le monitor en DB (201) et génère id + ping_key', async () => {
+    const res = await request(app)
+      .post('/monitors')
+      .set('X-API-Key', client.api_key)
+      .send({ name: 'nouveau-job', env: 'production', schedule: '0 * * * *' })
+    expect(res.status).toBe(201)
+    expect(res.body.id).toBeTruthy()         // id généré par le DEFAULT (gen_random_uuid)
+    expect(res.body.ping_key).toBeTruthy()   // ping_key généré de même
+    const { rows } = await pgPool.query(`SELECT name, env FROM monitors WHERE id = $1`, [res.body.id])
+    expect(rows[0]).toMatchObject({ name: 'nouveau-job', env: 'production' })
+  })
 
+  it('POST /monitors — validation Zod fonctionne (grace_period invalide → 400)', async () => {
     const resInvalid = await request(app)
       .post('/monitors')
       .set('X-API-Key', client.api_key)
