@@ -7,6 +7,14 @@
 // séparé, à valider en navigateur. Ici on ferme déjà les vecteurs durs : object/embed,
 // base-tag hijack, clickjacking (frame-ancestors), POST de formulaire cross-origin, et
 // on borne connect/img. Seule ressource externe légitime : Google Fonts.
+//
+// Pourquoi on ne passe PAS au nonce (décision pesée 2026-11-06) : dashboard.html est servi
+// statiquement (res.sendFile, pas de templating) ET la démo (§11) est hébergeable en statique
+// SANS backend → aucun serveur pour injecter un nonce par requête. Un nonce casserait donc la
+// démo statique, qui est un différenciateur (lever de conversion). Les hashes marcheraient en
+// statique mais = 111 hashes + re-hash à chaque changement JS (fragile). Le gain (checkbox revue
+// de sécu, utile ICP régulé) ne vaut pas ce coût tant que les sorties XSS sont déjà échappées (§9).
+// À rouvrir seulement si un deal régulé l'exige explicitement.
 export const CSP_DIRECTIVES: Record<string, string[]> = {
   defaultSrc:     ["'self'"],
   scriptSrc:      ["'self'", "'unsafe-inline'"],
