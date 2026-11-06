@@ -5,7 +5,7 @@
  *
  * Usage :
  *   import { CronGuard } from './cronguard'
- *   const cg = new CronGuard('https://api.cronguard.io')
+ *   const cg = new CronGuard('http://localhost:3000')
  *
  *   // Wrapper automatique
  *   await cg.monitor('ma-ping-key', async () => {
@@ -89,7 +89,7 @@ export class CronGuard {
 
 // ── Export fonctionnel (sans instanciation) ───────────────────────────────────
 
-const DEFAULT_URL = process.env.CRONGUARD_URL ?? 'https://api.cronguard.io'
+const DEFAULT_URL = process.env.CRONGUARD_URL ?? 'http://localhost:3000'
 const cg = new CronGuard(DEFAULT_URL)
 
 export const monitor   = cg.monitor.bind(cg)

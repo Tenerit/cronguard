@@ -209,7 +209,9 @@ Default: **llama3.2:3b** through local Ollama (free, private, non-reasoning → 
 No log ever leaves your infrastructure.
 
 **Benchmark (lab set)** — 26 curated failure scenarios ([eval/](eval/), `npm run eval`), default model on CPU, **5-run mean ± std** ([eval/results.json](eval/results.json)):
-**100%** valid structured output · **76% ± 7%** exact root-cause category (runs ranged 65–85%) · **45% ± 4%** exact severity (**98%** within ±1 rank) · ~15s per analysis on our test machine (latency depends heavily on hardware and load).
+**100%** valid structured output · **78% ± 3%** exact root-cause category (a constant answer scores 15%; another session measured 76% ± 7, runs ranged 65–85%) · the cause mentions the expected fact **88%** of the time, the action **71%** (loose keyword check) · **53%** of answers cite a parameter, flag or path absent from the logs, so check them before applying · ~15s per analysis on our test machine (latency depends heavily on hardware and load).
+
+**Severity is not reliable yet:** exact severity (41%) does no better than always answering `high` (46%). It is shown for information and never decides whether an alert is sent.
 These fixtures are deliberately unambiguous, so treat this as an **upper bound, not a field number** — it measures the model on clean cases we authored, and the category score swings run-to-run (the model is non-deterministic).
 
 **Measure it on YOUR logs (the number that matters).** The harness reports **mean ± std over N runs** and takes an independent real-incident set:

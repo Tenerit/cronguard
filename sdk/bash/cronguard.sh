@@ -4,7 +4,7 @@
 # Source ce fichier dans ton script : source /usr/local/lib/cronguard.sh
 #
 # Variables d'environnement :
-#   CRONGUARD_URL   (défaut: https://api.cronguard.io)
+#   CRONGUARD_URL   (défaut: http://localhost:3000, ton instance auto-hébergée)
 #
 # Usage :
 #   source /usr/local/lib/cronguard.sh
@@ -18,7 +18,7 @@
 #
 # ─────────────────────────────────────────────────────────────────────────────
 
-CRONGUARD_URL="${CRONGUARD_URL:-https://api.cronguard.io}"
+CRONGUARD_URL="${CRONGUARD_URL:-http://localhost:3000}"
 _CG_PING_KEY=""
 _CG_START_TIME=""
 _CG_OUTPUT_FILE=""

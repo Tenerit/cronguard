@@ -39,6 +39,7 @@ jest.mock('../queue', () => ({
 // ─── Setup complet ────────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  process.env.STRIPE_SECRET_KEY = 'sk_test_x'   // la limite de plan ne s'applique qu'avec la facturation
   // Redis réel (doit tourner sur localhost:6379)
   realRedis = new Redis({ host: '127.0.0.1', port: 6379, lazyConnect: true })
   try {

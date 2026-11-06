@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-06T18:18:37.813Z",
+  "date": "2026-11-06T22:35:46.222Z",
   "set": "lab",
   "runs": 5,
   "raw_mode": false,
@@ -10,79 +10,116 @@
   "template_mining": true,
   "aggregate": {
     "category_exact": {
-      "mean": 0.7615384615384615,
-      "std": 0.07398224639104364
+      "mean": 0.7769230769230768,
+      "std": 0.03217923178977216
     },
     "severity_exact": {
-      "mean": 0.4538461538461539,
-      "std": 0.04213250442347431
+      "mean": 0.41538461538461535,
+      "std": 0.08338262841799536
     },
     "severity_near": {
-      "mean": 0.9846153846153847,
-      "std": 0.021066252211737146
+      "mean": 1,
+      "std": 0
     },
     "parsable": {
       "mean": 1,
       "std": 0
     },
+    "cause_fact": {
+      "mean": 0.8846153846153847,
+      "std": 0.03846153846153849
+    },
+    "action_fact": {
+      "mean": 0.7153846153846154,
+      "std": 0.05832981110808886
+    },
+    "with_unverifiable": {
+      "mean": 0.5307692307692308,
+      "std": 0.042132504423474285
+    },
     "avg_tokens_in": {
-      "mean": 1148,
-      "std": 0.7071067811865476
+      "mean": 1147.8,
+      "std": 1.0954451150103324
     },
     "avg_tokens_out": {
-      "mean": 149,
-      "std": 2.345207879911715
+      "mean": 148.4,
+      "std": 1.6733200530681511
     },
     "avg_latency_ms": {
-      "mean": 14520.4,
-      "std": 246.84671356937284
+      "mean": 15161.2,
+      "std": 198.98040104492702
     }
   },
   "per_run": [
     {
       "parsable": 1,
       "category_exact": 0.7307692307692307,
-      "severity_exact": 0.46153846153846156,
+      "severity_exact": 0.4230769230769231,
       "severity_near": 1,
-      "avg_latency_ms": 14830,
-      "avg_tokens_in": 1148,
-      "avg_tokens_out": 153
-    },
-    {
-      "parsable": 1,
-      "category_exact": 0.6538461538461539,
-      "severity_exact": 0.38461538461538464,
-      "severity_near": 0.9615384615384616,
-      "avg_latency_ms": 14281,
+      "avg_latency_ms": 15468,
       "avg_tokens_in": 1147,
-      "avg_tokens_out": 148
-    },
-    {
-      "parsable": 1,
-      "category_exact": 0.7692307692307693,
-      "severity_exact": 0.46153846153846156,
-      "severity_near": 1,
-      "avg_latency_ms": 14718,
-      "avg_tokens_in": 1149,
-      "avg_tokens_out": 147
-    },
-    {
-      "parsable": 1,
-      "category_exact": 0.8461538461538461,
-      "severity_exact": 0.5,
-      "severity_near": 0.9615384615384616,
-      "avg_latency_ms": 14475,
-      "avg_tokens_in": 1148,
-      "avg_tokens_out": 149
+      "avg_tokens_out": 150,
+      "cause_fact": 0.8461538461538461,
+      "action_fact": 0.7692307692307693,
+      "with_unverifiable": 0.5
     },
     {
       "parsable": 1,
       "category_exact": 0.8076923076923077,
-      "severity_exact": 0.46153846153846156,
+      "severity_exact": 0.4230769230769231,
       "severity_near": 1,
-      "avg_latency_ms": 14298,
-      "avg_tokens_in": 1148,
-      "avg_tokens_out": 148
+      "avg_latency_ms": 15146,
+      "avg_tokens_in": 1149,
+      "avg_tokens_out": 148,
+      "cause_fact": 0.9230769230769231,
+      "action_fact": 0.7692307692307693,
+      "with_unverifiable": 0.5
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.7692307692307693,
+      "severity_exact": 0.5384615384615384,
+      "severity_near": 1,
+      "avg_latency_ms": 14910,
+      "avg_tokens_in": 1147,
+      "avg_tokens_out": 146,
+      "cause_fact": 0.8846153846153846,
+      "action_fact": 0.6538461538461539,
+      "with_unverifiable": 0.5769230769230769
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.8076923076923077,
+      "severity_exact": 0.38461538461538464,
+      "severity_near": 1,
+      "avg_latency_ms": 15148,
+      "avg_tokens_in": 1147,
+      "avg_tokens_out": 150,
+      "cause_fact": 0.8461538461538461,
+      "action_fact": 0.6538461538461539,
+      "with_unverifiable": 0.5769230769230769
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.7692307692307693,
+      "severity_exact": 0.3076923076923077,
+      "severity_near": 1,
+      "avg_latency_ms": 15134,
+      "avg_tokens_in": 1149,
+      "avg_tokens_out": 148,
+      "cause_fact": 0.9230769230769231,
+      "action_fact": 0.7307692307692307,
+      "with_unverifiable": 0.5
     }
-  ]
+  ],
+  "constant_baseline": {
+    "category": {
+      "label": "database",
+      "rate": 0.15384615384615385
+    },
+    "severity": {
+      "label": "high",
+      "rate": 0.46153846153846156
+    }
+  }
 }

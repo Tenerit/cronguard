@@ -1,4 +1,6 @@
 import request from 'supertest'
+// Limite de plan active seulement avec la facturation ; lu au chargement de plans.ts.
+process.env.STRIPE_SECRET_KEY = 'sk_test_x'
 import express from 'express'
 import { monitorsRouter } from '../api/routes/monitors'
 import { requireApiKey }  from '../api/middleware/auth'

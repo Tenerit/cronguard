@@ -48,6 +48,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   établi.
 
 ### Corrigé
+- **Éval : mesure de la cause et de l'action**, plus seulement de l'étiquette (`eval/quality.ts`). Mesuré sur 5 runs :
+  cause 88 %, action 71 % (filtre lâche par mots-clés), 53 % des réponses citent un identifiant absent des logs,
+  catégorie 78 % ± 3 (constante : 15 %), sévérité exacte 41 % (constante `high` : 46 %).
+- **Redémarrage** : Postgres et Redis repartent seuls dans `docker-compose.yml`. Après un reboot de Docker, ils
+  restaient arrêtés et l'API bouclait sur `ENOTFOUND postgres`.
+- **SDK** : l'adresse par défaut est `http://localhost:3000`, plus `https://api.cronguard.io`. Une variable
+  oubliée aurait envoyé les logs hors de la machine.
+- **Auto-hébergé sans Stripe** : plus de limite à 3 monitors.
+- **Observateur Windows** (`scripts/windows-observer.ps1`) : suit des tâches planifiées sans les modifier.
 - **Échec sans log : plus de cause inventée.** Sans log ni `records` hors plage, le modèle n'est plus appelé
   (il répondait par exemple `high/database` sur du vide). L'analyse indique « cause impossible à déterminer », avec
   `category: unknown`, `confidence: low` et `model: none`, y compris si le LLM est indisponible. 5 tests.

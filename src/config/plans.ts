@@ -49,7 +49,7 @@ export function planFor(plan: string): Plan {
 }
 
 export function monitorLimitFor(plan: string): number {
-  return planFor(plan).monitorLimit
+  return BILLING_ENABLED ? planFor(plan).monitorLimit : Infinity
 }
 
 // L'analyse IA est le différenciateur Pro sur l'offre hébergée. En self-hosted

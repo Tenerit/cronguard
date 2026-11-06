@@ -32,7 +32,7 @@ import os
 from typing import Optional, Callable, Any
 import requests
 
-CRONGUARD_URL = os.environ.get('CRONGUARD_URL', 'https://api.cronguard.io')
+CRONGUARD_URL = os.environ.get('CRONGUARD_URL', 'http://localhost:3000')
 TIMEOUT_S = 5
 
 

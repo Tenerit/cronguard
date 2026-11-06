@@ -29,6 +29,7 @@ import * as path from 'path'
 import { redis } from '../src/config/redis'
 import { analyzeFailure, Severity } from '../src/services/llm/analyzer'
 import type { EvalCase } from './cases'
+import { FACTS, unverifiableIdentifiers, constantBaseline } from './quality'
 
 const SEV_RANK: Record<Severity, number> = { low: 0, medium: 1, high: 2, critical: 3 }
 const TIMEOUT_MS = Number(process.env.EVAL_TIMEOUT_MS || 120_000)
@@ -39,7 +40,7 @@ function argVal(flag: string): string | undefined {
   return i !== -1 ? process.argv[i + 1] : undefined
 }
 
-interface RunScore { parsable: number; category_exact: number; severity_exact: number; severity_near: number; avg_latency_ms: number; avg_tokens_in: number; avg_tokens_out: number }
+interface RunScore { parsable: number; category_exact: number; severity_exact: number; severity_near: number; avg_latency_ms: number; avg_tokens_in: number; avg_tokens_out: number; cause_fact: number; action_fact: number; with_unverifiable: number }
 
 async function loadCases(set: string): Promise<EvalCase[]> {
   if (set === 'real') {
@@ -70,7 +71,8 @@ async function runOnce(cases: EvalCase[], runIdx: number): Promise<{ score: RunS
   const tag = `${Date.now().toString(36)}-r${runIdx}`
   let parsable = 0, catOk = 0, sevOk = 0, sevNear = 0, msSum = 0, msN = 0
   let tokInSum = 0, tokOutSum = 0, tokN = 0
-  const perCase: Array<{ name: string; ok: boolean; got: string | null }> = []
+  let causeOk = 0, actionOk = 0, unverifiable = 0
+  const perCase: Array<Record<string, unknown>> = []
 
   for (const c of cases) {
     const t0 = Date.now()
@@ -89,7 +91,15 @@ async function runOnce(cases: EvalCase[], runIdx: number): Promise<{ score: RunS
     if (categoryOk) catOk++
     if (res?.severity === c.severity) sevOk++
     if (res && Math.abs(SEV_RANK[res.severity] - SEV_RANK[c.severity]) <= 1) sevNear++
-    perCase.push({ name: c.name, ok: categoryOk, got: res?.category ?? null })
+    const facts = FACTS[c.name]
+    const causeHit  = !!res && !!facts?.cause.test(res.cause)
+    const actionHit = !!res && !!facts?.action.test(res.action)
+    const invented  = res ? unverifiableIdentifiers(`${res.cause} ${res.action} ${res.checks.join(' ')}`, c.logs) : []
+    if (causeHit) causeOk++
+    if (actionHit) actionOk++
+    if (invented.length) unverifiable++
+    perCase.push({ run: runIdx, name: c.name, expected: c.category, expectedSeverity: c.severity, category: res?.category ?? null, severity: res?.severity ?? null,
+      data_impact: res?.data_impact ?? null, causeHit, actionHit, invented, cause: res?.cause ?? null, action: res?.action ?? null })
   }
   const n = cases.length
   return {
@@ -98,6 +108,7 @@ async function runOnce(cases: EvalCase[], runIdx: number): Promise<{ score: RunS
       severity_near: sevNear / n, avg_latency_ms: msN ? Math.round(msSum / msN) : 0,
       avg_tokens_in:  tokN ? Math.round(tokInSum / tokN)  : 0,
       avg_tokens_out: tokN ? Math.round(tokOutSum / tokN) : 0,
+      cause_fact: causeOk / n, action_fact: actionOk / n, with_unverifiable: unverifiable / n,
     },
     perCase,
   }
@@ -125,9 +136,11 @@ async function main() {
     `${rawMode ? ' · RAW (sans regex)' : ''}\n`)
 
   const scores: RunScore[] = []
+  const allCases: Array<Record<string, unknown>> = []
   for (let r = 1; r <= runs; r++) {
-    const { score } = await runOnce(cases, r)
+    const { score, perCase } = await runOnce(cases, r)
     scores.push(score)
+    allCases.push(...perCase)
     console.log(`  run ${r}/${runs} · cat ${(score.category_exact * 100).toFixed(0)}% · ` +
       `sev ${(score.severity_exact * 100).toFixed(0)}% · ±1 ${(score.severity_near * 100).toFixed(0)}% · ` +
       `parsable ${(score.parsable * 100).toFixed(0)}% · ${(score.avg_latency_ms / 1000).toFixed(1)}s · ` +
@@ -136,6 +149,8 @@ async function main() {
 
   const agg = (k: keyof RunScore) => meanStd(scores.map(s => s[k]))
   const cat = agg('category_exact'), sev = agg('severity_exact'), near = agg('severity_near'), pars = agg('parsable')
+  const causeF = agg('cause_fact'), actionF = agg('action_fact'), unver = agg('with_unverifiable')
+  const catBase = constantBaseline(cases.map(c => c.category)), sevBase = constantBaseline(cases.map(c => c.severity))
   const tin = agg('avg_tokens_in'), tout = agg('avg_tokens_out'), lat = agg('avg_latency_ms')
   const fmt = (m: { mean: number; std: number }) => `${(m.mean * 100).toFixed(1)}% ± ${(m.std * 100).toFixed(1)}`
   const fmtN = (m: { mean: number; std: number }) => `${m.mean.toFixed(0)} ± ${m.std.toFixed(0)}`
@@ -145,6 +160,10 @@ async function main() {
   console.log(`  Sévérité exacte  : ${fmt(sev)}`)
   console.log(`  Sévérité ±1 rang : ${fmt(near)}`)
   console.log(`  Parsable         : ${fmt(pars)}`)
+  console.log(`  Cause évoque le fait attendu  : ${fmt(causeF)}`)
+  console.log(`  Action évoque le fait attendu : ${fmt(actionF)}`)
+  console.log(`  Réponses citant un identifiant absent des logs : ${fmt(unver)}`)
+  console.log(`  Réponse constante : catégorie ${catBase.label} ${(catBase.rate * 100).toFixed(0)}% · sévérité ${sevBase.label} ${(sevBase.rate * 100).toFixed(0)}%`)
   console.log(`  Tokens in (moy)  : ${fmtN(tin)}   ← gain mining ON vs OFF`)
   console.log(`  Tokens out (moy) : ${fmtN(tout)}`)
   console.log(`  Latence moy (ms) : ${fmtN(lat)}`)
@@ -164,9 +183,11 @@ async function main() {
     template_mining: process.env.LLM_TEMPLATE_MINING !== 'false',
     aggregate: {
       category_exact: cat, severity_exact: sev, severity_near: near, parsable: pars,
+      cause_fact: causeF, action_fact: actionF, with_unverifiable: unver,
       avg_tokens_in: tin, avg_tokens_out: tout, avg_latency_ms: lat,
     },
     per_run: scores,
+    constant_baseline: { category: catBase, severity: sevBase },
   }
   // Un run sur un modèle non-baseline (comparaison) n'écrase PAS le results.json canonique
   // qui porte le claim commercial : il atterrit dans results.<modèle>.json, sauf --out explicite.
@@ -176,6 +197,8 @@ async function main() {
     ? (path.isAbsolute(explicitOut) ? explicitOut : path.resolve(process.cwd(), explicitOut))
     : path.join(__dirname, model === BASELINE_MODEL ? 'results.json' : safeName)
   fs.writeFileSync(outPath, JSON.stringify(out, null, 2))
+  // Détail des réponses, à relire à la main (gitignoré, peut contenir de vrais logs avec --set real).
+  fs.writeFileSync(outPath.replace(/[.]json$/, '') + '.cases.json', JSON.stringify(allCases, null, 2))
   const canonical = outPath === path.join(__dirname, 'results.json')
   console.log(`  → ${path.relative(process.cwd(), outPath)}${canonical ? '' : '  (comparaison — results.json canonique préservé)'}\n`)
 
