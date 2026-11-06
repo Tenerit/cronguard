@@ -75,7 +75,8 @@ async function runOnce(cases: EvalCase[], runIdx: number): Promise<{ score: RunS
   for (const c of cases) {
     const t0 = Date.now()
     const res = await analyzeFailure(
-      { jobName: `eval-${tag}-${c.name}`, clientId: 'eval', monitorId: 'eval', exitCode: c.exitCode, env: 'production', logs: c.logs },
+      // Nom neutre : jobName entre dans le prompt, et c.name (« oom-killer-137 »…) soufflerait la catégorie attendue.
+      { jobName: `job-${tag}-${cases.indexOf(c)}`, clientId: 'eval', monitorId: 'eval', exitCode: c.exitCode, env: 'production', logs: c.logs },
       TIMEOUT_MS, { skipRateLimit: true },
     )
     const ms = Date.now() - t0

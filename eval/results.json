@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-06T12:49:44.570Z",
+  "date": "2026-11-06T18:18:37.813Z",
   "set": "lab",
   "runs": 5,
   "raw_mode": false,
@@ -10,79 +10,79 @@
   "template_mining": true,
   "aggregate": {
     "category_exact": {
-      "mean": 0.8615384615384615,
-      "std": 0.04385290096535147
+      "mean": 0.7615384615384615,
+      "std": 0.07398224639104364
     },
     "severity_exact": {
-      "mean": 0.5,
-      "std": 0.0543928293220421
+      "mean": 0.4538461538461539,
+      "std": 0.04213250442347431
     },
     "severity_near": {
-      "mean": 0.9923076923076923,
-      "std": 0.017200522903844526
+      "mean": 0.9846153846153847,
+      "std": 0.021066252211737146
     },
     "parsable": {
       "mean": 1,
       "std": 0
     },
     "avg_tokens_in": {
-      "mean": 1151.8,
-      "std": 0.4472135954999579
+      "mean": 1148,
+      "std": 0.7071067811865476
     },
     "avg_tokens_out": {
-      "mean": 149.2,
-      "std": 3.492849839314596
+      "mean": 149,
+      "std": 2.345207879911715
     },
     "avg_latency_ms": {
-      "mean": 14335.4,
-      "std": 269.30893041263965
+      "mean": 14520.4,
+      "std": 246.84671356937284
     }
   },
   "per_run": [
     {
       "parsable": 1,
+      "category_exact": 0.7307692307692307,
+      "severity_exact": 0.46153846153846156,
+      "severity_near": 1,
+      "avg_latency_ms": 14830,
+      "avg_tokens_in": 1148,
+      "avg_tokens_out": 153
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.6538461538461539,
+      "severity_exact": 0.38461538461538464,
+      "severity_near": 0.9615384615384616,
+      "avg_latency_ms": 14281,
+      "avg_tokens_in": 1147,
+      "avg_tokens_out": 148
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.7692307692307693,
+      "severity_exact": 0.46153846153846156,
+      "severity_near": 1,
+      "avg_latency_ms": 14718,
+      "avg_tokens_in": 1149,
+      "avg_tokens_out": 147
+    },
+    {
+      "parsable": 1,
       "category_exact": 0.8461538461538461,
       "severity_exact": 0.5,
-      "severity_near": 1,
+      "severity_near": 0.9615384615384616,
       "avg_latency_ms": 14475,
-      "avg_tokens_in": 1152,
-      "avg_tokens_out": 153
+      "avg_tokens_in": 1148,
+      "avg_tokens_out": 149
     },
     {
       "parsable": 1,
       "category_exact": 0.8076923076923077,
-      "severity_exact": 0.5769230769230769,
+      "severity_exact": 0.46153846153846156,
       "severity_near": 1,
-      "avg_latency_ms": 14699,
-      "avg_tokens_in": 1152,
-      "avg_tokens_out": 153
-    },
-    {
-      "parsable": 1,
-      "category_exact": 0.8846153846153846,
-      "severity_exact": 0.4230769230769231,
-      "severity_near": 1,
-      "avg_latency_ms": 14357,
-      "avg_tokens_in": 1152,
-      "avg_tokens_out": 147
-    },
-    {
-      "parsable": 1,
-      "category_exact": 0.9230769230769231,
-      "severity_exact": 0.5,
-      "severity_near": 0.9615384615384616,
-      "avg_latency_ms": 14084,
-      "avg_tokens_in": 1152,
-      "avg_tokens_out": 147
-    },
-    {
-      "parsable": 1,
-      "category_exact": 0.8461538461538461,
-      "severity_exact": 0.5,
-      "severity_near": 1,
-      "avg_latency_ms": 14062,
-      "avg_tokens_in": 1151,
-      "avg_tokens_out": 146
+      "avg_latency_ms": 14298,
+      "avg_tokens_in": 1148,
+      "avg_tokens_out": 148
     }
   ]
 }

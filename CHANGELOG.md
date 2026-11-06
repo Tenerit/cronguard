@@ -22,8 +22,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - **Sortie structurée LLM** (`LLM_JSON_MODE`, défaut `json_object`) — `response_format` sur le chemin
   OpenAI-compatible (Ollama natif, OpenAI, Groq…) : décodage contraint en JSON valide, durcit la garantie
   « 100% parsable » et dé-risque un changement de modèle. `json_schema` contraint en plus les enums
-  (category/severity/… → aucune étiquette hors-liste) ; latence ≈ identique à chaud (mesuré ~20s, le
-  pic initial = chargement du modèle), reste opt-in car support provider plus étroit.
+  (category/severity/… → aucune étiquette hors-liste) ; gain non établi (1 seul run), reste opt-in car
+  support provider plus étroit.
   `off` pour un provider qui rejette le champ.
 - **Red-team injection de prompt** — `npm run eval:redteam` (promptfoo) : envoie des logs piégés à
   `analyzeFailure` et vérifie que le modèle n'exécute jamais les instructions injectées.
@@ -42,22 +42,29 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ### Changé
 - **Prompt SYSTEM télégraphique** (2026-11-06) — directive de concision/action : `cause` ≤ 20 mots citant
   la valeur EXACTE du log, `action` impérative exécutable tout de suite, `checks` ≤ 8 mots (le plus décisif
-  d'abord), zéro préambule. But = réponse plus rapide et plus actionnable en incident. Mesuré (5 runs,
-  llama3.2:3b, même harness) : **latence 19,7 s → 14,3 s (−27 %)**, **catégorie 76 % → 86 %**, tok_out
-  162 → 149. Seul recul : **sévérité exacte 57 % → 50 %** (±1 rang reste 99 %), secondaire, à surveiller.
-  `eval/results.json` régénéré.
+  d'abord), zéro préambule. A/B apparié ancien/nouveau prompt, même session (5 runs, 260 appels) : réponses
+  plus courtes (tok_out 162 → 149, tok_in 963 → 1144), latence médiane 15,5 s → 14,6 s, catégorie 76,2 % → 72,3 %
+  (écart −3,9 pts, IC95 −10,8 à +2,3 : non significatif), sévérité exacte 50,8 % → 46,9 %. Pas de gain de précision
+  établi.
 
-### Mesuré (2026-11-03, 5 runs, llama3.2:3b, code actuel)
+### Corrigé
+- **Éval : nom de job neutre.** `jobName` entre dans le prompt et contenait le nom de la fixture
+  (`oom-killer-137`…), ce qui soufflait la catégorie attendue. Tous les scores antérieurs portent ce biais ;
+  son ampleur n'est pas établie. Score actuel (5 runs, llama3.2:3b) : catégorie 76 % ± 7 (runs 65–85), sévérité
+  45 % ± 4, 98 % à ±1 rang, 100 % parsable, ~15 s. Ce chiffre passe le seuil de 75 % sans marge.
+- **Annonces retirées** : « latence −27 % » et « catégorie 76 % → 86 % » (publiées plus tôt dans cette version).
+  Elles comparaient des sessions différentes, alors que la latence varie du simple au double selon la charge
+  et la catégorie de plus de 10 pts à code identique.
+
+### Mesuré (2026-11-03, 5 runs, llama3.2:3b, avant correction du nom de job — chiffres historiques)
 - **Claim catégorie tient** : 76% ± 7 (runs 69–85), sévérité 57% ± 4, **100% ±1 rang**, **100% parsable**,
   ~20 s/analyse. `eval/results.json` rafraîchi.
 - **Mining : gain tokens ≈ 0 sur le jeu labo** (972 ON vs 971 OFF) — les fixtures ont peu de lignes
   répétées. Le levier ne paie que sur de **vrais logs à spam répétitif** ; pas de chiffre labo à vendre.
-- **qwen3:4b écarté** : en mode *thinking*, ne rend aucun JSON dans `content` via `response_format`
-  (réponses vides) → **llama3.2:3b confirmé** empiriquement (cf. §6).
-- **json_schema mesuré** (1 run, 26 cas) : cat 80,8% · sév 50% · **100% parsable** · **~20s (≈ json_object,
-  pas plus lent)** · tok_in 970. Pas de différence décisive de précision sur labo (1 run bruité, dans la
-  bande) → la contrainte enum = robustesse, pas un levier précision ; **défaut `json_object` conservé**
-  (support provider universel).
+- **qwen3:4b non concluant** : réponses vides sur les 6 appels observés, test arrêté, avec 512 tokens max.
+  Cause non vérifiée ; ne permet pas de conclure sur ce modèle.
+- **json_schema mesuré** (1 run, 26 cas) : cat 80,8% · sév 50% · **100% parsable** · tok_in 970. Un seul run : ni gain
+  de précision ni coût de latence établis. **Défaut `json_object` conservé** (support provider plus large).
 
 ---
 
