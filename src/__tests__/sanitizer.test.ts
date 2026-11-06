@@ -174,6 +174,35 @@ describe('hashError', () => {
       .not.toBe(hashError('job', banner + 'FATAL: out of memory cannot allocate'))
   })
 
+  it('same error with different durations → same hash (cache hit)', () => {
+    const j = 'etl'
+    expect(hashError(j, 'query timed out after 3630s')).toBe(hashError(j, 'query timed out after 3712s'))
+    expect(hashError(j, 'finished in 1.5 seconds then failed')).toBe(hashError(j, 'finished in 22 seconds then failed'))
+    expect(hashError(j, 'hung for 1h30m')).toBe(hashError(j, 'hung for 2h5m10s'))
+    expect(hashError(j, 'retry in 120000ms')).toBe(hashError(j, 'retry in 45 min'))
+  })
+
+  it('same error with different sizes → same hash (cache hit)', () => {
+    const j = 'backup'
+    expect(hashError(j, 'no space left: needed 512MB')).toBe(hashError(j, 'no space left: needed 1.2 GB'))
+    expect(hashError(j, 'dump aborted after 4096 bytes')).toBe(hashError(j, 'dump aborted after 88 KiB'))
+  })
+
+  it('a zero duration or size stays distinct: it means nothing happened', () => {
+    const j = 'backup'
+    expect(hashError(j, 'wrote 0 bytes')).not.toBe(hashError(j, 'wrote 512 bytes'))
+    expect(hashError(j, 'ran for 0s')).not.toBe(hashError(j, 'ran for 40s'))
+  })
+
+  it('numbers that are not durations or sizes stay distinct', () => {
+    const j = 'job'
+    expect(hashError(j, 'exit code 137')).not.toBe(hashError(j, 'exit code 143'))
+    expect(hashError(j, 'HTTP 503 service unavailable')).not.toBe(hashError(j, 'HTTP 502 service unavailable'))
+    expect(hashError(j, 'retry 5 to 10 times')).not.toBe(hashError(j, 'retry 7 to 10 times'))
+    expect(hashError(j, 'connect to port 5432')).not.toBe(hashError(j, 'connect to port 3306'))
+    expect(hashError(j, 'pg_dump 15 mismatch')).not.toBe(hashError(j, 'pg_dump 16 mismatch'))
+  })
+
   it('fingerprintLogs neutralises volatile tokens', () => {
     const fp = fingerprintLogs('2026-06-14T02:00:01Z pid 12345 uuid 550e8400-e29b-41d4-a716-446655440000 at x.js:10:5 ip 10.0.0.1:5432 count 9847211')
     expect(fp).toContain('<ts>')

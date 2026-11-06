@@ -48,6 +48,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   établi.
 
 ### Corrigé
+- **Cache : durées et tailles normalisées dans l'empreinte d'erreur** (`3630s`, `1h30m`, `512MB`). La même panne
+  avec une valeur différente ne rappelle plus le modèle. Un zéro reste distinct (`wrote 0 bytes`). 4 tests.
 - **Éval : nom de job neutre.** `jobName` entre dans le prompt et contenait le nom de la fixture
   (`oom-killer-137`…), ce qui soufflait la catégorie attendue. Tous les scores antérieurs portent ce biais ;
   son ampleur n'est pas établie. Score actuel (5 runs, llama3.2:3b) : catégorie 76 % ± 7 (runs 65–85), sévérité

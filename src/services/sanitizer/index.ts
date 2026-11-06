@@ -86,6 +86,11 @@ export function fingerprintLogs(logs: string): string {
     // n° de ligne:colonne dans les stacks (:123:45) + "line 123"
     .replace(/:\d+:\d+\b/g, ':<line>')
     .replace(/\bline\s+\d+/g, 'line <line>')
+    // durées et tailles : varient d'un run à l'autre pour la même panne. Un zéro reste
+    // distinct (« wrote 0 bytes » : rien n'a été écrit, ce n'est pas la même panne).
+    .replace(/\b(?:\d+h(?:\d+m)?(?:\d+s)?|\d+m\d+s)\b/g, '<dur>')
+    .replace(/\b(?!0+(?:\.0+)?\s?[a-z])\d+(?:\.\d+)?\s?(?:ms|us|ns|s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?)\b/g, '<dur>')
+    .replace(/\b(?!0+(?:\.0+)?\s?[a-z])\d+(?:\.\d+)?\s?(?:b|bytes?|kb|mb|gb|tb|kib|mib|gib|tib)\b/g, '<size>')
     // longues séquences de chiffres (compteurs, offsets) — garde les courts (codes)
     .replace(/\b\d{5,}\b/g, '<n>')
     .replace(/[ \t]+/g, ' ')
