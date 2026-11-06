@@ -155,16 +155,16 @@ function extractLogSignals(raw: string): {
   // Détection de pattern (désactivée en mode raw pour isoler la contribution du modèle)
   let errorType: string | undefined
   const allText = rawMode ? '' : raw.toLowerCase()
-  if (/connection refused|econnrefused|could not connect|no route to host/.test(allText)) errorType = 'CONNEXION_REFUSÉE'
-  else if (/timeout|timed out|deadline exceeded/.test(allText)) errorType = 'TIMEOUT'
-  else if (/too many connections|max_connections|pool exhausted|connection limit/.test(allText)) errorType = 'POOL_ÉPUISÉ'
-  else if (/deadlock|lock wait timeout|waiting for.*lock/.test(allText)) errorType = 'DEADLOCK'
-  else if (/out of memory|oom|cannot allocate|memory exhausted/.test(allText)) errorType = 'MÉMOIRE'
-  else if (/disk full|no space left|quota exceeded/.test(allText)) errorType = 'DISQUE_PLEIN'
-  else if (/permission denied|access denied|unauthorized|403|401/.test(allText)) errorType = 'PERMISSIONS'
-  else if (/syntax error|unexpected|parse error|invalid input/.test(allText)) errorType = 'SYNTAXE'
-  else if (/not found|no such file|404|does not exist/.test(allText)) errorType = 'INTROUVABLE'
-  else if (/certificate|ssl|tls|x509/.test(allText)) errorType = 'TLS'
+  if (/connection refused|econnrefused|could not connect|no route to host/.test(allText)) errorType = 'connexion refusée'
+  else if (/timeout|timed out|deadline exceeded/.test(allText)) errorType = 'dépassement de délai'
+  else if (/too many connections|max_connections|pool exhausted|connection limit/.test(allText)) errorType = 'connexions épuisées'
+  else if (/deadlock|lock wait timeout|waiting for.*lock/.test(allText)) errorType = 'interblocage'
+  else if (/out of memory|\boom(killed)?\b|cannot allocate|memory exhausted/.test(allText)) errorType = 'mémoire insuffisante'
+  else if (/disk full|no space left|disk quota exceeded/.test(allText)) errorType = 'disque plein'
+  else if (/permission denied|access denied|unauthorized|\b40[13]\b/.test(allText)) errorType = 'accès refusé'
+  else if (/syntax error|unexpected|parse error|invalid input/.test(allText)) errorType = 'erreur de syntaxe'
+  else if (/not found|no such file|\b404\b|does not exist/.test(allText)) errorType = 'élément introuvable'
+  else if (/certificate|ssl|tls|x509/.test(allText)) errorType = 'certificat ou TLS'
 
   return { keyLines: capped.join('\n'), errorType, hasStack }
 }
@@ -176,9 +176,9 @@ Un job planifié a échoué. Analyse TOUS les signaux fournis et réponds UNIQUE
 
 FORMAT DE RÉPONSE (respecte exactement ces champs) :
 {
-  "cause":       "cause racine en 1 phrase — cite les valeurs exactes des logs (ex: 'pg_dump échoue avec LOCK TABLE denied sur le replica en standby')",
-  "action":      "commande ou action immédiate concrète (ex: 'Augmenter max_standby_streaming_delay à 300s dans postgresql.conf puis redémarrer le replica')",
-  "prevention":  "fix structurel pour éviter la récurrence (ex: 'Planifier le backup sur le primary ou utiliser pg_dump --no-acl --no-owner')",
+  "cause":       "cause racine en 1 phrase — cite les valeurs exactes des logs",
+  "action":      "action immédiate concrète, fondée sur les logs",
+  "prevention":  "fix structurel pour éviter que la panne revienne",
   "checks":      ["première vérification à faire maintenant", "deuxième vérification", "troisième si pertinent"],
   "severity":    "low|medium|high|critical",
   "category":    "database|network|timeout|resources|dependency|code|data|unknown",
@@ -193,6 +193,7 @@ STYLE (incident — priorité vitesse + action fiable) :
 - "action" : 1 étape impérative exécutable TOUT DE SUITE (commande/opération concrète), ≤ 20 mots.
 - "prevention" : 1 phrase, ≤ 15 mots.
 - "checks" : 2 à 3 vérifs, chacune ≤ 8 mots, la plus décisive en premier.
+- N'invente aucun paramètre, option ni chemin : si les logs n'en donnent pas, décris l'action sans en citer.
 - Zéro redite entre champs, zéro préambule, zéro politesse.
 
 RÈGLES DE CATÉGORIE :
@@ -227,7 +228,6 @@ RÈGLES DE CONFIDENCE :
 - medium → inférée depuis le contexte + logs partiels
 - low    → hypothèse basée sur le pattern historique uniquement
 
-Si sameErrorBefore=true → severity au moins high, mentionne "récurrent (Nème fois)" dans cause
 Si correlatedFailures → category probablement database/network/resources, mentionne l'infra commune
 Si durationTrend > 50% → prevention doit mentionner le risque de timeout croissant
 
@@ -260,7 +260,7 @@ function buildPrompt(ctx: JobContext, logs: string, redacted: number): string {
     const urgency = ctx.failCount7d >= 3 ? ' ⚠️ RÉCURRENT' : ''
     meta.push(`├─ HISTORIQUE 7J: ${ctx.failCount7d} échec(s) | succès ${ctx.successRate7d ?? '?'}%${urgency}`)
   }
-  if (ctx.sameErrorBefore) meta.push(`│  ⚠️  Même erreur déjà vue récemment sur ce job`)
+  if (ctx.sameErrorBefore) meta.push(`│  ⚠️  Même erreur déjà vue récemment sur ce job : signale-le dans cause`)
   if (ctx.timePattern)     meta.push(`│  Pattern temporel: ${ctx.timePattern}`)
 
   // Corrélations multi-monitors
@@ -370,6 +370,11 @@ export function isAnthropic(): boolean {
   return /api\.anthropic\.com/i.test(process.env.LLM_BASE_URL ?? '')
 }
 
+function atLeastHighIfRecurring<T extends { severity: Severity }>(a: T, ctx: JobContext): T {
+  const low = a.severity === 'low' || a.severity === 'medium'
+  return ctx.sameErrorBefore && low ? { ...a, severity: 'high' } : a
+}
+
 function recordsOutOfRange(ctx: JobContext): boolean {
   if (ctx.records === undefined) return false
   return (ctx.expectedMin != null && ctx.records < ctx.expectedMin)
@@ -412,13 +417,9 @@ export async function analyzeFailure(
   if (cached) {
     // Le cache est keyé sur l'empreinte d'erreur, pas sur la récurrence. Un incident
     // désormais récurrent ne doit pas hériter de la sévérité (souvent "medium") du 1er
-    // passage : on applique la règle SYSTEM "récurrent → au moins high" au moment de
+    // passage : on applique la règle « récurrent → au moins high » au moment de
     // servir. N'augmente jamais vers le bas → sûr.
-    const RANK: Record<Severity, number> = { low: 0, medium: 1, high: 2, critical: 3 }
-    if (ctx.sameErrorBefore && RANK[cached.severity] < RANK.high) {
-      return { ...cached, severity: 'high' }
-    }
-    return cached
+    return atLeastHighIfRecurring(cached, ctx)
   }
 
   if (await isOpen()) { logger.warn('[LLM] Circuit open'); return null }
@@ -474,7 +475,7 @@ export async function analyzeFailure(
     if (!parsed) { logger.warn('[LLM] Réponse invalide', { raw: raw.slice(0, 150) }); return null }
 
     const result: AnalysisResult = {
-      ...parsed,
+      ...atLeastHighIfRecurring(parsed, ctx),
       fromCache:          false,
       correlatedMonitors: ctx.correlatedFailures,
       tokensIn:           anthropic ? data.usage?.input_tokens  : data.usage?.prompt_tokens,

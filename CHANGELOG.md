@@ -48,6 +48,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   établi.
 
 ### Corrigé
+- **Prompt : le modèle n'invente plus de paramètres ni de récurrence.** Il recopiait nos exemples
+  (`max_standby_streaming_delay` sur un `ECONNRESET`) et affirmait « récurrent » sans historique. Exemples retirés,
+  récurrence signalée seulement si elle est réelle, sévérité relevée par le code. Faux positifs corrigés dans la
+  détection de motifs (quota d'API pris pour un disque plein). A/B apparié (5 runs, 260 appels) : identifiants absents
+  des logs 58 % → 1,5 %, récurrence mentionnée dans la cause 35 % → 0 %, cause 75 % → 88 %, sévérité exacte 39 % → 58 %, catégorie
+  76 % → 72 % (IC95 −17 à +9), action 68 % → 58 % (IC95 −30 à +11). Une perte sur la catégorie ou l'action n'est pas
+  exclue. Le critère fixé avant la mesure n'était pas rempli ; publié par décision explicite.
 - **Éval : mesure de la cause et de l'action**, plus seulement de l'étiquette (`eval/quality.ts`). Mesuré sur 5 runs :
   cause 88 %, action 71 % (filtre lâche par mots-clés), 53 % des réponses citent un identifiant absent des logs,
   catégorie 78 % ± 3 (constante : 15 %), sévérité exacte 41 % (constante `high` : 46 %).

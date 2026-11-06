@@ -255,6 +255,45 @@ describe('analyzeFailure()', () => {
     })
   })
 
+  describe('Prompt does not lead the model', () => {
+    const sent = async (ctx: Partial<JobContext>) => {
+      mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
+      const result = await analyzeFailure({ ...baseCtx, ...ctx })
+      const body = mockedAxios.post.mock.calls[0][1] as any
+      return { result, all: body.messages.map((m: any) => m.content).join(' ') as string }
+    }
+
+    it('contains no concrete example the model could copy', async () => {
+      const { all } = await sent({ jobName: 'p-examples' })
+      expect(all).not.toContain('max_standby_streaming_delay')
+      expect(all).not.toContain('--no-owner')
+    })
+
+    it('mentions recurrence only when the error really recurred', async () => {
+      expect((await sent({ jobName: 'p-norecur' })).all).not.toMatch(/Nème fois|Même erreur déjà vue/)
+    })
+
+    it('tells the model and raises severity in code when the error recurred', async () => {
+      const { all, result } = await sent({ jobName: 'p-recur', sameErrorBefore: true })
+      expect(all).toContain('Même erreur déjà vue')
+      expect(result?.severity).toBe('high')
+    })
+
+    it('does not label an API quota or a number as a disk or an access problem', async () => {
+      expect((await sent({ jobName: 'p-quota', logs: 'ERROR Quota exceeded for quota metric requests' })).all).not.toContain('Pattern détecté: disque plein')
+      jest.clearAllMocks()
+      expect((await sent({ jobName: 'p-num', logs: 'ERROR failed after 12403 rows in room 7' })).all).not.toMatch(/Pattern détecté: (accès refusé|mémoire)/)
+    })
+
+    it('still labels a real OOM kill', async () => {
+      expect((await sent({ jobName: 'p-oom', logs: 'ERROR container exit code 137 (OOMKilled)' })).all).toContain('Pattern détecté: mémoire insuffisante')
+    })
+
+    it('still labels a real full disk', async () => {
+      expect((await sent({ jobName: 'p-disk', logs: 'ERROR write failed: No space left on device' })).all).toContain('Pattern détecté: disque plein')
+    })
+  })
+
   describe('Failure without logs', () => {
     it('does not call the LLM and says the cause is undetermined', async () => {
       const result = await analyzeFailure({ ...baseCtx, jobName: 'no-logs', logs: ' \t ', exitCode: 137 })
