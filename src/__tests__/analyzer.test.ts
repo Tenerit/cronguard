@@ -255,6 +255,40 @@ describe('analyzeFailure()', () => {
     })
   })
 
+  describe('Failure without logs', () => {
+    it('does not call the LLM and says the cause is undetermined', async () => {
+      const result = await analyzeFailure({ ...baseCtx, jobName: 'no-logs', logs: ' \t ', exitCode: 137 })
+
+      expect(mockedAxios.post).not.toHaveBeenCalled()
+      expect(result).toMatchObject({ category: 'unknown', confidence: 'low', data_impact: 'possible', severity: 'medium', fromCache: false })
+      expect(result!.cause).toContain('137')
+    })
+
+    it('still answers when the circuit breaker is open', async () => {
+      cache['llm:circuit_breaker'] = String(Date.now() - 10_000)
+      const result = await analyzeFailure({ ...baseCtx, jobName: 'no-logs-open', logs: '' })
+      expect(result?.category).toBe('unknown')
+    })
+
+    it('treats 3+ failures in 7 days as high severity', async () => {
+      const result = await analyzeFailure({ ...baseCtx, jobName: 'no-logs-recurring', logs: '', failCount7d: 3 })
+      expect(result?.severity).toBe('high')
+    })
+
+    it('keeps correlated monitors in the answer', async () => {
+      const result = await analyzeFailure({ ...baseCtx, jobName: 'no-logs-corr', logs: '', correlatedFailures: ['etl-a'] })
+      expect(result?.correlatedMonitors).toEqual(['etl-a'])
+      expect(result?.checks.join(' ')).toContain('etl-a')
+    })
+
+    it('still calls the LLM when records are outside the expected range', async () => {
+      mockLLMResponse('{"cause":"0 record","action":"check source","severity":"high"}')
+      const result = await analyzeFailure({ ...baseCtx, jobName: 'no-logs-records', logs: '', records: 0, expectedMin: 100, expectedMax: 200 })
+      expect(mockedAxios.post).toHaveBeenCalledTimes(1)
+      expect(result?.cause).toBe('0 record')
+    })
+  })
+
   describe('Circuit breaker integration', () => {
     it('returns null when circuit is open', async () => {
       // Open the circuit

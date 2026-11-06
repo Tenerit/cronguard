@@ -370,12 +370,42 @@ export function isAnthropic(): boolean {
   return /api\.anthropic\.com/i.test(process.env.LLM_BASE_URL ?? '')
 }
 
+function recordsOutOfRange(ctx: JobContext): boolean {
+  if (ctx.records === undefined) return false
+  return (ctx.expectedMin != null && ctx.records < ctx.expectedMin)
+      || (ctx.expectedMax != null && ctx.records > ctx.expectedMax)
+}
+
+// Sans log ni autre preuve, le modèle inventait une cause (« high/database » sur du vide).
+// On ne l'appelle pas : mieux vaut dire qu'on ne sait pas et indiquer quoi faire.
+function analysisWithoutEvidence(ctx: JobContext): AnalysisResult {
+  const exit = ctx.exitCode !== undefined ? ` (code de sortie ${ctx.exitCode})` : ''
+  return {
+    cause:       `Échec sans log${exit} : cause impossible à déterminer.`,
+    action:      'Consulter les logs du job sur son hôte.',
+    prevention:  'Envoyer la sortie du job dans le champ output du ping pour permettre l\'analyse.',
+    checks:      [
+      'Logs du job sur son hôte',
+      ...(ctx.correlatedFailures?.length ? [`Infra commune avec : ${ctx.correlatedFailures.join(', ')}`] : []),
+    ],
+    severity:    (ctx.failCount7d ?? 0) >= 3 ? 'high' : 'medium',
+    category:    'unknown',
+    confidence:  'low',
+    data_impact: 'possible',
+    fix_minutes: 30,
+    fromCache:   false,
+    correlatedMonitors: ctx.correlatedFailures,
+    model:       'none',
+  }
+}
+
 export async function analyzeFailure(
   ctx: JobContext,
   timeoutMs?: number,
   opts?: { skipRateLimit?: boolean }
 ): Promise<AnalysisResult | null> {
   const { clean, redactedCount } = sanitizeLogs(ctx.logs)
+  if (!clean.trim() && !recordsOutOfRange(ctx)) return analysisWithoutEvidence(ctx)
   const hash = hashError(ctx.jobName, clean)
 
   const cached = await fromCache(hash)

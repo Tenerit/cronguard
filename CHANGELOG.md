@@ -48,6 +48,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   établi.
 
 ### Corrigé
+- **Échec sans log : plus de cause inventée.** Sans log ni `records` hors plage, le modèle n'est plus appelé
+  (il répondait par exemple `high/database` sur du vide). L'analyse indique « cause impossible à déterminer », avec
+  `category: unknown`, `confidence: low` et `model: none`, y compris si le LLM est indisponible. 5 tests.
 - **Analyse des échecs réparée.** Une requête du worker (`AVG` + `ORDER BY`) était rejetée par Postgres : chaque
   échec signalé par un ping plantait le job avant l'analyse et l'alerte. Présent depuis le commit initial.
 - **Test de bout en bout en CI** (`npm run test:e2e`) : vrais API, worker, Postgres et Redis, faux LLM. Couvre le

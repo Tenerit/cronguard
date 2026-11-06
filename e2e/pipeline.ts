@@ -119,7 +119,7 @@ async function main() {
       if (await count() > before) {
         await sleep(500)
         const { rows: [row] } = await db.query(
-          `SELECT from_cache, severity FROM analyses WHERE monitor_id=$1 ORDER BY created_at DESC LIMIT 1`, [mon.id])
+          `SELECT from_cache, severity, category, confidence FROM analyses WHERE monitor_id=$1 ORDER BY created_at DESC LIMIT 1`, [mon.id])
         const sent = prompts.slice(firstPrompt)
         return { ...row, llm: sent.length, recurring: sent.some(p => p.includes('Même erreur déjà vue')) }
       }
@@ -151,7 +151,7 @@ async function main() {
   check('Même erreur, cache vidé : appel LLM et récurrente', d.llm === 1 && d.recurring === true, JSON.stringify(d))
 
   const e = await fail(undefined)
-  check('Échec sans log : pas récurrent', e.recurring === false, JSON.stringify(e))
+  check('Échec sans log : aucun appel LLM, cause non inventée', e.llm === 0 && e.category === 'unknown' && e.confidence === 'low', JSON.stringify(e))
 
   const total = Number((await db.query(`SELECT COUNT(*) FROM analyses WHERE monitor_id=$1`, [mon.id])).rows[0].count)
   check('Une seule analyse par panne', total === 5, `${total} lignes`)

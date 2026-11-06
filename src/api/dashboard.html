@@ -2844,7 +2844,7 @@ function renderAnalyses() {
   const el = document.getElementById('analyses-list')
   renderAnSummary(analysesData)                       // bandeau sur le jeu complet
   if (metricsVisible) renderQualityMetrics(analysesData)
-  const activeModel = window._activeModel || analysesData[0]?.model_used || 'llama3.2:3b'
+  const activeModel = window._activeModel || analysesData.find(a => a.model_used !== 'none')?.model_used || 'llama3.2:3b'
 
   const q = anSearch.toLowerCase()
   let list = analysesData.filter(a => {
