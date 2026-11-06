@@ -637,3 +637,54 @@ describe('Maintenance windows — PATCH ne doit pas réinjecter les defaults (zo
     expect(rows[0].duration_min).toBe(90)     // inchangé
   })
 })
+
+describe('sameErrorBefore — même empreinte sur ce monitor, 7 jours', () => {
+  const LOGS = 'FATAL: connection refused on db-primary after 30s'
+
+  async function seed(monitorId: string, jobName: string, logs: string, ageDays = 0) {
+    const { hashError, sanitizeLogs } = await import('../services/sanitizer')
+    await pgPool.query(
+      `INSERT INTO analyses (id, monitor_id, error_hash, diagnosis, model_used, created_at) VALUES ($1,$2,$3,'{}','m',$4)`,
+      [`a-${Date.now()}-${Math.random()}`, monitorId, hashError(jobName, sanitizeLogs(logs).clean),
+       new Date(Date.now() - ageDays * 86400_000)]
+    )
+  }
+
+  async function setup() {
+    const { sameErrorRecently } = await import('../services/llm/incident-memory')
+    const client = await createTestClient()
+    return { sameErrorRecently, monitor: await createTestMonitor(client.id, 'etl'), client }
+  }
+
+  it('vrai pour la même erreur, y compris avec une autre durée', async () => {
+    const { sameErrorRecently, monitor } = await setup()
+    await seed(monitor.id, 'etl', LOGS)
+    expect(await sameErrorRecently(monitor.id, 'etl', LOGS)).toBe(true)
+    expect(await sameErrorRecently(monitor.id, 'etl', LOGS.replace('30s', '75s'))).toBe(true)
+  })
+
+  it('faux pour une autre erreur sur le même monitor', async () => {
+    const { sameErrorRecently, monitor } = await setup()
+    await seed(monitor.id, 'etl', LOGS)
+    expect(await sameErrorRecently(monitor.id, 'etl', 'out of memory: killed process')).toBe(false)
+  })
+
+  it('faux si la même erreur vient d un autre monitor', async () => {
+    const { sameErrorRecently, monitor, client } = await setup()
+    const other = await createTestMonitor(client.id, 'etl')
+    await seed(other.id, 'etl', LOGS)
+    expect(await sameErrorRecently(monitor.id, 'etl', LOGS)).toBe(false)
+  })
+
+  it('faux au-delà de 7 jours', async () => {
+    const { sameErrorRecently, monitor } = await setup()
+    await seed(monitor.id, 'etl', LOGS, 8)
+    expect(await sameErrorRecently(monitor.id, 'etl', LOGS)).toBe(false)
+  })
+
+  it('faux sans log, même si une analyse sans log existe', async () => {
+    const { sameErrorRecently, monitor } = await setup()
+    await seed(monitor.id, 'etl', '')
+    expect(await sameErrorRecently(monitor.id, 'etl', '   ')).toBe(false)
+  })
+})

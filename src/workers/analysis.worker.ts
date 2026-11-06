@@ -6,7 +6,7 @@ import { Worker, Job }   from 'bullmq'
 import { db }            from '../db'
 import { logger }        from '../config/logger'
 import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
-import { recallSimilar } from '../services/llm/incident-memory'
+import { recallSimilar, sameErrorRecently } from '../services/llm/incident-memory'
 import { planHasAI }     from '../config/plans'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
 import { sendAlert, sendRecovery } from '../services/alerts'
@@ -151,11 +151,7 @@ function createPingWorker() {
       if (avg1 > 0) durationTrend = Math.round((avg2 - avg1) / avg1 * 100)
     }
 
-    const { rows: [recentError] } = await db.query(`
-      SELECT 1 FROM analyses
-      WHERE monitor_id=$1 AND created_at > NOW() - INTERVAL '7 days'
-      LIMIT 1
-    `, [monitorId])
+    const sameErrorBefore = await sameErrorRecently(monitorId, ctx.name, output ?? '')
 
     // Défaillances simultanées (multi-monitors)
     const { rows: correlatedRows } = await db.query(`
@@ -286,7 +282,7 @@ function createPingWorker() {
       failCount7d:        fails7d,
       successRate7d:      successRate,
       durationTrend,
-      sameErrorBefore:    !!recentError,
+      sameErrorBefore,
       correlatedFailures: correlatedFailures.length ? correlatedFailures : undefined,
       timePattern,
       fewShotExamples:    fewShotExamples.length

@@ -1,6 +1,6 @@
 import { db }     from '../../db'
 import { logger } from '../../config/logger'
-import { sanitizeLogs, fingerprintLogs } from '../sanitizer'
+import { sanitizeLogs, fingerprintLogs, hashError } from '../sanitizer'
 import { embed, cosine, memoryEnabled } from './embeddings'
 import type { FewShotExample, ErrorCategory } from './analyzer'
 
@@ -60,4 +60,16 @@ export async function recallSimilar(clientId: string, logs: string, k = 2): Prom
     logger.warn('[Memory] recall failed', { err })
     return []
   }
+}
+
+// Vrai seulement si CETTE erreur (même empreinte) a déjà été analysée sur ce monitor dans les 7 jours.
+// Sans log, rien ne prouve que deux échecs sont la même erreur.
+export async function sameErrorRecently(monitorId: string, jobName: string, logs: string): Promise<boolean> {
+  if (!logs.trim()) return false
+  const { rows } = await db.query(`
+    SELECT 1 FROM analyses
+    WHERE monitor_id=$1 AND error_hash=$2 AND created_at > NOW() - INTERVAL '7 days'
+    LIMIT 1
+  `, [monitorId, hashError(jobName, sanitizeLogs(logs).clean)])
+  return rows.length > 0
 }

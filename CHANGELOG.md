@@ -48,6 +48,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   établi.
 
 ### Corrigé
+- **`sameErrorBefore` compare enfin l'erreur.** Il valait vrai dès qu'un monitor avait eu une analyse quelconque
+  dans les 7 jours : deux pannes sans rapport comptaient comme récurrentes, ce qui poussait la sévérité à
+  « high » au minimum. Il exige maintenant la même empreinte d'erreur, et reste faux sans log. 5 tests.
 - **Cache : durées et tailles normalisées dans l'empreinte d'erreur** (`3630s`, `1h30m`, `512MB`). La même panne
   avec une valeur différente ne rappelle plus le modèle. Un zéro reste distinct (`wrote 0 bytes`). 4 tests.
 - **Éval : nom de job neutre.** `jobName` entre dans le prompt et contenait le nom de la fixture
