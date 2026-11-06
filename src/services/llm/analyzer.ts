@@ -187,6 +187,14 @@ FORMAT DE RÉPONSE (respecte exactement ces champs) :
   "fix_minutes": 15
 }
 
+STYLE (incident — priorité vitesse + action fiable) :
+- Sois TÉLÉGRAPHIQUE : pendant une panne, l'opérateur lit en 5 s puis agit. Chaque mot inutile coûte du temps.
+- "cause" : 1 phrase, ≤ 20 mots, cite la valeur EXACTE du log (pas de reformulation vague).
+- "action" : 1 étape impérative exécutable TOUT DE SUITE (commande/opération concrète), ≤ 20 mots.
+- "prevention" : 1 phrase, ≤ 15 mots.
+- "checks" : 2 à 3 vérifs, chacune ≤ 8 mots, la plus décisive en premier.
+- Zéro redite entre champs, zéro préambule, zéro politesse.
+
 RÈGLES DE CATÉGORIE :
 - database   → connection refused/timeout, too many connections, deadlock, query error, replica lag
 - network    → DNS failure, ECONNREFUSED, socket timeout, TLS/SSL error, unreachable host

@@ -39,6 +39,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   du provider) + latence agrégée et le flag `template_mining`, pour mesurer le gain mining ON vs OFF
   à jeu de cas identique.
 
+### Changé
+- **Prompt SYSTEM télégraphique** (2026-11-06) — directive de concision/action : `cause` ≤ 20 mots citant
+  la valeur EXACTE du log, `action` impérative exécutable tout de suite, `checks` ≤ 8 mots (le plus décisif
+  d'abord), zéro préambule. But = réponse plus rapide et plus actionnable en incident. Mesuré (5 runs,
+  llama3.2:3b, même harness) : **latence 19,7 s → 14,3 s (−27 %)**, **catégorie 76 % → 86 %**, tok_out
+  162 → 149. Seul recul : **sévérité exacte 57 % → 50 %** (±1 rang reste 99 %), secondaire, à surveiller.
+  `eval/results.json` régénéré.
+
 ### Mesuré (2026-11-03, 5 runs, llama3.2:3b, code actuel)
 - **Claim catégorie tient** : 76% ± 7 (runs 69–85), sévérité 57% ± 4, **100% ±1 rang**, **100% parsable**,
   ~20 s/analyse. `eval/results.json` rafraîchi.
