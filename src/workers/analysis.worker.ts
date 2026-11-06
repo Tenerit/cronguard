@@ -122,7 +122,7 @@ function createPingWorker() {
       SELECT m.name, m.schedule, m.env, m.expected_min, m.expected_max, m.notes,
              c.email, c.slack_webhook,
              (SELECT pinged_at FROM pings WHERE monitor_id=m.id AND status='success' ORDER BY pinged_at DESC LIMIT 1) AS last_success,
-             (SELECT AVG(duration_ms) FROM pings WHERE monitor_id=m.id AND status='success' ORDER BY pinged_at DESC LIMIT 20) AS avg_dur
+             (SELECT AVG(duration_ms) FROM (SELECT duration_ms FROM pings WHERE monitor_id=m.id AND status='success' ORDER BY pinged_at DESC LIMIT 20) recent) AS avg_dur
       FROM monitors m JOIN clients c ON c.id=m.client_id WHERE m.id=$1
     `, [monitorId])
 
