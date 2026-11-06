@@ -48,6 +48,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   établi.
 
 ### Corrigé
+- **Analyse des échecs réparée.** Une requête du worker (`AVG` + `ORDER BY`) était rejetée par Postgres : chaque
+  échec signalé par un ping plantait le job avant l'analyse et l'alerte. Présent depuis le commit initial.
+- **Test de bout en bout en CI** (`npm run test:e2e`) : vrais API, worker, Postgres et Redis, faux LLM. Couvre le
+  chemin ping → analyse → alerte, le cache et `sameErrorBefore`.
 - **`sameErrorBefore` compare enfin l'erreur.** Il valait vrai dès qu'un monitor avait eu une analyse quelconque
   dans les 7 jours : deux pannes sans rapport comptaient comme récurrentes, ce qui poussait la sévérité à
   « high » au minimum. Il exige maintenant la même empreinte d'erreur, et reste faux sans log. 5 tests.

@@ -48,7 +48,8 @@ jobs:
   # Tue le risque « vert tout-mocké » : les vraies migrations SQL s'appliquent sur
   # un vrai Postgres (pg-mem ne le garantit pas — cf. dérive de schéma), et le seed
   # exerce le schéma + la connectivité Redis de bout en bout. Pas d'Ollama (trop
-  # lourd en CI) — le LLM est testé séparément par le harness d'éval.
+  # lourd en CI) — le LLM est testé séparément par le harness d'éval, et le test e2e
+  # le remplace par un faux serveur.
   integration:
     name: Integration (real Postgres + Redis)
     runs-on: ubuntu-latest
@@ -98,6 +99,11 @@ jobs:
       - name: Smoke — schema reachable + seeded
         run: |
           node -e "const {Pool}=require('pg');const p=new Pool({connectionString:process.env.DATABASE_URL});p.query('SELECT count(*)::int AS n FROM monitors').then(r=>{if(r.rows[0].n<1)throw new Error('no monitors seeded');console.log('✓ '+r.rows[0].n+' monitors seeded on real Postgres');return p.end();}).catch(e=>{console.error(e);process.exit(1);});"
+
+      # Vrais API + worker sur vrais Postgres + Redis, LLM remplacé : le chemin ping → analyse → alerte
+      # n'était couvert par rien, et un SQL invalide l'a cassé sans bruit de juin à novembre 2026.
+      - name: End-to-end failure pipeline
+        run: npm run test:e2e
 
   # ─── 3. Build Docker image ───────────────────────────────────────────────────
   build:

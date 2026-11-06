@@ -38,6 +38,7 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",
     "llm:pull": "docker compose exec ollama ollama pull llama3.2:3b",
+    "test:e2e": "tsx e2e/pipeline.ts",
     "eval": "tsx eval/run.ts",
     "eval:redteam": "cross-env PROMPTFOO_DISABLE_TELEMETRY=1 PROMPTFOO_DISABLE_UPDATE=1 npx -y promptfoo@0.124.1 eval -c eval/redteam/promptfooconfig.yaml --no-cache -j 1",
     "retention:now": "cross-env RUN_RETENTION_NOW=true node dist/workers/retention.worker.js"
