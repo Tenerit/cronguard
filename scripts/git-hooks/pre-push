@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Lance la CI locale avant chaque push (GitHub Actions indisponible sur ce compte).
+# Activer une fois :   git config core.hooksPath scripts/git-hooks
+# Contourner en urgence (déconseillé) : git push --no-verify
+exec npm run -s ci

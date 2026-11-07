@@ -32,6 +32,14 @@ npm test                    # jest  (src/__tests__) — c'est ce que lance la CI
 npx vitest run              # vitest (tests/) — logique pure + analyzer
 ```
 
+**Tout d'un coup : `npm run ci`** — les mêmes contrôles que la CI GitHub (tsc, jest, vitest,
+audit des dépendances de prod, build, test de bout en bout sur vrais PostgreSQL + Redis), en ~40 s.
+`CI_SKIP_E2E=1 npm run ci` sans Docker. Pour le lancer avant chaque push :
+
+```bash
+git config core.hooksPath scripts/git-hooks
+```
+
 - `npm test` a besoin de Redis (pour les tests d'intégration). Postgres est mocké
   via `pg-mem` ; certaines requêtes (LATERAL, CTE, `::interval`) y sont partiellement
   supportées → ces tests tolèrent `200` **ou** `500`.
