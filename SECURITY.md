@@ -22,10 +22,12 @@ Only the latest release on `master` receives security fixes.
 - **API keys are stored as SHA-256 digests only.** A database dump or backup gives access to no
   account. A key is shown once, when it is created; account recovery issues a new key.
 - **`/metrics` is closed by default** (set `METRICS_TOKEN`, or `METRICS_PUBLIC=true` on a trusted network).
+- **Strict script policy.** The dashboard and status page run no inline event handlers; their
+  `<script>` blocks are allowed by SHA-256 hash only (`script-src` has no `'unsafe-inline'`), so
+  injected markup cannot run script. Every inserted value is also escaped, and tests guard both.
 
 ## Known limitations
 
-- The dashboard's Content Security Policy allows inline scripts (`'unsafe-inline'`) because the
-  page uses inline event handlers. Every value inserted into the page is escaped, and a test
-  (`tests/dashboard-xss.test.ts`) guards the patterns that led to past issues.
+- `style-src` still allows inline styles (`'unsafe-inline'`): the dashboard sets many `style`
+  attributes. Injected CSS cannot run script, but could restyle the page.
 - `npm audit` reports 20 low/moderate advisories, all inside the jest test toolchain (glob, minimatch, deepmerge via jest 30). They are dev dependencies: not in the Docker images and not run in production. npm's suggested fix is a downgrade to jest 25, so they stay until jest ships patched versions. Production dependencies report 0 vulnerabilities (`npm audit --omit=dev`).

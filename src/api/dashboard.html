@@ -366,6 +366,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
   color:var(--text2);cursor:pointer;transition:all .15s ease;
   display:inline-flex;align-items:center;gap:4px;
 }
+.hist-row{display:flex;gap:12px;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--text3)}
+.hist-time{min-width:34px}.hist-dur,.hist-rec{margin-left:auto;min-width:64px;text-align:right}.hist-rec{margin-left:0}
+.hs-ok{color:var(--green)}.hs-fail{color:var(--red)}.hs-late{color:var(--amber)}
 .d-btn:hover{border-color:var(--border3);color:var(--text);background:var(--bg4);transform:translateY(-1px)}
 .d-btn.danger:hover{border-color:var(--red);color:var(--red);background:var(--red-dim)}
 .d-btn.success:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
@@ -1094,11 +1097,11 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
 <!-- Bannière démo (affichée uniquement en mode démo) -->
 <div class="demo-banner" id="demo-banner">
   <span><b data-i18n="demo.tag">DÉMO</b> <span class="db-note" data-i18n="demo.note">données fictives · lecture seule</span></span>
-  <button class="db-cta" onclick="setView('docs')" data-i18n="demo.cta">Installer chez vous →</button>
+  <button class="db-cta" data-click="setView" data-args='["docs"]' data-i18n="demo.cta">Installer chez vous →</button>
 </div>
 
 <!-- Visite guidée (onboarding) -->
-<div class="tour-overlay" id="tour-overlay" onclick="event.target===this && endTour()" role="dialog" aria-modal="true" aria-label="Visite guidée">
+<div class="tour-overlay" id="tour-overlay" data-click="endTour" data-self role="dialog" aria-modal="true" aria-label="Visite guidée">
   <div class="tour-ring" id="tour-ring"></div>
   <div class="tour-pop" id="tour-pop">
     <div class="tour-step" id="tour-step">1 / 6</div>
@@ -1107,9 +1110,9 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
     <div class="tour-nav">
       <div class="tour-dots" id="tour-dots"></div>
       <div class="tour-actions">
-        <button class="tour-skip" onclick="endTour()" id="tour-skip" data-i18n="tour.skip">Passer</button>
-        <button class="btn btn-ghost" onclick="tourPrev()" id="tour-prev" style="font-size:11px;padding:5px 10px" data-i18n="tour.back">Précédent</button>
-        <button class="btn btn-primary" onclick="tourNext()" id="tour-next" style="font-size:11px;padding:5px 12px" data-i18n="tour.next">Suivant</button>
+        <button class="tour-skip" data-click="endTour" id="tour-skip" data-i18n="tour.skip">Passer</button>
+        <button class="btn btn-ghost" data-click="tourPrev" id="tour-prev" style="font-size:11px;padding:5px 10px" data-i18n="tour.back">Précédent</button>
+        <button class="btn btn-primary" data-click="tourNext" id="tour-next" style="font-size:11px;padding:5px 12px" data-i18n="tour.next">Suivant</button>
       </div>
     </div>
   </div>
@@ -1130,7 +1133,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
       <label class="field-label" data-i18n="auth.apiUrl">URL de l'API</label>
       <input class="field-input" type="text" id="auth-url" value="http://localhost:3000">
     </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:8px" onclick="login()" data-i18n="auth.login">
+    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:8px" data-click="login" data-i18n="auth.login">
       → Connexion
     </button>
     <div class="field-err" id="auth-err"></div>
@@ -1138,13 +1141,13 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
 </div>
 
 <!-- Sidebar backdrop (mobile) -->
-<div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+<div class="sidebar-backdrop" id="sidebar-backdrop" data-click="closeSidebar"></div>
 
 <!-- Drawer overlay -->
-<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer-overlay" id="drawer-overlay" data-click="closeDrawer"></div>
 <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-name">
   <div class="d-head">
-    <button class="d-close" onclick="closeDrawer()" data-i18n-aria="a11y.closeDrawer" aria-label="Fermer le panneau">✕</button>
+    <button class="d-close" data-click="closeDrawer" data-i18n-aria="a11y.closeDrawer" aria-label="Fermer le panneau">✕</button>
     <div class="d-name" id="d-name">—</div>
     <div class="d-meta" id="d-meta"></div>
     <div class="d-actions" id="d-actions"></div>
@@ -1192,8 +1195,8 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
     </div>
     <div class="field-err" id="m-err"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeModal()" data-i18n="mod.cancel">annuler</button>
-      <button class="btn btn-primary" onclick="createMonitor()" data-i18n="mod.new.create">créer →</button>
+      <button class="btn btn-ghost" data-click="closeModal" data-i18n="mod.cancel">annuler</button>
+      <button class="btn btn-primary" data-click="createMonitor" data-i18n="mod.new.create">créer →</button>
     </div>
   </div>
 
@@ -1203,12 +1206,12 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
     <div class="success-box">
       <div class="success-key">
         <span id="s-key">—</span>
-        <button class="key-copy" onclick="copyKey('s-key')" data-i18n="set.copy">copier</button>
+        <button class="key-copy" data-click="copyKey" data-args='["s-key"]' data-i18n="set.copy">copier</button>
       </div>
       <div class="curl-success" id="s-curl"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-primary btn-full" style="width:100%;justify-content:center" onclick="closeModal()" data-i18n="mod.close">fermer</button>
+      <button class="btn btn-primary btn-full" style="width:100%;justify-content:center" data-click="closeModal" data-i18n="mod.close">fermer</button>
     </div>
   </div>
 </div>
@@ -1262,8 +1265,8 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
     </div>
     <div class="field-err" id="em-err"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeEditModal()" data-i18n="mod.cancel">annuler</button>
-      <button class="btn btn-primary" onclick="saveMonitor()" data-i18n="mod.edit.save">enregistrer →</button>
+      <button class="btn btn-ghost" data-click="closeEditModal" data-i18n="mod.cancel">annuler</button>
+      <button class="btn btn-primary" data-click="saveMonitor" data-i18n="mod.edit.save">enregistrer →</button>
     </div>
   </div>
 </div>
@@ -1289,11 +1292,11 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
     <div id="inv-success" style="display:none;margin-top:12px">
       <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--mono)" data-i18n="mod.inv.link">Lien d'acceptation (valable 7 jours) :</div>
       <div class="key-box" id="inv-link" style="font-size:10px;word-break:break-all"></div>
-      <button class="btn btn-ghost" onclick="copyText(document.getElementById('inv-link').dataset.url,t('toast.linkCopied'))" data-i18n="mod.inv.copyLink">copier le lien</button>
+      <button class="btn btn-ghost" data-click="copyInviteLink" data-i18n="mod.inv.copyLink">copier le lien</button>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeInviteModal()" data-i18n="mod.close">fermer</button>
-      <button class="btn btn-primary" id="inv-btn" onclick="sendInvite()" data-i18n="mod.inv.send">envoyer →</button>
+      <button class="btn btn-ghost" data-click="closeInviteModal" data-i18n="mod.close">fermer</button>
+      <button class="btn btn-primary" id="inv-btn" data-click="sendInvite" data-i18n="mod.inv.send">envoyer →</button>
     </div>
   </div>
 </div>
@@ -1326,8 +1329,8 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
     </div>
     <div class="field-err" id="mw-err"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeMaintenanceModal()" data-i18n="mod.cancel">annuler</button>
-      <button class="btn btn-primary" onclick="createMaintenanceWindow()" data-i18n="mod.mw.create">créer →</button>
+      <button class="btn btn-ghost" data-click="closeMaintenanceModal" data-i18n="mod.cancel">annuler</button>
+      <button class="btn btn-primary" data-click="createMaintenanceWindow" data-i18n="mod.mw.create">créer →</button>
     </div>
   </div>
 </div>
@@ -1343,27 +1346,27 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
     </div>
     <nav class="s-nav">
       <div class="s-section" data-i18n="nav.monitoring">monitoring</div>
-      <div class="s-item active" id="nav-dashboard" onclick="setView('dashboard')">
+      <div class="s-item active" id="nav-dashboard" data-click="setView" data-args='["dashboard"]'>
         <span class="icon">◈</span> <span data-i18n="nav.dashboard">dashboard</span>
       </div>
-      <div class="s-item" id="nav-monitors" onclick="setView('monitors')">
+      <div class="s-item" id="nav-monitors" data-click="setView" data-args='["monitors"]'>
         <span class="icon">⬡</span> <span data-i18n="nav.services">services</span>
         <span class="s-badge" id="alert-badge" style="display:none">0</span>
       </div>
-      <div class="s-item" id="nav-logs" onclick="setView('logs')">
+      <div class="s-item" id="nav-logs" data-click="setView" data-args='["logs"]'>
         <span class="icon">≡</span> <span data-i18n="nav.logs">journal</span>
       </div>
-      <div class="s-item" id="nav-analyses" onclick="setView('analyses')">
+      <div class="s-item" id="nav-analyses" data-click="setView" data-args='["analyses"]'>
         <span class="icon">✦</span> <span data-i18n="nav.analyses">analyses ia</span>
       </div>
-      <div class="s-item" id="nav-playground" onclick="setView('playground')">
+      <div class="s-item" id="nav-playground" data-click="setView" data-args='["playground"]'>
         <span class="icon">⚡</span> <span data-i18n="nav.playground">playground ia</span>
       </div>
       <div class="s-section" data-i18n="nav.account">compte</div>
-      <div class="s-item" id="nav-settings" onclick="setView('settings')">
+      <div class="s-item" id="nav-settings" data-click="setView" data-args='["settings"]'>
         <span class="icon">⚙</span> <span data-i18n="nav.settings">paramètres</span>
       </div>
-      <div class="s-item" id="nav-docs" onclick="setView('docs')">
+      <div class="s-item" id="nav-docs" data-click="setView" data-args='["docs"]'>
         <span class="icon">?</span> <span data-i18n="nav.docs">documentation</span>
       </div>
     </nav>
@@ -1372,24 +1375,24 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
         <span id="sidebar-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">—</span>
         <span class="s-plan-badge" id="sidebar-plan">free</span>
       </div>
-      <button class="btn btn-ghost" onclick="logout()" style="width:100%;justify-content:center;font-size:10px" data-i18n="nav.logout">déconnexion</button>
+      <button class="btn btn-ghost" data-click="logout" style="width:100%;justify-content:center;font-size:10px" data-i18n="nav.logout">déconnexion</button>
     </div>
   </aside>
 
   <main class="main">
     <div class="topbar">
-      <button class="mobile-menu-btn" onclick="toggleSidebar()" data-i18n-aria="a11y.menu" aria-label="Ouvrir le menu">☰</button>
+      <button class="mobile-menu-btn" data-click="toggleSidebar" data-i18n-aria="a11y.menu" aria-label="Ouvrir le menu">☰</button>
       <h1 class="topbar-title" id="page-title" style="margin:0;font-size:14px;font-weight:600">dashboard</h1>
       <div class="search-wrap">
         <span class="search-icon" aria-hidden="true">⌕</span>
-        <input class="search-input" id="search" type="search" data-i18n-ph="top.search" data-i18n-aria="a11y.search" aria-label="Filtrer les services" placeholder="filtrer les services..." oninput="filterMonitors()">
+        <input class="search-input" id="search" type="search" data-i18n-ph="top.search" data-i18n-aria="a11y.search" aria-label="Filtrer les services" placeholder="filtrer les services..." data-input="filterMonitors">
         <span class="search-kbd" aria-hidden="true">/</span>
       </div>
       <div class="topbar-right">
         <div class="live" id="live-indicator" role="status" aria-live="polite"><div class="live-dot" aria-hidden="true"></div> <span id="live-ts">live</span></div>
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Changer de thème">☀</button>
-        <button class="btn btn-ghost" onclick="refreshAll()" data-i18n-title="top.refresh" data-i18n-aria="a11y.refresh" aria-label="Rafraîchir" title="Rafraîchir (R)">↻</button>
-        <button class="btn btn-primary" onclick="openModal()" data-i18n="top.newMonitor">+ monitor</button>
+        <button class="theme-toggle" id="theme-toggle" data-click="toggleTheme" aria-label="Changer de thème">☀</button>
+        <button class="btn btn-ghost" data-click="refreshAll" data-i18n-title="top.refresh" data-i18n-aria="a11y.refresh" aria-label="Rafraîchir" title="Rafraîchir (R)">↻</button>
+        <button class="btn btn-primary" data-click="openModal" data-i18n="top.newMonitor">+ monitor</button>
       </div>
     </div>
 
@@ -1411,8 +1414,8 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
             <div class="ph">
               <div class="ph-title"><span data-i18n="panel.services">services</span> <span class="ph-count" id="m-count-dash">—</span></div>
               <div class="ph-right">
-                <button class="btn btn-ghost" id="f-all" onclick="setFilter('all')" style="font-size:10px;padding:2px 7px" data-i18n="filter.all">tous</button>
-                <button class="btn btn-ghost" id="f-alerts" onclick="setFilter('alerts')" style="font-size:10px;padding:2px 7px" data-i18n="filter.alerts">alertes</button>
+                <button class="btn btn-ghost" id="f-all" data-click="setFilter" data-args='["all"]' style="font-size:10px;padding:2px 7px" data-i18n="filter.all">tous</button>
+                <button class="btn btn-ghost" id="f-alerts" data-click="setFilter" data-args='["alerts"]' style="font-size:10px;padding:2px 7px" data-i18n="filter.alerts">alertes</button>
               </div>
             </div>
             <div id="monitors-list"><div class="empty">…</div></div>
@@ -1430,8 +1433,8 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <div class="ph">
             <div class="ph-title"><span data-i18n="panel.allServices">tous les services</span> <span class="ph-count" id="m-count-full">—</span></div>
             <div class="ph-right">
-              <button class="btn btn-ghost" id="f-all-f" onclick="setFilter('all','full')" style="font-size:10px;padding:2px 7px" data-i18n="filter.all">tous</button>
-              <button class="btn btn-ghost" id="f-alerts-f" onclick="setFilter('alerts','full')" style="font-size:10px;padding:2px 7px" data-i18n="filter.alerts">alertes</button>
+              <button class="btn btn-ghost" id="f-all-f" data-click="setFilter" data-args='["all","full"]' style="font-size:10px;padding:2px 7px" data-i18n="filter.all">tous</button>
+              <button class="btn btn-ghost" id="f-alerts-f" data-click="setFilter" data-args='["alerts","full"]' style="font-size:10px;padding:2px 7px" data-i18n="filter.alerts">alertes</button>
             </div>
           </div>
           <div id="monitors-list-full"><div class="empty">…</div></div>
@@ -1444,11 +1447,11 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <div class="ph">
             <div class="ph-title"><span data-i18n="logs.title">journal d'activité</span> <span class="ph-count" id="log-count">—</span></div>
             <div class="ph-right" style="gap:8px">
-              <input class="search-input" id="log-search" data-i18n-ph="logs.search" placeholder="filtrer par service..." oninput="filterLogs()"
+              <input class="search-input" id="log-search" data-i18n-ph="logs.search" placeholder="filtrer par service..." data-input="filterLogs"
                      style="width:160px;padding-left:10px">
-              <button class="btn btn-ghost lf-btn active" id="lf-all"  onclick="setLogFilter('all')"  style="font-size:10px;padding:3px 8px" data-i18n="logs.all">tous</button>
-              <button class="btn btn-ghost lf-btn" id="lf-fail" onclick="setLogFilter('fail')" style="font-size:10px;padding:3px 8px" data-i18n="logs.failures">échecs</button>
-              <button class="btn btn-ghost lf-btn" id="lf-ai"   onclick="setLogFilter('ai')"   style="font-size:10px;padding:3px 8px" data-i18n="logs.aiAnalyzed">analysés ia</button>
+              <button class="btn btn-ghost lf-btn active" id="lf-all"  data-click="setLogFilter" data-args='["all"]'  style="font-size:10px;padding:3px 8px" data-i18n="logs.all">tous</button>
+              <button class="btn btn-ghost lf-btn" id="lf-fail" data-click="setLogFilter" data-args='["fail"]' style="font-size:10px;padding:3px 8px" data-i18n="logs.failures">échecs</button>
+              <button class="btn btn-ghost lf-btn" id="lf-ai"   data-click="setLogFilter" data-args='["ai"]'   style="font-size:10px;padding:3px 8px" data-i18n="logs.aiAnalyzed">analysés ia</button>
               <div class="live"><div class="live-dot"></div> <span data-i18n="live">en direct</span></div>
             </div>
           </div>
@@ -1459,12 +1462,12 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
       <!-- SETTINGS VIEW -->
       <div class="view" id="view-settings">
         <div class="settings-tabs" role="tablist">
-          <button class="stab active" data-stab-btn="account" onclick="setSettingsTab('account')" data-i18n="set.tab.account">Compte</button>
-          <button class="stab" data-stab-btn="notifications" onclick="setSettingsTab('notifications')" data-i18n="set.tab.notifications">Notifications</button>
-          <button class="stab" data-stab-btn="alerts" onclick="setSettingsTab('alerts')" data-i18n="set.tab.alerts">Alertes</button>
-          <button class="stab" data-stab-btn="team" onclick="setSettingsTab('team')" data-i18n="set.tab.team">Équipe</button>
-          <button class="stab" data-stab-btn="status" onclick="setSettingsTab('status')" data-i18n="set.tab.status">Statut</button>
-          <button class="stab" data-stab-btn="audit" onclick="setSettingsTab('audit')" data-i18n="set.tab.audit">Audit</button>
+          <button class="stab active" data-stab-btn="account" data-click="setSettingsTab" data-args='["account"]' data-i18n="set.tab.account">Compte</button>
+          <button class="stab" data-stab-btn="notifications" data-click="setSettingsTab" data-args='["notifications"]' data-i18n="set.tab.notifications">Notifications</button>
+          <button class="stab" data-stab-btn="alerts" data-click="setSettingsTab" data-args='["alerts"]' data-i18n="set.tab.alerts">Alertes</button>
+          <button class="stab" data-stab-btn="team" data-click="setSettingsTab" data-args='["team"]' data-i18n="set.tab.team">Équipe</button>
+          <button class="stab" data-stab-btn="status" data-click="setSettingsTab" data-args='["status"]' data-i18n="set.tab.status">Statut</button>
+          <button class="stab" data-stab-btn="audit" data-click="setSettingsTab" data-args='["audit"]' data-i18n="set.tab.audit">Audit</button>
         </div>
         <div class="settings-section" data-stab="account">
           <div class="settings-title" data-i18n="set.account">compte</div>
@@ -1484,15 +1487,15 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
             <span class="settings-label" data-i18n="set.apiKey">Clé API</span>
             <span class="settings-val" style="display:flex;align-items:center;gap:6px">
               <span id="set-key-hidden">••••••••••••••••</span>
-              <button class="key-copy" onclick="toggleApiKey()" data-i18n="set.show">afficher</button>
-              <button class="key-copy" onclick="copyText(window._rawApiKey||'',t('toast.apiKeyCopied'))" data-i18n="set.copy">copier</button>
-              <button class="key-copy" style="border-color:rgba(248,113,113,.3);color:var(--red)" onclick="rotateApiKey()" data-i18n="set.rotate">rotation</button>
+              <button class="key-copy" data-click="toggleApiKey" data-i18n="set.show">afficher</button>
+              <button class="key-copy" data-click="copyApiKey" data-i18n="set.copy">copier</button>
+              <button class="key-copy" style="border-color:rgba(248,113,113,.3);color:var(--red)" data-click="rotateApiKey" data-i18n="set.rotate">rotation</button>
             </span>
           </div>
           <div class="settings-row">
             <span class="settings-label" data-i18n="lang.label">Langue</span>
             <span class="settings-val">
-              <select class="field-input field-select" id="set-lang" onchange="setLang(this.value)" style="padding:4px 8px;font-size:11px">
+              <select class="field-input field-select" id="set-lang" data-change="setLang" data-pass="value" style="padding:4px 8px;font-size:11px">
                 <option value="">Auto</option>
                 <option value="fr">Français</option>
                 <option value="en">English</option>
@@ -1511,7 +1514,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
           <div class="settings-input-row">
             <input class="field-input" id="set-slack" placeholder="https://hooks.slack.com/services/...">
-            <button class="btn btn-ghost" onclick="saveSlack()" data-i18n="set.save">enregistrer</button>
+            <button class="btn btn-ghost" data-click="saveSlack" data-i18n="set.save">enregistrer</button>
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
@@ -1521,7 +1524,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
           <div class="settings-input-row">
             <input class="field-input" id="set-webhook" placeholder="https://...">
-            <button class="btn btn-ghost" onclick="saveWebhook()" data-i18n="set.save">enregistrer</button>
+            <button class="btn btn-ghost" data-click="saveWebhook" data-i18n="set.save">enregistrer</button>
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
@@ -1530,7 +1533,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
             </div>
           </div>
           <div class="settings-input-row">
-            <select class="field-input field-select" id="set-tz" onchange="saveTz()">
+            <select class="field-input field-select" id="set-tz" data-change="saveTz">
               <option value="" data-i18n="set.tzAuto">Automatique (navigateur)</option>
             </select>
           </div>
@@ -1541,7 +1544,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6" data-i18n="set.trialDesc">
             Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, analyses IA avancées.
           </div>
-          <button class="btn btn-primary" onclick="startTrial()" data-i18n="set.startTrial">Démarrer l'essai 14 jours →</button>
+          <button class="btn btn-primary" data-click="startTrial" data-i18n="set.startTrial">Démarrer l'essai 14 jours →</button>
         </div>
 
         <div class="settings-section" data-stab="alerts">
@@ -1558,7 +1561,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <div class="settings-input-row" style="align-items:center">
             <input class="field-input" id="set-esc-delay" type="number" placeholder="30" min="1" max="1440" style="max-width:100px">
             <span style="font-size:11px;color:var(--text3)" data-i18n="set.minutes">minutes</span>
-            <button class="btn btn-ghost" onclick="saveEscalation()" style="margin-left:auto" data-i18n="set.save">enregistrer</button>
+            <button class="btn btn-ghost" data-click="saveEscalation" style="margin-left:auto" data-i18n="set.save">enregistrer</button>
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
@@ -1577,7 +1580,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
           <div class="settings-input-row">
             <input class="field-input" id="set-esc-webhook" placeholder="https://...">
-            <button class="btn btn-ghost" onclick="saveEscalation()" data-i18n="set.save">enregistrer</button>
+            <button class="btn btn-ghost" data-click="saveEscalation" data-i18n="set.save">enregistrer</button>
           </div>
         </div>
 
@@ -1588,7 +1591,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
           <div id="maint-windows-list" style="margin-bottom:12px"><div style="font-size:12px;color:var(--text3)">…</div></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-ghost" onclick="openMaintenanceModal()" data-i18n="set.addWindow">+ ajouter une fenêtre</button>
+            <button class="btn btn-ghost" data-click="openMaintenanceModal" data-i18n="set.addWindow">+ ajouter une fenêtre</button>
           </div>
         </div>
 
@@ -1600,7 +1603,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <div id="team-members-list" style="margin-bottom:12px"><div style="font-size:12px;color:var(--text3)">…</div></div>
           <div id="team-invites-list" style="margin-bottom:12px"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-ghost" onclick="openInviteModal()" data-i18n="set.inviteMember">+ inviter un membre</button>
+            <button class="btn btn-ghost" data-click="openInviteModal" data-i18n="set.inviteMember">+ inviter un membre</button>
           </div>
         </div>
 
@@ -1626,7 +1629,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
       <!-- DOCS VIEW -->
       <div class="view" id="view-docs">
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-          <button class="btn btn-ghost" onclick="startTour(true)" style="font-size:11px" data-i18n="tour.replay">Relancer la visite guidée</button>
+          <button class="btn btn-ghost" data-click="startTour" data-args='[true]' style="font-size:11px" data-i18n="tour.replay">Relancer la visite guidée</button>
         </div>
         <div class="docs-section">
           <div class="docs-h2" data-i18n="docs.qs">démarrage rapide</div>
@@ -1655,7 +1658,7 @@ LOG=$(cat /var/log/backup.log 2>/dev/null | tail -50)
 curl -sX POST <span id="doc-url">http://localhost:3000</span>/ping/VOTRE_PING_KEY \
   -H "Content-Type: application/json" \
   -d "{"status":"$([ $STATUS -eq 0 ] && echo success || echo fail)","exit_code":$STATUS,"output":"$LOG"}"
-<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-bash')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" data-click="copyCode" data-args='["code-bash"]'>copier</button></div>
 
           <div class="docs-code" id="code-node">// Node.js / TypeScript
 const PING_KEY = 'VOTRE_PING_KEY'
@@ -1683,7 +1686,7 @@ await withMonitor(async () => {
   const count = await syncDatabase()
   return count // nombre d'enregistrements traités
 })
-<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-node')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" data-click="copyCode" data-args='["code-node"]'>copier</button></div>
 
           <div class="docs-code" id="code-python">import requests, time, traceback
 
@@ -1709,7 +1712,7 @@ def with_monitor(fn):
 
 # Utilisation
 with_monitor(lambda: sync_database())
-<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-python')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" data-click="copyCode" data-args='["code-python"]'>copier</button></div>
         </div>
 
         <div class="docs-section">
@@ -1722,7 +1725,7 @@ with_monitor(lambda: sync_database())
   "exit_code":   0,                     // code de retour du script
   "output":      "logs du script..."   // envoyé au LLM si status=fail (max 4000c)
 }
-<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-payload')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" data-click="copyCode" data-args='["code-payload"]'>copier</button></div>
 
           <div class="docs-h3" data-i18n="docs.outVal">validation de sortie</div>
           <div class="docs-p" data-i18n="docs.outValP">Si vous configurez records min/max sur un service, CronGuard reclasse automatiquement un ping « success » avec 0 record en « fail ». Idéal pour détecter les backups silencieux qui ne traitent rien.</div>
@@ -1772,7 +1775,7 @@ GET  /status/:monitor_id          # Page de statut publique
 GET  /health                      # Santé de l'API
 
 # Toutes les routes nécessitent : X-API-Key: votre_cle
-<button class="docs-copy" data-i18n="docs.copy" onclick="copyCode('code-api')">copier</button></div>
+<button class="docs-copy" data-i18n="docs.copy" data-click="copyCode" data-args='["code-api"]'>copier</button></div>
         </div>
 
         <div class="docs-section">
@@ -1817,14 +1820,14 @@ GET  /health                      # Santé de l'API
 
         <!-- Barre de filtres -->
         <div class="an-toolbar">
-          <select id="an-sev" onchange="filterAnalyses()">
+          <select id="an-sev" data-change="filterAnalyses">
             <option value="all" data-i18n="antb.allSev">toutes sévérités</option>
             <option value="critical">critical</option>
             <option value="high">high</option>
             <option value="medium">medium</option>
             <option value="low">low</option>
           </select>
-          <select id="an-cat" onchange="filterAnalyses()">
+          <select id="an-cat" data-change="filterAnalyses">
             <option value="all" data-i18n="antb.allCat">toutes catégories</option>
             <option value="database">database</option>
             <option value="network">network</option>
@@ -1835,10 +1838,10 @@ GET  /health                      # Santé de l'API
             <option value="data">data</option>
             <option value="unknown">unknown</option>
           </select>
-          <input class="search-input" id="an-search" data-i18n-ph="antb.search" placeholder="rechercher cause / service..." oninput="filterAnalyses()" style="width:180px;padding-left:10px">
-          <span id="an-filter-badge" class="an-filter-badge" style="display:none" onclick="clearAnFilter()">— <span id="an-filter-name"></span> ✕</span>
+          <input class="search-input" id="an-search" data-i18n-ph="antb.search" placeholder="rechercher cause / service..." data-input="filterAnalyses" style="width:180px;padding-left:10px">
+          <span id="an-filter-badge" class="an-filter-badge" style="display:none" data-click="clearAnFilter">— <span id="an-filter-name"></span> ✕</span>
           <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
-            <button class="btn btn-ghost" id="toggle-metrics" onclick="toggleMetrics()" style="font-size:10px;padding:3px 8px" data-i18n="antb.hide">masquer</button>
+            <button class="btn btn-ghost" id="toggle-metrics" data-click="toggleMetrics" style="font-size:10px;padding:3px 8px" data-i18n="antb.hide">masquer</button>
             <span style="font-size:9px;font-family:var(--mono);color:var(--text3)" id="an-info">—</span>
           </span>
         </div>
@@ -1846,7 +1849,7 @@ GET  /health                      # Santé de l'API
         <div id="analyses-list"><div class="empty">…</div></div>
 
         <div style="margin-top:16px;text-align:center">
-          <button class="btn btn-ghost" onclick="setView('playground')" style="border-color:rgba(52,211,153,.25);color:var(--green)" data-i18n="pg.testCta">
+          <button class="btn btn-ghost" data-click="setView" data-args='["playground"]' style="border-color:rgba(52,211,153,.25);color:var(--green)" data-i18n="pg.testCta">
             Tester le LLM en direct →
           </button>
         </div>
@@ -1895,8 +1898,8 @@ GET  /health                      # Santé de l'API
             <textarea id="pg-logs" data-i18n-ph="pg.logsPh" placeholder="Collez ici les logs d'erreur de votre cron job..."></textarea>
           </div>
           <div style="display:flex;align-items:center;gap:10px;margin-top:12px">
-            <button class="btn btn-primary" onclick="runPreview()" style="padding:8px 18px;font-size:13px" data-i18n="pg.analyze">Analyser maintenant</button>
-            <button class="btn btn-ghost" onclick="clearPreview()" data-i18n="pg.clear">Effacer</button>
+            <button class="btn btn-primary" data-click="runPreview" style="padding:8px 18px;font-size:13px" data-i18n="pg.analyze">Analyser maintenant</button>
+            <button class="btn btn-ghost" data-click="clearPreview" data-i18n="pg.clear">Effacer</button>
           </div>
           <div class="playground-spinner" id="pg-spinner">
             <div class="pending-spin"></div>
@@ -2550,8 +2553,8 @@ function renderAlertBanner(list) {
   if (failed.length) parts.push(`${failed.length} ${t('ab.failing')}`)
   if (late.length)   parts.push(`${late.length} ${t('ab.late')}`)
   const chips = [
-    ...failed.map(m => `<span class="ab-chip fail" onclick="openDrawer('${m.id}')">${esc(m.name)}</span>`),
-    ...late.map(m   => `<span class="ab-chip late" onclick="openDrawer('${m.id}')">${esc(m.name)}</span>`)
+    ...failed.map(m => `<span class="ab-chip fail" data-click="openDrawer" data-args="${esc(JSON.stringify([`${m.id}`]))}">${esc(m.name)}</span>`),
+    ...late.map(m   => `<span class="ab-chip late" data-click="openDrawer" data-args="${esc(JSON.stringify([`${m.id}`]))}">${esc(m.name)}</span>`)
   ].join('')
   el.innerHTML = `<div class="alert-banner ${cls}">
     <div class="ab-icon"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${dot};box-shadow:0 0 8px ${dot}"></span></div>
@@ -2694,8 +2697,8 @@ function renderMonitors(target) {
         ${t('empty.mon.desc')}
       </div>
       <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="openModal()">${t('empty.mon.createFirst')}</button>
-        <button class="btn btn-ghost" onclick="setView('docs')">${t('empty.mon.seeDocs')}</button>
+        <button class="btn btn-primary" data-click="openModal">${t('empty.mon.createFirst')}</button>
+        <button class="btn btn-ghost" data-click="setView" data-args='["docs"]'>${t('empty.mon.seeDocs')}</button>
       </div>
       <div style="margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:480px;margin-left:auto;margin-right:auto">
         <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;font-size:10px;color:var(--text3);font-family:var(--mono)">
@@ -2742,7 +2745,7 @@ function renderMonitors(target) {
     const pendingHtml = isPending ? `<span class="pending-spin" title="${t('pending')}"></span>` : ''
     const rowLabel = `${esc(m.name)}, ${esc(m.env)}, ${pillTxt}`
     return `<div class="m-row${isActive}" role="button" tabindex="0" aria-label="${rowLabel}"
-      onclick="openDrawer('${m.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
+      data-click="openDrawer" data-args="${esc(JSON.stringify([`${m.id}`]))}" data-key-click>
       <div class="m-dot ${dotCls}" aria-hidden="true"></div>
       <div>
         <div class="m-name">${esc(m.name)} ${pendingHtml}</div>
@@ -2758,11 +2761,11 @@ function renderMonitors(target) {
       </div>
       <div class="m-status"><span class="pill ${pillCls}">${pillTxt}</span></div>
       <div class="m-actions" role="group" aria-label="${esc(m.name)} actions">
-        <button class="act-btn" onclick="event.stopPropagation();openEditModal(${esc(JSON.stringify(m))})" aria-label="${t('row.edit')}" title="${t('row.edit')}">edit</button>
-        <button class="act-btn" onclick="event.stopPropagation();ackMonitor('${m.id}')" aria-label="${t('row.ack')}" title="${t('row.ack')}">ack</button>
-        <button class="act-btn" onclick="event.stopPropagation();snoozeMonitor('${m.id}')" aria-label="${t('row.snooze')}" title="${t('row.snooze')}">snooze</button>
-        <button class="act-btn" onclick="event.stopPropagation();copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')" aria-label="${t('row.copyKey')}" title="${t('row.copyKey')}">key</button>
-        <button class="act-btn red" data-name="${esc(m.name)}" onclick="event.stopPropagation();confirmDelete('${m.id}',this.dataset.name)" aria-label="${t('row.delete')}" title="${t('row.delete')}">del</button>
+        <button class="act-btn" data-click="openEditModal" data-args="${esc(JSON.stringify([m]))}" aria-label="${t('row.edit')}" title="${t('row.edit')}">edit</button>
+        <button class="act-btn" data-click="ackMonitor" data-args="${esc(JSON.stringify([`${m.id}`]))}" aria-label="${t('row.ack')}" title="${t('row.ack')}">ack</button>
+        <button class="act-btn" data-click="snoozeMonitor" data-args="${esc(JSON.stringify([`${m.id}`]))}" aria-label="${t('row.snooze')}" title="${t('row.snooze')}">snooze</button>
+        <button class="act-btn" data-click="copyText" data-args="${esc(JSON.stringify([`${m.ping_key}`, `${t('dr.pingKeyCopied')}`]))}" aria-label="${t('row.copyKey')}" title="${t('row.copyKey')}">key</button>
+        <button class="act-btn red" data-name="${esc(m.name)}" data-click="confirmDelete" data-args="${esc(JSON.stringify([`${m.id}`, m.name]))}" aria-label="${t('row.delete')}" title="${t('row.delete')}">del</button>
       </div>
     </div>`
   }).join('')
@@ -2817,7 +2820,7 @@ function renderJournal() {
     const ai    = isAI ? '<span class="je-ai">IA</span>' : ''
     const rCls  = isFail ? 'je-r-fail' : isLate ? 'je-r-late' : 'je-r-ok'
     const click = l.monitor_id
-      ? `role="button" tabindex="0" aria-label="${esc(l.monitor_name)} ${sTxt}" onclick="openDrawer('${l.monitor_id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"`
+      ? `role="button" tabindex="0" aria-label="${esc(l.monitor_name)} ${sTxt}" data-click="openDrawer" data-args="${esc(JSON.stringify([`${l.monitor_id}`]))}" data-key-click`
       : ''
     return `<div class="je ${rCls}" ${click}>
       <span class="je-time">${ts}</span>
@@ -2900,14 +2903,14 @@ function renderAnalyses() {
         </div>
       </div>
       <div style="text-align:center">
-        <button class="btn btn-primary" onclick="setView('playground')">${t('sample.cta')}</button>
+        <button class="btn btn-primary" data-click="setView" data-args='["playground"]'>${t('sample.cta')}</button>
       </div>
     </div>`
     return
   }
   if (!list.length) {
     el.innerHTML = `<div class="empty">${t('an.none')}<br>
-      <button class="btn btn-ghost" onclick="resetAnFilters()" style="margin-top:12px">↺ ${t('an.reset')}</button></div>`
+      <button class="btn btn-ghost" data-click="resetAnFilters" style="margin-top:12px">↺ ${t('an.reset')}</button></div>`
     return
   }
 
@@ -2955,7 +2958,7 @@ function renderAnalyses() {
            ${checks.map(c => `<div class="an-check-item">${esc(String(c))}</div>`).join('')}
          </div>` : ''
     const logsHtml = hasLog
-      ? `<div class="an-logs-toggle" onclick="toggleLog('al${i}',this)">▶ ${t('log.show')} (${logTxt.trim().length}c)</div>
+      ? `<div class="an-logs-toggle" data-click="toggleLog" data-args="${esc(JSON.stringify([`al${i}`]))}" data-pass="el">▶ ${t('log.show')} (${logTxt.trim().length}c)</div>
          <div class="an-logs-content" id="al${i}">${esc(logTxt.trim())}</div>` : ''
 
     return `<div class="an-item acc-${esc(sev)}" id="an-${a.id||i}">
@@ -2991,10 +2994,10 @@ function renderAnalyses() {
       <div class="feedback-row">
         <span class="fb-label">${t('fb.question')}</span>
         <button class="fb-btn ${a.user_feedback==='positive'?'active-pos':''}"
-          onclick="sendFeedback('${a.id||''}','positive','an-${a.id||i}')">👍</button>
+          data-click="sendFeedback" data-args="${esc(JSON.stringify([`${a.id||''}`, "positive", `an-${a.id||i}`]))}">👍</button>
         <button class="fb-btn ${a.user_feedback==='negative'?'active-neg':''}"
-          onclick="sendFeedback('${a.id||''}','negative','an-${a.id||i}')">👎</button>
-        <button class="fb-btn" onclick="recordFix('${a.id||''}')">${t('fb.fixBtn')}</button>
+          data-click="sendFeedback" data-args="${esc(JSON.stringify([`${a.id||''}`, "negative", `an-${a.id||i}`]))}">👎</button>
+        <button class="fb-btn" data-click="recordFix" data-args="${esc(JSON.stringify([`${a.id||''}`]))}">${t('fb.fixBtn')}</button>
       </div>
     </div>`
   }).join('')
@@ -3025,14 +3028,14 @@ async function openDrawer(id) {
     ${m.expected_min!=null ? `<span>${m.expected_min}–${m.expected_max||'∞'} ${t('dr.records')}</span>` : ''}`
 
   document.getElementById('d-actions').innerHTML = `
-    <button class="d-btn" onclick="openEditModal(${esc(JSON.stringify(m))})">✎ ${t('dr.edit')}</button>
-    <button class="d-btn" onclick="copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')">⎘ ${t('dr.pingKey')}</button>
-    <button class="d-btn" onclick="testMonitor('${id}')">⚡ ${t('dr.testAlert')}</button>
-    <button class="d-btn" onclick="ackMonitor('${id}')">✓ ${t('dr.ack')}</button>
-    <button class="d-btn" onclick="snoozeMonitor('${id}')">⏸ ${t('dr.snooze')}</button>
-    ${isPaused ? `<button class="d-btn success" onclick="resumeMonitor('${id}')">▶ ${t('dr.resume')}</button>`
-               : `<button class="d-btn" onclick="pauseMonitor('${id}')">⏹ ${t('dr.pause')}</button>`}
-    <button class="d-btn danger" data-name="${esc(m.name)}" onclick="confirmDelete('${id}',this.dataset.name)">✕ ${t('dr.delete')}</button>`
+    <button class="d-btn" data-click="openEditModal" data-args="${esc(JSON.stringify([m]))}">✎ ${t('dr.edit')}</button>
+    <button class="d-btn" data-click="copyText" data-args="${esc(JSON.stringify([`${m.ping_key}`, `${t('dr.pingKeyCopied')}`]))}">⎘ ${t('dr.pingKey')}</button>
+    <button class="d-btn" data-click="testMonitor" data-args="${esc(JSON.stringify([`${id}`]))}">⚡ ${t('dr.testAlert')}</button>
+    <button class="d-btn" data-click="ackMonitor" data-args="${esc(JSON.stringify([`${id}`]))}">✓ ${t('dr.ack')}</button>
+    <button class="d-btn" data-click="snoozeMonitor" data-args="${esc(JSON.stringify([`${id}`]))}">⏸ ${t('dr.snooze')}</button>
+    ${isPaused ? `<button class="d-btn success" data-click="resumeMonitor" data-args="${esc(JSON.stringify([`${id}`]))}">▶ ${t('dr.resume')}</button>`
+               : `<button class="d-btn" data-click="pauseMonitor" data-args="${esc(JSON.stringify([`${id}`]))}">⏹ ${t('dr.pause')}</button>`}
+    <button class="d-btn danger" data-name="${esc(m.name)}" data-click="confirmDelete" data-args="${esc(JSON.stringify([`${id}`, m.name]))}">✕ ${t('dr.delete')}</button>`
 
   document.getElementById('d-body').innerHTML = '<div class="empty">…</div>'
   document.getElementById('drawer-overlay').classList.add('open')
@@ -3109,7 +3112,7 @@ function renderDrawerBody(m, history, analyses) {
     })()
     const hasLog = a.ping_output || a.ping_exit_code!=null
     const logTxt = (a.ping_exit_code!=null?'exit: '+a.ping_exit_code+'\n':'')+(a.ping_output||'')
-    const logs   = hasLog ? `<div class="d-analysis-logs" onclick="toggleLog('dl${i}',this)">▶ ${t('log.show')}</div>
+    const logs   = hasLog ? `<div class="d-analysis-logs" data-click="toggleLog" data-args="${esc(JSON.stringify([`dl${i}`]))}" data-pass="el">▶ ${t('log.show')}</div>
       <div class="d-logs-content" id="dl${i}">${esc(logTxt.trim())}</div>` : ''
     const checksHtml = dChecks.length
       ? dChecks.map(c => `<div style="font-size:10px;color:var(--text2);padding:1px 0;font-family:var(--mono)">→ ${esc(String(c))}</div>`).join('')
@@ -3151,7 +3154,7 @@ function renderDrawerBody(m, history, analyses) {
     </div>
 
     <div class="d-section">
-      <div class="d-section-title">ping_key <button class="key-copy" onclick="copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')">${t('dr.copy')}</button></div>
+      <div class="d-section-title">ping_key <button class="key-copy" data-click="copyText" data-args="${esc(JSON.stringify([`${m.ping_key}`, `${t('dr.pingKeyCopied')}`]))}">${t('dr.copy')}</button></div>
       <div class="key-box"><span style="word-break:break-all">${m.ping_key}</span></div>
       <div class="curl-box">curl -sX POST ${BASE_URL}/ping/${m.ping_key} \\
   -d '{"status":"success","duration_ms":1200}'
@@ -3225,10 +3228,10 @@ function confirmDelete(id, name) {
   div.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--red-dim);border-radius:var(--radius-lg);padding:24px;width:360px">
     <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">${t('del.title')} "${esc(name)}"</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:12px">${t('del.warn')}</div>
-    <input id="del-name-input" class="del-input" placeholder="${esc(name)}" data-name="${esc(name)}" oninput="checkDelName(this.dataset.name,'del-ok-btn')">
+    <input id="del-name-input" class="del-input" placeholder="${esc(name)}" data-name="${esc(name)}" data-input="checkDelName" data-args="${esc(JSON.stringify([name, 'del-ok-btn']))}">
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-      <button class="btn btn-ghost" onclick="document.getElementById('del-confirm').remove()">${t('del.cancel')}</button>
-      <button id="del-ok-btn" class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim);opacity:.4;pointer-events:none" onclick="doDelete('${id}')">${t('del.confirm')}</button>
+      <button class="btn btn-ghost" data-click="closeDelConfirm">${t('del.cancel')}</button>
+      <button id="del-ok-btn" class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim);opacity:.4;pointer-events:none" data-click="doDelete" data-args="${esc(JSON.stringify([`${id}`]))}">${t('del.confirm')}</button>
     </div>
   </div>`
   document.body.appendChild(div)
@@ -3497,6 +3500,34 @@ function toggleLog(id, btn) {
   btn.textContent = open ? `▼ ${t('log.hide')}` : `▶ ${t('log.show')} (${el.textContent.length}c)`
 }
 
+function copyApiKey()      { copyText(window._rawApiKey || '', t('toast.apiKeyCopied')) }
+function copyInviteLink()  { copyText(document.getElementById('inv-link').dataset.url, t('toast.linkCopied')) }
+function closeDelConfirm() { document.getElementById('del-confirm')?.remove() }
+
+// ─── Actions déclaratives (CSP sans 'unsafe-inline') ─────────────────────────
+// Aucun handler inline : data-click / data-input / data-change nomment une fonction globale,
+// data-args porte ses arguments (JSON), data-pass ajoute l'élément (el) ou sa valeur (value).
+// Seul le [data-click] le plus proche agit : remplace les event.stopPropagation() d'avant.
+function runAction(el, attr) {
+  const fn = window[el.getAttribute(attr)]
+  if (typeof fn !== 'function') return
+  const args = el.dataset.args ? JSON.parse(el.dataset.args) : []
+  if (el.dataset.pass === 'el') args.push(el)
+  else if (el.dataset.pass === 'value') args.push(el.value)
+  fn.apply(el, args)
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest?.('[data-click]')
+  if (el && (!el.hasAttribute('data-self') || e.target === el)) runAction(el, 'data-click')
+})
+for (const ev of ['input', 'change']) document.addEventListener(ev, e => {
+  const el = e.target.closest?.(`[data-${ev}]`)
+  if (el) runAction(el, `data-${ev}`)
+})
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('[data-key-click]')) { e.preventDefault(); e.target.click() }
+})
+
 // ─── Raccourcis clavier ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return
@@ -3590,7 +3621,7 @@ window._rawApiKey = ''
 
 function toggleApiKey() {
   const el  = document.getElementById('set-key-hidden')
-  const btn = event.target
+  const btn = this
   if (el.textContent.includes('•')) {
     el.textContent = window._rawApiKey || API_KEY
     btn.textContent = 'masquer'
@@ -3721,7 +3752,7 @@ async function loadMaintenanceWindows() {
           </div>
           <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${esc(w.cron_expr)} · ${w.duration_min}min${w.monitor_id?'':' · '+t('set.allMonitors')}</div>
         </div>
-        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="deleteMaintenanceWindow('${w.id}')">${t('set.remove')}</button>
+        <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" data-click="deleteMaintenanceWindow" data-args="${esc(JSON.stringify([`${w.id}`]))}">${t('set.remove')}</button>
       </div>`).join('')
   } catch(e) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">—</div>' }
 }
@@ -3774,8 +3805,8 @@ async function loadTeamMembers() {
           </div>
         </div>
         <span style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-ghost" style="font-size:10px" onclick="rotateMemberKey('${m.id}')">${t('set.rotate')}</button>
-          <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" onclick="removeTeamMember('${m.id}')">${t('set.remove')}</button>
+          <button class="btn btn-ghost" style="font-size:10px" data-click="rotateMemberKey" data-args="${esc(JSON.stringify([`${m.id}`]))}">${t('set.rotate')}</button>
+          <button class="btn btn-ghost" style="font-size:10px;color:var(--red)" data-click="removeTeamMember" data-args="${esc(JSON.stringify([`${m.id}`]))}">${t('set.remove')}</button>
         </span>
       </div>`).join('')
   } catch(e) { el.innerHTML = '<div style="font-size:12px;color:var(--text3)">—</div>' }
@@ -3792,7 +3823,7 @@ async function loadTeamMembers() {
             <div class="settings-label" style="color:var(--text2)">${esc(i.email)}</div>
             <div style="font-size:10px;font-family:var(--mono);color:var(--text3)">${i.role} · ${t('set.expires')} ${fmtDateTime(i.expires_at)}</div>
           </div>
-          <button class="btn btn-ghost" style="font-size:10px" onclick="cancelInvite('${i.id}')">${t('set.cancel')}</button>
+          <button class="btn btn-ghost" style="font-size:10px" data-click="cancelInvite" data-args="${esc(JSON.stringify([`${i.id}`]))}">${t('set.cancel')}</button>
         </div>`).join('')
   } catch(e) { iel.innerHTML = '' }
 }
@@ -3988,7 +4019,7 @@ function initQuickErrors() {
   container.innerHTML = QUICK_ERRORS.map((s, i) => `
     <button class="quick-err-btn"
       style="color:${catColors[s.category]||'var(--text2)'};border-color:${catColors[s.category]||'var(--border2)'}20"
-      onclick="loadScenario(${i})">${s.label}</button>
+      data-click="loadScenario" data-args="${esc(JSON.stringify([i]))}">${s.label}</button>
   `).join('')
 }
 

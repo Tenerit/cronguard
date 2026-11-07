@@ -23,6 +23,10 @@ npm run dev:all             # API + workers + checker (hot reload)
 
 Dashboard : http://localhost:3000/dashboard · clé API dans `.env.seed`.
 
+Pas de `onclick=` dans le dashboard : la CSP les bloque (le bouton ne fait rien, sans erreur).
+Écrire `data-click="maFonction"` (+ `data-args='["x"]'`, ou `data-args="${esc(JSON.stringify([...]))}"`
+dans un template) ; `maFonction` doit être une `function` de premier niveau. Un test le vérifie.
+
 ## Tests
 
 Deux runners — **les deux doivent passer** :

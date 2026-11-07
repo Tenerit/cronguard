@@ -2,14 +2,20 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
-// Garde-fous statiques sur le dashboard : la CSP autorise les scripts inline (handlers onclick),
-// donc une seule interpolation non échappée suffit à voler la clé API de l'owner.
+// Garde-fous statiques sur le dashboard : la CSP bloque les scripts inline non hashés, mais une
+// interpolation non échappée reste une injection HTML (faux formulaire, lien piégé) : on garde ces tests.
 const html = readFileSync(join(__dirname, '../src/api/dashboard.html'), 'utf8')
 
 describe('dashboard : échappement des champs saisis par un membre', () => {
   it("esc() échappe aussi l'apostrophe", () => {
     const src = /function esc\(s\) \{([\s\S]*?)\n\}/.exec(html)?.[1] ?? ''
     expect(src).toContain("&#39;")
+  })
+
+  it('data-args dynamiques toujours sérialisés en JSON puis échappés', () => {
+    const dyn = html.match(/data-args="\$\{[^"]*"/g) ?? []
+    expect(dyn.length).toBeGreaterThan(20)
+    for (const a of dyn) expect(a).toMatch(/^data-args="\$\{esc\(JSON\.stringify\(\[/)
   })
 
   it("aucun texte échappé HTML n'est placé dans une chaîne JS d'attribut (décodé avant le JS)", () => {

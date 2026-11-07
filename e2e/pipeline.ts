@@ -189,6 +189,10 @@ async function main() {
   const twice = (await db.query(`SELECT api_key FROM clients WHERE id = $1`, [legacy.id])).rows[0].api_key
   check('Clé : migration idempotente (pas de double hash)', twice === migrated)
 
+  // ─── Page de statut publique : un id invalide ne doit pas arrêter l'API ──────
+  const bad = await fetch(`http://localhost:${API_PORT}/status/not-a-uuid`)
+  check('Statut : id invalide → 404 sans planter l\'API', bad.status === 404 && (await fetch(`http://localhost:${API_PORT}/health`)).status === 200, String(bad.status))
+
   // ─── Mémoire panne × cause × correction ─────────────────────────────────────
   const post = (p: string, key: string, body: unknown) => fetch(`http://localhost:${API_PORT}${p}`, {
     method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': key }, body: JSON.stringify(body) })

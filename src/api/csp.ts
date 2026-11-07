@@ -1,23 +1,32 @@
 // Directives Content-Security-Policy du dashboard / status page.
 // Extrait ici pour être testable sans booter toute l'app (cf. csp.test.ts).
 //
-// 'unsafe-inline' est conservé pour script/style : le dashboard a des blocs <script>
-// inline + ~111 handlers inline (onclick…) + styles inline. Un script-src strict
-// (nonce/hash) imposerait de refactorer tous les handlers en addEventListener — chantier
-// séparé, à valider en navigateur. Ici on ferme déjà les vecteurs durs : object/embed,
-// base-tag hijack, clickjacking (frame-ancestors), POST de formulaire cross-origin, et
-// on borne connect/img. Seule ressource externe légitime : Google Fonts.
-//
-// Pourquoi on ne passe PAS au nonce (décision pesée 2026-11-06) : dashboard.html est servi
-// statiquement (res.sendFile, pas de templating) ET la démo (§11) est hébergeable en statique
-// SANS backend → aucun serveur pour injecter un nonce par requête. Un nonce casserait donc la
-// démo statique, qui est un différenciateur (lever de conversion). Les hashes marcheraient en
-// statique mais = 111 hashes + re-hash à chaque changement JS (fragile). Le gain (checkbox revue
-// de sécu, utile ICP régulé) ne vaut pas ce coût tant que les sorties XSS sont déjà échappées (§9).
-// À rouvrir seulement si un deal régulé l'exige explicitement.
+// script-src SANS 'unsafe-inline' (2026-11-07) : les handlers inline (onclick…) ont été remplacés
+// par des attributs data-click/data-input/data-change lus par un seul écouteur délégué (dashboard.html,
+// « Actions déclaratives »), et les blocs <script> inline sont autorisés par leur empreinte SHA-256,
+// calculée ici au démarrage depuis les fichiers servis : rien à re-hasher à la main quand le JS change.
+// La démo statique (?demo=1 sur un hébergeur sans backend) n'est pas concernée : pas d'en-tête CSP.
+// style-src garde 'unsafe-inline' (≈190 attributs style=, injection de style = risque faible).
+// Vecteurs durs fermés : object/embed, base-tag hijack, clickjacking, POST cross-origin.
+import { createHash }   from 'crypto'
+import { readFileSync } from 'fs'
+import { join }         from 'path'
+
+// Le parseur HTML convertit CRLF en LF avant de hasher le contenu du <script> : on fait pareil,
+// sinon un checkout Windows (autocrlf) servirait des empreintes fausses et bloquerait le dashboard.
+export function inlineScriptHashes(html: string): string[] {
+  const out: string[] = []
+  for (const [, body] of html.replace(/\r\n?/g, '\n').matchAll(/<script>([\s\S]*?)<\/script>/g))
+    out.push(`'sha256-${createHash('sha256').update(body, 'utf8').digest('base64')}'`)
+  return out
+}
+
+const PAGES = ['dashboard.html', 'status.html']
+const SCRIPT_HASHES = PAGES.flatMap(p => inlineScriptHashes(readFileSync(join(__dirname, p), 'utf8')))
+
 export const CSP_DIRECTIVES: Record<string, string[]> = {
   defaultSrc:     ["'self'"],
-  scriptSrc:      ["'self'", "'unsafe-inline'"],
+  scriptSrc:      ["'self'", ...SCRIPT_HASHES],
   styleSrc:       ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
   fontSrc:        ["'self'", 'https://fonts.gstatic.com'],
   imgSrc:         ["'self'", 'data:'],

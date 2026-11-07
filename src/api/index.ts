@@ -32,6 +32,7 @@ import { logger } from '../config/logger'
 import { CSP_DIRECTIVES }  from './csp'
 import { escapeHtml }      from '../services/escape'
 import { requireApiKey }  from './middleware/auth'
+import { asyncHandler }   from './middleware/async-handler'
 import { metricsHandler } from './routes/metrics'
 import { pingRouter }     from './routes/ping'
 import { monitorsRouter } from './routes/monitors'
@@ -198,11 +199,15 @@ app.get('/badge/:monitorId', async (req, res) => {
   }
 })
 
-app.get('/status/:monitorId', (req, res) => {
+// Route publique : un id non-UUID faisait rejeter la requête PG hors de tout catch → le
+// handler unhandledRejection arrêtait l'API. N'importe quel visiteur pouvait la faire tomber.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+app.get('/status/:monitorId', asyncHandler(async (req, res) => {
   if (req.headers.accept?.includes('text/html') && !req.headers['x-api-key'])
     return res.sendFile('status.html', { root: __dirname })
+  if (!UUID_RE.test(req.params.monitorId)) return res.status(404).json({ error: 'Not found' })
 
-  db.query(`
+  const { rows: [m] } = await db.query(`
     SELECT m.name, m.last_status, m.last_ping_at, m.env, m.schedule,
       COALESCE(json_agg(json_build_object('status',p.status,'pinged_at',p.pinged_at)
         ORDER BY p.pinged_at DESC) FILTER (WHERE p.id IS NOT NULL), '[]') AS recent_pings
@@ -211,10 +216,9 @@ app.get('/status/:monitorId', (req, res) => {
       SELECT id,status,pinged_at FROM pings WHERE monitor_id=m.id ORDER BY pinged_at DESC LIMIT 90
     ) p ON true
     WHERE m.id=$1 AND m.active=true GROUP BY m.id
-  `, [req.params.monitorId]).then(({ rows: [m] }) =>
-    m ? res.json(m) : res.status(404).json({ error: 'Not found' })
-  )
-})
+  `, [req.params.monitorId])
+  m ? res.json(m) : res.status(404).json({ error: 'Not found' })
+}))
 
 // ─── Health & Error ───────────────────────────────────────────────────────────
 
