@@ -43,7 +43,20 @@ One alert is a notification. The other is a head start on the diagnosis.
 
 Sample monitors, AI analyses, MTTR/impact and a working **AI playground** (pre-recorded replies), all client-side. Host the single file on any static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages), or serve it from a `demo.*` subdomain to auto-enable. Mutations are disabled — a safe public showcase.
 
-## Run it for real — one command
+## Run it for real — one container
+
+PostgreSQL, Redis, the API and the workers in a single container, AI optional. For a quick start and small setups; use `docker-compose.yml` for larger production.
+
+```bash
+git clone https://github.com/Tenerit/cronguard && cd cronguard
+docker build -f Dockerfile.allinone -t cronguard .
+docker run -d --restart unless-stopped -p 3000:3000 -v cronguard-data:/data --name cronguard cronguard
+curl -X POST http://localhost:3000/auth/register -H "Content-Type: application/json" -d '{"email":"you@example.com"}'   # returns your API key, shown once
+```
+
+Open **http://localhost:3000/dashboard**. Without a model, failures get related log lines and known fixes; add local AI with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1`. Data lives in the `cronguard-data` volume; PostgreSQL and Redis listen on 127.0.0.1 inside the container only. `scripts/test-allinone.sh` checks start-up, a failure analysed without AI, data kept across a restart, and a clean PostgreSQL shutdown.
+
+## Demo with sample data — one command
 
 ```bash
 git clone https://github.com/Tenerit/cronguard && cd cronguard

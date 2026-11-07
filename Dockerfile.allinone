@@ -1,0 +1,39 @@
+# ── CronGuard tout-en-un : API + workers + PostgreSQL + Redis dans UN conteneur ──
+# Pour démarrer vite et pour les petites installations (quelques centaines de monitors).
+# En production plus large : docker-compose.yml (services séparés, sauvegardes, montée en charge).
+#
+#   docker build -f Dockerfile.allinone -t cronguard .
+#   docker run -d -p 3000:3000 -v cronguard-data:/data --name cronguard cronguard
+#
+# L'IA locale est optionnelle : -e LLM_BASE_URL=http://<hôte-ollama>:11434/v1
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --ignore-scripts
+COPY tsconfig.json ./
+COPY src/ ./src/
+RUN npm run build && npm prune --production --ignore-scripts
+
+FROM node:22-alpine
+RUN apk add --no-cache postgresql16 postgresql16-contrib redis su-exec tini \
+ && addgroup -S cronguard && adduser -S cronguard -G cronguard
+WORKDIR /app
+COPY --from=builder --chown=cronguard:cronguard /app/dist         ./dist
+COPY --from=builder --chown=cronguard:cronguard /app/node_modules ./node_modules
+COPY --from=builder --chown=cronguard:cronguard /app/package.json ./
+COPY --chown=cronguard:cronguard src/api/dashboard.html src/api/status.html ./dist/api/
+COPY docker/allinone-entrypoint.sh /usr/local/bin/cronguard-allinone
+RUN chmod +x /usr/local/bin/cronguard-allinone
+
+ENV NODE_ENV=production PORT=3000 \
+    DATABASE_URL=postgres://cronguard@127.0.0.1:5432/cronguard \
+    REDIS_URL=redis://127.0.0.1:6379
+VOLUME /data
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s \
+  CMD wget -qO- http://127.0.0.1:3000/health || exit 1
+
+# tini relaie SIGTERM au script, qui arrête PostgreSQL proprement (pas de corruption).
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/cronguard-allinone"]
