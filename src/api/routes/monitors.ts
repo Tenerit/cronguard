@@ -331,6 +331,17 @@ monitorsRouter.post('/analyze/preview', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: parsed.error.flatten() })
 
   const { logs, job_name, env, exit_code, duration_ms, avg_duration, schedule } = parsed.data
+  const { llmEnabled, analysisWithoutModel } = await import('../../services/llm/analyzer')
+  if (!llmEnabled()) {
+    const clean = sanitizeLogs(logs).clean
+    const analysis = analysisWithoutModel({ logs, exitCode: exit_code })
+    return res.json({
+      ...analysis,
+      evidence:  evidenceLines(clean, analysis.cause),
+      known_fix: knownFix(clean),
+      _meta: { job_name, env, model: 'none', logs_length: logs.length, ai: false },
+    })
+  }
   const baseUrl = process.env.LLM_BASE_URL?.replace('/v1', '') ?? 'http://localhost:11434'
   const model   = process.env.LLM_MODEL ?? 'llama3.2:3b'
 

@@ -10,7 +10,8 @@ import { llmHeaders } from './analyzer'
 export function memoryEnabled(): boolean {
   // ON par défaut (le moat) : actif sauf si explicitement coupé via MEMORY_ENABLED=false.
   // Si le modèle d'embed est absent, embed() échoue proprement (null) → no-op, pas de casse.
-  return process.env.MEMORY_ENABLED !== 'false'
+  // Sans serveur d'embeddings configuré, inutile de tenter localhost à chaque panne.
+  return process.env.MEMORY_ENABLED !== 'false' && !!(process.env.EMBED_BASE_URL || process.env.LLM_BASE_URL)
 }
 
 function embedBaseUrl(): string {

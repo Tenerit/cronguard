@@ -4,6 +4,8 @@ import { redis }      from '../../config/redis'
 import { sanitizeLogs, hashError } from '../sanitizer'
 import { isOpen, onSuccess, onFailure } from './circuit-breaker'
 import { mineTemplates } from './drain'
+import { knownFix }      from './known-fixes'
+import { evidenceLines } from './evidence'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -386,7 +388,9 @@ function recordsOutOfRange(ctx: JobContext): boolean {
 
 // Sans log ni autre preuve, le modèle inventait une cause (« high/database » sur du vide).
 // On ne l'appelle pas : mieux vaut dire qu'on ne sait pas et indiquer quoi faire.
-function analysisWithoutEvidence(ctx: JobContext): AnalysisResult {
+type LogOnlyContext = Pick<JobContext, 'logs' | 'exitCode' | 'failCount7d' | 'correlatedFailures'>
+
+function analysisWithoutEvidence(ctx: LogOnlyContext): AnalysisResult {
   const exit = ctx.exitCode !== undefined ? ` (code de sortie ${ctx.exitCode})` : ''
   return {
     cause:       `Échec sans log${exit} : cause impossible à déterminer.`,
@@ -407,6 +411,35 @@ function analysisWithoutEvidence(ctx: JobContext): AnalysisResult {
   }
 }
 
+// L'IA est optionnelle : sans LLM_BASE_URL (ou LLM_ENABLED=false), CronGuard reste utile
+// avec ce qui ne dépend pas du modèle (corrections connues, lignes de log, mémoire).
+export function llmEnabled(): boolean {
+  return process.env.LLM_ENABLED !== 'false' && !!process.env.LLM_BASE_URL
+}
+
+// Analyse sans modèle : tout vient des logs (pack déclenché, sinon dernière ligne d'erreur).
+// Sert quand l'IA est désactivée, et en repli quand le LLM est en panne ou saturé.
+export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
+  const { clean } = sanitizeLogs(ctx.logs)
+  if (!clean.trim()) return analysisWithoutEvidence(ctx)
+  const kf = knownFix(clean)
+  const line = evidenceLines(clean, kf?.title ?? '')[0]
+  return {
+    cause:       kf ? kf.title : line ? `Échec du job, dernière erreur : ${line}` : 'Échec du job : aucune ligne d\'erreur reconnue dans les logs.',
+    action:      kf ? kf.steps[0] : 'Lire les lignes de log liées et la sortie complète du job.',
+    prevention:  kf ? kf.steps[kf.steps.length - 1] : 'Activer l\'analyse IA locale pour une cause détaillée (LLM_BASE_URL).',
+    checks:      kf ? kf.steps.slice(1, 3) : [],
+    severity:    (ctx.failCount7d ?? 0) >= 3 ? 'high' : 'medium',
+    category:    kf?.category ?? 'unknown',
+    confidence:  kf ? 'medium' : 'low',
+    data_impact: 'possible',
+    fix_minutes: 30,
+    fromCache:   false,
+    correlatedMonitors: ctx.correlatedFailures,
+    model:       'none',
+  }
+}
+
 export async function analyzeFailure(
   ctx: JobContext,
   timeoutMs?: number,
@@ -414,6 +447,7 @@ export async function analyzeFailure(
 ): Promise<AnalysisResult | null> {
   const { clean, redactedCount } = sanitizeLogs(ctx.logs)
   if (!clean.trim() && !recordsOutOfRange(ctx)) return analysisWithoutEvidence(ctx)
+  if (!llmEnabled()) return analysisWithoutModel(ctx)
   const hash = hashError(ctx.jobName, clean)
 
   const cached = await fromCache(hash)

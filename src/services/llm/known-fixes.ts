@@ -9,8 +9,11 @@
 // N'ajouter qu'une panne au message stable et une procédure qu'un ops validerait sans
 // contexte. Chaque entrée a un test qui la déclenche et des fixtures qui ne doivent pas.
 
+import type { ErrorCategory } from './analyzer'
+
 export interface KnownFix {
   id:    string
+  category: ErrorCategory
   title: string
   steps: string[]
 }
@@ -18,6 +21,7 @@ export interface KnownFix {
 const FIXES: Array<KnownFix & { match: RegExp }> = [
   {
     id: 'pg-wal-full',
+    category: 'database',
     match: /pg_wal\/\S*["']?:? No space left on device|could not write to file "pg_wal/i,
     title: 'PostgreSQL : disque plein dans pg_wal',
     steps: [
@@ -29,6 +33,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'inodes-exhausted',
+    category: 'resources',
     match: /inodes? (exhausted|épuisés)|no free inodes|out of inodes/i,
     title: 'Inodes épuisés (disque pas forcément plein)',
     steps: [
@@ -39,6 +44,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'disk-full',
+    category: 'resources',
     match: /No space left on device|ENOSPC/i,
     title: 'Disque plein',
     steps: [
@@ -50,6 +56,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'oom-killed',
+    category: 'resources',
     match: /Out of memory: Killed process|OOMKilled|oom-kill|exit code:? 137\b/i,
     title: 'Processus tué par manque de mémoire (OOM, code 137)',
     steps: [
@@ -60,6 +67,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'pg-connection-refused',
+    category: 'database',
     match: /port 5432 failed: Connection refused|could not connect to server: Connection refused/i,
     title: 'PostgreSQL injoignable (connexion refusée)',
     steps: [
@@ -70,6 +78,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'pg-too-many-connections',
+    category: 'database',
     match: /too many clients already|remaining connection slots are reserved/i,
     title: 'PostgreSQL : plus de connexions disponibles',
     steps: [
@@ -80,6 +89,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'db-deadlock',
+    category: 'database',
     match: /deadlock detected|Deadlock found when trying to get lock/i,
     title: 'Interblocage (deadlock) entre transactions',
     steps: [
@@ -90,6 +100,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'dns-resolution',
+    category: 'network',
     match: /Could not resolve host|getaddrinfo (ENOTFOUND|EAI_AGAIN)|Temporary failure in name resolution|Name or service not known/i,
     title: 'Résolution DNS en échec',
     steps: [
@@ -100,6 +111,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'tls-cert-expired',
+    category: 'network',
     match: /certificate has expired|CERT_HAS_EXPIRED|certificate verify failed: certificate has expired/i,
     title: 'Certificat TLS expiré',
     steps: [
@@ -110,6 +122,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'http-429',
+    category: 'dependency',
     match: /\b429\b.*(Too Many Requests|rate limit)|(Too Many Requests|rate limit exceeded).*\b429\b|RateLimitError/i,
     title: 'Limite de débit de l\'API atteinte (429)',
     steps: [
@@ -123,5 +136,5 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
 export function knownFix(logs: string): KnownFix | null {
   if (!logs) return null
   const f = FIXES.find(x => x.match.test(logs))
-  return f ? { id: f.id, title: f.title, steps: f.steps } : null
+  return f ? { id: f.id, category: f.category, title: f.title, steps: f.steps } : null
 }

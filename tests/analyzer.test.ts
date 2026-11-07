@@ -41,7 +41,8 @@ const baseCtx = {
 
 describe('analyzeFailure', () => {
 
-  beforeEach(() => { vi.clearAllMocks() })
+  // Ces tests portent sur l'appel au LLM : il doit être configuré (sans lui, analyse tirée des logs).
+  beforeEach(() => { vi.clearAllMocks(); process.env.LLM_BASE_URL ??= 'http://localhost:11434/v1' })
 
   it('returns parsed diagnosis on valid LLM response', async () => {
     mockAxios.mockResolvedValueOnce({

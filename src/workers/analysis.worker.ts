@@ -5,7 +5,7 @@ import axios from 'axios'
 import { Worker, Job }   from 'bullmq'
 import { db }            from '../db'
 import { logger }        from '../config/logger'
-import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
+import { analyzeFailure, analysisWithoutModel, llmEnabled, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
 import { recallSimilar, recallVerifiedFix, sameErrorRecently } from '../services/llm/incident-memory'
 import { evidenceLines } from '../services/llm/evidence'
 import { knownFix }      from '../services/llm/known-fixes'
@@ -337,7 +337,8 @@ function createAnalysisWorker() {
           correlatedFailures: ctx.correlatedFailures,
           timePattern:        ctx.timePattern,
           fewShotExamples:    ctx.fewShotExamples as import('../services/llm/analyzer').FewShotExample[] | undefined,
-        })
+        }) ?? analysisWithoutModel({ logs: ctx.logs,
+          failCount7d: ctx.failCount7d, exitCode: ctx.exitCode, correlatedFailures: ctx.correlatedFailures })   // LLM en panne ou saturé : on garde ce que les logs disent
       : null
 
     let analysisId: string | undefined
@@ -417,7 +418,7 @@ async function main() {
 
   // 2. Warm-up du modèle LLM — évite le cold start de 30-60s au 1er job (Ollama local).
   //    Inutile pour un provider cloud (pas de cold start, et ça coûterait un appel).
-  if (!isCloudLLM()) {
+  if (llmEnabled() && !isCloudLLM()) {
     try {
       const llmUrl = process.env.LLM_BASE_URL ?? 'http://localhost:11434/v1'
       const model  = process.env.LLM_MODEL ?? 'llama3.2:3b'

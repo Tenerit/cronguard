@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { llmEnabled } from '../services/llm/analyzer'
 import { validateEnv } from '../config/env'
 validateEnv()
 
@@ -228,7 +229,7 @@ app.get('/health', async (_, res) => {
     res.json({
       ok:    true,
       ts:    new Date(),
-      model: process.env.LLM_MODEL ?? 'llama3.2:3b',
+      model: llmEnabled() ? (process.env.LLM_MODEL ?? 'llama3.2:3b') : 'none',
     })
   }
   catch { res.status(503).json({ ok: false }) }

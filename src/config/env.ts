@@ -1,12 +1,11 @@
 // Variables d'environnement
-// En mode local (DATABASE_URL absent), aucune infra n'est requise.
-// En mode prod, DATABASE_URL + REDIS_URL + LLM_BASE_URL sont obligatoires.
+// DATABASE_URL + REDIS_URL obligatoires. LLM_BASE_URL optionnel : sans lui, pas d'analyse IA,
+// mais corrections connues, lignes de log liées et mémoire des corrections restent actives.
 
 export function validateEnv(): void {
   const required: Record<string, string> = {
     DATABASE_URL: 'URL PostgreSQL',
     REDIS_URL:    'URL Redis',
-    LLM_BASE_URL: 'URL LLM (Ollama/vLLM)',
   }
   const missing = Object.entries(required)
     .filter(([k]) => !process.env[k])
@@ -17,6 +16,9 @@ export function validateEnv(): void {
     console.error('\nCopiez .env.example → .env et renseignez les valeurs.\n')
     process.exit(1)
   }
+
+  if (!process.env.LLM_BASE_URL || process.env.LLM_ENABLED === 'false')
+    console.info('[env] Analyse IA désactivée (LLM_BASE_URL absent ou LLM_ENABLED=false) : analyses tirées des logs seulement.')
 
   const defaults: Record<string, string> = {
     PORT: '3000', NODE_ENV: 'development',

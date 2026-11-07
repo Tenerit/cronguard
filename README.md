@@ -217,6 +217,8 @@ The dashboard, served from behind the proxy, detects the SSO session (`/auth/who
 Default: **llama3.2:3b** through local Ollama (free, private, non-reasoning → fast on CPU).
 No log ever leaves your infrastructure.
 
+**The model is optional.** Leave `LLM_BASE_URL` unset (or set `LLM_ENABLED=false`) and CronGuard runs without Ollama: each failure still gets the related log lines, a known fix when the logs match a common failure (disk full, OOM, PostgreSQL refused, expired certificate…), and fixes your team recorded. The same fallback applies when the model is down or saturated. Analyses made this way are marked `model: none`.
+
 **Benchmark (lab set)** — 26 curated failure scenarios ([eval/](eval/), `npm run eval`), default model on CPU, **5-run mean ± std** ([eval/results.json](eval/results.json)):
 **100%** valid structured output · **72% ± 4** exact root-cause category (runs ranged 65–77%, a constant answer scores 15%; this is below our own 75% bar, and the previous prompt scored 76–78%) · the cause mentions the expected fact **88%** of the time, the action **58%** (loose keyword check) · **1.5%** of answers cite a parameter, flag or path absent from the logs (an undercount: hyphenated names such as HTTP headers are not detected) · ~14s per analysis on our test machine (latency depends heavily on hardware and load).
 
