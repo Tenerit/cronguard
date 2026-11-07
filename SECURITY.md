@@ -28,3 +28,4 @@ Only the latest release on `master` receives security fixes.
 - The dashboard's Content Security Policy allows inline scripts (`'unsafe-inline'`) because the
   page uses inline event handlers. Every value inserted into the page is escaped, and a test
   (`tests/dashboard-xss.test.ts`) guards the patterns that led to past issues.
+- `npm audit` reports 20 low/moderate advisories, all inside the jest test toolchain (glob, minimatch, deepmerge via jest 30). They are dev dependencies: not in the Docker images and not run in production. npm's suggested fix is a downgrade to jest 25, so they stay until jest ships patched versions. Production dependencies report 0 vulnerabilities (`npm audit --omit=dev`).
