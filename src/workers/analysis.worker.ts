@@ -338,14 +338,15 @@ function createAnalysisWorker() {
         })
       : null
 
+    let analysisId: string | undefined
     if (analysis) {
-      await db.query(
+      const ins = await db.query(
         `INSERT INTO analyses
           (monitor_id,ping_id,error_hash,diagnosis,model_used,alert_type,
            severity,from_cache,tokens_in,tokens_out,
            category,prevention,confidence,correlated_monitors,
            checks,data_impact,fix_minutes,cause,action,verified_fix,fix_verified_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21) RETURNING id`,
         [ctx.monitorId, ctx.pingId ?? null, hashError(ctx.jobName, sanitizeLogs(ctx.logs).clean),
          JSON.stringify({ cause: analysis.cause, action: analysis.action,
                           prevention: analysis.prevention, category: analysis.category,
@@ -363,6 +364,7 @@ function createAnalysisWorker() {
          analysis.verifiedFix ? analysis.action : null, analysis.verifiedFix ?? null,
         ]
       )
+      analysisId = ins.rows[0]?.id
     }
 
     // shouldAlert avec protection FK
@@ -383,6 +385,7 @@ function createAnalysisWorker() {
         jobName: ctx.jobName, env: ctx.env, lastPingAt: ctx.lastSuccess,
         analysis, alertCount: alertState.alertCount, firstFired: alertState.firstFired,
         statusPageUrl: `${APP_URL}/status/${ctx.monitorId}`,
+        fixUrl: analysisId ? `${APP_URL}/dashboard#fix=${analysisId}` : undefined,
         client: { email: client.email, slackWebhook: client.slack_webhook, webhookUrl: client.webhook_url },
       })
     }

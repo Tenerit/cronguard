@@ -19,6 +19,7 @@ coverage
 .claude
 CLAUDE.md
 GTM.md
+PLAN-ACTION.md
 eval/real-cases.ts
 .vscode
 .idea

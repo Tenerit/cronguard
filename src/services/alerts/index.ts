@@ -52,6 +52,7 @@ export interface AlertPayload {
   alertCount?:   number       // nb d'alertes depuis le début de l'incident
   firstFired?:   Date         // début de l'incident
   statusPageUrl: string
+  fixUrl?:       string       // ouvre le dashboard sur « ce qui a réglé la panne »
   client: {
     email:         string
     slackWebhook?: string
@@ -118,7 +119,12 @@ export async function sendSlackAlert(payload: AlertPayload) {
       text: { type: 'plain_text', text: 'Voir la page de statut' },
       url:  payload.statusPageUrl,
       style: 'primary',
-    }],
+    },
+    ...(payload.fixUrl ? [{
+      type: 'button',
+      text: { type: 'plain_text', text: 'Ce qui a réglé la panne' },
+      url:  payload.fixUrl,
+    }] : [])],
   })
 
   if (!(await isSafeWebhookTarget(slackWebhook))) return
@@ -175,6 +181,7 @@ export async function sendEmailAlert(payload: AlertPayload) {
               border-radius:6px;text-decoration:none;margin-top:8px;">
       Voir la page de statut →
     </a>
+    ${payload.fixUrl ? `<a href="${escapeHtml(payload.fixUrl)}" style="display:inline-block;color:#6c63ff;padding:10px 20px;margin-top:8px;">Ce qui a réglé la panne →</a>` : ''}
     <p style="color:#aaa;font-size:12px;margin-top:24px;">
       CronGuard · <a href="#">Gérer les alertes</a>
     </p>
@@ -218,6 +225,7 @@ export async function sendWebhookAlert(payload: AlertPayload) {
     alert_count:   payload.alertCount ?? 1,
     last_ping_at:  payload.lastPingAt ?? null,
     status_page:   payload.statusPageUrl,
+    fix_url:       payload.fixUrl ?? null,
     timestamp:     new Date().toISOString(),
   }
   try {

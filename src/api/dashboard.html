@@ -2447,6 +2447,9 @@ async function boot() {
   showSkeletons()
   if (!DEMO) fetch(BASE_URL+'/health').then(r=>r.json()).then(h=>{ if(h.model) window._activeModel=h.model }).catch(()=>{})
   await refreshAll()
+  // Lien « ce qui a réglé la panne » reçu dans l'alerte (mail/Slack) : ouvre le formulaire direct.
+  const fixLink = /^#fix=([\w-]+)$/.exec(location.hash)
+  if (fixLink) { history.replaceState(null, '', location.pathname + location.search); recordFix(fixLink[1]) }
   loadClientInfo()
   loadImpact()
   timer = setInterval(refreshAll, 15000)

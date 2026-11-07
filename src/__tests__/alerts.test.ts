@@ -178,6 +178,22 @@ describe('sendSlackAlert()', () => {
   })
 })
 
+describe('lien « ce qui a réglé la panne »', () => {
+  const withFix = { ...payloadWithAI, fixUrl: 'http://localhost:3000/dashboard#fix=an-1' }
+  it('apparaît dans le mail et dans un bouton Slack', async () => {
+    await sendEmailAlert(withFix)
+    expect(mockSendMail.mock.calls[0][0].html).toContain('dashboard#fix=an-1')
+    await sendSlackAlert(withFix)
+    const actions = (mockedAxios.post.mock.calls[0][1] as any).blocks.find((b: any) => b.type === 'actions')
+    expect(actions.elements.map((e: any) => e.url)).toContain('http://localhost:3000/dashboard#fix=an-1')
+  })
+  it('absent sans analyse enregistrée', async () => {
+    await sendSlackAlert(payloadWithAI)
+    const actions = (mockedAxios.post.mock.calls[0][1] as any).blocks.find((b: any) => b.type === 'actions')
+    expect(actions.elements).toHaveLength(1)
+  })
+})
+
 describe('sendAlert() — orchestration', () => {
   it('sends both email and Slack in parallel', async () => {
     mockedAxios.post.mockResolvedValueOnce({ data: 'ok' })
