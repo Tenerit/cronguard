@@ -88,6 +88,7 @@ export interface AnalysisResult {
   tokensOut?:    number
   model:         string
   correlatedMonitors?: string[]
+  knownFix?:     import('./known-fixes').KnownFix | null   // correction connue déclenchée par les logs (pack)
   evidence?:     string[]      // lignes de log liées à la cause, recopiées (jamais générées)
   verifiedFix?:  string        // date ISO : action = correction confirmée par un humain, pas une suggestion du modèle
 }

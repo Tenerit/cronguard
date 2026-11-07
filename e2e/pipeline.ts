@@ -171,6 +171,7 @@ async function main() {
   const listed = await (await fetch(`http://localhost:${API_PORT}/dashboard/analyses?limit=50`, { headers: { 'X-API-Key': client.api_key } })).json() as Array<{ evidence: string[]; ping_output: string | null }>
   const withEv = listed.filter(r => r.evidence?.length)
   check('Preuves : présentes sur les analyses avec logs', withEv.length > 0, `${withEv.length}/${listed.length}`)
+  check('Pack : champ known_fix présent sur chaque analyse', listed.every(r => 'known_fix' in r))
   check('Preuves : chaque ligne vient des logs du ping', withEv.every(r => r.evidence.every(l => (r.ping_output ?? '').includes(l))))
 
   // ─── Clés API stockées en empreinte (v18) ───────────────────────────────────

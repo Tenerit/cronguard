@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evidenceLines, withEvidence } from '../src/services/llm/evidence'
+import { evidenceLines, withLogHints } from '../src/services/llm/evidence'
 
 const LOGS = [
   '2026-11-07 02:00:01 starting backup',
@@ -34,13 +34,13 @@ describe('evidenceLines', () => {
     for (const l of ev) expect(l.length).toBeLessThanOrEqual(240)
   })
 
-  it('withEvidence lit la cause dans diagnosis, objet ou texte JSON, et nettoie les logs', () => {
+  it('withLogHints lit la cause dans diagnosis, objet ou texte JSON, et nettoie les logs', () => {
     const sanitize = (s: string) => s.replace(/secret=\S+/g, 'secret=[REDACTED]')
     const logs = 'auth failed: access denied secret=hunter2'
     for (const diagnosis of [{ cause: 'accès refusé' }, JSON.stringify({ cause: 'accès refusé' })]) {
-      const r = withEvidence({ diagnosis, ping_output: logs }, sanitize)
+      const r = withLogHints({ diagnosis, ping_output: logs }, sanitize)
       expect(r.evidence).toEqual(['auth failed: access denied secret=[REDACTED]'])
     }
-    expect(withEvidence({ diagnosis: null, ping_output: null }, sanitize).evidence).toEqual([])
+    expect(withLogHints({ diagnosis: null, ping_output: null }, sanitize).evidence).toEqual([])
   })
 })

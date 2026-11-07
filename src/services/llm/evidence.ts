@@ -1,3 +1,5 @@
+import { knownFix, KnownFix } from './known-fixes'
+
 // Lignes de log qui appuient la cause annoncée, choisies par le code et non par le modèle :
 // elles sont recopiées des logs, donc jamais inventées. Un 3B se trompe ; montrer « regardez,
 // c'est là » permet de vérifier en un coup d'œil au lieu de faire confiance.
@@ -74,9 +76,11 @@ export function evidenceLines(logs: string, cause: string, max = 2): string[] {
 }
 
 // Pour les lignes d'analyse lues en base : la cause vit dans diagnosis (jsonb, ou texte selon le driver).
-export function withEvidence<T extends { diagnosis?: unknown; ping_output?: string | null }>(row: T, sanitize: (s: string) => string): T & { evidence: string[] } {
+// Ajoute aussi la correction connue (pack) déclenchée par ces logs.
+export function withLogHints<T extends { diagnosis?: unknown; ping_output?: string | null }>(row: T, sanitize: (s: string) => string): T & { evidence: string[]; known_fix: KnownFix | null } {
   let d = row.diagnosis as { cause?: string } | string | null | undefined
   if (typeof d === 'string') { try { d = JSON.parse(d) } catch { d = null } }
   const cause = (d && typeof d === 'object' ? d.cause : '') ?? ''
-  return { ...row, evidence: row.ping_output ? evidenceLines(sanitize(row.ping_output), cause) : [] }
+  const logs = row.ping_output ? sanitize(row.ping_output) : ''
+  return { ...row, evidence: logs ? evidenceLines(logs, cause) : [], known_fix: knownFix(logs) }
 }

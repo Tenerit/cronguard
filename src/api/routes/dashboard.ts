@@ -3,7 +3,7 @@ import { db }     from '../../db'
 import { asyncHandler } from '../middleware/async-handler'
 
 import { sanitizeLogs } from '../../services/sanitizer'
-import { withEvidence } from '../../services/llm/evidence'
+import { withLogHints } from '../../services/llm/evidence'
 
 export const dashboardRouter = Router()
 
@@ -123,5 +123,5 @@ dashboardRouter.get('/analyses', asyncHandler(async (req, res) => {
     WHERE m.client_id = $1
     ORDER BY a.created_at DESC LIMIT $2
   `, [res.locals.clientId, limit])
-  res.json(rows.map(r => withEvidence(r, s => sanitizeLogs(s).clean)))
+  res.json(rows.map(r => withLogHints(r, s => sanitizeLogs(s).clean)))
 }))

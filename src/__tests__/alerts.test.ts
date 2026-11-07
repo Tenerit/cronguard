@@ -192,6 +192,23 @@ describe('lignes de log liées', () => {
   })
 })
 
+describe('correction connue (pack)', () => {
+  const kf = { id: 'disk-full', title: 'Disque <plein>', steps: ['df -h', 'du -xh / | sort -h'] }
+  const withKf = { ...payloadWithAI, analysis: { ...payloadWithAI.analysis!, knownFix: kf } }
+  it('mail (échappé), Slack et webhook la présentent comme « à adapter »', async () => {
+    await sendEmailAlert(withKf)
+    const html = mockSendMail.mock.calls[0][0].html
+    expect(html).toContain('Correction connue (à adapter) — Disque &lt;plein&gt;')
+    expect(html).toContain('<li>du -xh / | sort -h</li>')
+    await sendSlackAlert(withKf)
+    expect(JSON.stringify((mockedAxios.post.mock.calls[0][1] as any).blocks)).toContain('• df -h')
+  })
+  it('absente quand le pack ne se déclenche pas', async () => {
+    await sendEmailAlert(payloadWithAI)
+    expect(mockSendMail.mock.calls[0][0].html).not.toContain('Correction connue')
+  })
+})
+
 describe('lien « ce qui a réglé la panne »', () => {
   const withFix = { ...payloadWithAI, fixUrl: 'http://localhost:3000/dashboard#fix=an-1' }
   it('apparaît dans le mail et dans un bouton Slack', async () => {
