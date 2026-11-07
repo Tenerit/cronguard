@@ -10,6 +10,7 @@
 import { db }     from '../db'
 import { logger } from '../config/logger'
 import nodemailer  from 'nodemailer'
+import { escapeHtml } from './escape'
 
 interface ClientReport {
   id:          string
@@ -21,6 +22,7 @@ interface ClientReport {
   incidents:    IncidentSummary[]
   topJobs:      JobStat[]
   weeklyUptime: number
+  value:        { failures: number; fromMemory: number; fixesRecorded: number }
 }
 
 interface IncidentSummary {
@@ -82,6 +84,18 @@ async function buildReport(clientId: string, email: string): Promise<ClientRepor
     ORDER BY ok::float / NULLIF(total, 0) ASC
   `, [clientId])
 
+  // Valeur mesurée, pas estimée : pannes resservies par une correction déjà vérifiée
+  // (sans appel au modèle) et corrections enregistrées par l'équipe cette semaine.
+  const { rows: [v] } = await db.query(`
+    SELECT COUNT(*) FILTER (WHERE a.created_at > NOW() - INTERVAL '7 days' AND a.alert_type != 'slow') AS failures,
+           COUNT(*) FILTER (WHERE a.created_at > NOW() - INTERVAL '7 days' AND a.model_used = 'memory') AS from_memory,
+           COUNT(*) FILTER (WHERE a.fix_verified_at > NOW() - INTERVAL '7 days') AS fixes
+    FROM analyses a
+    JOIN monitors m ON m.id = a.monitor_id
+    WHERE m.client_id = $1
+  `, [clientId])
+  const value = { failures: Number(v?.failures ?? 0), fromMemory: Number(v?.from_memory ?? 0), fixesRecorded: Number(v?.fixes ?? 0) }
+
   const okCount   = monitors.filter((m: MonitorRow) => m.last_status === 'ok').length
   const failCount = monitors.filter((m: MonitorRow) => m.last_status === 'failed').length
   const lateCount = monitors.filter((m: MonitorRow) => m.last_status === 'late').length
@@ -117,6 +131,7 @@ async function buildReport(clientId: string, email: string): Promise<ClientRepor
     incidents: parsedIncidents,
     topJobs,
     weeklyUptime,
+    value,
   }
 }
 
@@ -128,10 +143,10 @@ function buildEmailHtml(report: ClientReport, appUrl: string): string {
   const incidentRows = report.incidents.length
     ? report.incidents.map(i => `
       <tr style="border-bottom:1px solid #1a2230">
-        <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#c9d1d9">${i.jobName}</td>
-        <td style="padding:8px 12px;font-size:11px;color:#8b949e">${i.env}</td>
-        <td style="padding:8px 12px;font-size:11px;color:#c9d1d9">${i.cause}</td>
-        <td style="padding:8px 12px;font-size:11px;color:#2dba8c">${i.action}</td>
+        <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#c9d1d9">${escapeHtml(i.jobName)}</td>
+        <td style="padding:8px 12px;font-size:11px;color:#8b949e">${escapeHtml(i.env)}</td>
+        <td style="padding:8px 12px;font-size:11px;color:#c9d1d9">${escapeHtml(i.cause)}</td>
+        <td style="padding:8px 12px;font-size:11px;color:#2dba8c">${escapeHtml(i.action)}</td>
         <td style="padding:8px 12px;font-size:10px;color:#8b949e">${i.failedAt}</td>
       </tr>`).join('')
     : `<tr><td colspan="5" style="padding:16px;text-align:center;color:#8b949e;font-size:12px">
@@ -143,8 +158,8 @@ function buildEmailHtml(report: ClientReport, appUrl: string): string {
     const dur = j.avgDuration > 60000 ? `${Math.round(j.avgDuration/1000)}s` : `${j.avgDuration}ms`
     return `
       <tr style="border-bottom:1px solid #1a2230">
-        <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#c9d1d9">${j.name}</td>
-        <td style="padding:8px 12px;font-size:11px;color:#8b949e">${j.env}</td>
+        <td style="padding:8px 12px;font-family:monospace;font-size:12px;color:#c9d1d9">${escapeHtml(j.name)}</td>
+        <td style="padding:8px 12px;font-size:11px;color:#8b949e">${escapeHtml(j.env)}</td>
         <td style="padding:8px 12px">
           <div style="display:flex;align-items:center;gap:8px">
             <div style="width:60px;height:4px;background:#1a2230;border-radius:2px;overflow:hidden">
@@ -191,6 +206,17 @@ function buildEmailHtml(report: ClientReport, appUrl: string): string {
       <div style="font-size:24px;font-weight:600;font-family:monospace;color:#d4a017">${report.incidents.length}</div>
       <div style="font-size:10px;color:#8b949e;margin-top:4px">incidents IA</div>
     </div>
+  </div>
+
+  <!-- Mémoire des corrections -->
+  <div style="background:#0d1117;border:1px solid #1a2230;border-radius:8px;margin-bottom:16px;padding:12px 16px;font-size:12px;color:#c9d1d9">
+    <div style="font-size:11px;font-family:monospace;color:#8b949e;margin-bottom:6px">✦ MÉMOIRE DES CORRECTIONS — 7 DERNIERS JOURS</div>
+    ${report.value.failures
+      ? `<strong>${report.value.fromMemory}</strong> panne(s) sur ${report.value.failures} résolue(s) par une correction déjà vérifiée chez vous, sans appel au modèle.`
+      : 'Aucune panne cette semaine.'}
+    ${report.value.fixesRecorded
+      ? `<br><strong>${report.value.fixesRecorded}</strong> correction(s) enregistrée(s) par l'équipe : elles seront proposées si la panne revient.`
+      : `<br>Aucune correction enregistrée : après une panne, « Ce qui a réglé la panne » la fait resservir la prochaine fois.`}
   </div>
 
   <!-- Incidents -->

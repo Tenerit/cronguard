@@ -8,6 +8,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Unreleased]
 
 ### Sécurité
+- Rapport hebdomadaire : nom du job, environnement, cause et action étaient insérés sans échappement dans le mail (injection HTML, ex. lien piégé via un nom de monitor). Échappés.
 - Clés API stockées en empreinte SHA-256 (migration v18, les clés existantes restent valides). La récupération de compte par mail émet une **nouvelle** clé et révoque l'ancienne ; accepter une invitation émet une nouvelle clé de membre.
 - XSS stockée corrigée dans le dashboard (env, planification, nom de monitor dans les actions, JSON d'édition).
 - Clé API acceptée uniquement dans l'en-tête `X-API-Key` (plus `?apiKey=`).
@@ -22,6 +23,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
 ### Ajouté
+- **Rapport hebdomadaire : valeur mesurée** — pannes résolues par une correction déjà vérifiée (sans appel au modèle) sur le total, et corrections enregistrées dans la semaine. Comptages réels, aucune estimation.
 - **Paquet hors ligne** (`scripts/offline-bundle.sh`) : image (~80 Mo) + `install.sh` + `SHA256SUMS`, et avec `--with-model` Ollama + modèle. Testé sans modèle : image locale supprimée puis réinstallée par `install.sh`, `/health` OK. La branche `--with-model` (~2 Go) n'est pas testée.
 - **Image tout-en-un** (`Dockerfile.allinone`, ~350 Mo) : PostgreSQL 16, Redis, API et workers dans un seul conteneur, IA optionnelle. `docker run -v cronguard-data:/data` et c'est prêt. PostgreSQL/Redis n'écoutent que sur 127.0.0.1 ; arrêt propre sur SIGTERM ; si un processus meurt, le conteneur s'arrête et Docker le relance. Sauvegarde PostgreSQL au démarrage puis toutes les 24 h dans `/data/backups` (format custom, 7 jours, réglable). Testé par `scripts/test-allinone.sh`, y compris une restauration réelle.
 - **Mesure hors échantillon** : `eval/public-cases.ts`, 11 vraies pannes publiques sourcées (issues, forums), étiquettes figées avant le passage du modèle. 3 runs (2026-11-07) : catégorie 72,7 % (réponse constante 36 %), cause 78,8 %, action 75,8 %, 0 % d'identifiants inventés, lignes de log liées 90,9 % (30/33), 0 pack déclenché à tort sur 11. Sans modèle : catégorie 0/11 (toujours « unknown »), cause contenant le fait 8/11. Limites : 11 cas, logs souvent explicites, le modèle reformule surtout le symptôme sans trouver la cause profonde établie dans le fil ; sévérité non étiquetée donc non mesurée.

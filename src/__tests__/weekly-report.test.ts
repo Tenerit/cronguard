@@ -78,9 +78,11 @@ describe('sendWeeklyReports()', () => {
       .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-0') })  // monitors cli 0
       .mockResolvedValueOnce({ rows: [] })                     // incidents cli 0
       .mockResolvedValueOnce({ rows: mockStats() })            // stats cli 0
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '1', fixes: '2' }] })  // valeur
       .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-1') })  // monitors cli 1
       .mockResolvedValueOnce({ rows: [] })                     // incidents cli 1
       .mockResolvedValueOnce({ rows: mockStats() })            // stats cli 1
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '1', fixes: '2' }] })  // valeur
     await sendWeeklyReports()
     expect(mockSendMail).toHaveBeenCalledTimes(2)
   })
@@ -97,6 +99,7 @@ describe('sendWeeklyReports()', () => {
       .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-0') })
       .mockResolvedValueOnce({ rows: incidents })
       .mockResolvedValueOnce({ rows: mockStats() })
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '1', fixes: '2' }] })  // valeur
 
     await sendWeeklyReports()
 
@@ -118,6 +121,7 @@ describe('sendWeeklyReports()', () => {
       .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-0') })
       .mockResolvedValueOnce({ rows: incidents })
       .mockResolvedValueOnce({ rows: mockStats() })
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '1', fixes: '2' }] })  // valeur
 
     await sendWeeklyReports()
 
@@ -132,6 +136,7 @@ describe('sendWeeklyReports()', () => {
       .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-0') })
       .mockResolvedValueOnce({ rows: [] })   // no incidents
       .mockResolvedValueOnce({ rows: mockStats() })
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '1', fixes: '2' }] })  // valeur
 
     await sendWeeklyReports()
 
@@ -146,9 +151,11 @@ describe('sendWeeklyReports()', () => {
       .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-0') })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: mockStats() })
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '1', fixes: '2' }] })  // valeur
       .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-1') })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: mockStats() })
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '1', fixes: '2' }] })  // valeur
 
     mockSendMail
       .mockRejectedValueOnce(new Error('SMTP timeout'))
@@ -182,4 +189,24 @@ describe('Calcul uptime hebdo', () => {
   it('0% si tous en échec', () => expect(computeUptime(0, 5)).toBe(0))
   it('80% avec 4/5 succès', () => expect(computeUptime(4, 5)).toBe(80))
   it('100% sans données', () => expect(computeUptime(0, 0)).toBe(100))
+})
+
+describe('rapport : valeur mesurée et échappement', () => {
+  it('affiche la mémoire des corrections et échappe les champs saisis', async () => {
+    const evil = { job_name: '<a href="https://evil.example">clic</a>', env: 'production',
+      cause: '<img src=x>', action: 'df -h', severity: 'high', failed_at: new Date().toISOString() }
+    mockQuery
+      .mockResolvedValueOnce({ rows: mockProClients(1) })
+      .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-0') })
+      .mockResolvedValueOnce({ rows: [evil] })
+      .mockResolvedValueOnce({ rows: mockStats() })
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '1', fixes: '2' }] })
+    await sendWeeklyReports()
+    const html = mockSendMail.mock.calls[0][0].html as string
+    expect(html).toContain('<strong>1</strong> panne(s) sur 3')
+    expect(html).toContain('<strong>2</strong> correction(s) enregistrée(s)')
+    expect(html).not.toContain('<a href="https://evil.example">')
+    expect(html).toContain('&lt;a href=')
+    expect(html).not.toContain('<img src=x>')
+  })
 })
