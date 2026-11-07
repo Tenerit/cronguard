@@ -48,6 +48,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   établi.
 
 ### Corrigé
+- **Action présentée comme une piste** : « Piste à vérifier » dans les alertes, le rapport hebdo et le dashboard. Le champ
+  `action` des webhooks ne change pas. L'exemple du README, écrit à la main, est remplacé par une vraie sortie du modèle.
+- **`eval/results.json` régénéré** : catégorie 72 % ± 4 (sous le seuil de 75 %), cause 88 %, action 58 %, 1,5 % d'identifiants
+  absents des logs, sévérité 57 %. Deux sessions à 72 % contre 76-78 % avant : la perte sur la catégorie semble réelle.
 - **Prompt : le modèle n'invente plus de paramètres ni de récurrence.** Il recopiait nos exemples
   (`max_standby_streaming_delay` sur un `ECONNRESET`) et affirmait « récurrent » sans historique. Exemples retirés,
   récurrence signalée seulement si elle est réelle, sévérité relevée par le code. Faux positifs corrigés dans la

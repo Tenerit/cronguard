@@ -204,7 +204,7 @@ function buildEmailHtml(report: ClientReport, appUrl: string): string {
           <th style="padding:8px 12px;font-size:10px;font-family:monospace;color:#484f58;text-align:left">JOB</th>
           <th style="padding:8px 12px;font-size:10px;font-family:monospace;color:#484f58;text-align:left">ENV</th>
           <th style="padding:8px 12px;font-size:10px;font-family:monospace;color:#484f58;text-align:left">CAUSE</th>
-          <th style="padding:8px 12px;font-size:10px;font-family:monospace;color:#484f58;text-align:left">ACTION</th>
+          <th style="padding:8px 12px;font-size:10px;font-family:monospace;color:#484f58;text-align:left">PISTE À VÉRIFIER</th>
           <th style="padding:8px 12px;font-size:10px;font-family:monospace;color:#484f58;text-align:left">QUAND</th>
         </tr>
       </thead>

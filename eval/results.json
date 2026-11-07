@@ -1,21 +1,21 @@
 {
-  "date": "2026-11-06T22:35:46.222Z",
+  "date": "2026-11-07T00:24:25.471Z",
   "set": "lab",
   "runs": 5,
   "raw_mode": false,
   "model": "llama3.2:3b",
   "cases": 26,
   "threshold": 0.75,
-  "passes_threshold": true,
+  "passes_threshold": false,
   "template_mining": true,
   "aggregate": {
     "category_exact": {
-      "mean": 0.7769230769230768,
-      "std": 0.03217923178977216
+      "mean": 0.7153846153846153,
+      "std": 0.043852900965351466
     },
     "severity_exact": {
-      "mean": 0.41538461538461535,
-      "std": 0.08338262841799536
+      "mean": 0.5692307692307692,
+      "std": 0.06319875663521149
     },
     "severity_near": {
       "mean": 1,
@@ -26,90 +26,90 @@
       "std": 0
     },
     "cause_fact": {
-      "mean": 0.8846153846153847,
-      "std": 0.03846153846153849
+      "mean": 0.876923076923077,
+      "std": 0.017200522903844526
     },
     "action_fact": {
-      "mean": 0.7153846153846154,
-      "std": 0.05832981110808886
+      "mean": 0.5846153846153845,
+      "std": 0.03217923178977217
     },
     "with_unverifiable": {
-      "mean": 0.5307692307692308,
-      "std": 0.042132504423474285
+      "mean": 0.015384615384615385,
+      "std": 0.02106625221173716
     },
     "avg_tokens_in": {
-      "mean": 1147.8,
-      "std": 1.0954451150103324
+      "mean": 1090,
+      "std": 1
     },
     "avg_tokens_out": {
-      "mean": 148.4,
-      "std": 1.6733200530681511
+      "mean": 134.6,
+      "std": 0.5477225575051661
     },
     "avg_latency_ms": {
-      "mean": 15161.2,
-      "std": 198.98040104492702
+      "mean": 13476.6,
+      "std": 253.63122836117796
     }
   },
   "per_run": [
     {
       "parsable": 1,
       "category_exact": 0.7307692307692307,
-      "severity_exact": 0.4230769230769231,
+      "severity_exact": 0.5384615384615384,
       "severity_near": 1,
-      "avg_latency_ms": 15468,
-      "avg_tokens_in": 1147,
-      "avg_tokens_out": 150,
+      "avg_latency_ms": 13914,
+      "avg_tokens_in": 1089,
+      "avg_tokens_out": 134,
       "cause_fact": 0.8461538461538461,
-      "action_fact": 0.7692307692307693,
-      "with_unverifiable": 0.5
+      "action_fact": 0.6153846153846154,
+      "with_unverifiable": 0.038461538461538464
     },
     {
       "parsable": 1,
-      "category_exact": 0.8076923076923077,
-      "severity_exact": 0.4230769230769231,
+      "category_exact": 0.6538461538461539,
+      "severity_exact": 0.6538461538461539,
       "severity_near": 1,
-      "avg_latency_ms": 15146,
-      "avg_tokens_in": 1149,
-      "avg_tokens_out": 148,
-      "cause_fact": 0.9230769230769231,
-      "action_fact": 0.7692307692307693,
-      "with_unverifiable": 0.5
+      "avg_latency_ms": 13364,
+      "avg_tokens_in": 1091,
+      "avg_tokens_out": 135,
+      "cause_fact": 0.8846153846153846,
+      "action_fact": 0.5384615384615384,
+      "with_unverifiable": 0
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.6923076923076923,
+      "severity_exact": 0.6153846153846154,
+      "severity_near": 1,
+      "avg_latency_ms": 13342,
+      "avg_tokens_in": 1091,
+      "avg_tokens_out": 135,
+      "cause_fact": 0.8846153846153846,
+      "action_fact": 0.5769230769230769,
+      "with_unverifiable": 0
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.7307692307692307,
+      "severity_exact": 0.5,
+      "severity_near": 1,
+      "avg_latency_ms": 13474,
+      "avg_tokens_in": 1089,
+      "avg_tokens_out": 135,
+      "cause_fact": 0.8846153846153846,
+      "action_fact": 0.6153846153846154,
+      "with_unverifiable": 0.038461538461538464
     },
     {
       "parsable": 1,
       "category_exact": 0.7692307692307693,
       "severity_exact": 0.5384615384615384,
       "severity_near": 1,
-      "avg_latency_ms": 14910,
-      "avg_tokens_in": 1147,
-      "avg_tokens_out": 146,
+      "avg_latency_ms": 13289,
+      "avg_tokens_in": 1090,
+      "avg_tokens_out": 134,
       "cause_fact": 0.8846153846153846,
-      "action_fact": 0.6538461538461539,
-      "with_unverifiable": 0.5769230769230769
-    },
-    {
-      "parsable": 1,
-      "category_exact": 0.8076923076923077,
-      "severity_exact": 0.38461538461538464,
-      "severity_near": 1,
-      "avg_latency_ms": 15148,
-      "avg_tokens_in": 1147,
-      "avg_tokens_out": 150,
-      "cause_fact": 0.8461538461538461,
-      "action_fact": 0.6538461538461539,
-      "with_unverifiable": 0.5769230769230769
-    },
-    {
-      "parsable": 1,
-      "category_exact": 0.7692307692307693,
-      "severity_exact": 0.3076923076923077,
-      "severity_near": 1,
-      "avg_latency_ms": 15134,
-      "avg_tokens_in": 1149,
-      "avg_tokens_out": 148,
-      "cause_fact": 0.9230769230769231,
-      "action_fact": 0.7307692307692307,
-      "with_unverifiable": 0.5
+      "action_fact": 0.5769230769230769,
+      "with_unverifiable": 0
     }
   ],
   "constant_baseline": {

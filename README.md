@@ -14,19 +14,19 @@ Self-hosted, AI-powered failure analysis. A job fails, CronGuard reads the logs 
 
 ## The difference
 
-Your nightly `pg_dump` backup fails. Here is what each tool tells you:
+Your nightly backup fails. Here is what each tool tells you:
 
 > **A classic monitor (Healthchecks, Cronitor):**
-> 🔴 `backup-postgres is DOWN`
+> 🔴 `backup is DOWN`
 
-> **CronGuard:**
-> 🔴 `backup-postgres failed (exit 1) — severity: high`
-> **Root cause:** pg_dump fails on the standby replica — WAL recovery conflict on tables `events` and `orders`.
-> **Fix now:** raise `max_standby_streaming_delay` to 300s in postgresql.conf on the replica, then reload.
-> **Prevent:** schedule the backup on the primary, or enable `hot_standby_feedback=on`.
-> **Check first:** replication lag in `pg_stat_replication` · current `max_standby_streaming_delay` · pending WAL size.
+> **CronGuard** (unedited model output from our lab set, in French):
+> 🔴 `backup failed (exit 1) — severity: critical`
+> **Cause:** disque plein
+> **Lead to verify:** Augmenter la taille du disque ou déplacer le fichier de sauvegarde vers un disque plus grand
 
-One alert is a notification. The other is a head start on the fix.
+The log named the full disk and also showed no rotation configured: the model found the first, missed the second. Answers vary, and some are wrong or too vague to act on.
+
+One alert is a notification. The other is a head start on the diagnosis.
 
 <!-- demo.gif: record dashboard → failed job → AI analysis drawer. Place in docs/demo.gif -->
 <!-- ![CronGuard demo](docs/demo.gif) -->
@@ -209,9 +209,9 @@ Default: **llama3.2:3b** through local Ollama (free, private, non-reasoning → 
 No log ever leaves your infrastructure.
 
 **Benchmark (lab set)** — 26 curated failure scenarios ([eval/](eval/), `npm run eval`), default model on CPU, **5-run mean ± std** ([eval/results.json](eval/results.json)):
-**100%** valid structured output · **72%** exact root-cause category (a constant answer scores 15%; sessions range from 72% to 78%, and this is below our own 75% bar) · the cause mentions the expected fact **88%** of the time, the action **58%** (loose keyword check) · **1.5%** of answers cite a parameter, flag or path absent from the logs · ~14s per analysis on our test machine (latency depends heavily on hardware and load).
+**100%** valid structured output · **72% ± 4** exact root-cause category (runs ranged 65–77%, a constant answer scores 15%; this is below our own 75% bar, and the previous prompt scored 76–78%) · the cause mentions the expected fact **88%** of the time, the action **58%** (loose keyword check) · **1.5%** of answers cite a parameter, flag or path absent from the logs · ~14s per analysis on our test machine (latency depends heavily on hardware and load).
 
-**Treat the suggested action as a lead, not an instruction:** it is often too vague and sometimes wrong, even on these clean logs. **Severity is not reliable yet:** 58% exact in the latest session against 46% for always answering `high`, from one session only. It is shown for information and never decides whether an alert is sent.
+**Treat the suggested action as a lead, not an instruction:** it is often too vague and sometimes wrong, even on these clean logs. **Severity is not reliable yet:** 57% exact against 46% for always answering `high`, over two sessions. It is shown for information and never decides whether an alert is sent.
 These fixtures are deliberately unambiguous, so treat this as an **upper bound, not a field number** — it measures the model on clean cases we authored, and the category score swings run-to-run (the model is non-deterministic).
 
 **Measure it on YOUR logs (the number that matters).** The harness reports **mean ± std over N runs** and takes an independent real-incident set:

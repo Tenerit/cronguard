@@ -99,7 +99,7 @@ export async function sendSlackAlert(payload: AlertPayload) {
         text: [
           `*🧠 Analyse IA* \`${cat}\``,
           `*Cause :* ${payload.analysis!.cause}`,
-          `*Action :* ${payload.analysis!.action}`,
+          `*Piste à vérifier :* ${payload.analysis!.action}`,
           prev ? `*Prévention :* ${prev}` : '',
         ].filter(Boolean).join('\n'),
       },
@@ -146,7 +146,7 @@ export async function sendEmailAlert(payload: AlertPayload) {
         <span style="font-size:11px;background:${catColor}22;color:${catColor};padding:2px 8px;border-radius:10px;font-family:monospace">${cat}</span>
       </p>
       <p style="margin:0 0 4px;"><strong>Cause :</strong> ${escapeHtml(payload.analysis!.cause)}</p>
-      <p style="margin:0 0 4px;"><strong>Action :</strong> ${escapeHtml(payload.analysis!.action)}</p>
+      <p style="margin:0 0 4px;"><strong>Piste à vérifier :</strong> ${escapeHtml(payload.analysis!.action)}</p>
       ${payload.analysis!.prevention ? `<p style="margin:4px 0 0;color:#4a9aa7;"><strong>Prévention :</strong> ${escapeHtml(payload.analysis!.prevention)}</p>` : ''}
     </div>`
     : `<p style="color:#888;">Analyse IA indisponible — vérifiez les logs manuellement.</p>`
@@ -324,7 +324,7 @@ export async function sendEscalation(p: EscalationPayload) {
     if (!p.escalationEmail) return
     const aiBlock = p.analysis?.cause
       ? `<p style="margin:4px 0"><strong>Cause connue :</strong> ${escapeHtml(p.analysis.cause)}</p>
-         <p style="margin:4px 0"><strong>Action :</strong> ${escapeHtml(p.analysis.action ?? '—')}</p>`
+         <p style="margin:4px 0"><strong>Piste à vérifier :</strong> ${escapeHtml(p.analysis.action ?? '—')}</p>`
       : `<p style="color:#888">Aucune analyse IA disponible.</p>`
 
     await getMailer().sendMail({
