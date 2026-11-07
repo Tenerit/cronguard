@@ -1,0 +1,101 @@
+{
+  "date": "2026-11-07T20:30:09.372Z",
+  "set": "public",
+  "runs": 3,
+  "raw_mode": false,
+  "model": "llama3.2:3b",
+  "cases": 11,
+  "threshold": 0.75,
+  "passes_threshold": false,
+  "template_mining": true,
+  "aggregate": {
+    "category_exact": {
+      "mean": 0.7272727272727272,
+      "std": 1.3597399555105182e-16
+    },
+    "severity_exact": {
+      "mean": 0.6969696969696969,
+      "std": 0.05248638810814781
+    },
+    "severity_near": {
+      "mean": 0.787878787878788,
+      "std": 0.05248638810814781
+    },
+    "parsable": {
+      "mean": 1,
+      "std": 0
+    },
+    "cause_fact": {
+      "mean": 0.787878787878788,
+      "std": 0.05248638810814781
+    },
+    "action_fact": {
+      "mean": 0.7575757575757577,
+      "std": 0.10497277621629562
+    },
+    "with_unverifiable": {
+      "mean": 0,
+      "std": 0
+    },
+    "avg_tokens_in": {
+      "mean": 1092,
+      "std": 0
+    },
+    "avg_tokens_out": {
+      "mean": 136.66666666666666,
+      "std": 3.7859388972001824
+    },
+    "avg_latency_ms": {
+      "mean": 13616.333333333334,
+      "std": 630.7529891592535
+    }
+  },
+  "per_run": [
+    {
+      "parsable": 1,
+      "category_exact": 0.7272727272727273,
+      "severity_exact": 0.7272727272727273,
+      "severity_near": 0.8181818181818182,
+      "avg_latency_ms": 14283,
+      "avg_tokens_in": 1092,
+      "avg_tokens_out": 135,
+      "cause_fact": 0.7272727272727273,
+      "action_fact": 0.6363636363636364,
+      "with_unverifiable": 0
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.7272727272727273,
+      "severity_exact": 0.6363636363636364,
+      "severity_near": 0.8181818181818182,
+      "avg_latency_ms": 13029,
+      "avg_tokens_in": 1092,
+      "avg_tokens_out": 134,
+      "cause_fact": 0.8181818181818182,
+      "action_fact": 0.8181818181818182,
+      "with_unverifiable": 0
+    },
+    {
+      "parsable": 1,
+      "category_exact": 0.7272727272727273,
+      "severity_exact": 0.7272727272727273,
+      "severity_near": 0.7272727272727273,
+      "avg_latency_ms": 13537,
+      "avg_tokens_in": 1092,
+      "avg_tokens_out": 141,
+      "cause_fact": 0.8181818181818182,
+      "action_fact": 0.8181818181818182,
+      "with_unverifiable": 0
+    }
+  ],
+  "constant_baseline": {
+    "category": {
+      "label": "network",
+      "rate": 0.36363636363636365
+    },
+    "severity": {
+      "label": "medium",
+      "rate": 1
+    }
+  }
+}

@@ -15,6 +15,8 @@ export interface EvalCase {
   severity: Severity
   exitCode: number
   logs:     string
+  source?:  string                                   // URL publique (jeu --set public)
+  facts?:   { cause: RegExp; action: RegExp }        // sinon FACTS[name] (quality.ts)
 }
 
 export const CASES: EvalCase[] = [

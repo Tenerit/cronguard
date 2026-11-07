@@ -17,6 +17,7 @@
  *   npx tsx eval/run.ts                    # 1 run, jeu labo (eval/cases.ts)
  *   npx tsx eval/run.ts --runs 5           # 5 runs → moyenne ± écart-type
  *   npx tsx eval/run.ts --set real --runs 5  # 5 runs sur tes vrais logs
+ *   npx tsx eval/run.ts --set public --runs 3 --out eval/results.public.json  # pannes publiques sourcées (hors échantillon)
  *   npx tsx eval/run.ts --limit 5          # smoke test (5 premiers cas)
  *   LLM_RAW_LOGS=true npx tsx eval/run.ts --runs 5   # sans préprocessing regex
  *                                            (mesure modèle seul vs +regex)
@@ -61,6 +62,7 @@ async function loadCases(set: string): Promise<EvalCase[]> {
       process.exit(2)
     }
   }
+  if (set === 'public') return (await import('./public-cases')).PUBLIC_CASES
   return (await import('./cases')).CASES
 }
 
@@ -91,7 +93,7 @@ async function runOnce(cases: EvalCase[], runIdx: number): Promise<{ score: RunS
     if (categoryOk) catOk++
     if (res?.severity === c.severity) sevOk++
     if (res && Math.abs(SEV_RANK[res.severity] - SEV_RANK[c.severity]) <= 1) sevNear++
-    const facts = FACTS[c.name]
+    const facts = c.facts ?? FACTS[c.name]
     const causeHit  = !!res && !!facts?.cause.test(res.cause)
     const actionHit = !!res && !!facts?.action.test(res.action)
     const invented  = res ? unverifiableIdentifiers(`${res.cause} ${res.action} ${res.checks.join(' ')}`, c.logs) : []

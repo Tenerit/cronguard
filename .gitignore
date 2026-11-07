@@ -36,3 +36,5 @@ node_modules
 
 # Résultats d'éval de comparaison (modèle non-baseline) — seul results.json est suivi
 eval/results.*.json
+!eval/results.public.json
+!eval/results.public.cases.json
