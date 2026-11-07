@@ -7,6 +7,7 @@ import { audit }                         from '../middleware/audit'
 import { acknowledgeAlert, snoozeAlert } from '../../services/alerts/dedup'
 import { sendAlert }                     from '../../services/alerts'
 import { rememberIncident }              from '../../services/llm/incident-memory'
+import { sanitizeLogs }                  from '../../services/sanitizer'
 import { monitorLimitFor }               from '../../config/plans'
 
 export const monitorsRouter = Router()
@@ -143,7 +144,7 @@ monitorsRouter.get('/:id/analyses', ownsMonitor, asyncHandler(async (req, res) =
     SELECT a.id, a.diagnosis, a.model_used, a.alert_type, a.severity,
            a.category, a.prevention, a.confidence, a.correlated_monitors,
            a.user_feedback, a.from_cache, a.tokens_in, a.tokens_out, a.created_at,
-           a.checks, a.data_impact, a.fix_minutes, a.ping_id,
+           a.checks, a.data_impact, a.fix_minutes, a.ping_id, a.verified_fix, a.fix_verified_at,
            p.output    AS ping_output,
            p.exit_code AS ping_exit_code
     FROM analyses a
@@ -257,7 +258,7 @@ monitorsRouter.post('/analyses/:analysisId/feedback', asyncHandler(async (req, r
 
   // Vérifie que l'analyse appartient au client (et récupère les logs pour la mémoire)
   const { rows: [analysis] } = await db.query(`
-    SELECT a.id, p.output AS logs FROM analyses a
+    SELECT a.id, a.monitor_id, a.error_hash, p.output AS logs FROM analyses a
     JOIN monitors m      ON m.id = a.monitor_id
     LEFT JOIN pings p    ON p.id = a.ping_id
     WHERE a.id = $1 AND m.client_id = $2
@@ -270,10 +271,44 @@ monitorsRouter.post('/analyses/:analysisId/feedback', asyncHandler(async (req, r
     [analysisId, feedback]
   )
 
+  // 👎 : la correction mémorisée pour cette panne n'est plus fiable, elle ne doit plus être resservie.
+  if (feedback === 'negative') {
+    await db.query(
+      `UPDATE analyses SET verified_fix = NULL, fix_verified_at = NULL WHERE monitor_id = $1 AND error_hash = $2`,
+      [analysis.monitor_id, analysis.error_hash]
+    )
+  }
+
   // Validé 👍 → mémorise l'incident (embedding) pour le few-shot par similarité (no-op si MEMORY off)
   if (feedback === 'positive') await rememberIncident(analysisId, analysis.logs ?? '')
 
   res.json({ ok: true, feedback })
+}))
+
+// ─── POST /analyses/:analysisId/fix — ce qui a réellement réglé la panne ────────
+// Prime sur l'action du modèle : resservie telle quelle si la même panne revient.
+
+monitorsRouter.post('/analyses/:analysisId/fix', requireRole('member'), asyncHandler(async (req, res) => {
+  const parsed = z.object({ fix: z.string().trim().min(3).max(500) }).safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+
+  const { rows: [analysis] } = await db.query(`
+    SELECT a.id, a.monitor_id, p.output AS logs FROM analyses a
+    JOIN monitors m   ON m.id = a.monitor_id
+    LEFT JOIN pings p ON p.id = a.ping_id
+    WHERE a.id = $1 AND m.client_id = $2
+  `, [req.params.analysisId, res.locals.clientId])
+  if (!analysis) return res.status(404).json({ error: 'Analysis not found' })
+
+  // Le texte repart ensuite dans le prompt et les alertes : un secret collé par erreur ne doit pas y aller.
+  const fix = sanitizeLogs(parsed.data.fix).clean
+  await db.query(
+    `UPDATE analyses SET verified_fix = $2, fix_verified_at = NOW(), user_feedback = 'positive' WHERE id = $1`,
+    [analysis.id, fix]
+  )
+  await audit(res, 'analysis.fix_recorded', 'monitor', analysis.monitor_id, { analysisId: analysis.id })
+  await rememberIncident(analysis.id, analysis.logs ?? '')
+  res.json({ ok: true, verified_fix: fix })
 }))
 
 // ─── POST /analyze/preview — Analyse immédiate avec diagnostic complet ────────

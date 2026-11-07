@@ -81,6 +81,10 @@ const check = (name: string, ok: boolean, detail = '') => { results.push({ name,
 
 async function main() {
   await dropDb()
+  // Un run interrompu laisse son cache dans Redis (volume persistant) : on repart de zéro.
+  const stale = new Redis(redisUrl.toString())
+  await stale.flushdb()
+  stale.disconnect()
   const admin = new Pool({ connectionString: adminUrl })
   await admin.query(`CREATE DATABASE ${E2E_DB}`)
   await admin.end()
@@ -100,7 +104,7 @@ async function main() {
   pg = new Pool({ connectionString: dbUrl.toString() })
   pg.on('error', () => {})
   const db = pg
-  const { rows: [client] } = await db.query(`INSERT INTO clients (email) VALUES ('e2e@example.invalid') RETURNING id`)
+  const { rows: [client] } = await db.query(`INSERT INTO clients (email) VALUES ('e2e@example.invalid') RETURNING id, api_key`)
   const { rows: [mon] } = await db.query(
     `INSERT INTO monitors (client_id, name, grace_period) VALUES ($1,'nightly-etl',300) RETURNING id, ping_key`, [client.id])
   redis = new Redis(redisUrl.toString())
@@ -119,7 +123,7 @@ async function main() {
       if (await count() > before) {
         await sleep(500)
         const { rows: [row] } = await db.query(
-          `SELECT from_cache, severity, category, confidence FROM analyses WHERE monitor_id=$1 ORDER BY created_at DESC LIMIT 1`, [mon.id])
+          `SELECT id, from_cache, severity, category, confidence, model_used, action, verified_fix FROM analyses WHERE monitor_id=$1 ORDER BY created_at DESC LIMIT 1`, [mon.id])
         const sent = prompts.slice(firstPrompt)
         return { ...row, llm: sent.length, recurring: sent.some(p => p.includes('Même erreur déjà vue')) }
       }
@@ -156,6 +160,34 @@ async function main() {
   const total = Number((await db.query(`SELECT COUNT(*) FROM analyses WHERE monitor_id=$1`, [mon.id])).rows[0].count)
   check('Une seule analyse par panne', total === 5, `${total} lignes`)
 
+  // ─── Mémoire panne × cause × correction ─────────────────────────────────────
+  const post = (p: string, key: string, body: unknown) => fetch(`http://localhost:${API_PORT}${p}`, {
+    method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': key }, body: JSON.stringify(body) })
+
+  const { rows: [other] } = await db.query(`INSERT INTO clients (email) VALUES ('other@example.invalid') RETURNING api_key`)
+  const foreign = await post(`/monitors/analyses/${d.id}/fix`, other.api_key, { fix: 'correction d un autre client' })
+  check('Correction : un autre client ne peut pas écrire', foreign.status === 404, String(foreign.status))
+  const tooShort = await post(`/monitors/analyses/${d.id}/fix`, client.api_key, { fix: ' ' })
+  check('Correction vide refusée', tooShort.status === 400, String(tooShort.status))
+
+  const FIX = 'Limiter le worker a 4 Go avec --max-old-space-size=4096 et token sk_live_abcdefghijklmnopqrstuvwx'
+  const saved = await post(`/monitors/analyses/${d.id}/fix`, client.api_key, { fix: FIX })
+  const savedBody = await saved.json() as { verified_fix: string }
+  check('Correction enregistrée', saved.status === 200, String(saved.status))
+  check('Secret retiré de la correction', !savedBody.verified_fix.includes('sk_live_'), savedBody.verified_fix)
+
+  const known = await fail(OOM)
+  check('Même panne : correction resservie sans appel LLM', known.llm === 0 && known.model_used === 'memory' && known.action === savedBody.verified_fix, JSON.stringify(known))
+  check('Même panne : correction marquée vérifiée', known.verified_fix === savedBody.verified_fix)
+
+  const unrelated = await fail('TypeError: cannot read property of undefined at foo.js')
+  check('Autre panne : correction non resservie', unrelated.model_used !== 'memory' && unrelated.llm === 1, JSON.stringify(unrelated))
+
+  const nope = await post(`/monitors/analyses/${known.id}/feedback`, client.api_key, { feedback: 'negative' })
+  check('👎 accepté', nope.status === 200, String(nope.status))
+  const afterNo = await fail(OOM)
+  check('Après 👎 : correction plus resservie', afterNo.model_used !== 'memory' && !afterNo.verified_fix, JSON.stringify(afterNo))
+
 }
 
 async function finish(fatal?: Error) {
@@ -166,7 +198,8 @@ async function finish(fatal?: Error) {
   await redis?.flushdb().catch(() => {})
   redis?.disconnect()
   await dropDb().catch(e => console.error('Nettoyage Postgres échoué :', e.message))
-  if (fatal) results.push({ name: fatal.message, ok: false, detail: '' })
+  // Une erreur de connexion (AggregateError) n'a pas de message : sans repli, le rapport serait vide.
+  if (fatal) results.push({ name: fatal.message || (fatal as NodeJS.ErrnoException).code || fatal.name, ok: false, detail: '' })
   for (const r of results) console.log(`${r.ok ? 'OK  ' : 'FAIL'} ${r.name}${r.detail && !r.ok ? ` — ${r.detail}` : ''}`)
   const failed = results.filter(r => !r.ok).length
   if (failed) {

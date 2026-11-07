@@ -47,6 +47,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   (écart −3,9 pts, IC95 −10,8 à +2,3 : non significatif), sévérité exacte 50,8 % → 46,9 %. Pas de gain de précision
   établi.
 
+### Ajouté
+- **Mémoire panne × cause × correction.** Bouton « Ce qui a réglé la panne » sur chaque analyse (`POST /monitors/analyses/:id/fix`,
+  migration v17). Si la même panne revient sur ce job, la correction confirmée est resservie par le code, datée, sans appel
+  au modèle. Pour une panne similaire, elle remplace l'action du modèle dans les exemples du prompt. Un 👎 l'annule. Les
+  secrets collés par erreur sont retirés. Les webhooks reçoivent `action_verified`. Couvert par le test e2e.
+
 ### Corrigé
 - **Démo : vraies sorties du modèle.** Les réponses de la démo en ligne, du seed Docker et de l'exemple vide étaient
   écrites à la main et meilleures que le produit. Elles viennent maintenant de `llama3.2:3b` sur les mêmes logs, en un

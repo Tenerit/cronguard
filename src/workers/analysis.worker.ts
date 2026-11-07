@@ -6,7 +6,7 @@ import { Worker, Job }   from 'bullmq'
 import { db }            from '../db'
 import { logger }        from '../config/logger'
 import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
-import { recallSimilar, sameErrorRecently } from '../services/llm/incident-memory'
+import { recallSimilar, recallVerifiedFix, sameErrorRecently } from '../services/llm/incident-memory'
 import { planHasAI }     from '../config/plans'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
 import { sendAlert, sendRecovery } from '../services/alerts'
@@ -252,7 +252,7 @@ function createPingWorker() {
 
     // ─── Few-shot : analyses passées validées ──────────────────────────────
     const { rows: fewShotRows } = await db.query(`
-      SELECT a.cause, a.action, a.category, p.output AS logs FROM analyses a
+      SELECT a.cause, COALESCE(a.verified_fix, a.action) AS action, a.category, p.output AS logs FROM analyses a
       JOIN pings p ON p.id = a.ping_id
       WHERE a.monitor_id=$1 AND a.user_feedback='positive' AND p.output IS NOT NULL
       ORDER BY a.created_at DESC LIMIT 2
@@ -320,7 +320,7 @@ function createAnalysisWorker() {
     // L'analyse IA est réservée au plan Pro sur l'offre hébergée (planHasAI gère le
     // self-hosted où tout le monde y a droit). Free → on alerte quand même, sans IA.
     const analysis = planHasAI(client.plan)
-      ? await analyzeFailure({
+      ? await recallVerifiedFix(ctx.monitorId, ctx.jobName, ctx.logs, ctx.correlatedFailures) ?? await analyzeFailure({
           jobName:     ctx.jobName, clientId: ctx.clientId, monitorId: ctx.monitorId,
           env:         ctx.env,
           schedule:    ctx.schedule, lastSuccess: ctx.lastSuccess, notes: ctx.notes,
@@ -344,8 +344,8 @@ function createAnalysisWorker() {
           (monitor_id,ping_id,error_hash,diagnosis,model_used,alert_type,
            severity,from_cache,tokens_in,tokens_out,
            category,prevention,confidence,correlated_monitors,
-           checks,data_impact,fix_minutes,cause,action)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)`,
+           checks,data_impact,fix_minutes,cause,action,verified_fix,fix_verified_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
         [ctx.monitorId, ctx.pingId ?? null, hashError(ctx.jobName, sanitizeLogs(ctx.logs).clean),
          JSON.stringify({ cause: analysis.cause, action: analysis.action,
                           prevention: analysis.prevention, category: analysis.category,
@@ -360,6 +360,7 @@ function createAnalysisWorker() {
          analysis.data_impact ?? 'none',
          analysis.fix_minutes ?? 30,
          analysis.cause, analysis.action,
+         analysis.verifiedFix ? analysis.action : null, analysis.verifiedFix ?? null,
         ]
       )
     }

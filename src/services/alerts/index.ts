@@ -37,6 +37,11 @@ const SEVERITY_EMOJI: Record<string, string> = {
   critical: '🚨',
 }
 
+// Une correction confirmée par un humain n'a pas le même statut qu'une suggestion du modèle.
+function actionLabel(a: AnalysisResult): string {
+  return a.verifiedFix ? `Correction vérifiée (${a.verifiedFix.slice(0, 10)})` : 'Piste à vérifier'
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AlertPayload {
@@ -99,7 +104,7 @@ export async function sendSlackAlert(payload: AlertPayload) {
         text: [
           `*🧠 Analyse IA* \`${cat}\``,
           `*Cause :* ${payload.analysis!.cause}`,
-          `*Piste à vérifier :* ${payload.analysis!.action}`,
+          `*${actionLabel(payload.analysis!)} :* ${payload.analysis!.action}`,
           prev ? `*Prévention :* ${prev}` : '',
         ].filter(Boolean).join('\n'),
       },
@@ -146,7 +151,7 @@ export async function sendEmailAlert(payload: AlertPayload) {
         <span style="font-size:11px;background:${catColor}22;color:${catColor};padding:2px 8px;border-radius:10px;font-family:monospace">${cat}</span>
       </p>
       <p style="margin:0 0 4px;"><strong>Cause :</strong> ${escapeHtml(payload.analysis!.cause)}</p>
-      <p style="margin:0 0 4px;"><strong>Piste à vérifier :</strong> ${escapeHtml(payload.analysis!.action)}</p>
+      <p style="margin:0 0 4px;"><strong>${actionLabel(payload.analysis!)} :</strong> ${escapeHtml(payload.analysis!.action)}</p>
       ${payload.analysis!.prevention ? `<p style="margin:4px 0 0;color:#4a9aa7;"><strong>Prévention :</strong> ${escapeHtml(payload.analysis!.prevention)}</p>` : ''}
     </div>`
     : `<p style="color:#888;">Analyse IA indisponible — vérifiez les logs manuellement.</p>`
@@ -206,6 +211,7 @@ export async function sendWebhookAlert(payload: AlertPayload) {
     category:      payload.analysis?.category ?? 'unknown',
     cause:         payload.analysis?.cause ?? null,
     action:        payload.analysis?.action ?? null,
+    action_verified: !!payload.analysis?.verifiedFix,
     prevention:    payload.analysis?.prevention ?? null,
     data_impact:   payload.analysis?.data_impact ?? null,
     fix_minutes:   payload.analysis?.fix_minutes ?? null,

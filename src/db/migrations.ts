@@ -333,6 +333,12 @@ async function v15(client: {query(sql: string, params?: unknown[]): Promise<unkn
 // `diagnosis`, parsé à la lecture côté serveur). Le blob reste écrit (contrat client
 // dashboard). Backfill depuis le blob existant — PG16 `IS JSON` ignore les blobs
 // dégradés (non-JSON) sans faire échouer la transaction.
+// ─── V17 : correction réellement appliquée, saisie par un humain (panne × cause × correction)
+async function v17(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS verified_fix TEXT`)
+  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS fix_verified_at TIMESTAMPTZ`)
+}
+
 async function v16(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
   await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS cause  TEXT`)
   await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS action TEXT`)
@@ -371,8 +377,9 @@ export async function runMigrations() {
     await v14(client)
     await v15(client)
     await v16(client)
+    await v17(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v16)')
+    logger.info('[DB] Migrations terminées (v1 → v17)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

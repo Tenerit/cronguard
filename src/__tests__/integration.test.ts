@@ -134,6 +134,8 @@ beforeAll(async () => {
       from_cache  BOOLEAN NOT NULL DEFAULT false,
       tokens_in   INT DEFAULT 0,
       tokens_out  INT DEFAULT 0,
+      verified_fix TEXT,
+      fix_verified_at TIMESTAMPTZ,
       created_at  TIMESTAMPTZ DEFAULT NOW()
     )
   `)

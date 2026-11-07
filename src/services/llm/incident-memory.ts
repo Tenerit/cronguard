@@ -2,7 +2,7 @@ import { db }     from '../../db'
 import { logger } from '../../config/logger'
 import { sanitizeLogs, fingerprintLogs, hashError } from '../sanitizer'
 import { embed, cosine, memoryEnabled } from './embeddings'
-import type { FewShotExample, ErrorCategory } from './analyzer'
+import type { AnalysisResult, FewShotExample, ErrorCategory } from './analyzer'
 
 // ─── Mémoire d'incidents (RAG few-shot par similarité) ────────────────────────
 // Corpus = analyses VALIDÉES (feedback 👍). On embed l'empreinte d'erreur normalisée
@@ -38,7 +38,7 @@ export async function recallSimilar(clientId: string, logs: string, k = 2): Prom
   if (!q) return []
   try {
     const { rows } = await db.query(`
-      SELECT a.cause, a.action, a.category, a.embedding, p.output AS logs
+      SELECT a.cause, COALESCE(a.verified_fix, a.action) AS action, a.category, a.embedding, p.output AS logs
       FROM analyses a
       JOIN pings p    ON p.id = a.ping_id
       JOIN monitors m ON m.id = a.monitor_id
@@ -72,4 +72,26 @@ export async function sameErrorRecently(monitorId: string, jobName: string, logs
     LIMIT 1
   `, [monitorId, hashError(jobName, sanitizeLogs(logs).clean)])
   return rows.length > 0
+}
+
+// Même panne sur ce monitor avec une correction confirmée : on la ressert telle quelle, sans appeler
+// le modèle, qui pourrait la déformer. Sans log, rien ne prouve que c'est la même panne.
+export async function recallVerifiedFix(
+  monitorId: string, jobName: string, logs: string, correlatedMonitors?: string[],
+): Promise<AnalysisResult | null> {
+  if (!logs.trim()) return null
+  const { rows: [r] } = await db.query(`
+    SELECT cause, verified_fix, fix_verified_at, severity, category, prevention, data_impact, fix_minutes, checks
+    FROM analyses
+    WHERE monitor_id=$1 AND error_hash=$2 AND verified_fix IS NOT NULL
+    ORDER BY fix_verified_at DESC LIMIT 1
+  `, [monitorId, hashError(jobName, sanitizeLogs(logs).clean)])
+  if (!r) return null
+  return {
+    cause: r.cause, action: r.verified_fix, prevention: r.prevention ?? '',
+    checks: typeof r.checks === 'string' ? JSON.parse(r.checks) : (r.checks ?? []),
+    severity: r.severity, category: r.category, confidence: 'high', data_impact: r.data_impact, fix_minutes: r.fix_minutes,
+    fromCache: false, model: 'memory', correlatedMonitors,
+    verifiedFix: new Date(r.fix_verified_at).toISOString(),
+  }
 }

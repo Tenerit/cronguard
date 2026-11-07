@@ -1974,7 +1974,7 @@ const I18N = {
     'mttr.downtime':'Indispo. totale','mttr.downtimeSub':'cumulée sur 30 jours','mttr.dataLoss':'Perte de données','mttr.dataLossSub':'impact confirmé',
     'ansum.analyses':'analyses','ansum.analysesSub':'total récent','ansum.todo':'à traiter','ansum.todoSub':'high + critical',
     'ansum.topCat':'catégorie n°1','ansum.cases':'cas','ansum.resolution':'résolution','ansum.resolutionSub':'min en moyenne',
-    'an.lead':'Piste à vérifier :','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
+    'an.lead':'Piste à vérifier :','an.verified':'Correction vérifiée','fb.fixBtn':'Ce qui a réglé la panne','fb.fixPrompt':'Qu\'est-ce qui a réellement réglé cette panne ? Ce sera proposé si elle revient.','toast.fixSaved':'Correction mémorisée','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
     'impact.none':'Aucun incident résolu sur les 30 derniers jours.','impact.recurring':'Récurrents','impact.header':'Impact · 30 derniers jours',
     'impact.incidents':'incidents','impact.affected':'service(s) touché(s)','impact.mttr':'MTTR moyen','impact.mttrSub':'temps de rétablissement',
     'impact.downtime':'indispo. totale','impact.downtimeSub':'cumulée','impact.dataLoss':'perte de données','impact.dataLossSub':'impact confirmé',
@@ -2095,7 +2095,7 @@ const I18N = {
     'mttr.downtime':'Total downtime','mttr.downtimeSub':'over 30 days','mttr.dataLoss':'Data loss','mttr.dataLossSub':'confirmed impact',
     'ansum.analyses':'analyses','ansum.analysesSub':'recent total','ansum.todo':'to handle','ansum.todoSub':'high + critical',
     'ansum.topCat':'top category','ansum.cases':'cases','ansum.resolution':'resolution','ansum.resolutionSub':'avg minutes',
-    'an.lead':'Lead to verify:','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
+    'an.lead':'Lead to verify:','an.verified':'Verified fix','fb.fixBtn':'What fixed it','fb.fixPrompt':'What actually fixed this failure? It will be suggested if it happens again.','toast.fixSaved':'Fix saved','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
     'impact.none':'No incident resolved in the last 30 days.','impact.recurring':'Recurring','impact.header':'Impact · last 30 days',
     'impact.incidents':'incidents','impact.affected':'service(s) affected','impact.mttr':'avg MTTR','impact.mttrSub':'time to recovery',
     'impact.downtime':'total downtime','impact.downtimeSub':'cumulative','impact.dataLoss':'data loss','impact.dataLossSub':'confirmed impact',
@@ -2966,7 +2966,9 @@ function renderAnalyses() {
 
       ${correlatedHtml}
       <div class="an-cause">🔍 ${esc(cause)}</div>
-      ${action     ? `<div class="an-action">→ ${t('an.lead')} ${esc(action)}</div>` : ''}
+      ${a.verified_fix
+        ? `<div class="an-action">✓ ${t('an.verified')} (${esc(String(a.fix_verified_at||'').slice(0,10))}) : ${esc(a.verified_fix)}</div>`
+        : action ? `<div class="an-action">→ ${t('an.lead')} ${esc(action)}</div>` : ''}
       ${prevention && prevention !== action
         ? `<div class="an-prevention">🛡 ${esc(prevention)}</div>` : ''}
       ${checksHtml}
@@ -2978,6 +2980,7 @@ function renderAnalyses() {
           onclick="sendFeedback('${a.id||''}','positive','an-${a.id||i}')">👍</button>
         <button class="fb-btn ${a.user_feedback==='negative'?'active-neg':''}"
           onclick="sendFeedback('${a.id||''}','negative','an-${a.id||i}')">👎</button>
+        <button class="fb-btn" onclick="recordFix('${a.id||''}')">${t('fb.fixBtn')}</button>
       </div>
     </div>`
   }).join('')
@@ -3847,6 +3850,17 @@ window.setView = function(view) {
 }
 
 // ─── Feedback analyses ───────────────────────────────────────────────────────
+async function recordFix(analysisId) {
+  if (!analysisId) { toast(t('toast.missingId'), 'err'); return }
+  const fix = window.prompt(t('fb.fixPrompt'))
+  if (!fix || !fix.trim()) return
+  try {
+    await api(`/monitors/analyses/${analysisId}/fix`, { method: 'POST', body: JSON.stringify({ fix }) })
+    toast(t('toast.fixSaved'), 'ok')
+    if (!DEMO) await loadAnalyses()
+  } catch(e) { toast(e.message, 'err') }
+}
+
 async function sendFeedback(analysisId, feedback, elementId) {
   if (!analysisId) { toast(t('toast.missingId'), 'err'); return }
   try {

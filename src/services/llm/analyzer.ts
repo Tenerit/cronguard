@@ -88,6 +88,7 @@ export interface AnalysisResult {
   tokensOut?:    number
   model:         string
   correlatedMonitors?: string[]
+  verifiedFix?:  string        // date ISO : action = correction confirmée par un humain, pas une suggestion du modèle
 }
 
 // ─── Pré-traitement des logs ──────────────────────────────────────────────────
