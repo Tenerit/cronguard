@@ -2731,13 +2731,13 @@ function renderMonitors(target) {
     // Pending analysis indicator
     const isPending = pendingAnalysis.has(m.id)
     const pendingHtml = isPending ? `<span class="pending-spin" title="${t('pending')}"></span>` : ''
-    const rowLabel = `${esc(m.name)}, ${m.env}, ${pillTxt}`
+    const rowLabel = `${esc(m.name)}, ${esc(m.env)}, ${pillTxt}`
     return `<div class="m-row${isActive}" role="button" tabindex="0" aria-label="${rowLabel}"
       onclick="openDrawer('${m.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
       <div class="m-dot ${dotCls}" aria-hidden="true"></div>
       <div>
         <div class="m-name">${esc(m.name)} ${pendingHtml}</div>
-        <div class="m-env ${envCls}">${m.env} · ${lastPing}</div>
+        <div class="m-env ${envCls}">${esc(m.env)} · ${lastPing}</div>
       </div>
       <div class="m-spark" aria-hidden="true">${spark||'<div style="color:var(--text3);font-size:9px">—</div>'}</div>
       <div class="m-dur ${durAnom?'m-dur-anom':''}">
@@ -2749,11 +2749,11 @@ function renderMonitors(target) {
       </div>
       <div class="m-status"><span class="pill ${pillCls}">${pillTxt}</span></div>
       <div class="m-actions" role="group" aria-label="${esc(m.name)} actions">
-        <button class="act-btn" onclick="event.stopPropagation();openEditModal(${JSON.stringify(m).replace(/"/g,'&quot;')})" aria-label="${t('row.edit')}" title="${t('row.edit')}">edit</button>
+        <button class="act-btn" onclick="event.stopPropagation();openEditModal(${esc(JSON.stringify(m))})" aria-label="${t('row.edit')}" title="${t('row.edit')}">edit</button>
         <button class="act-btn" onclick="event.stopPropagation();ackMonitor('${m.id}')" aria-label="${t('row.ack')}" title="${t('row.ack')}">ack</button>
         <button class="act-btn" onclick="event.stopPropagation();snoozeMonitor('${m.id}')" aria-label="${t('row.snooze')}" title="${t('row.snooze')}">snooze</button>
         <button class="act-btn" onclick="event.stopPropagation();copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')" aria-label="${t('row.copyKey')}" title="${t('row.copyKey')}">key</button>
-        <button class="act-btn red" onclick="event.stopPropagation();confirmDelete('${m.id}','${esc(m.name)}')" aria-label="${t('row.delete')}" title="${t('row.delete')}">del</button>
+        <button class="act-btn red" data-name="${esc(m.name)}" onclick="event.stopPropagation();confirmDelete('${m.id}',this.dataset.name)" aria-label="${t('row.delete')}" title="${t('row.delete')}">del</button>
       </div>
     </div>`
   }).join('')
@@ -2949,21 +2949,21 @@ function renderAnalyses() {
       ? `<div class="an-logs-toggle" onclick="toggleLog('al${i}',this)">▶ ${t('log.show')} (${logTxt.trim().length}c)</div>
          <div class="an-logs-content" id="al${i}">${esc(logTxt.trim())}</div>` : ''
 
-    return `<div class="an-item acc-${sev}" id="an-${a.id||i}">
+    return `<div class="an-item acc-${esc(sev)}" id="an-${a.id||i}">
       <div class="an-header">
         <div class="an-job">
-          <span class="an-cat cat-${category}">${category}</span>
+          <span class="an-cat cat-${esc(category)}">${esc(category)}</span>
           ${esc(a.monitorName||'?')} ${type} ${cache}
         </div>
         <div class="an-meta">
-          <span class="an-confidence conf-${confidence}">${confidence}</span>
-          <span class="sev-pill sev-${sev}">${sev}</span>
-          <span class="an-time">${ts} · ${a.model_used||'llama3.2:3b'}</span>
+          <span class="an-confidence conf-${esc(confidence)}">${esc(confidence)}</span>
+          <span class="sev-pill sev-${esc(sev)}">${esc(sev)}</span>
+          <span class="an-time">${ts} · ${esc(a.model_used||'llama3.2:3b')}</span>
         </div>
       </div>
 
       <div class="an-meta-row">
-        <span class="data-impact impact-${impact}">${impactLabel[impact]||impact}</span>
+        <span class="data-impact impact-${esc(impact)}">${impactLabel[impact]||esc(impact)}</span>
         ${fixMins ? `<span class="fix-time">${t('an.fixEst')} <span>~${fixMins} min</span></span>` : ''}
       </div>
 
@@ -3008,20 +3008,20 @@ async function openDrawer(id) {
 
   document.getElementById('d-name').innerHTML = `<div class="m-dot ${dotCls}"></div> ${esc(m.name)}`
   document.getElementById('d-meta').innerHTML = `
-    <span class="env-p">${m.env}</span>
+    <span class="env-p">${esc(m.env)}</span>
     <span>${t('dr.grace')}: ${m.grace_period}s</span>
-    ${m.schedule ? `<span>⟳ ${m.schedule}</span>` : ''}
+    ${m.schedule ? `<span>⟳ ${esc(m.schedule)}</span>` : ''}
     ${m.expected_min!=null ? `<span>${m.expected_min}–${m.expected_max||'∞'} ${t('dr.records')}</span>` : ''}`
 
   document.getElementById('d-actions').innerHTML = `
-    <button class="d-btn" onclick="openEditModal(${JSON.stringify(m).replace(/'/g,'\'').replace(/"/g,'&quot;')})">✎ ${t('dr.edit')}</button>
+    <button class="d-btn" onclick="openEditModal(${esc(JSON.stringify(m))})">✎ ${t('dr.edit')}</button>
     <button class="d-btn" onclick="copyText('${m.ping_key}','${t('dr.pingKeyCopied')}')">⎘ ${t('dr.pingKey')}</button>
     <button class="d-btn" onclick="testMonitor('${id}')">⚡ ${t('dr.testAlert')}</button>
     <button class="d-btn" onclick="ackMonitor('${id}')">✓ ${t('dr.ack')}</button>
     <button class="d-btn" onclick="snoozeMonitor('${id}')">⏸ ${t('dr.snooze')}</button>
     ${isPaused ? `<button class="d-btn success" onclick="resumeMonitor('${id}')">▶ ${t('dr.resume')}</button>`
                : `<button class="d-btn" onclick="pauseMonitor('${id}')">⏹ ${t('dr.pause')}</button>`}
-    <button class="d-btn danger" onclick="confirmDelete('${id}','${esc(m.name)}')">✕ ${t('dr.delete')}</button>`
+    <button class="d-btn danger" data-name="${esc(m.name)}" onclick="confirmDelete('${id}',this.dataset.name)">✕ ${t('dr.delete')}</button>`
 
   document.getElementById('d-body').innerHTML = '<div class="empty">…</div>'
   document.getElementById('drawer-overlay').classList.add('open')
@@ -3045,7 +3045,7 @@ async function openDrawer(id) {
     analysesData = analyses
     renderAnalyses()
   } catch(e) {
-    document.getElementById('d-body').innerHTML = `<div class="empty">erreur: ${e.message}</div>`
+    document.getElementById('d-body').innerHTML = `<div class="empty">erreur: ${esc(e.message)}</div>`
   }
 }
 
@@ -3105,11 +3105,11 @@ function renderDrawerBody(m, history, analyses) {
       : ''
     return `<div class="d-analysis">
       <div class="d-analysis-job">
-        <span><span class="an-cat cat-${category}" style="font-size:8px">${category}</span> ${a.alert_type==='timeout'?'⏱':a.alert_type==='slow'?'🐢':'✕'} ${esc(a.monitorName||'?')}</span>
+        <span><span class="an-cat cat-${esc(category)}" style="font-size:8px">${esc(category)}</span> ${a.alert_type==='timeout'?'⏱':a.alert_type==='slow'?'🐢':'✕'} ${esc(a.monitorName||'?')}</span>
         <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
           ${impact !== 'none' ? `<span class="data-impact impact-${impact}" style="font-size:8px">${impact === 'confirmed' ? '⚠ '+t('dr.dataShort') : '? '+t('dr.dataShort')}</span>` : ''}
           ${fixMins ? `<span style="font-size:8px;font-family:var(--mono);color:var(--text3)">~${fixMins}m</span>` : ''}
-          <span class="sev-pill ${`sev-${sev}`}">${sev}</span>
+          <span class="sev-pill sev-${esc(sev)}">${esc(sev)}</span>
         </div>
       </div>
       <div class="d-analysis-cause">🔍 ${esc(cause)}</div>
@@ -3212,7 +3212,7 @@ function confirmDelete(id, name) {
   div.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--red-dim);border-radius:var(--radius-lg);padding:24px;width:360px">
     <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">${t('del.title')} "${esc(name)}"</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:12px">${t('del.warn')}</div>
-    <input id="del-name-input" class="del-input" placeholder="${esc(name)}" oninput="checkDelName('${name}','del-ok-btn')">
+    <input id="del-name-input" class="del-input" placeholder="${esc(name)}" data-name="${esc(name)}" oninput="checkDelName(this.dataset.name,'del-ok-btn')">
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
       <button class="btn btn-ghost" onclick="document.getElementById('del-confirm').remove()">${t('del.cancel')}</button>
       <button id="del-ok-btn" class="btn" style="background:var(--red-dim);color:var(--red);border:1px solid var(--red-dim);opacity:.4;pointer-events:none" onclick="doDelete('${id}')">${t('del.confirm')}</button>
@@ -3465,7 +3465,7 @@ function ago(iso) {
 }
 
 function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')
 }
 
 function parse(s) { try { return JSON.parse(s) } catch { return null } }
@@ -4065,12 +4065,12 @@ function renderPreviewResult(r) {
 
   document.getElementById('pg-result').innerHTML = `
     <div class="pr-header">
-      <span class="an-cat cat-${cat}">${cat}</span>
-      <span class="sev-pill sev-${sev}">${sev}</span>
-      <span class="an-confidence conf-${conf}">${conf}</span>
-      <span class="data-impact impact-${r.data_impact||'none'}">${impactLabel[r.data_impact]||'?'}</span>
+      <span class="an-cat cat-${esc(cat)}">${esc(cat)}</span>
+      <span class="sev-pill sev-${esc(sev)}">${esc(sev)}</span>
+      <span class="an-confidence conf-${esc(conf)}">${esc(conf)}</span>
+      <span class="data-impact impact-${esc(r.data_impact||'none')}">${impactLabel[r.data_impact]||'?'}</span>
       ${r.fix_minutes ? `<span class="fix-time">~<span>${r.fix_minutes}</span>min</span>` : ''}
-      <span style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:auto">${r.model||'llama3.2:3b'}</span>
+      <span style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:auto">${esc(r.model||'llama3.2:3b')}</span>
     </div>
     <div class="pr-cause">🔍 ${esc(r.cause||'—')}</div>
     ${r.action    ? `<div class="pr-action">→ ${t('an.lead')} ${esc(r.action)}</div>` : ''}
@@ -4141,7 +4141,7 @@ function renderQualityMetrics(analyses) {
     .sort(([,a],[,b]) => b-a)
     .map(([cat, count]) => `
       <div class="cat-bar-row">
-        <div class="cat-bar-label" style="color:${catColors[cat]||'var(--text3)'}">${cat}</div>
+        <div class="cat-bar-label" style="color:${catColors[cat]||'var(--text3)'}">${esc(cat)}</div>
         <div class="cat-bar-wrap">
           <div class="cat-bar-fill" style="width:${Math.round(count/maxCat*100)}%;background:${catColors[cat]||'var(--bg4)'}"></div>
         </div>

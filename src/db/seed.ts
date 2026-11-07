@@ -14,7 +14,7 @@ import { logger }        from '../config/logger'
 import * as fs           from 'fs'
 
 // SEED_API_KEY: clé fixe pour la démo docker (README la documente) — sinon aléatoire
-const DEMO_API_KEY = process.env.SEED_API_KEY || 'cg_demo_' + Math.random().toString(36).slice(2, 18)
+const DEMO_API_KEY = process.env.SEED_API_KEY || 'cg_demo_' + crypto.randomBytes(12).toString('hex')
 const DEMO_EMAIL   = 'demo@cronguard.local'
 
 // ─── Scénarios d'erreur réalistes ─────────────────────────────────────────────

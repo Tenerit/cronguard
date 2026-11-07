@@ -14,7 +14,7 @@ export const monitorsRouter = Router()
 
 const MonitorSchema = z.object({
   name:         z.string().min(1).max(100),
-  schedule:     z.string().optional(),
+  schedule:     z.string().max(120).optional(),
   grace_period: z.number().int().min(60).max(86400).default(300),
   expected_min: z.number().int().nonnegative().optional(),
   expected_max: z.number().int().nonnegative().optional(),
@@ -321,7 +321,7 @@ monitorsRouter.post('/analyze/preview', asyncHandler(async (req, res) => {
     exit_code:    z.number().int().optional(),
     duration_ms:  z.number().int().positive().optional(),
     avg_duration: z.number().int().positive().optional(),
-    schedule:     z.string().optional(),
+    schedule:     z.string().max(120).optional(),
   })
 
   const parsed = Schema.safeParse(req.body)

@@ -12,7 +12,8 @@ export function hasRole(actual: Role, minimum: Role): boolean {
 
 // Gate d'authentification. Clé API d'abord ; à défaut, SSO forward-auth (si activé).
 export async function requireApiKey(req: Request, res: Response, next: NextFunction) {
-  const key = (req.headers['x-api-key'] ?? req.query.apiKey) as string
+  // En-tête seulement : une clé en query string finit dans les logs de proxy et l'historique.
+  const key = req.headers['x-api-key'] as string
 
   // Pas de clé → tenter le SSO par reverse-proxy de confiance (opt-in, voir sso.ts)
   if (!key) {

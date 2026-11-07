@@ -115,7 +115,7 @@ async function load() {
     render(data)
   } catch(e) {
     document.getElementById('content').innerHTML =
-      `<div class="error-box">${e.message || 'Impossible de charger le statut'}</div>`
+      `<div class="error-box">${esc(e.message || 'Impossible de charger le statut')}</div>`
     document.getElementById('monitor-title').innerHTML =
       '<div class="monitor-name" style="color:var(--red)">Erreur</div>'
   }
