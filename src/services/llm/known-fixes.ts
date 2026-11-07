@@ -131,6 +131,167 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
       'Vérifier qu\'un autre job n\'utilise pas la même clé au même moment.',
     ],
   },
+
+  // ── Pannes courantes des jobs planifiés (sauvegardes, ETL, synchronisations) ──
+  // Regex écrites d'après les messages standard des outils (PostgreSQL, MySQL, OpenSSL/Go,
+  // AWS, Node, rsync, tar, OpenSSH, Python), pas d'après un log précis.
+  {
+    id: 'pg-dump-version-mismatch',
+    category: 'database',
+    match: /pg_dump: (error: )?aborting because of server version mismatch/i,
+    title: 'pg_dump plus ancien que le serveur PostgreSQL',
+    steps: [
+      'pg_dump doit être au moins de la version majeure du serveur (voir « server version » et « pg_dump version » dans le log).',
+      "Vérifier quel pg_dump le cron utilise : son PATH est minimal, ce n'est souvent pas celui de votre shell.",
+      'Appeler le bon binaire en chemin absolu (ex. /usr/lib/postgresql/<version>/bin/pg_dump) ou installer postgresql-client de la bonne version.',
+    ],
+  },
+  {
+    id: 'pg-auth-failed',
+    category: 'database',
+    match: /password authentication failed for user|no pg_hba\.conf entry for host|fe_sendauth: no password supplied/i,
+    title: 'PostgreSQL refuse l\'authentification',
+    steps: [
+      "Le cron tourne sous un autre utilisateur : son ~/.pgpass existe-t-il, en chmod 600 ? (ou PGPASSFILE)",
+      'Mot de passe changé ou rotation récente du secret ?',
+      "« no pg_hba.conf entry » : ajouter une règle pour l'hôte/utilisateur/base dans pg_hba.conf, puis SELECT pg_reload_conf();",
+    ],
+  },
+  {
+    id: 'mysql-lock-tables',
+    category: 'database',
+    match: /Access denied for user .* when using LOCK TABLES/i,
+    title: 'mysqldump : droit LOCK TABLES manquant',
+    steps: [
+      "Tables InnoDB : ajouter --single-transaction (sauvegarde cohérente sans verrouiller).",
+      "Sinon accorder le droit : GRANT LOCK TABLES ON <base>.* TO '<user>'@'<hôte>';",
+      'Vérifier avec SHOW GRANTS FOR \'<user>\'@\'<hôte>\'; que le compte du cron est bien celui attendu.',
+    ],
+  },
+  {
+    id: 'mysql-access-denied',
+    category: 'database',
+    match: /ERROR 1045 \(28000\)|Got error: 1045|Access denied for user '[^']*'@'[^']*' \(using password/i,
+    title: 'MySQL refuse l\'authentification',
+    steps: [
+      "Le cron tourne sous un autre utilisateur : son fichier d'options (~/.my.cnf, --defaults-extra-file) est-il lisible et à jour ?",
+      'Mot de passe changé, ou compte limité à un autre hôte (\'user\'@\'localhost\' ≠ \'user\'@\'%\') ?',
+    ],
+  },
+  {
+    id: 'command-not-found',
+    category: 'dependency',
+    match: /(^|\s)(\/bin\/)?(ba|da)?sh: (line \d+: |\d+: )?[\w.\/-]+: (command )?not found/m,
+    title: 'Commande introuvable (PATH minimal du cron)',
+    steps: [
+      "cron démarre avec un PATH réduit (souvent /usr/bin:/bin) : un outil sous /usr/local/bin, nvm ou pyenv y est invisible.",
+      'Appeler la commande en chemin absolu (command -v <outil> pour le trouver), ou définir PATH= en tête de la crontab.',
+    ],
+  },
+  {
+    id: 'python-module-missing',
+    category: 'dependency',
+    match: /ModuleNotFoundError: No module named/,
+    title: 'Module Python introuvable (mauvais environnement)',
+    steps: [
+      "Le cron n'active pas le virtualenv : appeler le python du venv en chemin absolu (/chemin/venv/bin/python script.py).",
+      'Vérifier que la dépendance est installée dans CE venv (pip install … avec ce python).',
+    ],
+  },
+  {
+    id: 'tls-unknown-ca',
+    category: 'network',
+    match: /certificate signed by unknown authority|unable to get local issuer certificate|self[- ]signed certificate in certificate chain|UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN/i,
+    title: 'Certificat émis par une autorité inconnue (CA interne non approuvée)',
+    steps: [
+      "Ajouter la CA interne au magasin système (update-ca-certificates / update-ca-trust) sur la machine ou dans l'image du job.",
+      'Ou la donner à l\'outil : SSL_CERT_FILE, REQUESTS_CA_BUNDLE (Python), NODE_EXTRA_CA_CERTS (Node), --cacert.',
+      'Ne pas désactiver la vérification TLS.',
+    ],
+  },
+  {
+    id: 'tls-hostname-mismatch',
+    category: 'network',
+    match: /legacy Common Name field|certificate is not valid for any names|Hostname mismatch|doesn't match any of the subject alternative names|ERR_TLS_CERT_ALTNAME_INVALID/i,
+    title: 'Certificat qui ne couvre pas ce nom d\'hôte (SAN)',
+    steps: [
+      'Le nom appelé doit figurer dans les Subject Alternative Names du certificat (le Common Name seul ne suffit plus).',
+      "Régénérer le certificat avec les SAN corrects, ou appeler l'hôte par un nom qu'il couvre.",
+    ],
+  },
+  {
+    id: 'cloud-token-expired',
+    category: 'dependency',
+    match: /ExpiredToken|security token included in the request is expired|SSO session associated with this profile has expired/i,
+    title: 'Identifiants cloud temporaires expirés',
+    steps: [
+      "Le cron utilise des identifiants de session (SSO, assume-role) d'un shell interactif : ils expirent.",
+      "Donner au job ses propres identifiants : rôle d'instance / IRSA, ou un compte de service limité.",
+      'Job plus long que la durée du jeton : rafraîchir les identifiants en cours de route ou allonger la durée de session.',
+    ],
+  },
+  {
+    id: 'node-heap-oom',
+    category: 'resources',
+    match: /JavaScript heap out of memory|Reached heap limit Allocation failed/i,
+    title: 'Node.js : limite de mémoire du tas atteinte',
+    steps: [
+      'Augmenter la limite : NODE_OPTIONS=--max-old-space-size=<Mo> (sans dépasser la RAM disponible).',
+      'Traiter par lots ou en flux au lieu de tout charger en mémoire.',
+    ],
+  },
+  {
+    id: 'acme-challenge-timeout',
+    category: 'network',
+    match: /Timeout during connect \(likely firewall problem\)/i,
+    title: 'Let\'s Encrypt ne joint pas le serveur (port 80)',
+    steps: [
+      "Le port 80 doit être joignable depuis Internet : pare-feu du serveur, groupe de sécurité, box ou FAI.",
+      "Les enregistrements DNS A et AAAA doivent pointer vers CE serveur (un AAAA périmé suffit à faire échouer).",
+      'Tester : certbot renew --dry-run',
+    ],
+  },
+  {
+    id: 'rsync-partial-transfer',
+    category: 'data',
+    match: /rsync error: some files\/attrs were not transferred.*\(code 23\)/i,
+    title: 'rsync : transfert partiel (code 23)',
+    steps: [
+      'Chercher les lignes « Permission denied » juste au-dessus : fichiers illisibles ou destination non inscriptible.',
+      'Relancer à la main sous le même utilisateur que le cron (sudo -u <user> rsync …) pour reproduire.',
+      'Exclure les fichiers inutiles plutôt que d\'ignorer le code 23 : la sauvegarde serait incomplète en silence.',
+    ],
+  },
+  {
+    id: 'tar-file-changed',
+    category: 'data',
+    match: /file changed as we read it/i,
+    title: 'tar : fichier modifié pendant la sauvegarde',
+    steps: [
+      'Sauvegarder un instantané (LVM, ZFS, snapshot cloud) ou arrêter l\'écriture pendant l\'archive.',
+      'Pour une base de données, utiliser son outil de dump plutôt que tar sur les fichiers.',
+    ],
+  },
+  {
+    id: 'ssh-publickey-denied',
+    category: 'network',
+    match: /Permission denied \(publickey/i,
+    title: 'SSH refuse la clé (publickey)',
+    steps: [
+      "Le cron n'a pas d'agent SSH : préciser la clé (ssh -i <clé> ou IdentityFile dans ~/.ssh/config de l'utilisateur du cron).",
+      'Droits de la clé : chmod 600 ; clé publique bien présente dans authorized_keys du compte distant.',
+    ],
+  },
+  {
+    id: 'too-many-open-files',
+    category: 'resources',
+    match: /Too many open files|EMFILE/,
+    title: 'Trop de fichiers ouverts',
+    steps: [
+      'Voir la limite : ulimit -n (et LimitNOFILE= pour un service systemd).',
+      "Chercher une fuite de descripteurs (fichiers ou connexions jamais fermés) avant d'augmenter la limite.",
+    ],
+  },
 ]
 
 export function knownFix(logs: string): KnownFix | null {
