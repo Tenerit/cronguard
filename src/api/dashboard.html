@@ -1979,10 +1979,10 @@ const I18N = {
     'impact.incidents':'incidents','impact.affected':'service(s) touché(s)','impact.mttr':'MTTR moyen','impact.mttrSub':'temps de rétablissement',
     'impact.downtime':'indispo. totale','impact.downtimeSub':'cumulée','impact.dataLoss':'perte de données','impact.dataLossSub':'impact confirmé',
     'sample.intro':'L\'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :',
-    'sample.time':'il y a 2 min','sample.impact':'impact possible','sample.fix':'résolution estimée :',
-    'sample.cause':'Connexion PostgreSQL refusée — le service postgres est arrêté ou inaccessible sur le port 5432',
-    'sample.action':'Vérifier que le service PostgreSQL est démarré :','sample.prevention':'Ajouter un healthcheck PostgreSQL avant le backup, surveiller pg_isready',
-    'sample.checks':'Vérifications immédiates','sample.disk':'Vérifier l\'espace disque :','sample.cta':'Tester l\'analyse IA maintenant →',
+    'sample.time':'il y a 2 min','sample.impact':'impact confirmé','sample.fix':'résolution estimée :',
+    'sample.cause':"connexion refusée au serveur PostgreSQL",
+    'sample.action':"verifier la disponibilité du service PostgreSQL et réessayer la connexion",'sample.prevention':"assurer que le service PostgreSQL est en ligne avant exécuter des backups",
+    'sample.checks':'Vérifications immédiates','sample.check1':"Vérifier la disponibilité du service PostgreSQL",'sample.check2':"Réessayer la connexion au serveur PostgreSQL",'sample.cta':'Tester l\'analyse IA maintenant →',
     'never':'jamais','now':'à l\'instant','pending':'Analyse IA en cours...',
     'toast.loadErr':'Erreur de chargement des services :','toast.acked':'Alertes acquittées','toast.snoozed':'Alertes silencieuses 1h',
     'toast.paused':'Service en pause 2h','toast.resumed':'Service repris','toast.testSent':'Alerte de test envoyée','toast.deleted':'Service supprimé',
@@ -2100,10 +2100,10 @@ const I18N = {
     'impact.incidents':'incidents','impact.affected':'service(s) affected','impact.mttr':'avg MTTR','impact.mttrSub':'time to recovery',
     'impact.downtime':'total downtime','impact.downtimeSub':'cumulative','impact.dataLoss':'data loss','impact.dataLossSub':'confirmed impact',
     'sample.intro':'The AI automatically analyzes every cron job failure. Here is an example of what you will receive:',
-    'sample.time':'2 min ago','sample.impact':'possible impact','sample.fix':'estimated resolution:',
-    'sample.cause':'PostgreSQL connection refused — the postgres service is stopped or unreachable on port 5432',
-    'sample.action':'Check that the PostgreSQL service is running:','sample.prevention':'Add a PostgreSQL healthcheck before the backup, monitor pg_isready',
-    'sample.checks':'Immediate checks','sample.disk':'Check disk space:','sample.cta':'Test the AI analysis now →',
+    'sample.time':'2 min ago','sample.impact':'confirmed impact','sample.fix':'estimated resolution:',
+    'sample.cause':"connexion refusée au serveur PostgreSQL",
+    'sample.action':"verifier la disponibilité du service PostgreSQL et réessayer la connexion",'sample.prevention':"assurer que le service PostgreSQL est en ligne avant exécuter des backups",
+    'sample.checks':'Immediate checks','sample.check1':"Vérifier la disponibilité du service PostgreSQL",'sample.check2':"Réessayer la connexion au serveur PostgreSQL",'sample.cta':'Test the AI analysis now →',
     'never':'never','now':'just now','pending':'AI analysis in progress...',
     'toast.loadErr':'Error loading services:','toast.acked':'Alerts acknowledged','toast.snoozed':'Alerts silenced 1h',
     'toast.paused':'Service paused 2h','toast.resumed':'Service resumed','toast.testSent':'Test alert sent','toast.deleted':'Service deleted',
@@ -2219,32 +2219,32 @@ const DEMO_MON = [
 
 const DEMO_AN = [
   { id:'a1', monitor_id:'d2', monitorName:'etl-warehouse', env:'production', alert_type:'fail', model_used:'llama3.2:3b', created_at:dISO(3), from_cache:false,
-    confidence:'high', data_impact:'possible', fix_minutes:15, severity:'high', category:'network',
+    confidence:'high', data_impact:'none', fix_minutes:15, severity:'medium', category:'database',
     ping_exit_code:1, ping_output:'ConnectionError: connect ECONNREFUSED 10.0.1.45:5439\\nAll retries exhausted. Records: 0/847392',
     correlated_monitors:['sync-invoices'],
-    diag:{ cause:'Connexion au warehouse Redshift refusée (ECONNREFUSED 10.0.1.45:5439) — l\'hôte est injoignable, 0/847392 enregistrements traités',
-      action:'Vérifier que le security group autorise le port 5439 depuis le worker ETL, puis relancer le job',
-      prevention:'Ajouter un healthcheck TCP sur 10.0.1.45:5439 avant le run + retry exponentiel borné',
-      checks:['nc -zv 10.0.1.45 5439','aws ec2 describe-security-groups','vérifier le statut du cluster Redshift'],
-      severity:'high', category:'network' } },
+    diag:{ cause:"connexion refusée",
+      action:"réessayer la connexion avec un timeout plus long (30 secondes) et vérifier l'état du service sync-invoices",
+      prevention:"Vérifier que le serveur de base de données est disponible et qu'il n'y a pas de problème réseau entre les serveurs",
+      checks:["Vérifier l'état du service sync-invoices","Réessayer la connexion avec un timeout plus long"],
+      severity:'medium', category:'database', confidence:'high', data_impact:'none', fix_minutes:15, tokensIn:1117, tokensOut:146 } },
   { id:'a2', monitor_id:'d6', monitorName:'cleanup-sessions', env:'production', alert_type:'fail', model_used:'llama3.2:3b', created_at:dISO(60*8), from_cache:false,
-    confidence:'high', data_impact:'none', fix_minutes:10, severity:'medium', category:'database',
+    confidence:'high', data_impact:'none', fix_minutes:15, severity:'medium', category:'database',
     ping_exit_code:1, ping_output:'ERROR: deadlock detected\\nProcess 12345 waits for ShareLock on transaction 88472',
     correlated_monitors:[],
-    diag:{ cause:'Deadlock PostgreSQL entre deux transactions concurrentes sur user_sessions — la transaction a été annulée (ROLLBACK)',
-      action:'Relancer le job ; le deadlock est transitoire. Ordonner les UPDATE par clé pour éviter la récurrence',
-      prevention:'Traiter les sessions par batch ordonné sur session_id, réduire la taille de transaction',
-      checks:['SELECT * FROM pg_stat_activity WHERE wait_event_type=\'Lock\'','vérifier les index sur user_sessions'],
-      severity:'medium', category:'database' } },
+    diag:{ cause:"lock contention",
+      action:"Increase the number of locks or optimize lock ordering",
+      prevention:"Regularly review and optimize concurrent access to shared resources",
+      checks:["Review lock configuration","Check for deadlocks in other jobs"],
+      severity:'medium', category:'database', confidence:'high', data_impact:'none', fix_minutes:15, tokensIn:1050, tokensOut:99 } },
   { id:'a3', monitor_id:'d3', monitorName:'sync-invoices', env:'production', alert_type:'timeout', model_used:'llama3.2:3b', created_at:dISO(28), from_cache:false,
-    confidence:'medium', data_impact:'possible', fix_minutes:30, severity:'high', category:'dependency',
+    confidence:'high', data_impact:'none', fix_minutes:15, severity:'medium', category:'dependency',
     ping_exit_code:124, ping_output:'StripeRateLimitError: Too Many Requests\\n statusCode: 429\\n retry-after: 29',
     correlated_monitors:[],
-    diag:{ cause:'API Stripe en rate-limit (429) — le job dépasse sa fenêtre de grâce avant d\'avoir fini, sync partielle',
-      action:'Respecter l\'en-tête retry-after (29s) et baisser la concurrence des appels Stripe',
-      prevention:'File d\'attente avec backoff + idempotency keys ; étaler la sync sur la nuit',
-      checks:['vérifier x-ratelimit-remaining dans les réponses Stripe','réduire BATCH_SIZE'],
-      severity:'high', category:'dependency' } },
+    diag:{ cause:"Too Many Requests",
+      action:"Réessayer la requête avec le header Stripe-X-Request-Id pour éviter les erreurs de rate limiting",
+      prevention:"Vérifier que l'application utilise correctement les headers pour éviter les erreurs de rate limiting",
+      checks:["Vérifier les logs de Stripe pour comprendre la cause exacte","Réessayer la requête avec un intervalle plus long entre les appels"],
+      severity:'medium', category:'dependency', confidence:'high', data_impact:'none', fix_minutes:15, tokensIn:1042, tokensOut:146 } },
 ].map(a => ({ ...a, diagnosis: JSON.stringify(a.diag), checks: a.diag.checks }))
 
 const DEMO_CLIENT = { id:'demo', email:'demo@cronguard.dev', plan:'pro', slack_webhook:null, webhook_url:null,
@@ -2281,10 +2281,10 @@ function demoPreview(body) {
     /econnrefused|refused|unreachable|dns/.test(logs) ? DEMO_AN[0].diag :
     /deadlock|lock|postgres|sql/.test(logs)           ? DEMO_AN[1].diag :
     /429|rate.?limit|stripe|api/.test(logs)           ? DEMO_AN[2].diag :
-    /oom|out of memory|killed|137/.test(logs)         ? { cause:'Processus tué par l\'OOM killer (exit 137) — mémoire épuisée en cours de run', action:'Augmenter la limite mémoire du conteneur ou traiter par lots plus petits', prevention:'Streamer au lieu de tout charger en mémoire ; fixer un cap mémoire', checks:['dmesg | grep -i oom','docker stats'], severity:'high', category:'resources' } :
-    { cause:'Échec du job — cause inférée depuis les logs fournis', action:'Inspecter la dernière erreur et relancer', prevention:'Ajouter des logs structurés et un retry borné', checks:['relire les 50 dernières lignes','vérifier le code de sortie'], severity:'medium', category:'unknown' }
-  return { ...pick, confidence:'high', data_impact:'possible', fix_minutes:pick.fix_minutes||15,
-    model:'llama3.2:3b (démo)', tokensIn:312, tokensOut:148, fromCache:false, _meta:{ logs_length:(body.logs||'').length } }
+    /oom|out of memory|killed|137/.test(logs)         ? { cause:"mémoire insuffisante", action:"Augmenter la mémoire allouée au processus ou redéployer avec plus de RAM", prevention:"Vérifier et ajuster les paramètres de mémoire pour éviter les OOM dans le futur", checks:["Vérifier l'état des ressources système","Vérifier la configuration de mémoire du processus"], severity:'critical', category:'resources', confidence:'high', data_impact:'confirmed', fix_minutes:15, tokensIn:1120, tokensOut:138 } :
+    { cause:'Démo sans modèle : vos logs ne sont pas analysés ici.', action:'Lancez CronGuard en local pour analyser vos propres logs.', prevention:'', checks:[], severity:'medium', category:'unknown', confidence:'low', data_impact:'possible', fix_minutes:0, tokensIn:0, tokensOut:0 }
+  return { ...pick,
+    model:'exemple enregistré, vos logs ne sont pas analysés', fromCache:false, _meta:{ logs_length:(body.logs||'').length } }
 }
 
 async function demoApi(path, opts={}) {
@@ -2877,15 +2877,14 @@ function renderAnalyses() {
             <span class="an-time">${t('sample.time')} · llama3.2:3b</span>
           </div>
         </div>
-        <div class="an-meta-row"><span class="data-impact impact-possible">${t('sample.impact')}</span><span class="fix-time">${t('sample.fix')} <span>~15 min</span></span></div>
+        <div class="an-meta-row"><span class="data-impact impact-confirmed">${t('sample.impact')}</span><span class="fix-time">${t('sample.fix')} <span>~15 min</span></span></div>
         <div class="an-cause">🔍 ${t('sample.cause')}</div>
-        <div class="an-action">→ ${t('an.lead')} ${t('sample.action')} <code>systemctl status postgresql</code></div>
+        <div class="an-action">→ ${t('an.lead')} ${t('sample.action')}</div>
         <div class="an-prevention">🛡 ${t('sample.prevention')}</div>
         <div style="margin-top:8px">
           <div class="an-checks-label">${t('sample.checks')}</div>
-          <div class="an-check-item">systemctl status postgresql</div>
-          <div class="an-check-item">pg_isready -h localhost -p 5432</div>
-          <div class="an-check-item">${t('sample.disk')} df -h /var/lib/postgresql</div>
+          <div class="an-check-item">${t('sample.check1')}</div>
+          <div class="an-check-item">${t('sample.check2')}</div>
         </div>
       </div>
       <div style="text-align:center">

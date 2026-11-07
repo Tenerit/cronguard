@@ -48,6 +48,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   établi.
 
 ### Corrigé
+- **Démo : vraies sorties du modèle.** Les réponses de la démo en ligne, du seed Docker et de l'exemple vide étaient
+  écrites à la main et meilleures que le produit. Elles viennent maintenant de `llama3.2:3b` sur les mêmes logs, en un
+  seul passage, sans tri. Le playground statique indique qu'il montre un exemple enregistré et n'analyse pas vos logs.
 - **Action présentée comme une piste** : « Piste à vérifier » dans les alertes, le rapport hebdo et le dashboard. Le champ
   `action` des webhooks ne change pas. L'exemple du README, écrit à la main, est remplacé par une vraie sortie du modèle.
 - **`eval/results.json` régénéré** : catégorie 72 % ± 4 (sous le seuil de 75 %), cause 88 %, action 58 %, 1,5 % d'identifiants

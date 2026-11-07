@@ -20,6 +20,8 @@ const DEMO_EMAIL   = 'demo@cronguard.local'
 // ─── Scénarios d'erreur réalistes ─────────────────────────────────────────────
 // Chaque scénario inclut les logs exacts qu'on enverrait au LLM
 
+// cause, action, prevention, checks, category, severity, confidence, data_impact, fix_minutes : sorties réelles
+// de llama3.2:3b sur ces logs, non retouchées, un seul passage (2026-11-07). Ne pas les réécrire à la main.
 const ERROR_SCENARIOS: Record<string, {
   category:    string
   severity:    string
@@ -29,6 +31,7 @@ const ERROR_SCENARIOS: Record<string, {
   action:      string
   prevention:  string
   checks:      string[]
+  confidence:  string
   data_impact: string
   fix_minutes: number
 }> = {
@@ -45,15 +48,16 @@ ENOSPC: no space left on device, write
 df -h /backups: /dev/sdb1  2.0T  2.0T  0 100% /backups
 ls /backups | wc -l: 397 archives (oldest: 2024-11-03 — no rotation configured)
 BACKUP FAILED — last good backup is 26h old`,
-    cause: 'Partition /backups pleine à 100% — 397 archives accumulées depuis novembre 2024, aucune rotation configurée',
-    action: 'Libérer de l\'espace immédiatement : supprimer les archives de plus de 30 jours (find /backups -mtime +30 -delete), puis relancer le backup',
-    prevention: 'Mettre en place une rotation automatique (garder 14 quotidiens + 8 hebdos) et une alerte disque à 80% d\'occupation',
-    checks: ['df -h /backups après purge', 'Taille moyenne d\'une archive × rétention visée', 'Dernier backup valide restaurable ?'],
-    data_impact: 'possible', fix_minutes: 10,
+    cause: "disque plein",
+    action: "Augmenter la taille du disque ou déplacer le job de backup vers un disque plus grand",
+    prevention: "Vérifier régulièrement l'espace disponible sur les disques et ajuster les tailles en conséquence",
+    checks: ["Vérifier l'espace disponible sur les disques","Vérifier si le job peut être déplacé vers un disque plus grand"],
+    confidence: 'high',
+    data_impact: 'confirmed', fix_minutes: 30,
   },
 
   'backup-postgres': {
-    category: 'database', severity: 'high', exit_code: 1,
+    category: 'database', severity: 'medium', exit_code: 1,
     logs: `pg_dump: error: query failed: ERROR:  canceling statement due to conflict with recovery
 pg_dump: error: query was: LOCK TABLE public.events IN ACCESS SHARE MODE
 DETAIL: User query might have needed to see row versions that must be removed.
@@ -63,15 +67,16 @@ pg_dump: error: query was: LOCK TABLE public.orders IN ACCESS SHARE MODE
 pg_dump[6234]: [archiver (db)] Error while FINALIZING:
     Error message from server: ERROR:  canceling statement due to conflict with recovery
 pg_dump: error: dump process failed: exit code 1`,
-    cause: 'pg_dump échoue sur le replica en standby — conflit avec le processus de recovery WAL sur les tables events et orders',
-    action: 'Augmenter max_standby_streaming_delay à 300s et max_standby_archive_delay à 300s dans postgresql.conf sur le replica, puis reload',
-    prevention: 'Planifier le backup sur le primary, ou utiliser pg_dump --no-acl --no-owner avec hot_standby_feedback=on',
-    checks: ['Vérifier pg_stat_replication lag', 'Contrôler max_standby_streaming_delay actuel', 'Vérifier taille du WAL en attente'],
+    cause: "conflict with recovery",
+    action: "Vérifier et supprimer le lock sur la table events",
+    prevention: "Utiliser LOCK TABLE public.events IN EXCLUSIVE MODE pour éviter les conflits avec la récupération",
+    checks: ["Vérifier l'état de la table events","Supprimer le lock si présent"],
+    confidence: 'high',
     data_impact: 'none', fix_minutes: 15,
   },
 
   'etl-analytics': {
-    category: 'network', severity: 'high', exit_code: 1,
+    category: 'database', severity: 'high', exit_code: 1,
     logs: `Connecting to analytics warehouse...
 ConnectionError: connect ECONNREFUSED 10.0.1.45:5439
     at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1716:16) {
@@ -87,15 +92,16 @@ Retrying connection (attempt 3/3)...
 ConnectionError: connect ECONNREFUSED 10.0.1.45:5439
 FATAL: All retry attempts exhausted. ETL pipeline aborted.
 Records processed: 0 / 847392`,
-    cause: 'Connexion Redshift refusée sur 10.0.1.45:5439 — le warehouse analytics est probablement arrêté ou le security group bloque le port',
-    action: 'Vérifier le statut du cluster Redshift dans AWS Console et contrôler les inbound rules du security group sur le port 5439',
-    prevention: 'Ajouter un circuit breaker avec retry exponentiel et alerte CloudWatch sur le statut Redshift',
-    checks: ['AWS Console → Redshift → cluster status', 'Security group inbound rules port 5439', 'VPC route table 10.0.1.x'],
+    cause: "connexion refusée au serveur PostgreSQL",
+    action: "reessayer la connexion avec un autre compte utilisateur ou vérifier le mot de passe",
+    prevention: "Vérifier que le compte utilisateur utilisé pour la connexion est correct et mis à jour",
+    checks: ["Vérifier l'état du service PostgreSQL","Rechercher des erreurs connues dans les logs"],
+    confidence: 'medium',
     data_impact: 'confirmed', fix_minutes: 30,
   },
 
   'sync-stripe-invoices': {
-    category: 'dependency', severity: 'medium', exit_code: 1,
+    category: 'network', severity: 'high', exit_code: 1,
     logs: `Fetching invoices from Stripe API...
 StripeRateLimitError: Too Many Requests
   at processResponse (/app/node_modules/stripe/lib/StripeResource.js:156:15)
@@ -113,11 +119,12 @@ StripeRateLimitError: Too Many Requests
   }
 Processed: 0 / ~2400 invoices
 Aborting.`,
-    cause: 'Rate limit Stripe API atteint (429) — le job toutes les heures fait trop de requêtes consécutives sur l\'endpoint invoices',
-    action: 'Implémenter un retry avec exponential backoff en respectant le header Retry-After: 29s, ou passer à l\'API Stripe Events pour une sync incrémentale',
-    prevention: 'Utiliser Stripe Webhooks pour les nouvelles invoices au lieu de polling toutes les heures',
-    checks: ['Vérifier x-ratelimit-remaining dans les logs précédents', 'Nb de requêtes par run', 'Stripe Dashboard → API logs'],
-    data_impact: 'possible', fix_minutes: 45,
+    cause: "Too Many Requests",
+    action: "Réessayer la requête avec un retard de 30 secondes entre les essais",
+    prevention: "Vérifier et ajuster le nombre de requêtes par minute pour éviter les erreurs de rate limiting",
+    checks: ["Vérifier l'état des connexions Stripe","Vérifier la fréquence des requêtes Stripe"],
+    confidence: 'medium',
+    data_impact: 'none', fix_minutes: 15,
   },
 
   'cleanup-sessions': {
@@ -133,11 +140,12 @@ CONTEXT: while updating tuple (0,43) in relation "user_sessions"
 [2024-01-15 02:04:23] Retry 1/3 in 5s...
 [2024-01-15 02:04:28] ERROR: deadlock detected
 [2024-01-15 02:04:28] All retries exhausted. 0 sessions cleaned.`,
-    cause: 'Deadlock détecté sur la table user_sessions entre le cleanup et un autre processus — conflit de lock sur les tuples (0,43)',
-    action: 'Ajouter un advisory lock (pg_try_advisory_lock) avant le DELETE, ou réordonner les opérations pour éviter le cycle de dépendance',
-    prevention: 'Utiliser DELETE ... WHERE session_id IN (SELECT ... FOR UPDATE SKIP LOCKED) pour éviter les deadlocks',
-    checks: ['pg_stat_activity pour identifier le processus concurrent', 'pg_locks pour les locks actifs', 'Vérifier si une transaction longue est ouverte'],
-    data_impact: 'none', fix_minutes: 20,
+    cause: "deadlock detected",
+    action: "redémarrer le service et vérifier la configuration de synchronisation des blocs",
+    prevention: "Vérifier régulièrement les logs de deadlock pour détecter les problèmes de synchronisation des blocs",
+    checks: ["Vérifier que les clés de bloc sont correctement générées","Vérifier que les transactions sont bien synchronisées"],
+    confidence: 'high',
+    data_impact: 'none', fix_minutes: 30,
   },
 
   'send-weekly-digest': {
@@ -153,11 +161,12 @@ CONTEXT: while updating tuple (0,43) in relation "user_sessions"
 [ERROR] Unhandled rejection: TypeError: Cannot read properties of undefined (reading 'email')
 [INFO] 0 / 1247 digests sent
 [INFO] Failed users logged to /tmp/failed_users_1705276800.json`,
-    cause: 'TypeError sur user.email à la ligne 134 de digest.js — un utilisateur dans la DB a un profil incomplet sans email (NULL ou objet mal formé)',
-    action: 'Ajouter un guard null check avant l\'accès à user.email et filtrer les utilisateurs sans email dans la requête SQL',
-    prevention: 'Ajouter une contrainte NOT NULL sur la colonne email en DB et un schema validator (Zod) à l\'entrée du service',
-    checks: ['Vérifier /tmp/failed_users_1705276800.json pour l\'ID du user', 'SELECT id FROM users WHERE email IS NULL', 'Vérifier la migration récente qui a pu nullifier des emails'],
-    data_impact: 'none', fix_minutes: 20,
+    cause: "erreur de type TypeError : propriété 'email' non définie",
+    action: "Vérifier la configuration des données d'email et les types de données utilisés pour éviter ces erreurs futures",
+    prevention: "Vérifier systématiquement que toutes les propriétés accessibles dans les données sont bien définies et valides",
+    checks: ["Vérifier l'état du service de messagerie","Vérifier la configuration des types de données utilisés"],
+    confidence: 'medium',
+    data_impact: 'none', fix_minutes: 15,
   },
 
   'reindex-search': {
@@ -172,11 +181,12 @@ CONTEXT: while updating tuple (0,43) in relation "user_sessions"
 Killed
 dmesg: [1234567.89] Out of memory: Killed process 23847 (node) total-vm:4892840kB, anon-rss:3891232kB
 Last log: oom_score_adj:0`,
-    cause: 'Processus tué par l\'OOM killer (exit 137) en cours de réindexation à 38% — consommation mémoire atteignant ~3.8GB sur un container limité à 4GB',
-    action: 'Réduire batch_size à 100-200 docs/req, ajouter --max-old-space-size=2048 à Node.js, ou augmenter la limite mémoire du container à 6GB',
-    prevention: 'Utiliser l\'API scroll d\'Elasticsearch avec batch_size adaptatif qui monitore l\'usage mémoire en temps réel',
-    checks: ['kubectl describe pod / docker stats pour la limite mémoire', 'Taille moyenne d\'un document products', 'Monitoring RSS pendant le run'],
-    data_impact: 'possible', fix_minutes: 30,
+    cause: "mémoire insuffisante",
+    action: "Augmenter la mémoire allouée au processus ou redéployer avec plus de RAM",
+    prevention: "Vérifier et ajuster les paramètres de mémoire pour éviter les OOM dans le futur",
+    checks: ["Vérifier l'état des ressources système","Vérifier la configuration de mémoire du processus"],
+    confidence: 'high',
+    data_impact: 'confirmed', fix_minutes: 15,
   },
 
   'export-reports': {
@@ -193,11 +203,12 @@ Last log: oom_score_adj:0`,
 Timeout: job exceeded 3600s grace period
 Process killed by watchdog (SIGTERM → SIGKILL)
 Generated: 201/384 reports — INCOMPLETE`,
-    cause: 'Export interrompu par le watchdog (grace period 3600s) après 201/384 rapports — la génération PDF ralentit progressivement (+10 min d\'ETA à chaque tranche)',
-    action: 'Implémenter une pagination avec checkpoint (reprendre depuis rapport 202), ou paralléliser sur 4 workers et réduire la résolution PDF',
-    prevention: 'Découper en micro-jobs par tranche de 50 clients avec état persisté en Redis, déclenchés en chaîne',
-    checks: ['Durée des 3 derniers exports (tendance)', 'Taille moyenne des PDF générés', 'CPU/RAM pendant le run'],
-    data_impact: 'possible', fix_minutes: 120,
+    cause: "délai de grâce dépassé",
+    action: "Réinitialiser le watchdog et redémarrer le job",
+    prevention: "Vérifier la durée de fonctionnement du job et ajuster la grace period si nécessaire",
+    checks: ["Vérifier l'état du service","Vérifier les logs de watchdog"],
+    confidence: 'medium',
+    data_impact: 'none', fix_minutes: 15,
   },
 
   'validate-data-pipeline': {
@@ -213,11 +224,12 @@ Generated: 201/384 reports — INCOMPLETE`,
 [CRITICAL] Pipeline aborted — corrupted data would propagate to downstream systems
 [INFO] Quarantine: 24,051 records moved to s3://prod-datalake/quarantine/2024-01-15/
 [INFO] 0 records written to production tables`,
-    cause: 'Pipeline avorté — score qualité données à 29.7% (seuil: 95%) : 23,847 customer_id NULL, 847 timestamps futurs et des prix négatifs détectés dans le batch s3 du 2024-01-15',
-    action: 'Investiguer le service upstream qui a produit le batch — vérifier les logs de l\'ETL source pour la nuit du 14-15 janvier et identifier le bug de transformation',
-    prevention: 'Ajouter des validations à la source (ETL) avant S3, et des alertes sur le score qualité en temps réel via Great Expectations',
-    checks: ['Logs de l\'ETL source pour 2024-01-15', 'Comparer avec batch du 2024-01-14 (succès)', 'Qui a déployé quoi entre les deux runs ?'],
-    data_impact: 'confirmed', fix_minutes: 240,
+    cause: "23,847 records with NULL customer_id et 1,204 records avec format d'email incorrect",
+    action: "Vérifier la source des données pour garantir l'intégrité du pipeline de validation",
+    prevention: "Assurer que les données provenant de sources externes sont correctement formatées et complètes avant de passer en validation",
+    checks: ["Vérifier les logs de la source de données","Vérifier les formats d'email utilisés dans le pipeline"],
+    confidence: 'high',
+    data_impact: 'confirmed', fix_minutes: 120,
   },
 }
 
@@ -347,7 +359,7 @@ async function seed() {
         false,
         scenario.category,
         scenario.prevention,
-        'high',
+        scenario.confidence,
         JSON.stringify(scenario.checks),
         scenario.data_impact,
         scenario.fix_minutes,
