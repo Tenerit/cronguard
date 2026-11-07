@@ -42,7 +42,8 @@ jest.mock('../queue', () => ({
 beforeAll(async () => {
   process.env.STRIPE_SECRET_KEY = 'sk_test_x'   // la limite de plan ne s'applique qu'avec la facturation
   // Redis réel (doit tourner sur localhost:6379)
-  realRedis = new Redis({ host: '127.0.0.1', port: 6379, lazyConnect: true })
+  // Base 14 : la base 0 est celle d'une stack locale qui tourne (files, cache) — flushdb la viderait.
+  realRedis = new Redis({ host: '127.0.0.1', port: 6379, db: 14, lazyConnect: true })
   try {
     await realRedis.connect()
     await realRedis.flushdb() // nettoie les clés de test

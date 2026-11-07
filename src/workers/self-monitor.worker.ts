@@ -17,7 +17,8 @@ import axios       from 'axios'
 import nodemailer  from 'nodemailer'
 
 const CHECK_INTERVAL = 5 * 60 * 1000   // 5 minutes
-const API_URL        = process.env.APP_URL ?? 'http://localhost:3000'
+// En conteneur, APP_URL (URL publique des liens) ne joint pas forcément l'API : adresse interne dédiée.
+const API_URL        = process.env.SELF_MONITOR_API_URL ?? process.env.APP_URL ?? 'http://localhost:3000'
 const ADMIN_EMAIL    = process.env.ADMIN_EMAIL ?? process.env.SMTP_FROM ?? ''
 
 // ─── Checks ───────────────────────────────────────────────────────────────────
@@ -135,25 +136,31 @@ export async function writeHeartbeat(): Promise<void> {
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-logger.info('[SelfMonitor] Started — checks every 5min')
-runChecks()
-const timer = setInterval(runChecks, CHECK_INTERVAL)
+// Importé par analysis.worker (writeHeartbeat) : sans ce garde, le worker lancerait un second
+// self-monitor et son SIGTERM ferait process.exit avant l'arrêt propre des jobs.
+if (require.main === module) {
+  logger.info('[SelfMonitor] Started — checks every 5min')
+  // Démarrés ensemble, l'API n'écoute pas encore : un contrôle immédiat alerterait à chaque redémarrage.
+  const firstCheck = setTimeout(runChecks, 30_000)
+  const timer = setInterval(runChecks, CHECK_INTERVAL)
 
-async function shutdown() {
-  clearInterval(timer)
-  await redis.quit()
-  await db.end()
-  process.exit(0)
+  async function shutdown() {
+    clearTimeout(firstCheck)
+    clearInterval(timer)
+    await redis.quit()
+    await db.end()
+    process.exit(0)
+  }
+
+  process.on('SIGTERM', shutdown)
+  process.on('SIGINT',  shutdown)
+
+  process.on('uncaughtException', (err) => {
+    logger.error('[SelfMonitor] Uncaught exception', { err: err.message, stack: err.stack })
+    process.exit(1)
+  })
+  process.on('unhandledRejection', (reason) => {
+    logger.error('[SelfMonitor] Unhandled rejection', { reason: String(reason) })
+    process.exit(1)
+  })
 }
-
-process.on('SIGTERM', shutdown)
-process.on('SIGINT',  shutdown)
-
-process.on('uncaughtException', (err) => {
-  logger.error('[SelfMonitor] Uncaught exception', { err: err.message, stack: err.stack })
-  process.exit(1)
-})
-process.on('unhandledRejection', (reason) => {
-  logger.error('[SelfMonitor] Unhandled rejection', { reason: String(reason) })
-  process.exit(1)
-})

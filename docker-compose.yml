@@ -67,6 +67,11 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
+    healthcheck:
+      test:     ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
     restart: unless-stopped
 
   self-monitor:
@@ -76,9 +81,15 @@ services:
     environment:
       DATABASE_URL: postgres://cronguard:${POSTGRES_PASSWORD}@postgres:5432/cronguard
       REDIS_URL:    redis://redis:6379
+      SELF_MONITOR_API_URL: http://api:3000
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
+    healthcheck:
+      test:     ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout:  10s
+      retries:  3
     restart: unless-stopped
 
   # ── Infrastructure ────────────────────────────────────────────────────────────
