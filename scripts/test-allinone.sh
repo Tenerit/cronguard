@@ -35,6 +35,16 @@ for _ in $(seq 1 30); do
 done
 echo "$AN" | grep -q '"disk-full"' && ok "panne analysée sans IA : correction connue disk-full" || fail "analyse sans IA absente : $AN"
 
+BK=$(docker exec "$NAME" sh -c 'ls /data/backups/*.dump 2>/dev/null | head -1')
+[ -n "$BK" ] && docker exec "$NAME" pg_restore --list "$BK" | grep -q "TABLE public monitors" \
+  && ok "sauvegarde au démarrage, lisible par pg_restore" || fail "sauvegarde absente ou illisible ($BK)"
+# Une sauvegarde ne vaut que si elle se restaure : on la recharge dans une base à part.
+docker exec "$NAME" sh -c "su-exec postgres pg_dump -h 127.0.0.1 -U cronguard -Fc -f /tmp/now.dump cronguard \
+  && su-exec postgres createdb -h 127.0.0.1 -U cronguard restore_check \
+  && su-exec postgres pg_restore -h 127.0.0.1 -U cronguard -d restore_check /tmp/now.dump" \
+  && docker exec "$NAME" su-exec postgres psql -h 127.0.0.1 -U cronguard -d restore_check -tAc "SELECT name FROM monitors" | grep -q nightly-backup \
+  && ok "restauration d'une sauvegarde : le monitor est bien là" || fail "restauration"
+
 docker restart "$NAME" >/dev/null
 wait_health
 curl -fsS "$URL/monitors" -H "X-API-Key: $KEY" | grep -q nightly-backup && ok "données conservées après redémarrage" || fail "données perdues"

@@ -43,6 +43,26 @@ for entry in api/index workers/analysis.worker workers/timeout.checker workers/r
   su-exec cronguard node "dist/$entry.js" &
   pids="$pids $!"
 done
+
+# Sauvegardes : pg_dump au format custom (compressé, sans tube qui masquerait une erreur),
+# au démarrage puis toutes les BACKUP_INTERVAL_HOURS, rétention BACKUP_KEEP_DAYS.
+# Restauration : pg_restore -h 127.0.0.1 -U cronguard -d cronguard --clean <fichier>
+if [ "${BACKUP_ENABLED:-true}" != "false" ]; then
+  mkdir -p /data/backups && chown postgres:postgres /data/backups
+  (
+    while :; do
+      f="/data/backups/cronguard_$(date +%Y%m%d_%H%M%S).dump"
+      if su-exec postgres pg_dump -h 127.0.0.1 -U cronguard -Fc -f "$f.tmp" cronguard; then
+        mv "$f.tmp" "$f" && echo "[cronguard] Sauvegarde : $f"
+      else
+        rm -f "$f.tmp"; echo "[cronguard] ÉCHEC de la sauvegarde" >&2
+      fi
+      find /data/backups -name 'cronguard_*.dump' -mtime "+${BACKUP_KEEP_DAYS:-7}" -delete
+      sleep "$(( ${BACKUP_INTERVAL_HOURS:-24} * 3600 ))"
+    done
+  ) &
+  pids="$pids $!"
+fi
 echo "[cronguard] Prêt sur http://localhost:${PORT:-3000}/dashboard"
 
 # Surveillance : si un processus s'arrête, on arrête tout (Docker relance le conteneur).
