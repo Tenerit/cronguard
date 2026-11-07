@@ -178,6 +178,20 @@ describe('sendSlackAlert()', () => {
   })
 })
 
+describe('lignes de log liées', () => {
+  const withEv = { ...payloadWithAI, analysis: { ...payloadWithAI.analysis!, evidence: ['FATAL: <b>pool</b> exhausted ```x```'] } }
+  it('apparaissent échappées dans le mail, en bloc de code Slack et dans le webhook', async () => {
+    await sendEmailAlert(withEv)
+    const html = mockSendMail.mock.calls[0][0].html
+    expect(html).toContain('FATAL: &lt;b&gt;pool&lt;/b&gt; exhausted')
+    expect(html).not.toContain('<b>pool</b>')
+    await sendSlackAlert(withEv)
+    const text = JSON.stringify((mockedAxios.post.mock.calls[0][1] as any).blocks)
+    expect(text).toContain('Lignes de log liées')
+    expect(text).not.toContain('```x```')   // ne casse pas le bloc de code Slack
+  })
+})
+
 describe('lien « ce qui a réglé la panne »', () => {
   const withFix = { ...payloadWithAI, fixUrl: 'http://localhost:3000/dashboard#fix=an-1' }
   it('apparaît dans le mail et dans un bouton Slack', async () => {

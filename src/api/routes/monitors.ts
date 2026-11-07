@@ -8,6 +8,7 @@ import { acknowledgeAlert, snoozeAlert } from '../../services/alerts/dedup'
 import { sendAlert }                     from '../../services/alerts'
 import { rememberIncident }              from '../../services/llm/incident-memory'
 import { sanitizeLogs }                  from '../../services/sanitizer'
+import { withEvidence, evidenceLines }   from '../../services/llm/evidence'
 import { monitorLimitFor }               from '../../config/plans'
 
 export const monitorsRouter = Router()
@@ -152,7 +153,7 @@ monitorsRouter.get('/:id/analyses', ownsMonitor, asyncHandler(async (req, res) =
     WHERE a.monitor_id = $1
     ORDER BY a.created_at DESC LIMIT 20
   `, [req.params.id])
-  res.json(rows)
+  res.json(rows.map(r => withEvidence(r, s => sanitizeLogs(s).clean)))
 }))
 
 // ─── POST /monitors/:id/acknowledge ──────────────────────────────────────────
@@ -412,6 +413,7 @@ monitorsRouter.post('/analyze/preview', asyncHandler(async (req, res) => {
 
     res.json({
       ...analysis,
+      evidence: evidenceLines(sanitizeLogs(logs).clean, analysis.cause),
       _meta: { job_name, env, model, logs_length: logs.length },
     })
   } finally {

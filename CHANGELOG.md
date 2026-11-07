@@ -22,6 +22,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
 ### Ajouté
+- **Lignes de log liées** à chaque analyse (dashboard, mail, Slack, webhook `evidence`) : choisies par le code, recopiées des logs nettoyés, jamais générées par le modèle. Mesuré hors ligne sur les 130 réponses réelles du 2026-11-07 : la ligne retenue contient le fait attendu dans 96,2 % des cas (base « dernière ligne d'erreur » : 61,5 %). Chiffre **dans l'échantillon** : le vocabulaire FR/EN a été réglé sur ces mêmes fixtures (72,3 % avant), aucune mesure hors échantillon faute de vrais logs.
 - **Sortie structurée LLM** (`LLM_JSON_MODE`, défaut `json_object`) — `response_format` sur le chemin
   OpenAI-compatible (Ollama natif, OpenAI, Groq…) : décodage contraint en JSON valide, durcit la garantie
   « 100% parsable » et dé-risque un changement de modèle. `json_schema` contraint en plus les enums

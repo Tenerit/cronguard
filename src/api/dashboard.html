@@ -843,6 +843,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 }
 .playground-result.show{display:block}
 .pr-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.an-evidence{font-family:var(--mono);font-size:10px;color:var(--text2);background:var(--bg3);border-left:2px solid var(--blue);padding:4px 8px;margin:0 0 8px;white-space:pre-wrap;word-break:break-all;border-radius:4px}
+.an-evidence-h{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;font-family:var(--sans)}
 .pr-cause{font-size:13px;color:var(--text);margin-bottom:8px;line-height:1.6;font-weight:500}
 .pr-action{font-size:12px;color:var(--text2);padding:8px 12px;background:rgba(52,211,153,.06);border-radius:var(--radius);border-left:2px solid var(--green);margin-bottom:8px}
 .pr-prevention{font-size:11px;color:var(--text3);padding:8px 12px;background:rgba(96,165,250,.05);border-radius:var(--radius);border-left:2px solid var(--blue);margin-bottom:8px}
@@ -1974,7 +1976,7 @@ const I18N = {
     'mttr.downtime':'Indispo. totale','mttr.downtimeSub':'cumulée sur 30 jours','mttr.dataLoss':'Perte de données','mttr.dataLossSub':'impact confirmé',
     'ansum.analyses':'analyses','ansum.analysesSub':'total récent','ansum.todo':'à traiter','ansum.todoSub':'high + critical',
     'ansum.topCat':'catégorie n°1','ansum.cases':'cas','ansum.resolution':'résolution','ansum.resolutionSub':'min en moyenne',
-    'an.lead':'Piste à vérifier :','an.verified':'Correction vérifiée','fb.fixBtn':'Ce qui a réglé la panne','fb.fixPrompt':'Qu\'est-ce qui a réellement réglé cette panne ? Ce sera proposé si elle revient.','toast.fixSaved':'Correction mémorisée','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
+    'an.lead':'Piste à vérifier :','an.evidence':'Lignes de log liées','an.evidenceTip':'Recopiées de vos logs, choisies par proximité avec la cause : à vérifier, pas une preuve','an.verified':'Correction vérifiée','fb.fixBtn':'Ce qui a réglé la panne','fb.fixPrompt':'Qu\'est-ce qui a réellement réglé cette panne ? Ce sera proposé si elle revient.','toast.fixSaved':'Correction mémorisée','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
     'impact.none':'Aucun incident résolu sur les 30 derniers jours.','impact.recurring':'Récurrents','impact.header':'Impact · 30 derniers jours',
     'impact.incidents':'incidents','impact.affected':'service(s) touché(s)','impact.mttr':'MTTR moyen','impact.mttrSub':'temps de rétablissement',
     'impact.downtime':'indispo. totale','impact.downtimeSub':'cumulée','impact.dataLoss':'perte de données','impact.dataLossSub':'impact confirmé',
@@ -2095,7 +2097,7 @@ const I18N = {
     'mttr.downtime':'Total downtime','mttr.downtimeSub':'over 30 days','mttr.dataLoss':'Data loss','mttr.dataLossSub':'confirmed impact',
     'ansum.analyses':'analyses','ansum.analysesSub':'recent total','ansum.todo':'to handle','ansum.todoSub':'high + critical',
     'ansum.topCat':'top category','ansum.cases':'cases','ansum.resolution':'resolution','ansum.resolutionSub':'avg minutes',
-    'an.lead':'Lead to verify:','an.verified':'Verified fix','fb.fixBtn':'What fixed it','fb.fixPrompt':'What actually fixed this failure? It will be suggested if it happens again.','toast.fixSaved':'Fix saved','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
+    'an.lead':'Lead to verify:','an.evidence':'Related log lines','an.evidenceTip':'Copied from your logs, picked by closeness to the cause: check them, they are not proof','an.verified':'Verified fix','fb.fixBtn':'What fixed it','fb.fixPrompt':'What actually fixed this failure? It will be suggested if it happens again.','toast.fixSaved':'Fix saved','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
     'impact.none':'No incident resolved in the last 30 days.','impact.recurring':'Recurring','impact.header':'Impact · last 30 days',
     'impact.incidents':'incidents','impact.affected':'service(s) affected','impact.mttr':'avg MTTR','impact.mttrSub':'time to recovery',
     'impact.downtime':'total downtime','impact.downtimeSub':'cumulative','impact.dataLoss':'data loss','impact.dataLossSub':'confirmed impact',
@@ -2221,6 +2223,7 @@ const DEMO_AN = [
   { id:'a1', monitor_id:'d2', monitorName:'etl-warehouse', env:'production', alert_type:'fail', model_used:'llama3.2:3b', created_at:dISO(3), from_cache:false,
     confidence:'high', data_impact:'none', fix_minutes:15, severity:'medium', category:'database',
     ping_exit_code:1, ping_output:'ConnectionError: connect ECONNREFUSED 10.0.1.45:5439\\nAll retries exhausted. Records: 0/847392',
+    evidence:['ConnectionError: connect ECONNREFUSED 10.0.1.45:5439'],
     correlated_monitors:['sync-invoices'],
     diag:{ cause:"connexion refusée",
       action:"réessayer la connexion avec un timeout plus long (30 secondes) et vérifier l'état du service sync-invoices",
@@ -2230,6 +2233,7 @@ const DEMO_AN = [
   { id:'a2', monitor_id:'d6', monitorName:'cleanup-sessions', env:'production', alert_type:'fail', model_used:'llama3.2:3b', created_at:dISO(60*8), from_cache:false,
     confidence:'high', data_impact:'none', fix_minutes:15, severity:'medium', category:'database',
     ping_exit_code:1, ping_output:'ERROR: deadlock detected\\nProcess 12345 waits for ShareLock on transaction 88472',
+    evidence:['ERROR: deadlock detected'],
     correlated_monitors:[],
     diag:{ cause:"lock contention",
       action:"Increase the number of locks or optimize lock ordering",
@@ -2239,13 +2243,14 @@ const DEMO_AN = [
   { id:'a3', monitor_id:'d3', monitorName:'sync-invoices', env:'production', alert_type:'timeout', model_used:'llama3.2:3b', created_at:dISO(28), from_cache:false,
     confidence:'high', data_impact:'none', fix_minutes:15, severity:'medium', category:'dependency',
     ping_exit_code:124, ping_output:'StripeRateLimitError: Too Many Requests\\n statusCode: 429\\n retry-after: 29',
+    evidence:['StripeRateLimitError: Too Many Requests'],
     correlated_monitors:[],
     diag:{ cause:"Too Many Requests",
       action:"Réessayer la requête avec le header Stripe-X-Request-Id pour éviter les erreurs de rate limiting",
       prevention:"Vérifier que l'application utilise correctement les headers pour éviter les erreurs de rate limiting",
       checks:["Vérifier les logs de Stripe pour comprendre la cause exacte","Réessayer la requête avec un intervalle plus long entre les appels"],
       severity:'medium', category:'dependency', confidence:'high', data_impact:'none', fix_minutes:15, tokensIn:1042, tokensOut:146 } },
-].map(a => ({ ...a, diagnosis: JSON.stringify(a.diag), checks: a.diag.checks }))
+].map(a => ({ ...a, diagnosis: JSON.stringify(a.diag), checks: a.diag.checks }))   // evidence : sortie réelle de evidenceLines() sur ces logs
 
 const DEMO_CLIENT = { id:'demo', email:'demo@cronguard.dev', plan:'pro', slack_webhook:null, webhook_url:null,
   escalation_after_min:30, escalation_email:null, escalation_webhook:null, monitor_count:DEMO_MON.length, created_at:dISO(60*24*42) }
@@ -2969,6 +2974,7 @@ function renderAnalyses() {
 
       ${correlatedHtml}
       <div class="an-cause">🔍 ${esc(cause)}</div>
+      ${evidenceHtml(a.evidence)}
       ${a.verified_fix
         ? `<div class="an-action">✓ ${t('an.verified')} (${esc(String(a.fix_verified_at||'').slice(0,10))}) : ${esc(a.verified_fix)}</div>`
         : action ? `<div class="an-action">→ ${t('an.lead')} ${esc(action)}</div>` : ''}
@@ -3113,6 +3119,7 @@ function renderDrawerBody(m, history, analyses) {
         </div>
       </div>
       <div class="d-analysis-cause">🔍 ${esc(cause)}</div>
+      ${evidenceHtml(a.evidence)}
       ${action    ? `<div class="d-analysis-action">→ ${t('an.lead')} ${esc(action)}</div>` : ''}
       ${prevention && prevention !== action ? `<div style="font-size:10px;color:var(--text3);padding:4px 6px;background:var(--bg2);border-radius:3px;border-left:2px solid var(--blue);margin-bottom:4px">🛡 ${esc(prevention)}</div>` : ''}
       ${checksHtml}
@@ -3852,6 +3859,12 @@ window.setView = function(view) {
   if (window.innerWidth <= 768) closeSidebar()
 }
 
+// Lignes de log liées à la cause (recopiées des logs par le serveur, jamais générées).
+function evidenceHtml(ev) {
+  if (!Array.isArray(ev) || !ev.length) return ''
+  return `<div class="an-evidence" title="${esc(t('an.evidenceTip'))}"><div class="an-evidence-h">${t('an.evidence')}</div>${ev.map(l => esc(String(l))).join('\n')}</div>`
+}
+
 // ─── Feedback analyses ───────────────────────────────────────────────────────
 async function recordFix(analysisId) {
   if (!analysisId) { toast(t('toast.missingId'), 'err'); return }
@@ -4073,6 +4086,7 @@ function renderPreviewResult(r) {
       <span style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:auto">${esc(r.model||'llama3.2:3b')}</span>
     </div>
     <div class="pr-cause">🔍 ${esc(r.cause||'—')}</div>
+    ${evidenceHtml(r.evidence)}
     ${r.action    ? `<div class="pr-action">→ ${t('an.lead')} ${esc(r.action)}</div>` : ''}
     ${r.prevention? `<div class="pr-prevention">🛡 ${esc(r.prevention)}</div>` : ''}
     ${checksHtml ? `<div class="pr-checks"><div style="font-size:9px;color:var(--text3);font-family:var(--sans);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${t('pg.res.checks')}</div>${checksHtml}</div>` : ''}

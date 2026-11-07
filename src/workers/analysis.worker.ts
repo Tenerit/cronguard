@@ -7,6 +7,7 @@ import { db }            from '../db'
 import { logger }        from '../config/logger'
 import { analyzeFailure, llmHeaders, isCloudLLM } from '../services/llm/analyzer'
 import { recallSimilar, recallVerifiedFix, sameErrorRecently } from '../services/llm/incident-memory'
+import { evidenceLines } from '../services/llm/evidence'
 import { planHasAI }     from '../config/plans'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
 import { sendAlert, sendRecovery } from '../services/alerts'
@@ -339,6 +340,7 @@ function createAnalysisWorker() {
       : null
 
     let analysisId: string | undefined
+    if (analysis) analysis.evidence = evidenceLines(sanitizeLogs(ctx.logs).clean, analysis.cause)
     if (analysis) {
       const ins = await db.query(
         `INSERT INTO analyses

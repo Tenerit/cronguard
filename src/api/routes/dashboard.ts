@@ -2,6 +2,9 @@ import { Router } from 'express'
 import { db }     from '../../db'
 import { asyncHandler } from '../middleware/async-handler'
 
+import { sanitizeLogs } from '../../services/sanitizer'
+import { withEvidence } from '../../services/llm/evidence'
+
 export const dashboardRouter = Router()
 
 // ─── GET /dashboard/overview — 1 requête CTE ──────────────────────────────────
@@ -120,5 +123,5 @@ dashboardRouter.get('/analyses', asyncHandler(async (req, res) => {
     WHERE m.client_id = $1
     ORDER BY a.created_at DESC LIMIT $2
   `, [res.locals.clientId, limit])
-  res.json(rows)
+  res.json(rows.map(r => withEvidence(r, s => sanitizeLogs(s).clean)))
 }))

@@ -88,6 +88,7 @@ export interface AnalysisResult {
   tokensOut?:    number
   model:         string
   correlatedMonitors?: string[]
+  evidence?:     string[]      // lignes de log liées à la cause, recopiées (jamais générées)
   verifiedFix?:  string        // date ISO : action = correction confirmée par un humain, pas une suggestion du modèle
 }
 

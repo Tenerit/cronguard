@@ -167,6 +167,12 @@ async function main() {
   const total = Number((await db.query(`SELECT COUNT(*) FROM analyses WHERE monitor_id=$1`, [mon.id])).rows[0].count)
   check('Une seule analyse par panne', total === 5, `${total} lignes`)
 
+  // ─── Lignes de log liées : toujours recopiées des logs du ping ───────────────
+  const listed = await (await fetch(`http://localhost:${API_PORT}/dashboard/analyses?limit=50`, { headers: { 'X-API-Key': client.api_key } })).json() as Array<{ evidence: string[]; ping_output: string | null }>
+  const withEv = listed.filter(r => r.evidence?.length)
+  check('Preuves : présentes sur les analyses avec logs', withEv.length > 0, `${withEv.length}/${listed.length}`)
+  check('Preuves : chaque ligne vient des logs du ping', withEv.every(r => r.evidence.every(l => (r.ping_output ?? '').includes(l))))
+
   // ─── Clés API stockées en empreinte (v18) ───────────────────────────────────
   const get = (p: string, key: string) => fetch(`http://localhost:${API_PORT}${p}`, { headers: { 'X-API-Key': key } })
   const stored = (await db.query(`SELECT api_key FROM clients WHERE id = $1`, [client.id])).rows[0].api_key as string

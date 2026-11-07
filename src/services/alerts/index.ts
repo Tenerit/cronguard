@@ -107,6 +107,9 @@ export async function sendSlackAlert(payload: AlertPayload) {
           `*Cause :* ${payload.analysis!.cause}`,
           `*${actionLabel(payload.analysis!)} :* ${payload.analysis!.action}`,
           prev ? `*Prévention :* ${prev}` : '',
+          payload.analysis!.evidence?.length
+            ? '*Lignes de log liées :*\n```' + payload.analysis!.evidence.join('\n').replace(/```/g, "'''") + '```'
+            : '',
         ].filter(Boolean).join('\n'),
       },
     })
@@ -158,6 +161,7 @@ export async function sendEmailAlert(payload: AlertPayload) {
       </p>
       <p style="margin:0 0 4px;"><strong>Cause :</strong> ${escapeHtml(payload.analysis!.cause)}</p>
       <p style="margin:0 0 4px;"><strong>${actionLabel(payload.analysis!)} :</strong> ${escapeHtml(payload.analysis!.action)}</p>
+      ${payload.analysis!.evidence?.length ? `<pre style="margin:8px 0 0;font-size:11px;background:#fff;border:1px solid #e2e8f0;padding:6px 8px;white-space:pre-wrap;">${escapeHtml(payload.analysis!.evidence.join('\n'))}</pre>` : ''}
       ${payload.analysis!.prevention ? `<p style="margin:4px 0 0;color:#4a9aa7;"><strong>Prévention :</strong> ${escapeHtml(payload.analysis!.prevention)}</p>` : ''}
     </div>`
     : `<p style="color:#888;">Analyse IA indisponible — vérifiez les logs manuellement.</p>`
@@ -219,6 +223,7 @@ export async function sendWebhookAlert(payload: AlertPayload) {
     cause:         payload.analysis?.cause ?? null,
     action:        payload.analysis?.action ?? null,
     action_verified: !!payload.analysis?.verifiedFix,
+    evidence:      payload.analysis?.evidence ?? [],
     prevention:    payload.analysis?.prevention ?? null,
     data_impact:   payload.analysis?.data_impact ?? null,
     fix_minutes:   payload.analysis?.fix_minutes ?? null,
