@@ -47,7 +47,7 @@ jest.mock('../db', () => ({
       }
       // Auth for checkout
       if (sql.includes('WHERE api_key')) {
-        return params[0] === 'valid-key'
+        return params[0] === require('../services/api-keys').hashApiKey('valid-key')
           ? { rows: [{ id: 'cli-1', email: 'test@example.com', stripe_id: null }] }
           : { rows: [] }
       }

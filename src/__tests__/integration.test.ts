@@ -10,6 +10,7 @@
 import { newDb, DataType } from 'pg-mem'
 import { randomUUID } from 'node:crypto'
 import { Pool }      from 'pg'
+import { hashApiKey } from '../services/api-keys'
 import request       from 'supertest'
 import express       from 'express'
 import { Redis }     from 'ioredis'
@@ -261,10 +262,10 @@ async function createTestClient(email = `test${Date.now()}@example.com`) {
   const id     = `c-${Date.now()}-${Math.floor(Math.random()*99999)}`
   const apiKey = `ak-${Date.now()}-${Math.floor(Math.random()*99999)}`
   const { rows: [client] } = await pgPool.query(
-    'INSERT INTO clients (id, email, api_key) VALUES ($1,$2,$3) RETURNING id, api_key, email',
-    [id, email, apiKey]
+    'INSERT INTO clients (id, email, api_key) VALUES ($1,$2,$3) RETURNING id, email',
+    [id, email, hashApiKey(apiKey)]
   )
-  return client
+  return { ...client, api_key: apiKey }   // en base : l'empreinte seule
 }
 
 async function createTestMonitor(clientId: string, name = 'test-job') {

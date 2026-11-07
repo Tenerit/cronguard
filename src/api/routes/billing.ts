@@ -6,6 +6,7 @@ import { sendWelcomeEmail } from '../../services/email'
 import { asyncHandler }          from '../middleware/async-handler'
 import { requestKeyReset, consumeResetToken } from '../../services/auth'
 import { FREE_MONITOR_LIMIT } from '../../config/plans'
+import { newApiKey, hashApiKey } from '../../services/api-keys'
 
 // Deux routers séparés :
 //  - webhookRouter  : POST /stripe — raw body, signature Stripe, AUCUNE auth (Stripe).
@@ -86,24 +87,32 @@ webhookRouter.post(
           // de celui du compte CronGuard, ce qui créerait un compte pro orphelin.
           // trial_ends_at remis à NULL : sinon expireTrails downgrade ensuite le payeur.
           // Fallback email : Checkout créés hors app (dashboard Stripe / payment link).
-          let client: { id: string; email: string; api_key: string } | undefined
+          let client: { id: string; email: string } | undefined
+          let freshKey: string | undefined   // seulement si le compte est créé ici
           if (clientId) {
             const { rows } = await db.query(`
               UPDATE clients
               SET stripe_id = $2, plan = 'pro', trial_ends_at = NULL
               WHERE id = $1
-              RETURNING id, email, api_key
+              RETURNING id, email
             `, [clientId, customerId])
             client = rows[0]
           }
           if (!client && email) {
             const { rows } = await db.query(`
-              INSERT INTO clients (email, stripe_id, plan)
-              VALUES ($1, $2, 'pro')
-              ON CONFLICT (email)
-              DO UPDATE SET stripe_id = $2, plan = 'pro', trial_ends_at = NULL
-              RETURNING id, email, api_key
+              UPDATE clients SET stripe_id = $2, plan = 'pro', trial_ends_at = NULL
+              WHERE email = $1
+              RETURNING id, email
             `, [email, customerId])
+            client = rows[0]
+          }
+          if (!client && email) {
+            freshKey = newApiKey()
+            const { rows } = await db.query(`
+              INSERT INTO clients (email, stripe_id, plan, api_key)
+              VALUES ($1, $2, 'pro', $3)
+              RETURNING id, email
+            `, [email, customerId, hashApiKey(freshKey)])
             client = rows[0]
           }
           if (!client) break
@@ -115,7 +124,8 @@ webhookRouter.post(
             ON CONFLICT (stripe_subscription_id) DO UPDATE SET status = 'active'
           `, [client.id, subscriptionId])
 
-          await sendWelcomeEmail(client.email, client.api_key ?? '—')
+          // Compte existant : sa clé n'est connue que de lui (empreinte seule en base).
+          if (freshKey) await sendWelcomeEmail(client.email, freshKey)
           logger.info('[Stripe] New pro client activated', { email: client.email })
           break
         }
@@ -194,12 +204,13 @@ accountRouter.post('/register', express.json(), async (req, res) => {
   }
 
   try {
+    const apiKey = newApiKey()
     const { rows: [client] } = await db.query(`
-      INSERT INTO clients (email)
-      VALUES ($1)
+      INSERT INTO clients (email, api_key)
+      VALUES ($1, $2)
       ON CONFLICT (email) DO NOTHING
-      RETURNING id, api_key, plan
-    `, [email])
+      RETURNING id, plan
+    `, [email, hashApiKey(apiKey)])
 
     // Email déjà pris : NE JAMAIS renvoyer la clé API du compte existant ici —
     // n'importe qui devinant l'email la récupérerait (account takeover). On répond
@@ -214,7 +225,7 @@ accountRouter.post('/register', express.json(), async (req, res) => {
     logger.info('[Auth] New client registered', { email })
 
     return res.status(201).json({
-      apiKey: client.api_key,
+      apiKey,
       plan:   client.plan,
       message: 'Welcome! Use your API key to create monitors.',
     })
@@ -238,7 +249,7 @@ accountRouter.post('/checkout', express.json(), async (req, res) => {
   try {
     const { rows: [client] } = await db.query(
       `SELECT id, email, stripe_id FROM clients WHERE api_key = $1`,
-      [apiKey]
+      [hashApiKey(apiKey)]
     )
     if (!client) return res.status(401).json({ error: 'Invalid API key' })
 
@@ -271,7 +282,7 @@ accountRouter.post('/reset-request', express.json(), asyncHandler(async (req, re
   res.json({ message: 'If this email exists, a reset link has been sent.' })
 }))
 
-// ─── POST /auth/reset — consomme le token et retourne la clé ─────────────────
+// ─── POST /auth/reset — consomme le token et retourne une NOUVELLE clé (l'ancienne est révoquée) ─────────────────
 
 accountRouter.post('/reset', express.json(), asyncHandler(async (req, res) => {
   const { token } = req.body ?? {}
@@ -290,7 +301,7 @@ accountRouter.post('/start-trial', express.json(), asyncHandler(async (req, res)
   if (!apiKey) return res.status(401).json({ error: 'Missing API key' })
 
   const { rows: [client] } = await db.query(
-    `SELECT id, plan, trial_ends_at FROM clients WHERE api_key = $1`, [apiKey]
+    `SELECT id, plan, trial_ends_at FROM clients WHERE api_key = $1`, [hashApiKey(apiKey)]
   )
   if (!client) return res.status(401).json({ error: 'Invalid API key' })
   if (client.plan === 'pro') return res.status(400).json({ error: 'Already on Pro plan' })

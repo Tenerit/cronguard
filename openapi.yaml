@@ -358,7 +358,7 @@ paths:
   /auth/reset:
     post:
       tags: [auth]
-      summary: Consomme le token et retourne la clé API
+      summary: Consomme le token et retourne une nouvelle clé API (l ancienne est révoquée)
       requestBody:
         required: true
         content:

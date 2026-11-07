@@ -19,6 +19,8 @@ Only the latest release on `master` receives security fixes.
 - **Outgoing webhooks are SSRF-guarded.** Loopback, link-local and cloud metadata addresses are
   always blocked; private ranges can be blocked too with `WEBHOOK_BLOCK_PRIVATE=true`.
 - **API keys are only accepted in the `X-API-Key` header**, never in the URL.
+- **API keys are stored as SHA-256 digests only.** A database dump or backup gives access to no
+  account. A key is shown once, when it is created; account recovery issues a new key.
 - **`/metrics` is closed by default** (set `METRICS_TOKEN`, or `METRICS_PUBLIC=true` on a trusted network).
 
 ## Known limitations
@@ -26,5 +28,3 @@ Only the latest release on `master` receives security fixes.
 - The dashboard's Content Security Policy allows inline scripts (`'unsafe-inline'`) because the
   page uses inline event handlers. Every value inserted into the page is escaped, and a test
   (`tests/dashboard-xss.test.ts`) guards the patterns that led to past issues.
-- API keys are stored in plain text in PostgreSQL. Protect database access and backups
-  accordingly.

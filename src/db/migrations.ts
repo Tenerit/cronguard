@@ -333,6 +333,16 @@ async function v15(client: {query(sql: string, params?: unknown[]): Promise<unkn
 // `diagnosis`, parsé à la lecture côté serveur). Le blob reste écrit (contrat client
 // dashboard). Backfill depuis le blob existant — PG16 `IS JSON` ignore les blobs
 // dégradés (non-JSON) sans faire échouer la transaction.
+// ─── V18 : clés API stockées en empreinte SHA-256 (une fuite de la base n'ouvre aucun compte).
+// Idempotent : le préfixe sha256: marque les lignes déjà converties. Les clés en clair des
+// utilisateurs restent valides : l'auth compare l'empreinte de la clé présentée.
+async function v18(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  for (const t of ['clients', 'team_members']) {
+    await client.query(`UPDATE ${t} SET api_key = 'sha256:' || encode(sha256(convert_to(api_key, 'UTF8')), 'hex')
+                        WHERE api_key IS NOT NULL AND api_key NOT LIKE 'sha256:%'`)
+  }
+}
+
 // ─── V17 : correction réellement appliquée, saisie par un humain (panne × cause × correction)
 async function v17(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
   await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS verified_fix TEXT`)
@@ -378,8 +388,9 @@ export async function runMigrations() {
     await v15(client)
     await v16(client)
     await v17(client)
+    await v18(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v17)')
+    logger.info('[DB] Migrations terminées (v1 → v18)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

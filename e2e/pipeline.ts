@@ -14,6 +14,7 @@ import * as os from 'os'
 import * as path from 'path'
 import { Pool } from 'pg'
 import Redis from 'ioredis'
+import { newApiKey, hashApiKey } from '../src/services/api-keys'
 
 const E2E_DB   = 'cronguard_e2e'
 const API_PORT = 3055
@@ -104,7 +105,13 @@ async function main() {
   pg = new Pool({ connectionString: dbUrl.toString() })
   pg.on('error', () => {})
   const db = pg
-  const { rows: [client] } = await db.query(`INSERT INTO clients (email) VALUES ('e2e@example.invalid') RETURNING id, api_key`)
+  // Comme l'app : la clé en clair n'existe que côté appelant, la base ne garde que son empreinte.
+  const addClient = async (email: string) => {
+    const api_key = newApiKey()
+    const { rows: [c] } = await db.query(`INSERT INTO clients (email, api_key) VALUES ($1, $2) RETURNING id`, [email, hashApiKey(api_key)])
+    return { id: c.id as string, api_key }
+  }
+  const client = await addClient('e2e@example.invalid')
   const { rows: [mon] } = await db.query(
     `INSERT INTO monitors (client_id, name, grace_period) VALUES ($1,'nightly-etl',300) RETURNING id, ping_key`, [client.id])
   redis = new Redis(redisUrl.toString())
@@ -160,11 +167,26 @@ async function main() {
   const total = Number((await db.query(`SELECT COUNT(*) FROM analyses WHERE monitor_id=$1`, [mon.id])).rows[0].count)
   check('Une seule analyse par panne', total === 5, `${total} lignes`)
 
+  // ─── Clés API stockées en empreinte (v18) ───────────────────────────────────
+  const get = (p: string, key: string) => fetch(`http://localhost:${API_PORT}${p}`, { headers: { 'X-API-Key': key } })
+  const stored = (await db.query(`SELECT api_key FROM clients WHERE id = $1`, [client.id])).rows[0].api_key as string
+  check('Clé : seule l\'empreinte est en base', stored.startsWith('sha256:') && !stored.includes(client.api_key), stored.slice(0, 12))
+  check('Clé : l\'empreinte elle-même ne permet pas de se connecter', (await get('/monitors', stored)).status === 401)
+  const legacyKey = 'cg_live_legacyplaintextkey0000000000'
+  const { rows: [legacy] } = await db.query(`INSERT INTO clients (email, api_key) VALUES ('legacy@example.invalid', $1) RETURNING id`, [legacyKey])
+  execSync('npx tsx src/db/migrations.ts', { env: { ...process.env, DATABASE_URL: dbUrl.toString() }, stdio: 'ignore' })
+  const migrated = (await db.query(`SELECT api_key FROM clients WHERE id = $1`, [legacy.id])).rows[0].api_key as string
+  check('Clé : migration v18 convertit une ancienne clé en clair', migrated === hashApiKey(legacyKey), migrated.slice(0, 12))
+  check('Clé : l\'ancienne clé en clair marche toujours après migration', (await get('/monitors', legacyKey)).status === 200)
+  execSync('npx tsx src/db/migrations.ts', { env: { ...process.env, DATABASE_URL: dbUrl.toString() }, stdio: 'ignore' })
+  const twice = (await db.query(`SELECT api_key FROM clients WHERE id = $1`, [legacy.id])).rows[0].api_key
+  check('Clé : migration idempotente (pas de double hash)', twice === migrated)
+
   // ─── Mémoire panne × cause × correction ─────────────────────────────────────
   const post = (p: string, key: string, body: unknown) => fetch(`http://localhost:${API_PORT}${p}`, {
     method: 'POST', headers: { 'content-type': 'application/json', 'X-API-Key': key }, body: JSON.stringify(body) })
 
-  const { rows: [other] } = await db.query(`INSERT INTO clients (email) VALUES ('other@example.invalid') RETURNING api_key`)
+  const other = await addClient('other@example.invalid')
   const foreign = await post(`/monitors/analyses/${d.id}/fix`, other.api_key, { fix: 'correction d un autre client' })
   check('Correction : un autre client ne peut pas écrire', foreign.status === 404, String(foreign.status))
   const tooShort = await post(`/monitors/analyses/${d.id}/fix`, client.api_key, { fix: ' ' })

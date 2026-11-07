@@ -8,6 +8,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Unreleased]
 
 ### Sécurité
+- Clés API stockées en empreinte SHA-256 (migration v18, les clés existantes restent valides). La récupération de compte par mail émet une **nouvelle** clé et révoque l'ancienne ; accepter une invitation émet une nouvelle clé de membre.
+- XSS stockée corrigée dans le dashboard (env, planification, nom de monitor dans les actions, JSON d'édition).
+- Clé API acceptée uniquement dans l'en-tête `X-API-Key` (plus `?apiKey=`).
 - **`npm audit fix`** : axios (bypass SSRF `NO_PROXY`, ReDoS, prototype-pollution), body-parser,
   follow-redirects, qs — advisories prod critical + high purgées (axios = client des webhooks sortants).
 - **zod `^3` → `^4.6.7`** (GHSA-mrhx-c7xc-m3w5 : DoS par épuisement mémoire à la frontière de validation).

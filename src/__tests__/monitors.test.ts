@@ -25,7 +25,7 @@ jest.mock('../db', () => ({
     query: jest.fn(async (sql: string, params: any[]) => {
       // Auth
       if (sql.includes('WHERE api_key')) {
-        return params[0] === 'valid-key'
+        return params[0] === require('../services/api-keys').hashApiKey('valid-key')
           ? { rows: [{ id: CLIENT_ID, plan: 'pro' }] }
           : { rows: [] }
       }

@@ -2,6 +2,7 @@ import { db }     from '../db'
 import { logger } from '../config/logger'
 import nodemailer  from 'nodemailer'
 import crypto      from 'crypto'
+import { newApiKey, hashApiKey } from './api-keys'
 
 const APP_URL = () => process.env.APP_URL ?? 'http://localhost:3000'
 const EXPIRY_MINUTES = 30
@@ -53,7 +54,7 @@ export async function requestKeyReset(email: string): Promise<void> {
       <a href="${resetUrl}"
          style="display:inline-block;background:#22d3a0;color:#000;padding:10px 20px;
                 border-radius:6px;text-decoration:none;font-weight:600;margin:16px 0">
-        Voir ma clé API →
+        Obtenir une nouvelle clé API →
       </a>
       <p style="color:#94a3b8;font-size:12px">
         Si vous n'avez pas demandé cela, ignorez cet email.
@@ -70,7 +71,7 @@ export async function consumeResetToken(
   token: string
 ): Promise<{ apiKey: string; email: string } | null> {
   const { rows: [client] } = await db.query(`
-    SELECT id, email, api_key
+    SELECT id, email
     FROM clients
     WHERE reset_token = $1
       AND reset_token_exp > NOW()
@@ -78,12 +79,14 @@ export async function consumeResetToken(
 
   if (!client) return null
 
-  // Invalide le token après usage unique
+  // Token à usage unique + nouvelle clé : l'ancienne n'est connue qu'en empreinte,
+  // et une récupération laisse supposer qu'elle a pu être perdue ou exposée.
+  const apiKey = newApiKey()
   await db.query(`
-    UPDATE clients SET reset_token = NULL, reset_token_exp = NULL
+    UPDATE clients SET reset_token = NULL, reset_token_exp = NULL, api_key = $2
     WHERE id = $1
-  `, [client.id])
+  `, [client.id, hashApiKey(apiKey)])
 
   logger.info('[Auth] Reset token consumed', { email: client.email })
-  return { apiKey: client.api_key, email: client.email }
+  return { apiKey, email: client.email }
 }

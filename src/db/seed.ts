@@ -11,6 +11,7 @@ import * as crypto from 'crypto'
 import { db }            from './index'
 import { runMigrations } from './migrations'
 import { logger }        from '../config/logger'
+import { hashApiKey }    from '../services/api-keys'
 import * as fs           from 'fs'
 
 // SEED_API_KEY: clé fixe pour la démo docker (README la documente) — sinon aléatoire
@@ -274,8 +275,8 @@ async function seed() {
   const { rows: [client] } = await db.query(`
     INSERT INTO clients (email, api_key, plan)
     VALUES ($1, $2, 'pro')
-    RETURNING id, api_key
-  `, [DEMO_EMAIL, DEMO_API_KEY])
+    RETURNING id
+  `, [DEMO_EMAIL, hashApiKey(DEMO_API_KEY)])
 
   logger.info('[Seed] Client created', { email: DEMO_EMAIL })
 

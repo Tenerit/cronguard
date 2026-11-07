@@ -46,6 +46,18 @@ describe('POST /clients/rotate-key', () => {
     expect(k1).not.toBe(k2)
   })
 
+  it("n'écrit en base que l'empreinte, jamais la clé en clair (client et membre)", async () => {
+    const { db } = jest.requireMock('../db') as { db: { query: jest.Mock } }
+    const { hashApiKey } = jest.requireActual('../services/api-keys')
+    for (const path of ['/clients/rotate-key', '/team/members/m-1/rotate-key']) {
+      db.query.mockClear()
+      const key = (await request(app('owner')).post(path)).body.api_key
+      const written = db.query.mock.calls.find(([sql]: [string]) => sql.includes('SET api_key'))![1] as string[]
+      expect(written).toContain(hashApiKey(key))
+      expect(written).not.toContain(key)
+    }
+  })
+
   it('is owner-only (admin → 403)', async () => {
     const res = await request(app('admin')).post('/clients/rotate-key')
     expect(res.status).toBe(403)

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { db }     from '../../db'
 import { logger } from '../../config/logger'
+import { hashApiKey } from '../../services/api-keys'
 
 export type Role = 'viewer' | 'member' | 'admin' | 'owner'
 
@@ -39,7 +40,7 @@ export async function requireApiKey(req: Request, res: Response, next: NextFunct
   try {
     // 1. Owner key (clients.api_key)
     const { rows: owners } = await db.query(
-      `SELECT id, plan FROM clients WHERE api_key = $1`, [key]
+      `SELECT id, plan FROM clients WHERE api_key = $1`, [hashApiKey(key)]
     )
     if (owners.length) {
       res.locals.clientId = owners[0].id
@@ -54,7 +55,7 @@ export async function requireApiKey(req: Request, res: Response, next: NextFunct
       FROM team_members tm
       JOIN clients c ON c.id = tm.client_id
       WHERE tm.api_key = $1
-    `, [key])
+    `, [hashApiKey(key)])
     if (members.length) {
       res.locals.clientId = members[0].client_id
       res.locals.plan     = members[0].plan

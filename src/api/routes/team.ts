@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { z }      from 'zod'
 import { db }     from '../../db'
-import { randomUUID } from 'crypto'
+import { newApiKey, hashApiKey } from '../../services/api-keys'
 import { asyncHandler } from '../middleware/async-handler'
 import { requireRole }  from '../middleware/ownership'
 import { audit }        from '../middleware/audit'
@@ -94,12 +94,15 @@ teamRouter.get('/invite/accept', asyncHandler(async (req, res) => {
   if (!inv) return res.status(410).json({ error: 'invalid_or_expired_token' })
 
   // Upsert membre (ré-invitation possible si rôle change)
+  // Nouvelle clé à chaque acceptation : seule son empreinte est stockée, donc l'ancienne
+  // (ré-invitation) ne peut pas être renvoyée.
+  const apiKey = newApiKey()
   const { rows: [member] } = await db.query(`
-    INSERT INTO team_members (client_id, email, role)
-    VALUES ($1, $2, $3)
-    ON CONFLICT (client_id, email) DO UPDATE SET role = EXCLUDED.role
-    RETURNING id, email, role, api_key
-  `, [inv.client_id, inv.email, inv.role])
+    INSERT INTO team_members (client_id, email, role, api_key)
+    VALUES ($1, $2, $3, $4)
+    ON CONFLICT (client_id, email) DO UPDATE SET role = EXCLUDED.role, api_key = EXCLUDED.api_key
+    RETURNING id, email, role
+  `, [inv.client_id, inv.email, inv.role, hashApiKey(apiKey)])
 
   // Marque l'invitation comme acceptée
   await db.query(
@@ -110,7 +113,7 @@ teamRouter.get('/invite/accept', asyncHandler(async (req, res) => {
     message:   'Invitation accepted',
     email:     member.email,
     role:      member.role,
-    api_key:   member.api_key,
+    api_key:   apiKey,
   })
 }))
 
@@ -129,10 +132,10 @@ teamRouter.delete('/members/:id', requireRole('owner'), asyncHandler(async (req,
 // ─── POST /team/members/:id/rotate-key — régénère la clé d'un membre (owner) ──
 
 teamRouter.post('/members/:id/rotate-key', requireRole('owner'), asyncHandler(async (req, res) => {
-  const key = 'cg_live_' + randomUUID().replace(/-/g, '')
+  const key = newApiKey()
   const { rows: [m] } = await db.query(
     `UPDATE team_members SET api_key = $3 WHERE id = $1 AND client_id = $2 RETURNING email`,
-    [req.params.id, res.locals.clientId, key]
+    [req.params.id, res.locals.clientId, hashApiKey(key)]
   )
   if (!m) return res.status(404).json({ error: 'not_found' })
   await audit(res, 'team.key_rotated', 'member', req.params.id, { email: m.email })
