@@ -25,6 +25,15 @@ Sans `bash` (Windows) → `node setup.js` ou `.\setup.ps1` ; détails dans [DEMA
 
 ## Intégration dans ton script
 
+### Importer une crontab existante
+Crée un monitor par job et affiche la crontab avec chaque commande enveloppée par `cg_run`. Ta crontab n'est jamais modifiée : tu relis puis tu recolles.
+```bash
+sudo cp sdk/bash/cronguard.sh /usr/local/lib/cronguard.sh
+CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh            # aperçu
+CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --apply    # crée les monitors
+```
+Pour `/etc/crontab` ou `/etc/cron.d/*` (colonne utilisateur en plus) : passer le fichier et `--system`. Les timers systemd ne sont pas importés.
+
 ### Bash (le plus simple)
 ```bash
 source sdk/bash/cronguard.sh

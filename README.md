@@ -107,6 +107,15 @@ The setup script detects your environment and configures everything automaticall
 
 ## Instrument your jobs
 
+### Import an existing crontab
+Creates one monitor per job and prints the crontab with each command wrapped by `cg_run`. Your crontab is never modified: you review and paste the result.
+```bash
+sudo cp sdk/bash/cronguard.sh /usr/local/lib/cronguard.sh
+CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh            # preview
+CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --apply    # create monitors
+```
+For `/etc/crontab` or `/etc/cron.d/*` (extra user column), pass the file and `--system`. systemd timers are not imported.
+
 ### Bash (simplest)
 ```bash
 source sdk/bash/cronguard.sh
