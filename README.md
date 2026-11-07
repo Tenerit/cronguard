@@ -56,6 +56,8 @@ curl -X POST http://localhost:3000/auth/register -H "Content-Type: application/j
 
 Open **http://localhost:3000/dashboard**. Without a model, failures get related log lines and known fixes; add local AI with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1`. Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host: a backup on the same disk does not survive the disk; PostgreSQL and Redis listen on 127.0.0.1 inside the container only. `scripts/test-allinone.sh` checks start-up, a failure analysed without AI, data kept across a restart, and a clean PostgreSQL shutdown.
 
+**Air-gapped server?** On a connected machine, `scripts/offline-bundle.sh [folder] [--with-model]` writes the image (~80 MB), an `install.sh` and `SHA256SUMS`; with `--with-model`, also the Ollama image and the model (~2 GB). Copy the folder over, then `sha256sum -c SHA256SUMS && ./install.sh`: no network needed.
+
 ## Demo with sample data — one command
 
 ```bash
