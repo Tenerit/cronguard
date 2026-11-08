@@ -38,6 +38,7 @@ node_modules
 eval/results.*.json
 !eval/results.public.json
 !eval/results.public.cases.json
+!eval/results.ab-root-cause.json
 
 # Bras B temporaire de eval/ab-root-cause.ts (supprimé en fin de run)
 src/services/llm/analyzer.abroot.ts
