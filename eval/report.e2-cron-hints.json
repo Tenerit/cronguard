@@ -1,0 +1,5013 @@
+{
+  "date": "2026-11-08T15:00:59.200Z",
+  "set": "all",
+  "runs": 2,
+  "model": "llama3.2:3b",
+  "summary": {
+    "A": {
+      "note": "6.6",
+      "ci95": [
+        "6.5",
+        "6.8"
+      ],
+      "runs": [
+        "6.7",
+        "6.5"
+      ],
+      "covered": {
+        "note": "8.4",
+        "n": 32
+      },
+      "uncovered": {
+        "note": "4.0",
+        "n": 22
+      },
+      "lab": "7.1",
+      "public": "8.7",
+      "public2": "4.6",
+      "criteria": {
+        "cause_mecanisme": "56 %",
+        "action": "61 %",
+        "categorie": "81 %",
+        "rien_invente": "98 %",
+        "preuve": "87 %"
+      },
+      "latence_mediane_s": "12.9",
+      "parsable": "100 %"
+    },
+    "B": {
+      "note": "6.7",
+      "ci95": [
+        "6.2",
+        "7.2"
+      ],
+      "runs": [
+        "6.4",
+        "7.0"
+      ],
+      "covered": {
+        "note": "8.4",
+        "n": 32
+      },
+      "uncovered": {
+        "note": "4.2",
+        "n": 22
+      },
+      "lab": "7.2",
+      "public": "8.7",
+      "public2": "4.6",
+      "criteria": {
+        "cause_mecanisme": "57 %",
+        "action": "61 %",
+        "categorie": "83 %",
+        "rien_invente": "94 %",
+        "preuve": "91 %"
+      },
+      "latence_mediane_s": "15.1",
+      "parsable": "100 %"
+    },
+    "diff_B_moins_A": {
+      "note": "0.1",
+      "ci95": [
+        "-0.2",
+        "0.4"
+      ],
+      "variant": "LLM_CRON_HINTS=on"
+    }
+  },
+  "rows": [
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "pg-connection-refused",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le serveur PostgreSQL n'écoute pas à cette adresse : service arrêté ou redémarré, ou listen_addresses / pare-feu qui bloque.",
+      "action": "Vérifier et redémarrer le service PostgreSQL (systemctl status postgresql, pg_isready), puis relancer le job.",
+      "model": "llama3.2:3b",
+      "ms": 14118
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "pg-connection-refused",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le serveur PostgreSQL n'écoute pas à cette adresse : service arrêté ou redémarré, ou listen_addresses / pare-feu qui bloque.",
+      "action": "Vérifier et redémarrer le service PostgreSQL (systemctl status postgresql, pg_isready), puis relancer le job.",
+      "model": "llama3.2:3b",
+      "ms": 15618
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "pg-too-many-connections",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Toutes les connexions PostgreSQL sont prises (limite max_connections atteinte), souvent par des connexions oubliées ou un pool mal dimensionné.",
+      "action": "Libérer les connexions inactives (idle in transaction) et passer par un pooler (PgBouncer) plutôt qu'augmenter max_connections.",
+      "model": "llama3.2:3b",
+      "ms": 12782
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "pg-too-many-connections",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Toutes les connexions PostgreSQL sont prises (limite max_connections atteinte), souvent par des connexions oubliées ou un pool mal dimensionné.",
+      "action": "Libérer les connexions inactives (idle in transaction) et passer par un pooler (PgBouncer) plutôt qu'augmenter max_connections.",
+      "model": "llama3.2:3b",
+      "ms": 13908
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "mysql-deadlock",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Deux transactions concurrentes verrouillent les mêmes lignes dans un ordre différent : la base en a annulé une (deadlock).",
+      "action": "Relancer la transaction et prendre les verrous dans le même ordre partout, avec des lots plus petits.",
+      "model": "llama3.2:3b",
+      "ms": 9978
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "mysql-deadlock",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Deux transactions concurrentes verrouillent les mêmes lignes dans un ordre différent : la base en a annulé une (deadlock).",
+      "action": "Relancer la transaction et prendre les verrous dans le même ordre partout, avec des lots plus petits.",
+      "model": "llama3.2:3b",
+      "ms": 14039
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "pg-disk-full-wal",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le volume de PostgreSQL est plein à cause de pg_wal : un slot de réplication inactif ou un archivage en échec empêche le recyclage des WAL.",
+      "action": "Supprimer le slot de réplication abandonné (ou réparer l'archivage) puis libérer ou agrandir le volume, sans toucher à pg_wal à la main.",
+      "model": "llama3.2:3b",
+      "ms": 15297
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "pg-disk-full-wal",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le volume de PostgreSQL est plein à cause de pg_wal : un slot de réplication inactif ou un archivage en échec empêche le recyclage des WAL.",
+      "action": "Supprimer le slot de réplication abandonné (ou réparer l'archivage) puis libérer ou agrandir le volume, sans toucher à pg_wal à la main.",
+      "model": "llama3.2:3b",
+      "ms": 13304
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "dns-resolution-failure",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le nom d'hôte ne se résout pas : résolveur DNS injoignable, nom erroné ou enregistrement supprimé.",
+      "action": "Tester la résolution depuis la machine du job (getent hosts <nom>) et corriger le résolveur ou le nom.",
+      "model": "llama3.2:3b",
+      "ms": 11732
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "dns-resolution-failure",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le nom d'hôte ne se résout pas : résolveur DNS injoignable, nom erroné ou enregistrement supprimé.",
+      "action": "Tester la résolution depuis la machine du job (getent hosts <nom>) et corriger le résolveur ou le nom.",
+      "model": "llama3.2:3b",
+      "ms": 16862
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "tls-cert-expired",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action dangereuse"
+        ]
+      },
+      "cause": "Le certificat TLS du serveur appelé est expiré : son renouvellement automatique n'a pas eu lieu.",
+      "action": "Renouveler le certificat (certbot renew pour Let's Encrypt) ou prévenir le tiers ; ne pas désactiver la vérification.",
+      "model": "llama3.2:3b",
+      "ms": 15005
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "tls-cert-expired",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action dangereuse"
+        ]
+      },
+      "cause": "Le certificat TLS du serveur appelé est expiré : son renouvellement automatique n'a pas eu lieu.",
+      "action": "Renouveler le certificat (certbot renew pour Let's Encrypt) ou prévenir le tiers ; ne pas désactiver la vérification.",
+      "model": "llama3.2:3b",
+      "ms": 12580
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "econnreset-mid-transfer",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "inventé : retry_count"
+        ]
+      },
+      "cause": "Connection reset by peer during transfer",
+      "action": "retry upload avec retry_count=3",
+      "model": "llama3.2:3b",
+      "ms": 11063
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "econnreset-mid-transfer",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ network",
+          "inventé : /bin/sh, /usr/bin"
+        ]
+      },
+      "cause": "ECONNRESET, mécanisme : /bin/sh au lieu de bash ; locale C (ASCII) ; dossier courant = HOME",
+      "action": "Mettre à jour la ligne de commande pour utiliser bash et ajuster le PATH minimal (/usr/bin:/bin)",
+      "model": "llama3.2:3b",
+      "ms": 19294
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "route-unreachable-vpn",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 4,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "LDAP sync failed due to VPN tunnel to datacenter being down",
+      "action": "Restart the service and verify its functionality",
+      "model": "llama3.2:3b",
+      "ms": 11507
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "route-unreachable-vpn",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 4,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "LDAP sync failed due to VPN tunnel to datacenter appearing down",
+      "action": "Restart service and verify LDAP connection",
+      "model": "llama3.2:3b",
+      "ms": 10232
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "watchdog-sigkill",
+      "covered": true,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "preuve : ligne décisive non liée",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le job a dépassé la durée maximale qui lui est accordée (timeout, TimeoutStartSec, watchdog) et a été tué avant la fin.",
+      "action": "Réduire la durée du job (traitement incrémental, découpage) ou ajuster la limite si la durée est devenue normale.",
+      "model": "llama3.2:3b",
+      "ms": 12299
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "watchdog-sigkill",
+      "covered": true,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "preuve : ligne décisive non liée",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le job a dépassé la durée maximale qui lui est accordée (timeout, TimeoutStartSec, watchdog) et a été tué avant la fin.",
+      "action": "Réduire la durée du job (traitement incrémental, découpage) ou ajuster la limite si la durée est devenue normale.",
+      "model": "llama3.2:3b",
+      "ms": 16647
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "http-client-timeout",
+      "covered": false,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie network ≠ timeout",
+          "inventé : /dev/null"
+        ]
+      },
+      "cause": "timeout - curl: Operation timed out after 30000 milliseconds",
+      "action": "curl -s -f https://rates.vendor.com/v2/daily > /dev/null",
+      "model": "llama3.2:3b",
+      "ms": 14151
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "http-client-timeout",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "catégorie network ≠ timeout"
+        ]
+      },
+      "cause": "curl: Operation timed out after 30000 milliseconds with 0 bytes received",
+      "action": "Réessayer la requête avec un timeout plus long (30 secondes) et vérifier que l'URL est correcte",
+      "model": "llama3.2:3b",
+      "ms": 16529
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "query-statement-timeout",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "La requête dépasse statement_timeout : la table a grossi ou un index manque, la requête est devenue trop lente.",
+      "action": "Optimiser la requête (index sur le filtre, EXPLAIN ANALYZE) ou la découper, plutôt que de relever statement_timeout.",
+      "model": "llama3.2:3b",
+      "ms": 13860
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "query-statement-timeout",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "La requête dépasse statement_timeout : la table a grossi ou un index manque, la requête est devenue trop lente.",
+      "action": "Optimiser la requête (index sur le filtre, EXPLAIN ANALYZE) ou la découper, plutôt que de relever statement_timeout.",
+      "model": "llama3.2:3b",
+      "ms": 16362
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "oom-killer-137",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le processus a dépassé la mémoire disponible ou la limite du conteneur : le noyau l'a tué (OOM killer, code 137).",
+      "action": "Réduire le pic mémoire en traitant par lots, ou augmenter la limite mémoire du conteneur ou de la machine.",
+      "model": "llama3.2:3b",
+      "ms": 30244
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "oom-killer-137",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le processus a dépassé la mémoire disponible ou la limite du conteneur : le noyau l'a tué (OOM killer, code 137).",
+      "action": "Réduire le pic mémoire en traitant par lots, ou augmenter la limite mémoire du conteneur ou de la machine.",
+      "model": "llama3.2:3b",
+      "ms": 11558
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "disk-full-enospc",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+      "action": "Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.",
+      "model": "llama3.2:3b",
+      "ms": 14131
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "disk-full-enospc",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+      "action": "Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.",
+      "model": "llama3.2:3b",
+      "ms": 15834
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "fork-cannot-allocate",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le système refuse de créer de nouveaux processus : mémoire libre épuisée ou limite de processus (ulimit -u, pids du cgroup) atteinte, souvent par trop de tâches en parallèle.",
+      "action": "Réduire le nombre de processus lancés en parallèle par le job, ou relever la limite de processus et la mémoire disponible.",
+      "model": "llama3.2:3b",
+      "ms": 15111
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "fork-cannot-allocate",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le système refuse de créer de nouveaux processus : mémoire libre épuisée ou limite de processus (ulimit -u, pids du cgroup) atteinte, souvent par trop de tâches en parallèle.",
+      "action": "Réduire le nombre de processus lancés en parallèle par le job, ou relever la limite de processus et la mémoire disponible.",
+      "model": "llama3.2:3b",
+      "ms": 12889
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "inode-exhaustion",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le système de fichiers n'a plus d'inodes : trop de petits fichiers, alors qu'il reste de l'espace disque.",
+      "action": "Purger ou regrouper en archive les dossiers aux millions de petits fichiers (du --inodes pour les trouver).",
+      "model": "llama3.2:3b",
+      "ms": 12555
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "inode-exhaustion",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le système de fichiers n'a plus d'inodes : trop de petits fichiers, alors qu'il reste de l'espace disque.",
+      "action": "Purger ou regrouper en archive les dossiers aux millions de petits fichiers (du --inodes pour les trouver).",
+      "model": "llama3.2:3b",
+      "ms": 12321
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "stripe-rate-limit-429",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Trop de requêtes envoyées à l'API dans la fenêtre autorisée : sa limite de débit est atteinte.",
+      "action": "Respecter Retry-After avec un délai exponentiel et étaler les appels.",
+      "model": "llama3.2:3b",
+      "ms": 10926
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "stripe-rate-limit-429",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Trop de requêtes envoyées à l'API dans la fenêtre autorisée : sa limite de débit est atteinte.",
+      "action": "Respecter Retry-After avec un délai exponentiel et étaler les appels.",
+      "model": "llama3.2:3b",
+      "ms": 13066
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "api-key-revoked-401",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "accès refusé",
+      "action": "Vérifier et mettre à jour l'authentification des transactions emailles",
+      "model": "llama3.2:3b",
+      "ms": 12811
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "api-key-revoked-401",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "accès refusé (autorisation de connexion invalidée)",
+      "action": "Vérifier et mettre à jour l'autorisation de connexion",
+      "model": "llama3.2:3b",
+      "ms": 15156
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "vendor-maintenance-503",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "scheduled_maintenance",
+      "action": "Supprimer le job et réessayer plus tard après la maintenance terminée",
+      "model": "llama3.2:3b",
+      "ms": 11907
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "vendor-maintenance-503",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "API est en ligne pour maintenance",
+      "action": "Attendre la fin du maintenanc et vérifier à nouveau le job",
+      "model": "llama3.2:3b",
+      "ms": 11914
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "geocoding-quota-exceeded",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "accès refusé (code 403)",
+      "action": "Vérifier les ressources utilisées et ajuster la configuration pour éviter l'excès de ressources",
+      "model": "llama3.2:3b",
+      "ms": 13987
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "geocoding-quota-exceeded",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "ressource épuisée (RESOURCE_EXHAUSTED) - accès refusé",
+      "action": "Vérifier et ajuster la limite de connections pour éviter l'épuisement des ressources",
+      "model": "llama3.2:3b",
+      "ms": 15724
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "typeerror-undefined-prop",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ code"
+        ]
+      },
+      "cause": "lib externe non disponible : erreur de type TypeError Cannot read properties of undefined (reading 'tier')",
+      "action": "Vérifier que la bibliothèque externe est installée et configurée correctement",
+      "model": "llama3.2:3b",
+      "ms": 16310
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "typeerror-undefined-prop",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "erreur de syntaxe dans une requête SQL",
+      "action": "réinitialiser le pool de connexions et reessayer la requête",
+      "model": "llama3.2:3b",
+      "ms": 12545
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "python-keyerror",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie data ≠ code"
+        ]
+      },
+      "cause": "KeyError 'gross_amount_eur' lors de la récupération des données",
+      "action": "Vérifier et corriger l'état des transactions pour éviter une erreur de récupération",
+      "model": "llama3.2:3b",
+      "ms": 14017
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "python-keyerror",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "KeyError 'gross_amount_eur' : mécanisme de vérification des données non lu, variables d'environnement et identifiants exportés absents",
+      "action": "Vérifier si ~/.pgpass, ~/.my.cnf, ~/.aws, ~/.ssh, trousseau GPG sont présents et correctement configurés",
+      "model": "llama3.2:3b",
+      "ms": 20709
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "syntax-error-bad-deploy",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "inventé : /bin/sh, /usr/bin"
+        ]
+      },
+      "cause": "syntax error due to unescaped semicolon in .bashrc",
+      "action": "run `source /bin/sh -c 'export PATH=$PATH:/usr/bin; export HOME=/root; source ~/.bashrc'` before running the job again",
+      "model": "llama3.2:3b",
+      "ms": 14267
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "syntax-error-bad-deploy",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "erreur de syntaxe",
+      "action": "réinitialiser le job et le réexécuter",
+      "model": "llama3.2:3b",
+      "ms": 12133
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "unhandled-rejection-null-order",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "Unhandled promise rejection avec erreur TypeError",
+      "action": "Vérifier la fonctionnalité qui a causé l'erreur et la corriger",
+      "model": "llama3.2:3b",
+      "ms": 13145
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "unhandled-rejection-null-order",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Unhandled promise rejection, TypeError: Cannot destructure property 'items' of 'order' as it is null",
+      "action": "Vérifier et mettre à jour la configuration de l'environnement pour éviter les erreurs de destructuration de propriétés",
+      "model": "llama3.2:3b",
+      "ms": 18147
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "validation-null-ids",
+      "covered": false,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "exécution de query avec NULL customer_id",
+      "action": "réinitialiser la table des clients et re-exécuter le job",
+      "model": "llama3.2:3b",
+      "ms": 13902
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "validation-null-ids",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "contrainte violated",
+      "action": "Vérifier et corriger les données d'ordre avec une valeur de customer_id nulle ou une order_total inférieure à zéro",
+      "model": "llama3.2:3b",
+      "ms": 14048
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "csv-encoding-garbage",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le fichier reçu n'est pas encodé en UTF-8 (UTF-16, Latin-1…) : le fournisseur a changé d'encodage ou d'outil d'export.",
+      "action": "Convertir le fichier (iconv -f <encodage> -t UTF-8) ou lire avec le bon encodage, et prévenir le fournisseur.",
+      "model": "llama3.2:3b",
+      "ms": 15966
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "csv-encoding-garbage",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le fichier reçu n'est pas encodé en UTF-8 (UTF-16, Latin-1…) : le fournisseur a changé d'encodage ou d'outil d'export.",
+      "action": "Convertir le fichier (iconv -f <encodage> -t UTF-8) ou lire avec le bon encodage, et prévenir le fournisseur.",
+      "model": "llama3.2:3b",
+      "ms": 17140
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "lab",
+      "name": "schema-drift-extra-column",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Parquet schema mismatch",
+      "action": "Vérifier et ajuster la structure des données du source pour qu'elle correspond à celle de la cible",
+      "model": "llama3.2:3b",
+      "ms": 13847
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "lab",
+      "name": "schema-drift-extra-column",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Parquet schema mismatch",
+      "action": "Vérifier et ajuster la structure des données du source pour qu'elle correspond à celle de la cible",
+      "model": "llama3.2:3b",
+      "ms": 14701
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-pg-dump-version-mismatch-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).",
+      "action": "Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.",
+      "model": "llama3.2:3b",
+      "ms": 11187
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-pg-dump-version-mismatch-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).",
+      "action": "Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.",
+      "model": "llama3.2:3b",
+      "ms": 13522
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-gitlab-backup-pg-dump-mismatch",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).",
+      "action": "Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.",
+      "model": "llama3.2:3b",
+      "ms": 13458
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-gitlab-backup-pg-dump-mismatch",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).",
+      "action": "Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.",
+      "model": "llama3.2:3b",
+      "ms": 14380
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-certbot-timeout-aaaa-old-provider",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+      "action": "Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.",
+      "model": "llama3.2:3b",
+      "ms": 13490
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-certbot-timeout-aaaa-old-provider",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+      "action": "Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.",
+      "model": "llama3.2:3b",
+      "ms": 13783
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-certbot-timeout-firewall-restarted",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+      "action": "Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.",
+      "model": "llama3.2:3b",
+      "ms": 12377
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-certbot-timeout-firewall-restarted",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+      "action": "Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.",
+      "model": "llama3.2:3b",
+      "ms": 12638
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-mysqldump-lock-tables-privilege",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le compte de sauvegarde n'a pas le privilège LOCK TABLES exigé par mysqldump.",
+      "action": "Ajouter --single-transaction (tables InnoDB) ou accorder GRANT LOCK TABLES au compte du cron.",
+      "model": "llama3.2:3b",
+      "ms": 15584
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-mysqldump-lock-tables-privilege",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le compte de sauvegarde n'a pas le privilège LOCK TABLES exigé par mysqldump.",
+      "action": "Ajouter --single-transaction (tables InnoDB) ou accorder GRANT LOCK TABLES au compte du cron.",
+      "model": "llama3.2:3b",
+      "ms": 17484
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-velero-x509-unknown-authority",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action dangereuse"
+        ]
+      },
+      "cause": "Le certificat est signé par une autorité (CA interne ou auto-signée) absente du magasin de confiance de la machine du job.",
+      "action": "Ajouter la CA au magasin de confiance (update-ca-certificates) ou la passer à l'outil (--cacert, REQUESTS_CA_BUNDLE).",
+      "model": "llama3.2:3b",
+      "ms": 18113
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-velero-x509-unknown-authority",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action dangereuse"
+        ]
+      },
+      "cause": "Le certificat est signé par une autorité (CA interne ou auto-signée) absente du magasin de confiance de la machine du job.",
+      "action": "Ajouter la CA au magasin de confiance (update-ca-certificates) ou la passer à l'outil (--cacert, REQUESTS_CA_BUNDLE).",
+      "model": "llama3.2:3b",
+      "ms": 14561
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-borg-not-found-cron-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "BORG non installé sur ce système",
+      "action": "Installer BORG immédiatement",
+      "model": "llama3.2:3b",
+      "ms": 11583
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-borg-not-found-cron-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "BORG non installé sur le système",
+      "action": "Installer BORG via apt-get ou une autre méthode de installation appropriée immédiatement",
+      "model": "llama3.2:3b",
+      "ms": 16211
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-weaviate-x509-legacy-cn",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "Le certificat ne couvre pas ce nom d'hôte dans ses SAN (Subject Alternative Names) ; le Common Name seul n'est plus accepté.",
+      "action": "Régénérer le certificat avec le bon SAN, ou appeler l'hôte par un nom qu'il couvre.",
+      "model": "llama3.2:3b",
+      "ms": 14167
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-weaviate-x509-legacy-cn",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "Le certificat ne couvre pas ce nom d'hôte dans ses SAN (Subject Alternative Names) ; le Common Name seul n'est plus accepté.",
+      "action": "Régénérer le certificat avec le bon SAN, ou appeler l'hôte par un nom qu'il couvre.",
+      "model": "llama3.2:3b",
+      "ms": 13551
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-aws-s3-sync-sso-expired",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.",
+      "action": "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+      "model": "llama3.2:3b",
+      "ms": 12080
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-aws-s3-sync-sso-expired",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.",
+      "action": "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+      "model": "llama3.2:3b",
+      "ms": 15562
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-s3-upload-expired-token",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.",
+      "action": "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+      "model": "llama3.2:3b",
+      "ms": 17485
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-s3-upload-expired-token",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.",
+      "action": "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+      "model": "llama3.2:3b",
+      "ms": 12013
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-node-heap-oom-backup",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le traitement charge plus de données que la limite de tas Node.js par défaut.",
+      "action": "Traiter par lots, ou augmenter NODE_OPTIONS=--max-old-space-size sans dépasser la RAM.",
+      "model": "llama3.2:3b",
+      "ms": 12853
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-node-heap-oom-backup",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le traitement charge plus de données que la limite de tas Node.js par défaut.",
+      "action": "Traiter par lots, ou augmenter NODE_OPTIONS=--max-old-space-size sans dépasser la RAM.",
+      "model": "llama3.2:3b",
+      "ms": 17282
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-cron-perm-denied-owner",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "accès refusé (permission denied)",
+      "action": "Changer le propriétaire du fichier/dossier ciblé et essayer à nouveau la commande",
+      "model": "llama3.2:3b",
+      "ms": 13551
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-cron-perm-denied-owner",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie network ≠ dependency"
+        ]
+      },
+      "cause": "accès refusé",
+      "action": "Vérifier les droits d'accès et ajuster la configuration de sécurité si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 12022
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-php-mysqli-env-vars",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "No such file or directory",
+      "action": "Vérifier que le fichier spécifié existe et est accessible",
+      "model": "llama3.2:3b",
+      "ms": 11652
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-php-mysqli-env-vars",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "No such file or directory",
+      "action": "Vérifier si le fichier de configuration MySQL est présent et correctement configuré.",
+      "model": "llama3.2:3b",
+      "ms": 15064
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-rake-path-rvm",
+      "covered": false,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie code ≠ dependency",
+          "inventé : /etc/profile"
+        ]
+      },
+      "cause": "élément introuvable : commande 'rake' non trouvée",
+      "action": "ajouter l'environnement PATH avec /usr/local/bin pour résoudre le problème",
+      "model": "llama3.2:3b",
+      "ms": 14695
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-rake-path-rvm",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "commande 'rake' introuvable",
+      "action": "ajouter l'environnement PATH pour redmine-email.sh",
+      "model": "llama3.2:3b",
+      "ms": 13668
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-crontab-percent",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "erreur de syntaxe",
+      "action": "Vérifier et corriger le fichier crontab pour supprimer l'EOF en backquote substitution",
+      "model": "llama3.2:3b",
+      "ms": 13715
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-crontab-percent",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Syntax error: EOF in backquote substitution",
+      "action": "Vérifier si le fichier crontab est correctement configuré et si les variables d'environnement sont exportées dans .bashrc",
+      "model": "llama3.2:3b",
+      "ms": 17788
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-mysqldump-p-space",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "MySQL refuse les identifiants du job : mot de passe changé, fichier ~/.my.cnf absent pour l'utilisateur du cron, ou compte limité à un autre hôte.",
+      "action": "Vérifier les identifiants du fichier d'options lu par le cron (--defaults-extra-file) et les droits du compte.",
+      "model": "llama3.2:3b",
+      "ms": 15687
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-mysqldump-p-space",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "MySQL refuse les identifiants du job : mot de passe changé, fichier ~/.my.cnf absent pour l'utilisateur du cron, ou compte limité à un autre hôte.",
+      "action": "Vérifier les identifiants du fichier d'options lu par le cron (--defaults-extra-file) et les droits du compte.",
+      "model": "llama3.2:3b",
+      "ms": 14101
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-pg-dump-pgpass-root",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 12347
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-pg-dump-pgpass-root",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 14218
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-docker-no-space",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+      "action": "Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.",
+      "model": "llama3.2:3b",
+      "ms": 13929
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-docker-no-space",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+      "action": "Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.",
+      "model": "llama3.2:3b",
+      "ms": 12397
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-cron-malware",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ unknown",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron service arrêté par signal SIGKILL",
+      "action": "redémarrer le service cron",
+      "model": "llama3.2:3b",
+      "ms": 12542
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-cron-malware",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cascading failure due to unit entered failed state after main process exited with code=killed",
+      "action": "Restart cron service and verify its status immediately",
+      "model": "llama3.2:3b",
+      "ms": 14507
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-curl-60-ca-bundle",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ network",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "lib externe (Guzzle) non installé ou non configuré",
+      "action": "sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev && sudo pecl install guzzlehttp/guzzle",
+      "model": "llama3.2:3b",
+      "ms": 17331
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-curl-60-ca-bundle",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "certificat ou TLS",
+      "action": "Vérifier et mettre à jour le certificat SSL/TLS pour la connexion à l'API Rackspace.",
+      "model": "llama3.2:3b",
+      "ms": 15566
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-spring-sftp-duplicate",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Problem occurred while synchronizing '/remote-file-path' to local directory",
+      "action": "Vérifier la configuration de synchronisation des fichiers et ajuster si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 13036
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-spring-sftp-duplicate",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie network ≠ code"
+        ]
+      },
+      "cause": "connection refused",
+      "action": "Vérifier que le service est en ligne et qu'il n'y a pas de problème de connexion réseau.",
+      "model": "llama3.2:3b",
+      "ms": 14999
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-ffmpeg-display-boot",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le job lance un programme graphique ou D-Bus, mais cron n'a pas de session graphique : DISPLAY et DBUS_SESSION_BUS_ADDRESS sont absents.",
+      "action": "Utiliser un mode sans affichage (headless, xvfb-run) ou définir DISPLAY et DBUS_SESSION_BUS_ADDRESS de la session dans la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12120
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-ffmpeg-display-boot",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le job lance un programme graphique ou D-Bus, mais cron n'a pas de session graphique : DISPLAY et DBUS_SESSION_BUS_ADDRESS sont absents.",
+      "action": "Utiliser un mode sans affichage (headless, xvfb-run) ou définir DISPLAY et DBUS_SESSION_BUS_ADDRESS de la session dans la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 11108
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-python-ascii-encode",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron s'exécute avec la locale POSIX/C (ASCII) : le programme ne peut pas écrire ou lire de caractères non ASCII.",
+      "action": "Définir LC_ALL=C.UTF-8 (ou LANG=fr_FR.UTF-8) en tête de la crontab ; pour Python, PYTHONIOENCODING=utf-8.",
+      "model": "llama3.2:3b",
+      "ms": 13984
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-python-ascii-encode",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron s'exécute avec la locale POSIX/C (ASCII) : le programme ne peut pas écrire ou lire de caractères non ASCII.",
+      "action": "Définir LC_ALL=C.UTF-8 (ou LANG=fr_FR.UTF-8) en tête de la crontab ; pour Python, PYTHONIOENCODING=utf-8.",
+      "model": "llama3.2:3b",
+      "ms": 20845
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-node-path-global",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Node ne trouve pas le module : node_modules non installés à cet endroit, ou cron lance le script depuis un autre dossier (cwd = HOME).",
+      "action": "Faire cd dans le dossier du projet avant de lancer node (ou chemin absolu), après npm ci.",
+      "model": "llama3.2:3b",
+      "ms": 17925
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-node-path-global",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Node ne trouve pas le module : node_modules non installés à cet endroit, ou cron lance le script depuis un autre dossier (cwd = HOME).",
+      "action": "Faire cd dans le dossier du projet avant de lancer node (ou chemin absolu), après npm ci.",
+      "model": "llama3.2:3b",
+      "ms": 12563
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-php-oom-ssh-safe-mode",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "mémoire insuffisante",
+      "action": "Augmenter la mémoire allouée au job ou réduire la charge de travail",
+      "model": "llama3.2:3b",
+      "ms": 13109
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-php-oom-ssh-safe-mode",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "mémoire insuffisante",
+      "action": "Augmenter la mémoire allouée au processus ou définir un timeout plus court",
+      "model": "llama3.2:3b",
+      "ms": 15429
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-aws-env-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le SDK cloud ne trouve pas d'identifiants : ~/.aws (ou équivalent) est dans le HOME d'un autre utilisateur, ou AWS_PROFILE n'est pas défini dans l'environnement du cron.",
+      "action": "Donner au job ses propres identifiants (rôle d'instance, fichier dans le HOME de l'utilisateur du cron, AWS_PROFILE explicite).",
+      "model": "llama3.2:3b",
+      "ms": 12789
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-aws-env-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le SDK cloud ne trouve pas d'identifiants : ~/.aws (ou équivalent) est dans le HOME d'un autre utilisateur, ou AWS_PROFILE n'est pas défini dans l'environnement du cron.",
+      "action": "Donner au job ses propres identifiants (rôle d'instance, fichier dans le HOME de l'utilisateur du cron, AWS_PROFILE explicite).",
+      "model": "llama3.2:3b",
+      "ms": 13722
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-selenium-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "Chrome failed to start: exited abnormally",
+      "action": "Réinitialiser le driver de Chrome et essayer à nouveau le job",
+      "model": "llama3.2:3b",
+      "ms": 12741
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-selenium-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "ChromeDriver non trouvé : chromedriver=2.38.552522",
+      "action": "Mettre à jour chromedriver à la version actuelle et essayer de nouveau",
+      "model": "llama3.2:3b",
+      "ms": 15334
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-git-ssh-key-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, ou clé absente d'authorized_keys.",
+      "action": "Préciser la clé dédiée (ssh -i ou IdentityFile) de l'utilisateur du cron et vérifier authorized_keys côté serveur.",
+      "model": "llama3.2:3b",
+      "ms": 12256
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-git-ssh-key-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, ou clé absente d'authorized_keys.",
+      "action": "Préciser la clé dédiée (ssh -i ou IdentityFile) de l'utilisateur du cron et vérifier authorized_keys côté serveur.",
+      "model": "llama3.2:3b",
+      "ms": 12567
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "pg-connection-refused",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le serveur PostgreSQL n'écoute pas à cette adresse : service arrêté ou redémarré, ou listen_addresses / pare-feu qui bloque.",
+      "action": "Vérifier et redémarrer le service PostgreSQL (systemctl status postgresql, pg_isready), puis relancer le job.",
+      "model": "llama3.2:3b",
+      "ms": 16535
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "pg-connection-refused",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le serveur PostgreSQL n'écoute pas à cette adresse : service arrêté ou redémarré, ou listen_addresses / pare-feu qui bloque.",
+      "action": "Vérifier et redémarrer le service PostgreSQL (systemctl status postgresql, pg_isready), puis relancer le job.",
+      "model": "llama3.2:3b",
+      "ms": 13943
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "pg-too-many-connections",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Toutes les connexions PostgreSQL sont prises (limite max_connections atteinte), souvent par des connexions oubliées ou un pool mal dimensionné.",
+      "action": "Libérer les connexions inactives (idle in transaction) et passer par un pooler (PgBouncer) plutôt qu'augmenter max_connections.",
+      "model": "llama3.2:3b",
+      "ms": 14670
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "pg-too-many-connections",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Toutes les connexions PostgreSQL sont prises (limite max_connections atteinte), souvent par des connexions oubliées ou un pool mal dimensionné.",
+      "action": "Libérer les connexions inactives (idle in transaction) et passer par un pooler (PgBouncer) plutôt qu'augmenter max_connections.",
+      "model": "llama3.2:3b",
+      "ms": 22711
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "mysql-deadlock",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Deux transactions concurrentes verrouillent les mêmes lignes dans un ordre différent : la base en a annulé une (deadlock).",
+      "action": "Relancer la transaction et prendre les verrous dans le même ordre partout, avec des lots plus petits.",
+      "model": "llama3.2:3b",
+      "ms": 12361
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "mysql-deadlock",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Deux transactions concurrentes verrouillent les mêmes lignes dans un ordre différent : la base en a annulé une (deadlock).",
+      "action": "Relancer la transaction et prendre les verrous dans le même ordre partout, avec des lots plus petits.",
+      "model": "llama3.2:3b",
+      "ms": 11753
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "pg-disk-full-wal",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le volume de PostgreSQL est plein à cause de pg_wal : un slot de réplication inactif ou un archivage en échec empêche le recyclage des WAL.",
+      "action": "Supprimer le slot de réplication abandonné (ou réparer l'archivage) puis libérer ou agrandir le volume, sans toucher à pg_wal à la main.",
+      "model": "llama3.2:3b",
+      "ms": 14604
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "pg-disk-full-wal",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le volume de PostgreSQL est plein à cause de pg_wal : un slot de réplication inactif ou un archivage en échec empêche le recyclage des WAL.",
+      "action": "Supprimer le slot de réplication abandonné (ou réparer l'archivage) puis libérer ou agrandir le volume, sans toucher à pg_wal à la main.",
+      "model": "llama3.2:3b",
+      "ms": 16889
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "dns-resolution-failure",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le nom d'hôte ne se résout pas : résolveur DNS injoignable, nom erroné ou enregistrement supprimé.",
+      "action": "Tester la résolution depuis la machine du job (getent hosts <nom>) et corriger le résolveur ou le nom.",
+      "model": "llama3.2:3b",
+      "ms": 12796
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "dns-resolution-failure",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le nom d'hôte ne se résout pas : résolveur DNS injoignable, nom erroné ou enregistrement supprimé.",
+      "action": "Tester la résolution depuis la machine du job (getent hosts <nom>) et corriger le résolveur ou le nom.",
+      "model": "llama3.2:3b",
+      "ms": 13295
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "tls-cert-expired",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action dangereuse"
+        ]
+      },
+      "cause": "Le certificat TLS du serveur appelé est expiré : son renouvellement automatique n'a pas eu lieu.",
+      "action": "Renouveler le certificat (certbot renew pour Let's Encrypt) ou prévenir le tiers ; ne pas désactiver la vérification.",
+      "model": "llama3.2:3b",
+      "ms": 11650
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "tls-cert-expired",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action dangereuse"
+        ]
+      },
+      "cause": "Le certificat TLS du serveur appelé est expiré : son renouvellement automatique n'a pas eu lieu.",
+      "action": "Renouveler le certificat (certbot renew pour Let's Encrypt) ou prévenir le tiers ; ne pas désactiver la vérification.",
+      "model": "llama3.2:3b",
+      "ms": 16907
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "econnreset-mid-transfer",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "ECONNRESET, connexion reset par le partenaire pendant la transfer",
+      "action": "Réessayer l'upload avec retry",
+      "model": "llama3.2:3b",
+      "ms": 12297
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "econnreset-mid-transfer",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "inventé : retry_count"
+        ]
+      },
+      "cause": "Connection reset by peer during transfer",
+      "action": "retry upload avec retry_count=3",
+      "model": "llama3.2:3b",
+      "ms": 11235
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "route-unreachable-vpn",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 4,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "LDAP sync failed due to VPN tunnel to datacenter appearing down",
+      "action": "Restart service and verify LDAP connection",
+      "model": "llama3.2:3b",
+      "ms": 9895
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "route-unreachable-vpn",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 4,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "LDAP sync failed due to VPN tunnel to datacenter being down",
+      "action": "Restart the service and verify its functionality immediately",
+      "model": "llama3.2:3b",
+      "ms": 13331
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "watchdog-sigkill",
+      "covered": true,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "preuve : ligne décisive non liée",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le job a dépassé la durée maximale qui lui est accordée (timeout, TimeoutStartSec, watchdog) et a été tué avant la fin.",
+      "action": "Réduire la durée du job (traitement incrémental, découpage) ou ajuster la limite si la durée est devenue normale.",
+      "model": "llama3.2:3b",
+      "ms": 15015
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "watchdog-sigkill",
+      "covered": true,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "preuve : ligne décisive non liée",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le job a dépassé la durée maximale qui lui est accordée (timeout, TimeoutStartSec, watchdog) et a été tué avant la fin.",
+      "action": "Réduire la durée du job (traitement incrémental, découpage) ou ajuster la limite si la durée est devenue normale.",
+      "model": "llama3.2:3b",
+      "ms": 15769
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "http-client-timeout",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "catégorie network ≠ timeout"
+        ]
+      },
+      "cause": "curl: Operation timed out after 30000 milliseconds with 0 bytes received",
+      "action": "Réessayer la requête avec un délai d'attente plus long (30 secondes) et vérifier que le serveur est accessible",
+      "model": "llama3.2:3b",
+      "ms": 16347
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "http-client-timeout",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "timeout - Dépassement de délai d'opération (curl) avec message 'Operation timed out after 30000 milliseconds with 0 bytes received'",
+      "action": "Réessayer l'exécution avec un temps d'attente plus long ou ajuster la limite de temps d'opération",
+      "model": "llama3.2:3b",
+      "ms": 19247
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "query-statement-timeout",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "La requête dépasse statement_timeout : la table a grossi ou un index manque, la requête est devenue trop lente.",
+      "action": "Optimiser la requête (index sur le filtre, EXPLAIN ANALYZE) ou la découper, plutôt que de relever statement_timeout.",
+      "model": "llama3.2:3b",
+      "ms": 14386
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "query-statement-timeout",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "La requête dépasse statement_timeout : la table a grossi ou un index manque, la requête est devenue trop lente.",
+      "action": "Optimiser la requête (index sur le filtre, EXPLAIN ANALYZE) ou la découper, plutôt que de relever statement_timeout.",
+      "model": "llama3.2:3b",
+      "ms": 13761
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "oom-killer-137",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le processus a dépassé la mémoire disponible ou la limite du conteneur : le noyau l'a tué (OOM killer, code 137).",
+      "action": "Réduire le pic mémoire en traitant par lots, ou augmenter la limite mémoire du conteneur ou de la machine.",
+      "model": "llama3.2:3b",
+      "ms": 10157
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "oom-killer-137",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le processus a dépassé la mémoire disponible ou la limite du conteneur : le noyau l'a tué (OOM killer, code 137).",
+      "action": "Réduire le pic mémoire en traitant par lots, ou augmenter la limite mémoire du conteneur ou de la machine.",
+      "model": "llama3.2:3b",
+      "ms": 16126
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "disk-full-enospc",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+      "action": "Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.",
+      "model": "llama3.2:3b",
+      "ms": 15632
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "disk-full-enospc",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+      "action": "Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.",
+      "model": "llama3.2:3b",
+      "ms": 14850
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "fork-cannot-allocate",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le système refuse de créer de nouveaux processus : mémoire libre épuisée ou limite de processus (ulimit -u, pids du cgroup) atteinte, souvent par trop de tâches en parallèle.",
+      "action": "Réduire le nombre de processus lancés en parallèle par le job, ou relever la limite de processus et la mémoire disponible.",
+      "model": "llama3.2:3b",
+      "ms": 13646
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "fork-cannot-allocate",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le système refuse de créer de nouveaux processus : mémoire libre épuisée ou limite de processus (ulimit -u, pids du cgroup) atteinte, souvent par trop de tâches en parallèle.",
+      "action": "Réduire le nombre de processus lancés en parallèle par le job, ou relever la limite de processus et la mémoire disponible.",
+      "model": "llama3.2:3b",
+      "ms": 16066
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "inode-exhaustion",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le système de fichiers n'a plus d'inodes : trop de petits fichiers, alors qu'il reste de l'espace disque.",
+      "action": "Purger ou regrouper en archive les dossiers aux millions de petits fichiers (du --inodes pour les trouver).",
+      "model": "llama3.2:3b",
+      "ms": 12128
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "inode-exhaustion",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le système de fichiers n'a plus d'inodes : trop de petits fichiers, alors qu'il reste de l'espace disque.",
+      "action": "Purger ou regrouper en archive les dossiers aux millions de petits fichiers (du --inodes pour les trouver).",
+      "model": "llama3.2:3b",
+      "ms": 12724
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "stripe-rate-limit-429",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Trop de requêtes envoyées à l'API dans la fenêtre autorisée : sa limite de débit est atteinte.",
+      "action": "Respecter Retry-After avec un délai exponentiel et étaler les appels.",
+      "model": "llama3.2:3b",
+      "ms": 12320
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "stripe-rate-limit-429",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Trop de requêtes envoyées à l'API dans la fenêtre autorisée : sa limite de débit est atteinte.",
+      "action": "Respecter Retry-After avec un délai exponentiel et étaler les appels.",
+      "model": "llama3.2:3b",
+      "ms": 15000
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "api-key-revoked-401",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "accès refusé (autorisation de connexion invalidée ou expirée)",
+      "action": "Vérifier et mettre à jour la configuration d'authentification pour le service API",
+      "model": "llama3.2:3b",
+      "ms": 14945
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "api-key-revoked-401",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "accès refusé",
+      "action": "Vérifier et mettre à jour les credentiels d'authentification pour le service de messagerie",
+      "model": "llama3.2:3b",
+      "ms": 13247
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "vendor-maintenance-503",
+      "covered": false,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "API est en ligne pour maintenance",
+      "action": "Attendez la fin du maintenanc et vérifiez à nouveau le job",
+      "model": "llama3.2:3b",
+      "ms": 12257
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "vendor-maintenance-503",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "scheduled_maintenance",
+      "action": "Supprimer le job et réessayer plus tard après la maintenance terminée",
+      "model": "llama3.2:3b",
+      "ms": 15669
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "geocoding-quota-exceeded",
+      "covered": false,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "ressource épuisée (RESOURCE_EXHAUSTED) - accès refusé",
+      "action": "Réduire la charge sur le système et attendre que la ressource se rétablisse",
+      "model": "llama3.2:3b",
+      "ms": 15336
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "geocoding-quota-exceeded",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie network ≠ dependency",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "accès refusé (403 Forbidden)",
+      "action": "Vérifier la connexion et essayer à nouveau le job",
+      "model": "llama3.2:3b",
+      "ms": 11884
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "typeerror-undefined-prop",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "erreur de syntaxe dans une requête SQL",
+      "action": "réinitialiser le pool de connexions et reessayer la requête",
+      "model": "llama3.2:3b",
+      "ms": 12337
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "typeerror-undefined-prop",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "Syntax error, unhandled exception",
+      "action": "Vérifier et corriger le code Python pour éviter les exceptions non gérées",
+      "model": "llama3.2:3b",
+      "ms": 14956
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "python-keyerror",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie data ≠ code"
+        ]
+      },
+      "cause": "KeyError 'gross_amount_eur' : erreur de lecture de fichier de configuration",
+      "action": "Vérifier et mettre à jour le fichier de configuration pour garantir que la clé 'gross_amount_eur' est présente et correctement définie.",
+      "model": "llama3.2:3b",
+      "ms": 18233
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "python-keyerror",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie data ≠ code"
+        ]
+      },
+      "cause": "KeyError 'gross_amount_eur' lors de la récupération des données",
+      "action": "Vérifier et corriger l'état des transactions pour éviter une erreur de récupération",
+      "model": "llama3.2:3b",
+      "ms": 12876
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "syntax-error-bad-deploy",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "erreur de syntaxe",
+      "action": "réexécuter le job avec correction du code",
+      "model": "llama3.2:3b",
+      "ms": 11711
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "syntax-error-bad-deploy",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "inventé : /path/to/script.sh"
+        ]
+      },
+      "cause": "syntax error due to unescaped semicolon in bash script",
+      "action": "run `bash -n /path/to/script.sh` to validate the script syntax",
+      "model": "llama3.2:3b",
+      "ms": 14257
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "unhandled-rejection-null-order",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Unhandled promise rejection, TypeError: Cannot destructure property 'items' of 'order' as it is null",
+      "action": "Vérifier la fonctionnalité qui génère l'exception et mettre à jour la gestion des erreurs",
+      "model": "llama3.2:3b",
+      "ms": 15801
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "unhandled-rejection-null-order",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "Unhandled promise rejection avec erreur TypeError",
+      "action": "Vérifier et mettre à jour la fonction pour éviter l'erreur de déconstruction de propriété 'items' de 'order'",
+      "model": "llama3.2:3b",
+      "ms": 15934
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "validation-null-ids",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "contrainte violated",
+      "action": "Vérifier et corriger les données de customer_id et order_total",
+      "model": "llama3.2:3b",
+      "ms": 14079
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "validation-null-ids",
+      "covered": false,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "exécution de query avec NULL customer_id",
+      "action": "répéter la query avec un JOIN LEFT ou une substitution de valeur par défaut",
+      "model": "llama3.2:3b",
+      "ms": 15645
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "csv-encoding-garbage",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le fichier reçu n'est pas encodé en UTF-8 (UTF-16, Latin-1…) : le fournisseur a changé d'encodage ou d'outil d'export.",
+      "action": "Convertir le fichier (iconv -f <encodage> -t UTF-8) ou lire avec le bon encodage, et prévenir le fournisseur.",
+      "model": "llama3.2:3b",
+      "ms": 14771
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "csv-encoding-garbage",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le fichier reçu n'est pas encodé en UTF-8 (UTF-16, Latin-1…) : le fournisseur a changé d'encodage ou d'outil d'export.",
+      "action": "Convertir le fichier (iconv -f <encodage> -t UTF-8) ou lire avec le bon encodage, et prévenir le fournisseur.",
+      "model": "llama3.2:3b",
+      "ms": 16001
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "lab",
+      "name": "schema-drift-extra-column",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Parquet schema mismatch",
+      "action": "Vérifier et ajuster la structure des données avant de procéder à une copie",
+      "model": "llama3.2:3b",
+      "ms": 12461
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "lab",
+      "name": "schema-drift-extra-column",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Parquet schema mismatch",
+      "action": "Vérifier et ajuster la structure des données du source pour qu'elle correspond à celle de la cible",
+      "model": "llama3.2:3b",
+      "ms": 17153
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-pg-dump-version-mismatch-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).",
+      "action": "Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.",
+      "model": "llama3.2:3b",
+      "ms": 11107
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-pg-dump-version-mismatch-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).",
+      "action": "Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.",
+      "model": "llama3.2:3b",
+      "ms": 11624
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-gitlab-backup-pg-dump-mismatch",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).",
+      "action": "Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.",
+      "model": "llama3.2:3b",
+      "ms": 13139
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-gitlab-backup-pg-dump-mismatch",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).",
+      "action": "Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.",
+      "model": "llama3.2:3b",
+      "ms": 15562
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-certbot-timeout-aaaa-old-provider",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+      "action": "Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.",
+      "model": "llama3.2:3b",
+      "ms": 12515
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-certbot-timeout-aaaa-old-provider",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+      "action": "Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.",
+      "model": "llama3.2:3b",
+      "ms": 12136
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-certbot-timeout-firewall-restarted",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+      "action": "Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.",
+      "model": "llama3.2:3b",
+      "ms": 13210
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-certbot-timeout-firewall-restarted",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+      "action": "Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.",
+      "model": "llama3.2:3b",
+      "ms": 14206
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-mysqldump-lock-tables-privilege",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le compte de sauvegarde n'a pas le privilège LOCK TABLES exigé par mysqldump.",
+      "action": "Ajouter --single-transaction (tables InnoDB) ou accorder GRANT LOCK TABLES au compte du cron.",
+      "model": "llama3.2:3b",
+      "ms": 14714
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-mysqldump-lock-tables-privilege",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le compte de sauvegarde n'a pas le privilège LOCK TABLES exigé par mysqldump.",
+      "action": "Ajouter --single-transaction (tables InnoDB) ou accorder GRANT LOCK TABLES au compte du cron.",
+      "model": "llama3.2:3b",
+      "ms": 14442
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-velero-x509-unknown-authority",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action dangereuse"
+        ]
+      },
+      "cause": "Le certificat est signé par une autorité (CA interne ou auto-signée) absente du magasin de confiance de la machine du job.",
+      "action": "Ajouter la CA au magasin de confiance (update-ca-certificates) ou la passer à l'outil (--cacert, REQUESTS_CA_BUNDLE).",
+      "model": "llama3.2:3b",
+      "ms": 16031
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-velero-x509-unknown-authority",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action dangereuse"
+        ]
+      },
+      "cause": "Le certificat est signé par une autorité (CA interne ou auto-signée) absente du magasin de confiance de la machine du job.",
+      "action": "Ajouter la CA au magasin de confiance (update-ca-certificates) ou la passer à l'outil (--cacert, REQUESTS_CA_BUNDLE).",
+      "model": "llama3.2:3b",
+      "ms": 15885
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-borg-not-found-cron-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "BORG non installé sur ce système",
+      "action": "Installez BORG via apt-get ou une autre méthode de installation appropriée immédiatement",
+      "model": "llama3.2:3b",
+      "ms": 12943
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-borg-not-found-cron-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "BORG est non installé sur ce système",
+      "action": "Installer BORG immédiatement",
+      "model": "llama3.2:3b",
+      "ms": 12698
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-weaviate-x509-legacy-cn",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "Le certificat ne couvre pas ce nom d'hôte dans ses SAN (Subject Alternative Names) ; le Common Name seul n'est plus accepté.",
+      "action": "Régénérer le certificat avec le bon SAN, ou appeler l'hôte par un nom qu'il couvre.",
+      "model": "llama3.2:3b",
+      "ms": 15041
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-weaviate-x509-legacy-cn",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "Le certificat ne couvre pas ce nom d'hôte dans ses SAN (Subject Alternative Names) ; le Common Name seul n'est plus accepté.",
+      "action": "Régénérer le certificat avec le bon SAN, ou appeler l'hôte par un nom qu'il couvre.",
+      "model": "llama3.2:3b",
+      "ms": 15868
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-aws-s3-sync-sso-expired",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.",
+      "action": "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+      "model": "llama3.2:3b",
+      "ms": 14617
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-aws-s3-sync-sso-expired",
+      "covered": true,
+      "g": {
+        "total": 7,
+        "mech": 4,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.",
+      "action": "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+      "model": "llama3.2:3b",
+      "ms": 12909
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-s3-upload-expired-token",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.",
+      "action": "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+      "model": "llama3.2:3b",
+      "ms": 12721
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-s3-upload-expired-token",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.",
+      "action": "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+      "model": "llama3.2:3b",
+      "ms": 18350
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public",
+      "name": "pub-node-heap-oom-backup",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le traitement charge plus de données que la limite de tas Node.js par défaut.",
+      "action": "Traiter par lots, ou augmenter NODE_OPTIONS=--max-old-space-size sans dépasser la RAM.",
+      "model": "llama3.2:3b",
+      "ms": 14845
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public",
+      "name": "pub-node-heap-oom-backup",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le traitement charge plus de données que la limite de tas Node.js par défaut.",
+      "action": "Traiter par lots, ou augmenter NODE_OPTIONS=--max-old-space-size sans dépasser la RAM.",
+      "model": "llama3.2:3b",
+      "ms": 12344
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-cron-perm-denied-owner",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ dependency"
+        ]
+      },
+      "cause": "accès refusé",
+      "action": "Vérifier la sécurité des fichiers et répertoires du service",
+      "model": "llama3.2:3b",
+      "ms": 12597
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-cron-perm-denied-owner",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ dependency"
+        ]
+      },
+      "cause": "accès refusé (permission denied)",
+      "action": "changer le propriétaire du fichier/dossier ciblé",
+      "model": "llama3.2:3b",
+      "ms": 14321
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-php-mysqli-env-vars",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "No such file or directory",
+      "action": "Vérifier si le fichier de configuration MySQL est présent et correctement configuré.",
+      "model": "llama3.2:3b",
+      "ms": 14376
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-php-mysqli-env-vars",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "No such file or directory",
+      "action": "Vérifier la configuration de la connexion MySQL et ajuster le chemin vers le fichier de configuration",
+      "model": "llama3.2:3b",
+      "ms": 12667
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-rake-path-rvm",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "commande 'rake' introuvable",
+      "action": "ajouter l'executable 'rake' à la liste des commandes exécutables du système",
+      "model": "llama3.2:3b",
+      "ms": 14527
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-rake-path-rvm",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "élément introuvable : commande 'rake' non trouvée",
+      "action": "ajouter l'interpréteur 'rake' à PATH minimal (/usr/bin:/bin)",
+      "model": "llama3.2:3b",
+      "ms": 19256
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-crontab-percent",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Syntax error: EOF in backquote substitution",
+      "action": "Vérifier si le fichier crontab est correctement configuré et si les variables d'environnement sont exportées dans .bashrc",
+      "model": "llama3.2:3b",
+      "ms": 15167
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-crontab-percent",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "erreur de syntaxe",
+      "action": "Vérifier le script et corriger l'erreur de syntaxe",
+      "model": "llama3.2:3b",
+      "ms": 12155
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-mysqldump-p-space",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "MySQL refuse les identifiants du job : mot de passe changé, fichier ~/.my.cnf absent pour l'utilisateur du cron, ou compte limité à un autre hôte.",
+      "action": "Vérifier les identifiants du fichier d'options lu par le cron (--defaults-extra-file) et les droits du compte.",
+      "model": "llama3.2:3b",
+      "ms": 13060
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-mysqldump-p-space",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "MySQL refuse les identifiants du job : mot de passe changé, fichier ~/.my.cnf absent pour l'utilisateur du cron, ou compte limité à un autre hôte.",
+      "action": "Vérifier les identifiants du fichier d'options lu par le cron (--defaults-extra-file) et les droits du compte.",
+      "model": "llama3.2:3b",
+      "ms": 17090
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-pg-dump-pgpass-root",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 13782
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-pg-dump-pgpass-root",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 13556
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-docker-no-space",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+      "action": "Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.",
+      "model": "llama3.2:3b",
+      "ms": 13736
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-docker-no-space",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+      "action": "Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.",
+      "model": "llama3.2:3b",
+      "ms": 16469
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-cron-malware",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ unknown",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron service : unit entraînée en état échoué après exécution du job",
+      "action": "redémarrer le service cron et vérifier son état",
+      "model": "llama3.2:3b",
+      "ms": 14018
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-cron-malware",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ unknown",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron service arrêté par systemd après avoir dépassé la durée de grâce",
+      "action": "redémarrer le service cron et vérifier son état",
+      "model": "llama3.2:3b",
+      "ms": 12605
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-curl-60-ca-bundle",
+      "covered": false,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie code ≠ network",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "certificat ou TLS",
+      "action": "Vérifier et mettre à jour le certificat SSL/TLS utilisé par l'application",
+      "model": "llama3.2:3b",
+      "ms": 13675
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-curl-60-ca-bundle",
+      "covered": false,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie dependency ≠ network",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "lib externe (Guzzle) sans TLS/SSL",
+      "action": "Mettre à jour Guzzle avec un certificat valide ou utiliser une version sans TLS/SSL",
+      "model": "llama3.2:3b",
+      "ms": 18540
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-spring-sftp-duplicate",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ code"
+        ]
+      },
+      "cause": "Mécanisme de synchronisation de fichier distant avec Spring Integration",
+      "action": "Vérifier si le service 'some-service' est configuré correctement et si la connexion au répertoire '/remote-file-path' est bien établie.",
+      "model": "llama3.2:3b",
+      "ms": 18513
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-spring-sftp-duplicate",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ code"
+        ]
+      },
+      "cause": "Problem occurred while synchronizing '/remote-file-path' to local directory",
+      "action": "Vérifier la configuration de synchronisation des fichiers et réessayer",
+      "model": "llama3.2:3b",
+      "ms": 13618
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-ffmpeg-display-boot",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le job lance un programme graphique ou D-Bus, mais cron n'a pas de session graphique : DISPLAY et DBUS_SESSION_BUS_ADDRESS sont absents.",
+      "action": "Utiliser un mode sans affichage (headless, xvfb-run) ou définir DISPLAY et DBUS_SESSION_BUS_ADDRESS de la session dans la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 11354
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-ffmpeg-display-boot",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le job lance un programme graphique ou D-Bus, mais cron n'a pas de session graphique : DISPLAY et DBUS_SESSION_BUS_ADDRESS sont absents.",
+      "action": "Utiliser un mode sans affichage (headless, xvfb-run) ou définir DISPLAY et DBUS_SESSION_BUS_ADDRESS de la session dans la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 14386
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-python-ascii-encode",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron s'exécute avec la locale POSIX/C (ASCII) : le programme ne peut pas écrire ou lire de caractères non ASCII.",
+      "action": "Définir LC_ALL=C.UTF-8 (ou LANG=fr_FR.UTF-8) en tête de la crontab ; pour Python, PYTHONIOENCODING=utf-8.",
+      "model": "llama3.2:3b",
+      "ms": 14405
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-python-ascii-encode",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron s'exécute avec la locale POSIX/C (ASCII) : le programme ne peut pas écrire ou lire de caractères non ASCII.",
+      "action": "Définir LC_ALL=C.UTF-8 (ou LANG=fr_FR.UTF-8) en tête de la crontab ; pour Python, PYTHONIOENCODING=utf-8.",
+      "model": "llama3.2:3b",
+      "ms": 12440
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-node-path-global",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Node ne trouve pas le module : node_modules non installés à cet endroit, ou cron lance le script depuis un autre dossier (cwd = HOME).",
+      "action": "Faire cd dans le dossier du projet avant de lancer node (ou chemin absolu), après npm ci.",
+      "model": "llama3.2:3b",
+      "ms": 12189
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-node-path-global",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Node ne trouve pas le module : node_modules non installés à cet endroit, ou cron lance le script depuis un autre dossier (cwd = HOME).",
+      "action": "Faire cd dans le dossier du projet avant de lancer node (ou chemin absolu), après npm ci.",
+      "model": "llama3.2:3b",
+      "ms": 21744
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-php-oom-ssh-safe-mode",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "mémoire insuffisante",
+      "action": "Augmenter la mémoire allouée au processus ou définir un timeout plus élevé",
+      "model": "llama3.2:3b",
+      "ms": 13663
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-php-oom-ssh-safe-mode",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "mémoire insuffisante",
+      "action": "Augmenter la mémoire allouée au job ou réduire la charge de travail",
+      "model": "llama3.2:3b",
+      "ms": 14146
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-aws-env-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le SDK cloud ne trouve pas d'identifiants : ~/.aws (ou équivalent) est dans le HOME d'un autre utilisateur, ou AWS_PROFILE n'est pas défini dans l'environnement du cron.",
+      "action": "Donner au job ses propres identifiants (rôle d'instance, fichier dans le HOME de l'utilisateur du cron, AWS_PROFILE explicite).",
+      "model": "llama3.2:3b",
+      "ms": 13625
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-aws-env-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le SDK cloud ne trouve pas d'identifiants : ~/.aws (ou équivalent) est dans le HOME d'un autre utilisateur, ou AWS_PROFILE n'est pas défini dans l'environnement du cron.",
+      "action": "Donner au job ses propres identifiants (rôle d'instance, fichier dans le HOME de l'utilisateur du cron, AWS_PROFILE explicite).",
+      "model": "llama3.2:3b",
+      "ms": 17148
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-selenium-path",
+      "covered": false,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie code ≠ dependency",
+          "inventé : /usr/bin, /usr/lib/chromium-browser"
+        ]
+      },
+      "cause": "ChromeDriver non trouvé ou incorrectement configuré",
+      "action": "Vérifier que ChromeDriver est installé et mis à jour, et qu'il est ajouté au PATH minimal (/usr/bin:/bin)",
+      "model": "llama3.2:3b",
+      "ms": 14266
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-selenium-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "Chrome failed to start: exited abnormally",
+      "action": "Réinitialiser le driver de Chrome et essayer à nouveau le job",
+      "model": "llama3.2:3b",
+      "ms": 11984
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public2",
+      "name": "p2-git-ssh-key-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, ou clé absente d'authorized_keys.",
+      "action": "Préciser la clé dédiée (ssh -i ou IdentityFile) de l'utilisateur du cron et vérifier authorized_keys côté serveur.",
+      "model": "llama3.2:3b",
+      "ms": 12069
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public2",
+      "name": "p2-git-ssh-key-cron",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, ou clé absente d'authorized_keys.",
+      "action": "Préciser la clé dédiée (ssh -i ou IdentityFile) de l'utilisateur du cron et vérifier authorized_keys côté serveur.",
+      "model": "llama3.2:3b",
+      "ms": 15094
+    }
+  ]
+}

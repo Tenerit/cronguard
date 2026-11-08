@@ -43,3 +43,6 @@ eval/results.*.json
 
 # Bras B temporaire de eval/ab-root-cause.ts (supprimé en fin de run)
 src/services/llm/analyzer.abroot.ts
+
+# Journaux bruts des runs d'éval (les rapports REPORT.*.md / report.*.json sont suivis)
+eval/score-*.log
