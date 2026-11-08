@@ -238,6 +238,25 @@ Si durationTrend > 50% → prevention doit mentionner le risque de timeout crois
 
 JAMAIS de markdown, JAMAIS de texte hors du JSON.`
 
+// Connaissance générale des pannes « marche à la main, pas en cron » : un petit modèle ne la
+// mobilise pas seul (il recopie le message d'erreur). Ce n'est pas une consigne de style mais
+// du savoir métier. LLM_CRON_HINTS=on l'active (A/B : eval/score.ts --ab LLM_CRON_HINTS=on).
+const CRON_HINTS = `
+
+PIÈGES DU CRON (la plupart des pannes « marche à la main, pas en cron ») — vérifie-les AVANT de conclure :
+- PATH minimal (/usr/bin:/bin) : commande ou interpréteur installé ailleurs introuvable.
+- Autre utilisateur, autre HOME (souvent root) : ~/.pgpass, ~/.my.cnf, ~/.aws, ~/.ssh, trousseau GPG absents.
+- .bashrc non lu : variables d'environnement et identifiants exportés absents.
+- Ni terminal ni session graphique : TTY, DISPLAY, agent SSH absents.
+- /bin/sh au lieu de bash ; locale C (ASCII) ; dossier courant = HOME, chemins relatifs cassés.
+- Dans la crontab, % non échappé coupe la commande.
+- Exécutions qui se chevauchent : verrous, base verrouillée.
+Dans "cause", nomme le MÉCANISME (lequel de ces pièges, ou un autre) avant de citer le message d'erreur.`
+
+function systemPrompt(): string {
+  return process.env.LLM_CRON_HINTS === 'on' ? SYSTEM + CRON_HINTS : SYSTEM
+}
+
 // ─── Builder de prompt ────────────────────────────────────────────────────────
 
 function buildPrompt(ctx: JobContext, logs: string, redacted: number): string {
@@ -424,7 +443,9 @@ export function llmEnabled(): boolean {
 export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'action' | 'category' | 'checks' | 'confidence' | 'knownFix'>>(res: T, cleanLogs: string): T {
   if (process.env.LLM_KNOWLEDGE === 'off') return res
   const kf = knownFix(cleanLogs)
-  if (!kf) return res
+  // Sans fiche, la cause vient seule du modèle : il se dit « high » sur un symptôme recopié.
+  // Une confiance haute n'est affichée que si une fiche connue l'appuie.
+  if (!kf) return res.confidence === 'high' ? { ...res, confidence: 'medium' } : res
   return { ...res, cause: kf.cause, action: kf.action, category: kf.category, checks: kf.steps.slice(0, 3), confidence: 'high', knownFix: kf }
 }
 
@@ -503,12 +524,12 @@ export async function analyzeFailure(
     : jsonMode === 'json_schema' ? { type: 'json_schema', json_schema: { name: 'cronguard_analysis', strict: true, schema: ANALYSIS_SCHEMA } }
     :                              { type: 'json_object' }
   const body = anthropic
-    ? { model, max_tokens: maxTokens, temperature: 0.15, system: SYSTEM,
+    ? { model, max_tokens: maxTokens, temperature: 0.15, system: systemPrompt(),
         messages: [{ role: 'user', content: userPrompt }] }
     : { model, max_tokens: maxTokens, temperature: 0.15,
         ...(responseFormat ? { response_format: responseFormat } : {}),
         messages: [
-          { role: 'system', content: SYSTEM },
+          { role: 'system', content: systemPrompt() },
           { role: 'user',   content: userPrompt },
         ] }
 
