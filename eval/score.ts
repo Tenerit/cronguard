@@ -1,7 +1,8 @@
 /**
  * Note /10 du diagnostic, calculée automatiquement (grille : eval/rubric.ts), et rapport à valider.
  *
- *   npx tsx eval/score.ts --set all --runs 3                       # note du pipeline actuel → eval/REPORT.md
+ *   npx tsx eval/score.ts --set all --runs 3      # jeux de RÉGLAGE (labo, public, public2) → eval/REPORT.md
+ *   npx tsx eval/score.ts --set final --runs 3    # + public3, le TEST FINAL : seulement pour la note finale
  *   npx tsx eval/score.ts --set all --runs 3 --ab LLM_KNOWLEDGE=off   # A/B apparié : A = réglage actuel, B = env modifié
  *   npx tsx eval/score.ts --validate                                # tamponne le dernier rapport comme validé
  *
@@ -44,10 +45,11 @@ async function main() {
   const { PUBLIC2_CASES } = await import('./public-cases-2')
   const { PUBLIC3_CASES } = await import('./public-cases-3')
   const cases: Array<[string, EvalCase]> = [
-    ...(set === 'public' ? [] : CASES.map(c => ['lab', c] as [string, EvalCase])),
-    ...(set === 'lab' || set === 'public2' ? [] : PUBLIC_CASES.map(c => ['public', c] as [string, EvalCase])),
-    ...(set === 'all' || set === 'public2' ? PUBLIC2_CASES.map(c => ['public2', c] as [string, EvalCase]) : []),
-    ...(set === 'all' || set === 'public3' ? PUBLIC3_CASES.map(c => ['public3', c] as [string, EvalCase]) : []),
+    ...(set === 'public' || set === 'public2' || set === 'public3' ? [] : CASES.map(c => ['lab', c] as [string, EvalCase])),
+    ...(set === 'lab' || set === 'public2' || set === 'public3' ? [] : PUBLIC_CASES.map(c => ['public', c] as [string, EvalCase])),
+    ...(set === 'all' || set === 'final' || set === 'public2' ? PUBLIC2_CASES.map(c => ['public2', c] as [string, EvalCase]) : []),
+    // public3 = test final : seulement avec --set final (ou public3), jamais dans les expériences de réglage.
+    ...(set === 'final' || set === 'public3' ? PUBLIC3_CASES.map(c => ['public3', c] as [string, EvalCase]) : []),
   ]
   const { analyzeFailure } = await import('../src/services/llm/analyzer')
   const { knownFix } = await import('../src/services/llm/known-fixes')
@@ -77,15 +79,14 @@ async function main() {
 
   const summarize = (arm: 'A' | 'B') => {
     const r = rows.filter(x => x.arm === arm)
+    const bySet = (name: string) => { const v = r.filter(x => x.set === name); return v.length ? f1(mean(v.map(x => x.g.total))) : '—' }
     const perRun = (filter: (x: Row) => boolean) => [...new Set(r.map(x => x.run))].map(run => mean(r.filter(x => x.run === run && filter(x)).map(x => x.g.total)))
     const all = perRun(() => true)
     return {
       note: f1(mean(r.map(x => x.g.total))), ci95: ci95(all).map(f1), runs: all.map(f1),
       covered:   { note: f1(mean(r.filter(x => x.covered).map(x => x.g.total))),  n: new Set(r.filter(x => x.covered).map(x => x.name)).size },
       uncovered: { note: f1(mean(r.filter(x => !x.covered).map(x => x.g.total))), n: new Set(r.filter(x => !x.covered).map(x => x.name)).size },
-      lab: f1(mean(r.filter(x => x.set === 'lab').map(x => x.g.total))), public: f1(mean(r.filter(x => x.set === 'public').map(x => x.g.total))),
-      public2: f1(mean(r.filter(x => x.set === 'public2').map(x => x.g.total))),
-      public3: f1(mean(r.filter(x => x.set === 'public3').map(x => x.g.total))),
+      lab: bySet('lab'), public: bySet('public'), public2: bySet('public2'), public3: bySet('public3'),
       criteria: {
         cause_mecanisme: pct(mean(r.map(x => x.g.mech / 4))), action: pct(mean(r.map(x => x.g.act / 3))),
         categorie: pct(mean(r.map(x => x.g.cat))), rien_invente: pct(mean(r.map(x => x.g.noInvent))), preuve: pct(mean(r.map(x => x.g.evidence))),
