@@ -1,73 +1,170 @@
 # CronGuard
 
-**Cron job monitoring that tells you *why* it broke — not just that it broke.**
+**Self-hosted cron monitoring that diagnoses failures on your own machine.**
 
-Self-hosted, AI-powered failure analysis. A job fails, CronGuard reads the logs and hands you the root cause, the fix, and how to prevent it. In seconds, without opening a single log file.
+A job fails at 2:40 a.m. Other monitors tell you *that* it broke. CronGuard tells you *why*, when it can know, from three sources that never leave your servers: a library of known cron failures, what it observes on the host (the cron command, the job's real environment, exit codes), and a local AI model for the rest. When it cannot establish a cause, it says so instead of guessing.
 
-**Who it's for:** ops / SRE / data teams in **regulated or air-gapped** environments — where critical crons (backups, ETL, billing sync) can't ship their logs to a third-party SaaS. The AI runs **locally**; nothing leaves your infra.
-
-**▶ See it now — zero install.** Open the dashboard in read-only demo mode (full UI + AI playground, no backend, no signup): **[live demo](https://YOUR-DEMO-URL.example/dashboard.html?demo=1)** ← *host `src/api/dashboard.html` on any static host (Netlify/Pages) and drop the URL here; or open it locally with `?demo=1`.* The static demo's AI replies are **pre-recorded samples** — run it for real (below) to see live `llama3.2` analysis.
+**Who it's for:** ops / SRE / data teams whose critical jobs (backups, ETL, billing sync) run on infrastructure where logs must not go to a third-party SaaS: regulated, air-gapped, or simply private. Nothing leaves your infra, the AI included.
 
 🇫🇷 [Version française](README.fr.md)
 
 ---
 
-## The difference
+## What on-call looks like
 
-Your nightly backup fails. Here is what each tool tells you:
+Your nightly backup fails. CronGuard posts to Teams (or Slack, Discord, ntfy…). Alert texts are in French today; translated here:
 
-> **A classic monitor (Healthchecks, Cronitor):**
-> 🔴 `backup is DOWN`
+> 🟠 **backup-db failed (production)**
+> **Cause:** the `pg_dump` binary used by the cron is older than the PostgreSQL server (lower major version).
+> **To check:** call a `pg_dump` of the server's version by absolute path, or install an up-to-date `postgresql-client`.
+> `pg_dump: error: aborting because of server version mismatch`
+> **[✅ Analysis right]** **[✏️ Correct]** **[Status page]**
 
-> **CronGuard** (unedited model output from our lab set, in French):
-> 🔴 `backup failed (exit 1) — severity: critical`
-> **Cause:** disque plein
-> **Lead to verify:** Augmenter la taille du disque ou déplacer le fichier de sauvegarde vers un disque plus grand
+- Right? One tap on **✅**, no login.
+- Partly wrong? **✏️ Correct**, type what really fixed it. Next time the same failure happens, CronGuard serves *your* fix, without calling the model.
 
-The log named the full disk and also showed no rotation configured: the model found the first, missed the second. Answers vary, and some are wrong or too vague to act on.
-
-One alert is a notification. The other is a head start on the diagnosis.
-
-<!-- demo.gif: record dashboard → failed job → AI analysis drawer. Place in docs/demo.gif -->
-<!-- ![CronGuard demo](docs/demo.gif) -->
+A classic monitor would have said `backup-db is DOWN`.
 
 ---
 
-## See it without installing anything
+## Why it's different
 
-`dashboard.html` has a built-in read-only demo — embedded fixtures, **no backend, no database, no signup**. Open it with `?demo=1`:
+| Source of the diagnosis | What it does |
+|---|---|
+| **Known-fix library** (97 sheets) | Standard messages of cron jobs and their tools (PostgreSQL, MySQL, rsync, SSH, GPG, certificates, cloud credentials, Docker, memory, disk…) mapped to the mechanism and the fix. Each sheet is tested against the failures it must not match. |
+| **Command check** | Reads the cron command itself: unescaped `%`, a password after `-p `, bash syntax run by `sh`, unquoted `rsync -e`, relative paths, `sudo`. Also warns at **import time**, before anything fails. |
+| **Execution-context probe** | On failure the SDK reports the cron's real user, HOME, PATH, shell, locale, DISPLAY / SSH-agent presence, and where a "command not found" actually lives on the machine. Names and paths only, no secret values. |
+| **Official codes** | Shell exit status (126, 127, 128+N signals: 137 OOM/SIGKILL, 143 SIGTERM…), `curl: (N)` and `rsync (code N)` from their man pages. |
+| **Local AI model** | `llama3.2:3b` through Ollama, on CPU. Used when none of the above applies, with its confidence capped; when it only restates the error line, the alert says the cause is not established. |
+| **Team memory** | Fixes confirmed from the alert are reused for the same failure, per job. It compounds with use and stays on your box. |
 
-```
-.../dashboard.html?demo=1
-```
+---
 
-Sample monitors, AI analyses, MTTR/impact and a working **AI playground** (pre-recorded replies), all client-side. Host the single file on any static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages), or serve it from a `demo.*` subdomain to auto-enable. Mutations are disabled — a safe public showcase.
+## Quick start
 
-## Run it for real — one container
+**Look at the UI, nothing installed.** Open `src/api/dashboard.html?demo=1` in a browser (or host that single file anywhere): sample monitors, analyses and the AI playground with pre-recorded replies, read-only.
 
-PostgreSQL, Redis, the API and the workers in a single container, AI optional. For a quick start and small setups; use `docker-compose.yml` for larger production.
+**Run it, one container** (PostgreSQL, Redis, API and workers inside; AI optional):
 
 ```bash
 git clone https://github.com/Tenerit/cronguard && cd cronguard
 docker build -f Dockerfile.allinone -t cronguard .
 docker run -d --restart unless-stopped -p 3000:3000 -v cronguard-data:/data --name cronguard cronguard
-curl -X POST http://localhost:3000/auth/register -H "Content-Type: application/json" -d '{"email":"you@example.com"}'   # returns your API key, shown once
+curl -X POST http://localhost:3000/auth/register -H "Content-Type: application/json" -d '{"email":"you@example.com"}'   # prints your API key, once
 ```
 
-Open **http://localhost:3000/dashboard**. Without a model, failures get related log lines and known fixes; add local AI with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1`. Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host: a backup on the same disk does not survive the disk; PostgreSQL and Redis listen on 127.0.0.1 inside the container only. `scripts/test-allinone.sh` checks start-up, a failure analysed without AI, data kept across a restart, and a clean PostgreSQL shutdown.
+Open **http://localhost:3000/dashboard**. Without a model, failures still get the known fixes, the command and context checks and the related log lines; add local AI with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1`. Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host.
 
-**Air-gapped server?** On a connected machine, `scripts/offline-bundle.sh [folder] [--with-model]` writes the image (~80 MB), an `install.sh` and `SHA256SUMS`; with `--with-model`, also the Ollama image and the model (~2 GB). Copy the folder over, then `sha256sum -c SHA256SUMS && ./install.sh`: no network needed.
-
-## Demo with sample data — one command
+**Demo with sample data and the AI model:**
 
 ```bash
-git clone https://github.com/Tenerit/cronguard && cd cronguard
-docker compose -f docker-compose.demo.yml up
+docker compose -f docker-compose.demo.yml up     # then log in with API key cg_demo_dockerdemo123456
 ```
 
-Then open **http://localhost:3000/dashboard** and log in with API key `cg_demo_dockerdemo123456`.
+Boots PostgreSQL, Redis and Ollama, seeds 9 monitors with realistic failures and pulls the model (~2 GB on first boot).
 
-The demo boots Postgres, Redis and Ollama, migrates the schema, seeds 9 monitors with realistic failure scenarios (disk full, OOM kill, deadlock, rate limit, data corruption…) and pulls the LLM model in the background. No `.env`, no setup. First boot pulls ~2 GB (model) — give it a few minutes; the playground shows a "model loading" state until ready.
+**Air-gapped server:** on a connected machine, `scripts/offline-bundle.sh [folder] [--with-model]` writes the image (~80 MB), `install.sh` and `SHA256SUMS`; `--with-model` adds the Ollama image and the model (several GB). Copy the folder, then `sha256sum -c SHA256SUMS && ./install.sh`. No network needed.
+
+**Production with Docker Compose:** `docker-compose.yml` (separate API, workers and services), see [DEPLOY.md](DEPLOY.md). For development: `./setup.sh` then `make dev`.
+
+---
+
+## Instrument your jobs
+
+### Import an existing crontab
+
+Creates one monitor per job and prints the crontab with each command wrapped by `cg_run`. Your crontab is never modified: you review and paste the result. With an API key, it also lists each command's risks before they fail.
+
+```bash
+sudo cp sdk/bash/cronguard.sh /usr/local/lib/cronguard.sh
+CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh            # preview
+CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --apply    # create monitors
+```
+
+For `/etc/crontab` or `/etc/cron.d/*` (extra user column), pass the file and `--system`.
+
+### systemd timers
+
+`--systemd` creates one monitor per enabled timer and prints a root script that adds an `ExecStopPost=` drop-in to each service: it reports the result, the exit status and the journal of that run. The service's own command is not changed.
+
+```bash
+CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --systemd --apply > add-cronguard.sh
+less add-cronguard.sh && sudo sh add-cronguard.sh
+```
+
+Common `OnCalendar=` forms become cron schedules; others use a grace period of 1.5 × the interval. System timers only.
+
+### Bash, Node.js, Python, cURL
+
+```bash
+source /usr/local/lib/cronguard.sh
+cg_run "your-ping-key" /scripts/backup.sh      # sends logs, exit code, duration, and the context probe on failure
+```
+
+```javascript
+import { monitor } from './sdk/node/cronguard'
+await monitor('your-ping-key', async () => ({ records: await syncDatabase() }))
+```
+
+```python
+from sdk.python.cronguard import monitor
+
+@monitor('your-ping-key')
+def my_job():
+    return {'records': sync_database()}
+```
+
+```bash
+curl -X POST http://localhost:3000/ping/your-ping-key -d '{"status":"fail","exit_code":1,"output":"..."}'
+curl http://localhost:3000/ping/your-ping-key/$?          # one-liner: 0 = success, else failure
+curl http://localhost:3000/ping/your-ping-key/start       # hung-job detection: start, then the result at the end
+```
+
+---
+
+## Notifications
+
+Alerts go out on every configured channel, followed by a recovery notice with the downtime.
+
+| Channel | Setup |
+|---|---|
+| Email | `SMTP_*` variables |
+| Slack | incoming webhook, Settings › Notifications |
+| Microsoft Teams | Workflows webhook ("post to a channel when a webhook request is received"), native card |
+| Discord · Google Chat · Mattermost / Rocket.Chat | webhook URL, Settings › Notifications › Other platforms |
+| ntfy | push notification to the phone, high priority; can be self-hosted |
+| PagerDuty | routing key; the incident resolves itself on recovery |
+| Generic webhook | any URL (n8n, Zapier, in-house tool), JSON payload, optional HMAC signature (`WEBHOOK_SIGNING_SECRET`) |
+
+**Validate or correct from the alert, without logging in.** The **✅** and **✏️** buttons open a page signed for that one analysis (HMAC, 30 days, no API key). Opening the link records nothing, because chat apps open links to build previews; only the page's button does. Every action is in the audit log. `APP_URL` must be reachable from the on-call phone (VPN or intranet is fine).
+
+Escalation to a second contact when an alert is not acknowledged, maintenance windows that silence alerts, and per-monitor runbook notes are in the dashboard.
+
+---
+
+## How good is the diagnosis?
+
+Measured automatically on real failures, not asserted. Each answer is graded out of 10 by code ([eval/rubric.ts](eval/rubric.ts)): the mechanism named (4), a correct and safe action (3), the category (1), nothing invented (1), the decisive log line linked (1), ±1 for honesty.
+
+| Set | Score /10 |
+|---|---|
+| Failures the known-fix library covers | **9.2** |
+| Failures it does not cover (the local model alone) | **3.7** |
+| All 85 cases used while tuning (lab + 4 public sets) | **7.8**, optimistic since these cases were read |
+| Last held-out test before the latest fixes (17 StackExchange cron failures) | **5.0** |
+
+The held-out number is the one to judge us on, and the next one is measured on failures collected after the last change. Real cron failures are often one-off mistakes that no library describes, and a 3B model mostly restates them; that is why the probe, the command check and your team's fixes matter more than the model. Full method, every experiment (including the ones that did not help) and how to score your own logs: [docs/EVALUATION.md](docs/EVALUATION.md).
+
+---
+
+## Local AI model
+
+Default: **`llama3.2:3b` through Ollama**, non-reasoning, fast on CPU. **The model is optional**: leave `LLM_BASE_URL` unset (or `LLM_ENABLED=false`) and everything except the model's free-text fallback still works; the same fallback applies when the model is down.
+
+- **Any local OpenAI-compatible server** works the same way (`LLM_BASE_URL`, `LLM_MODEL`): vLLM, llama.cpp server, LM Studio. Pointing it at a remote provider would send logs off your infrastructure; CronGuard is not designed for that.
+- **Incident memory** (on by default, `MEMORY_ENABLED`): incidents you confirm are embedded locally (`nomic-embed-text`) and the most similar ones guide the next analysis. A recurring error with the same fingerprint (timestamps, PIDs, UUIDs, IPs stripped) is served from cache without calling the model.
+- **Bounded prompts:** repeated error lines collapse into templates, long lines are capped and the log slice is bounded (`LLM_LOG_BUDGET`), so every analysis costs a predictable amount.
+- **Runbook notes** per monitor (known gotchas, who to wake) are given to the model as context.
 
 ---
 
@@ -75,310 +172,68 @@ The demo boots Postgres, Redis and Ollama, migrates the schema, seeds 9 monitors
 
 | | **CronGuard** | Healthchecks.io | Cronitor |
 |---|---|---|---|
-| Detects missed / late jobs (cron-aware) | ✅ | ✅ | ✅ |
-| Detects hung jobs (`/start` ping) | ✅ | ✅ | ✅ |
-| **AI root-cause analysis from your logs** | ✅ | ❌ | ❌ |
-| **Suggested fix + prevention + checklist** | ✅ | ❌ | ❌ |
-| Incident history with MTTR & downtime | ✅ | ❌ | partial |
+| Missed / late / hung jobs (cron-aware) | ✅ | ✅ | ✅ |
+| **Cause and fix from your logs** | ✅ library + host checks + local AI | ❌ | ❌ |
+| **Validate or correct a diagnosis from the alert; reused next time** | ✅ | ❌ | ❌ |
+| **Checks the cron command and the job's real environment** | ✅ | ❌ | ❌ |
 | Output validation (records min/max) | ✅ | ❌ | ✅ |
-| Recovery notifications | ✅ | ✅ | ✅ |
-| Email / Slack / generic webhook | ✅ | ✅ | ✅ |
-| Prometheus `/metrics` | ✅ | ✅ | ❌ |
-| Self-hosted, your data stays home | ✅ | ✅ | ❌ |
-| LLM runs locally (no log leaves your infra) | ✅ | — | — |
+| Incident history with MTTR and downtime | ✅ | ❌ | partial |
+| Chat and on-call integrations | email, Slack, Teams, Discord, Google Chat, Mattermost, ntfy, PagerDuty, webhook | many more | many |
+| Self-hosted, data stays home | ✅ | ✅ | ❌ |
 | License | MIT | BSD-3 | proprietary |
 
-CronGuard is not trying to out-feature Healthchecks on integrations. It does one thing they don't: **it reads the logs so you don't have to.**
+Healthchecks has far more integrations. CronGuard does one thing it doesn't: it reads the failure for you.
 
 ---
 
-## Pricing
+## Security and access
 
-**Self-hosted: free, forever (MIT).** Every feature ships in the open-source build — local AI analysis, alerts, escalation, maintenance windows, RBAC, SSO forward-auth, audit log, key rotation, status pages, Prometheus metrics. **No feature gates.**
-
-| | For | Price |
-|---|---|---|
-| **Self-host** | You run it — full features, your infra, zero egress. | **Free (MIT)** |
-| **Managed / Support** | We host & operate it, or back your self-host with SLA support. | Contact — [open an issue](https://github.com/Tenerit/cronguard/issues) |
-
-Revenue is hosting and support, not locked features. The thing you'd pay for (running PG + Redis + Ollama + the workers) is exactly what self-hosters who *want* the no-egress guarantee already choose to run.
-
----
-
-## Full setup (3 minutes)
-
-```bash
-git clone https://github.com/Tenerit/cronguard
-cd cronguard
-./setup.sh        # installs, configures, migrates, downloads the LLM model
-make dev          # starts API + workers
-make seed         # creates a demo account with data
-make open         # opens the dashboard
-```
-
-The setup script detects your environment and configures everything automatically.
-
----
-
-## Instrument your jobs
-
-### Import an existing crontab
-Creates one monitor per job and prints the crontab with each command wrapped by `cg_run`. Your crontab is never modified: you review and paste the result.
-```bash
-sudo cp sdk/bash/cronguard.sh /usr/local/lib/cronguard.sh
-CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh            # preview
-CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --apply    # create monitors
-```
-With an API key, the import also warns about risky commands before they ever fail (unescaped `%`, a password after `-p `, bash syntax run by `sh`, a relative script path, `sudo`…).
-
-For `/etc/crontab` or `/etc/cron.d/*` (extra user column), pass the file and `--system`.
-
-**systemd timers:** `--systemd` creates one monitor per enabled timer (or the `x.timer` names you pass) and prints a root script that adds a drop-in to each service: `ExecStopPost=` reports the result, exit status and the journal of that run. The service's own command is not changed.
-```bash
-CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --systemd --apply > add-cronguard.sh
-less add-cronguard.sh && sudo sh add-cronguard.sh
-```
-Common `OnCalendar=` forms become cron schedules; others (`OnUnitActiveSec=`, minute steps) use a grace period of 1.5 × the interval. System timers only, not `--user`.
-
-### Bash (simplest)
-```bash
-source sdk/bash/cronguard.sh
-cg_run "your-ping-key" /scripts/my-script.sh
-```
-
-### Node.js
-```javascript
-import { monitor } from './sdk/node/cronguard'
-
-await monitor('your-ping-key', async () => {
-  const count = await syncDatabase()
-  return { records: count }
-})
-```
-
-### Python
-```python
-from sdk.python.cronguard import monitor
-
-@monitor('your-ping-key')
-def my_job():
-    count = sync_database()
-    return {'records': count}
-```
-
-### Plain cURL
-```bash
-# Full payload (JSON) — logs enable the AI analysis
-curl -X POST http://localhost:3000/ping/your-ping-key \
-  -d '{"status":"success","duration_ms":1200,"records":5000}'
-
-# One-liner, no JSON (Healthchecks style)
-curl http://localhost:3000/ping/your-ping-key/$?      # exit code: 0 = success, else fail
-curl http://localhost:3000/ping/your-ping-key/fail    # explicit failure
-curl "http://localhost:3000/ping/your-ping-key/success?duration_ms=1200"
-
-# Hung job detection: ping /start first, completion at the end
-curl http://localhost:3000/ping/your-ping-key/start   # job started
-./my-script.sh
-curl http://localhost:3000/ping/your-ping-key/$?      # done — silent too long → "hung" alert
-```
-
----
-
-## Notifications
-
-Alerts go out on **every** configured channel, followed by a **recovery**
-notification ("✅ resolved", with downtime duration) when the job goes green again.
-
-| Channel | Configuration |
-|---------|---------------|
-| Email | `SMTP_*` variables |
-| Slack | incoming webhook — Settings › Notifications |
-| Microsoft Teams | Workflows webhook ("post to a channel when a webhook request is received") — Settings › Notifications; native card |
-| Discord · Google Chat · Mattermost / Rocket.Chat · ntfy · PagerDuty | Settings › Notifications › Other platforms — same alert and ✅ / ✏️ buttons; ntfy pushes to the phone and can be self-hosted; PagerDuty incidents resolve on recovery |
-| Generic webhook | custom URL (n8n, Zapier, in-house tool…) — receives the alert/recovery/escalation JSON |
-
-**Validate or correct from the alert, on call, without logging in.** Every failure alert (Teams, Slack, email) carries two buttons, **✅ Analysis right** and **✏️ Correct**. They open a page signed for that one analysis (HMAC, 30 days, no API key) where one tap confirms the diagnosis, or a short note records what really fixed it. That fix is then served as is the next time the same failure happens. The link itself never records anything: chat apps open links to build previews, so only the page's button does. `APP_URL` must be reachable from the on-call phone (VPN or intranet is fine).
-
-Outbound generic webhooks can be **HMAC-signed** for authenticity: set `WEBHOOK_SIGNING_SECRET` and each request carries `X-CronGuard-Signature: sha256=<hmac>` over `<X-CronGuard-Timestamp>.<raw body>`. Receivers recompute it (constant-time compare) and reject stale timestamps to prevent replay. Slack uses its own scheme and is left untouched.
+- **API keys** stored as SHA-256 digests, only accepted in the `X-API-Key` header; roles `viewer < member < admin < owner`, link-based team invites, key rotation, audit log.
+- **SSO through your reverse proxy** (oauth2-proxy, Authelia, Pomerium, a SAML/OIDC gateway): the proxy authenticates, CronGuard maps the email to a role. The app never talks to an identity provider itself.
+  ```bash
+  SSO_ENABLED=true
+  SSO_TRUSTED_PROXIES=10.0.0.10        # or SSO_SHARED_SECRET=... (at least one: fail-closed)
+  SSO_EMAIL_HEADER=X-Forwarded-Email
+  SSO_ALLOWED_DOMAINS=corp.com         # just-in-time accounts as viewers, never owner
+  ```
+- **Hardening:** strict script Content-Security-Policy, secrets redacted from logs before analysis, alerts and display (the raw output is kept in your own database), prompt-injection isolation, SSRF guard on every outbound webhook (cloud metadata and loopback always blocked, DNS rebinding checked), per-client and global rate limits, circuit breaker on the model. See [SECURITY.md](SECURITY.md).
 
 ---
 
 ## Observability
 
-```bash
-curl http://localhost:3000/metrics    # Prometheus format (monitors, alerts, pings 24h…)
-```
-
-Optionally protected with `METRICS_TOKEN` (`Authorization: Bearer <token>` or `?token=`).
-
-**Self-watch metrics** (alert on these — a monitoring tool that dies silently is worthless):
-- `cronguard_worker_heartbeat_age_seconds` — dead-man; alert if `> 600` (worker dead).
-- `cronguard_analysis_queue_depth` — balloons if the analysis worker stalls.
-- `cronguard_analysis_failures_24h` — failed pings with no AI analysis produced.
-- `cronguard_notification_failures_total{channel}` — alert deliveries that failed (bad SMTP, dead webhook) instead of dying in the logs.
-- `cronguard_analysis_dlq_depth` — analysis jobs that exhausted retries, parked in a dead-letter queue. Inspect with `GET /clients/dlq` and re-run them with `POST /clients/dlq/replay` (admin; scoped to your tenant).
-
-⚠️ **A monitoring tool cannot detect its own host dying.** If the box hosting CronGuard dies, its self-watch dies with it. **Scrape `/metrics` from an *external* Prometheus** so a failed scrape (`up == 0` / `absent`) is itself the dead-man. Ready-made alert rules: [`docs/cronguard.rules.yml`](docs/cronguard.rules.yml) (drop into your `rule_files:`).
-
----
-
-## Authentication & SSO
-
-By default, access is by **API key** (`X-API-Key`) with role-based access (`viewer < member < admin < owner`) and link-based team invites — no passwords, no sessions.
-
-For enterprise deployments, CronGuard supports **SSO via forward-auth**: put it behind your existing SSO reverse-proxy (oauth2-proxy, Authelia, Pomerium, Cloudflare Access, or your corporate SAML/OIDC gateway). The proxy authenticates the user and injects their email; CronGuard maps it to a team member and role. **The app never talks to an IdP itself** — keeping the no-egress guarantee intact, ideal for air-gapped/regulated environments.
-
-```bash
-SSO_ENABLED=true
-SSO_TRUSTED_PROXIES=10.0.0.10        # or SSO_SHARED_SECRET=... (at least one — fail-closed)
-SSO_EMAIL_HEADER=X-Forwarded-Email   # header your proxy injects
-SSO_ALLOWED_DOMAINS=corp.com         # JIT-provision these domains as viewers (never owner)
-```
-
-The dashboard, served from behind the proxy, detects the SSO session (`/auth/whoami`) and skips the API-key prompt. The identity header is only trusted from the configured proxy IP or with a matching shared secret.
-
----
-
-## LLM model
-
-Default: **llama3.2:3b** through local Ollama (free, private, non-reasoning → fast on CPU).
-No log ever leaves your infrastructure.
-
-**The model is optional.** Leave `LLM_BASE_URL` unset (or set `LLM_ENABLED=false`) and CronGuard runs without Ollama: each failure still gets the related log lines, a known fix when the logs match a common failure (disk full, OOM, PostgreSQL refused, expired certificate…), and fixes your team recorded. The same fallback applies when the model is down or saturated. Analyses made this way are marked `model: none`.
-
-**Benchmark (lab set)** — 26 curated failure scenarios ([eval/](eval/), `npm run eval`), default model on CPU, **5-run mean ± std** ([eval/results.json](eval/results.json)):
-**100%** valid structured output · **72% ± 4** exact root-cause category (runs ranged 65–77%, a constant answer scores 15%; this is below our own 75% bar, and the previous prompt scored 76–78%) · the cause mentions the expected fact **88%** of the time, the action **58%** (loose keyword check) · **1.5%** of answers cite a parameter, flag or path absent from the logs (an undercount: hyphenated names such as HTTP headers are not detected) · ~14s per analysis on our test machine (latency depends heavily on hardware and load).
-
-**Out of sample (public failures)** — 11 real failures copied from public issues and forums, each with its source and the cause established in the thread ([eval/public-cases.ts](eval/public-cases.ts), `npx tsx eval/run.ts --set public`). Labels were fixed before the model ran and nothing was tuned afterwards. 3 runs, 2026-11-07 ([eval/results.public.json](eval/results.public.json)): **73%** exact category (always answering "network" scores 36%), the cause mentions the expected fact **79%** of the time and the action **76%** (loose keyword check), **0%** invented identifiers, 100% parsable. The related log lines hold the expected fact **91%** of the time (30/33), and none of the 10 known fixes shipped then fired on these 11 cases. Known fixes added afterwards cover 10 of them, so that coverage is in sample, not a measurement. Read this with its limits: 11 cases is a wide margin of error; most of these logs state the error plainly, and the model mostly **restates the symptom** ("server version mismatch") rather than the deeper cause found in the thread (an older `pg_dump` on cron's PATH, a stale AAAA record). Severity was not labelled, so it is not measured here.
-
-**Treat the suggested action as a lead, not an instruction:** it is often too vague and sometimes wrong, even on these clean logs. **Severity is not reliable yet:** 57% exact against 46% for always answering `high`, over two sessions. It is shown for information and never decides whether an alert is sent.
-**Diagnosis score /10 (2026-11-08)** — every answer is graded automatically ([eval/rubric.ts](eval/rubric.ts)): mechanism named 4, correct and safe action 3, category 1, nothing invented 1, decisive log line linked 1, ±1 for honest or overconfident answers. `npx tsx eval/score.ts --set final --runs 3` writes [eval/REPORT.md](eval/REPORT.md). Known-fix sheets (89) give the cause when their pattern matches; the model handles the rest.
-
-| Set | Score /10 | What it is |
-|---|---|---|
-| Failures a known fix covers (45 cases) | **8.7** | standard tool messages; partly in sample |
-| Failures no fix covers (23 cases) | **3.1** | the model alone (llama3.2:3b) |
-| **public3 — held-out test, 14 StackExchange cron failures** | **3.5** (runs 3.4–3.6) | collected after every tuning decision; raw model without the sheets: 2.0 |
-| **public4 — held-out test, 17 more failures, with the cron command when the post gives it** | **5.0** (runs 4.8–5.4) | collected before the command check and execution-context levers; without them: 4.6 |
-
-The honest headline is the held-out one: **3.5/10**. Real-world cron failures posted online are mostly one-off mistakes (unquoted paths, a space after `-p`, an unactivated virtualenv) that no sheet describes and that a 3B model restates instead of explaining; one sheet also fired on the wrong failure there. On standard messages the sheets reach 8.7. CronGuard also checks the cron command (unescaped `%`, a password after `-p `, bash syntax run by `sh`…) and, through the SDK, the cron's real environment (PATH, user and HOME, locale, DISPLAY, SSH agent, and where a "not found" command really lives). On public4 the command check fixed the 2 cases it applies to (2 → 8 and 2 → 9); overall +0.4, not significant on 17 cases. The environment probe could not be measured: public posts never include it, so it needs real SDK logs. Prompting the model with cron traps (+0.1, not significant) and a 7B model (−0.2, 1.7× slower) did not help; reports for each experiment are in `eval/REPORT.*.md`.
-
-These fixtures are deliberately unambiguous, so treat this as an **upper bound, not a field number** — it measures the model on clean cases we authored, and the category score swings run-to-run (the model is non-deterministic).
-
-**Measure it on YOUR logs (the number that matters).** The harness reports **mean ± std over N runs** and takes an independent real-incident set:
-```bash
-npx tsx eval/run.ts --runs 5                       # 5 runs on the lab set → mean ± std
-cp eval/real-cases.example.ts eval/real-cases.ts   # paste ~20 of your real incident logs + expected labels
-npx tsx eval/run.ts --set real --runs 5            # the honest score; exits non-zero if category < 75%
-LLM_RAW_LOGS=true npx tsx eval/run.ts --runs 5      # model alone, no regex preprocessing (isolates each contribution)
-LLM_MODEL=qwen3.5:4b npx tsx eval/run.ts --runs 5   # try another model → writes eval/results.qwen3.5_4b.json (canonical results.json untouched)
-```
-Only the default model writes the canonical `eval/results.json`; any other `LLM_MODEL` lands in `eval/results.<model>.json` (or pass `--out <path>`), so a comparison run never clobbers the published numbers. Don't trust our headline — point `LLM_API_KEY` at a stronger model, or run `--set real` and judge on your own data.
-
-For higher quality, point to any **OpenAI-compatible** endpoint —
-setting `LLM_API_KEY` enables auth and switches to cloud mode:
-
-```bash
-# OpenAI
-LLM_BASE_URL=https://api.openai.com/v1   LLM_MODEL=gpt-4o-mini        LLM_API_KEY=sk-...
-# OpenRouter (Claude, etc.)
-LLM_BASE_URL=https://openrouter.ai/api/v1 LLM_MODEL=anthropic/claude-haiku-4-5 LLM_API_KEY=sk-or-...
-# Groq (Llama 70B, very fast)
-LLM_BASE_URL=https://api.groq.com/openai/v1 LLM_MODEL=llama-3.3-70b-versatile  LLM_API_KEY=gsk_...
-```
-
-Anthropic's native API (`api.anthropic.com`) isn't OpenAI-compatible, so it's handled
-directly — auto-detected from the URL (or force `LLM_PROVIDER=anthropic`):
-
-```bash
-LLM_BASE_URL=https://api.anthropic.com/v1 LLM_MODEL=claude-haiku-4-5 LLM_API_KEY=sk-ant-...
-```
-
-> Cloud models send your logs off-box — this breaks the no-egress guarantee. Keep it
-> opt-in; local Ollama stays the privacy-preserving default.
-
-The context pipeline (7-day history, cross-job correlations, timing patterns,
-few-shot from your feedback) stays identical — only the model changes.
-
-### Incident memory (optional)
-
-Incident memory is **on by default** (`MEMORY_ENABLED=true`; `setup.*` and the Docker demo pull the embedding model). Every analysis you mark 👍 is embedded (locally, via Ollama `nomic-embed-text` — no egress, ~274 MB) and, on the next failure, the most **similar** past incidents across all your jobs are retrieved as few-shot examples (cosine similarity), instead of just the most recent. This is the moat: it compounds with use and never leaves your box. The cache also dedupes by a normalized error fingerprint (timestamps/PIDs/UUIDs/IPs and non-zero durations/sizes stripped), so a recurring error is answered from cache instead of re-calling the model. No pgvector required — embeddings live in a `real[]` column, ranking is done in-app. Set `MEMORY_ENABLED=false` to drop the embedding model on a minimal/air-gapped box; if the model is absent the embed call fails cleanly (no-op, no breakage).
-
-You can also give each monitor a **runbook / notes** field (in its edit dialog) — known gotchas, dependencies, who to wake. It's injected into the prompt so the analysis is grounded in your operational context.
-
-**Token budget.** Before sending logs to the model, CronGuard groups error lines by **template** (a lightweight, dependency-free port of the Drain algorithm, on by default — `LLM_TEMPLATE_MINING`): variants of one pattern (`Connection to db1 refused`, `…db2…`, `…db3…`) collapse to a single `[×3] Connection to db1 refused` line — fewer tokens on logs with repetitive variant spam (on already-unique logs it simply matches exact dedup, no extra saving), and the `×N` count tells the model whether a failure is systemic or isolated while keeping one concrete sample. It also caps over-long single lines and bounds the total log slice — tunable with `LLM_LOG_BUDGET` (characters, default `2400`) — which trims input tokens on every analysis, local and cloud alike. The biggest saver stays the cache: a recurring error (same fingerprint) is answered for free without calling the model at all.
-
-**Structured output.** On the OpenAI-compatible path (Ollama's native engine, OpenAI, Groq, …) CronGuard asks the provider to constrain decoding to valid JSON (`response_format`, on by default — `LLM_JSON_MODE`). This hardens the "100% parsable" guarantee and makes swapping in a different model safe. Set `LLM_JSON_MODE=off` for an older provider that rejects the field; the native Anthropic path is unaffected.
-
----
-
-## Useful commands
-
-```bash
-make help          # list all commands
-make dev           # development (hot reload)
-make test          # run the test suite (jest + vitest)
-make ping-test     # send a test ping
-make api-test      # check the API responds correctly
-make queue-status  # BullMQ queue state
-make db-shell      # interactive PostgreSQL shell
-make deploy-check  # pre-production checklist
-make deploy-fly    # deploy to Fly.io
-```
+`GET /metrics` (Prometheus; protect with `METRICS_TOKEN`). Alert on CronGuard itself: `cronguard_worker_heartbeat_age_seconds > 600`, `cronguard_analysis_queue_depth`, `cronguard_notification_failures_total{channel}`, `cronguard_analysis_dlq_depth`. A monitor cannot see its own host die: scrape it from an **external** Prometheus, rules in [docs/cronguard.rules.yml](docs/cronguard.rules.yml).
 
 ---
 
 ## Architecture
 
 ```
-Client script
-    ↓ POST /ping/:key
-API (Express)
-    ↓ Queue (BullMQ + Redis)
-Workers
-    ├── Ping processor     → stores in DB, validates output, recovery notification
-    ├── Analysis worker    → calls the LLM, sends alerts (email/Slack/webhook)
-    └── Timeout checker    → silent jobs (cron-aware) + hung jobs + slowdowns · 60s
-                                       ↓
-                               Ollama (llama3.2:3b — instruct, non-reasoning)
-                               internal network only
-```
-
-**Active protections:**
-- Per-client rate limiting (10 analyses/hour) + global (30/minute)
-- Redis-backed circuit breaker (cuts the LLM off after 5 errors)
-- Alert deduplication (30-min cooldown, acknowledge, snooze)
-- Log sanitization (9 patterns: JWT, API keys, URLs with creds…)
-- Prompt-injection hardening (logs isolated in XML inside the prompt)
-- SQL injection (column whitelist on PATCH)
-- Outbound-webhook SSRF guard (cloud-metadata/loopback/link-local always blocked; DNS-rebinding checked on the resolved IP; RFC1918 opt-in via `WEBHOOK_BLOCK_PRIVATE`)
-
----
-
-## Production deployment
-
-See [DEPLOY.md](DEPLOY.md) for complete Fly.io and Hetzner VPS guides.
-
-```bash
-make deploy-check  # verifies everything is ready
-make deploy-fly    # deploys
+cron job ──(SDK: logs, exit code, command, context)──▶ API (Express) ──▶ BullMQ / Redis
+                                                                           │
+   ┌──────────────────────────────── workers ──────────────────────────────┤
+   ├─ ping processor    stores the run, validates output, recovery notice  │
+   ├─ analysis          command check → context probe → known fixes →      │
+   │                    official codes → local model (Ollama) → alerts     │
+   ├─ timeout checker   missed / late / hung / slow jobs, escalation       │
+   ├─ retention         purges old pings and analyses                      │
+   └─ self-monitor      API, workers and queue health                      │
+                                                                           │
+PostgreSQL (monitors, runs, analyses, verified fixes, audit)  ◀────────────┘
 ```
 
 ---
+
+## Pricing
+
+**Self-hosted: free, MIT, every feature.** Paid offers are hosting and support, not locked features: [open an issue](https://github.com/Tenerit/cronguard/issues) to talk about it.
 
 ## Contributing
 
-Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
-tests and architecture. In short: `npm test` + `npx vitest run`
-+ `npx tsc --noEmit` must be green before any PR.
+See [CONTRIBUTING.md](CONTRIBUTING.md). `npm run ci` runs what must pass: types, both test suites (jest and vitest), the production dependency audit, the build and an end-to-end run on a real PostgreSQL and Redis.
 
 ## License
 
-[MIT](LICENSE) — use it, modify it, host it freely.
+[MIT](LICENSE)
 
----
-
-## Built with
-
-Node.js · TypeScript · Express · BullMQ · PostgreSQL · Redis · Ollama (llama3.2:3b) · Stripe · Docker
+Built with Node.js · TypeScript · Express · BullMQ · PostgreSQL · Redis · Ollama
