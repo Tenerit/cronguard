@@ -11,6 +11,7 @@ import 'dotenv/config'
 
 import { db }     from './index'
 import { logger } from '../config/logger'
+import { sanitizeLogs } from '../services/sanitizer'
 
 // ─── V1 : Schéma initial ─────────────────────────────────────────────────────
 
@@ -333,6 +334,30 @@ async function v15(client: {query(sql: string, params?: unknown[]): Promise<unkn
 // `diagnosis`, parsé à la lecture côté serveur). Le blob reste écrit (contrat client
 // dashboard). Backfill depuis le blob existant — PG16 `IS JSON` ignore les blobs
 // dégradés (non-JSON) sans faire échouer la transaction.
+// ─── V21 : secrets masqués dans les logs DÉJÀ stockés (depuis cette version, la route /ping masque à
+// l'entrée). Passe unique grâce au marqueur migration_markers : ne relit pas la table à chaque démarrage.
+// Le sanitizer est idempotent ([REDACTED] n'est pas re-détecté). Par lots de 500, curseur sur id SEUL :
+// un curseur pinged_at repassé par une Date JS (milliseconde) contre PostgreSQL (microseconde) ressert
+// indéfiniment la dernière ligne du lot (boucle infinie vue en e2e, API bloquée au démarrage).
+async function v21(client: {query(sql: string, params?: unknown[]): Promise<{ rows: any[] }>}) {
+  await client.query(`CREATE TABLE IF NOT EXISTS migration_markers (name TEXT PRIMARY KEY, done_at TIMESTAMPTZ DEFAULT NOW())`)
+  const { rows: done } = await client.query(`SELECT 1 FROM migration_markers WHERE name = 'v21_redact_ping_output'`)
+  if (done.length) return
+  let id = '00000000-0000-0000-0000-000000000000', changed = 0
+  for (;;) {
+    const { rows } = await client.query(
+      `SELECT id, output FROM pings WHERE output IS NOT NULL AND id > $1::uuid ORDER BY id LIMIT 500`, [id])
+    if (!rows.length) break
+    for (const r of rows) {
+      const clean = sanitizeLogs(r.output).clean
+      if (clean !== r.output) { await client.query(`UPDATE pings SET output = $2 WHERE id = $1`, [r.id, clean]); changed++ }
+    }
+    id = rows[rows.length - 1].id
+  }
+  await client.query(`INSERT INTO migration_markers (name) VALUES ('v21_redact_ping_output') ON CONFLICT DO NOTHING`)
+  if (changed) logger.info(`[DB] v21 : secrets masqués dans ${changed} sortie(s) de job déjà stockée(s)`)
+}
+
 // ─── V20 : autres plateformes de notification (Discord, Google Chat, Mattermost, ntfy, PagerDuty) dans
 // une seule colonne JSON : en ajouter une ne demandera plus de migration.
 async function v20(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
@@ -404,8 +429,9 @@ export async function runMigrations() {
     await v18(client)
     await v19(client)
     await v20(client)
+    await v21(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v20)')
+    logger.info('[DB] Migrations terminées (v1 → v21)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

@@ -220,6 +220,17 @@ async function main() {
   check('Lien signé : ✏️ enregistre la correction (resservie ensuite)', fixRes.status === 200 && savedFix === 'ajouté --single-transaction au mysqldump', savedFix)
   check('Lien signé : action tracée dans l\'audit', (await db.query(`SELECT COUNT(*)::int AS n FROM audit_logs WHERE actor='lien signé'`)).rows[0].n >= 2)
 
+  // ─── Secrets masqués au stockage (route /ping) et dans les logs déjà stockés (migration v21) ──
+  await fail('backup failed: mysqldump -u root -pS3cretE2E db\nERROR password=hunter2E2E rejected', { command: 'mysqldump -u root -pS3cretE2E db' })
+  const stored2 = (await db.query(`SELECT output FROM pings WHERE monitor_id=$1 ORDER BY pinged_at DESC LIMIT 1`, [mon.id])).rows[0].output as string
+  check('Secrets : jamais stockés en clair (sortie du job)', !/S3cretE2E|hunter2E2E/.test(stored2) && stored2.includes('[REDACTED]'), stored2.slice(0, 80))
+  const { rows: [old] } = await db.query(`INSERT INTO pings (monitor_id, status, output, pinged_at) VALUES ($1, 'fail', 'old run password=legacyS3cret', NOW() - INTERVAL '2 days') RETURNING id`, [mon.id])
+  await db.query(`DELETE FROM migration_markers WHERE name = 'v21_redact_ping_output'`)
+  execSync('npx tsx src/db/migrations.ts', { env: { ...process.env, DATABASE_URL: dbUrl.toString() }, stdio: 'ignore' })
+  const backfilled = (await db.query(`SELECT output FROM pings WHERE id=$1`, [old.id])).rows[0].output as string
+  check('Secrets : la migration masque les logs déjà stockés', !backfilled.includes('legacyS3cret') && backfilled.includes('[REDACTED]'), backfilled)
+  check('Secrets : rattrapage fait une seule fois (marqueur)', (await db.query(`SELECT COUNT(*)::int AS n FROM migration_markers WHERE name='v21_redact_ping_output'`)).rows[0].n === 1)
+
   // ─── Page de statut publique : un id invalide ne doit pas arrêter l'API ──────
   const bad = await fetch(`http://localhost:${API_PORT}/status/not-a-uuid`)
   check('Statut : id invalide → 404 sans planter l\'API', bad.status === 404 && (await fetch(`http://localhost:${API_PORT}/health`)).status === 200, String(bad.status))

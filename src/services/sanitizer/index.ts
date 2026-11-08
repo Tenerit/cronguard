@@ -27,6 +27,9 @@ const PATTERNS: Array<{ name: string; regex: RegExp; replace: string }> = [
 
   // Mots de passe inline
   { name: 'password',     regex: /(password|passwd|pwd|secret)\s*[:=]\s*\S+/gi,                           replace: '$1=[REDACTED]' },
+  // Mot de passe collé à -p (mysql, mysqldump, mysqladmin) et sshpass -p : présents dans les commandes de cron.
+  { name: 'mysql_p',      regex: /(\bmysql(?:dump|admin|import)?\b[^\n|;&]*?\s-p)(?!\s|\[REDACTED\])(?:'[^'\n]*'|"[^"\n]*"|\S+)/gi, replace: '$1[REDACTED]' },
+  { name: 'sshpass',      regex: /(\bsshpass\s+-p\s*)(?!\[REDACTED\])\S+/gi,                                  replace: '$1[REDACTED]' },
 
   // AWS credentials
   { name: 'aws_key',    regex: /AKIA[0-9A-Z]{16}/g,              replace: '[AWS_KEY]' },

@@ -196,7 +196,7 @@ Healthchecks has far more integrations. CronGuard does one thing it doesn't: it 
   SSO_EMAIL_HEADER=X-Forwarded-Email
   SSO_ALLOWED_DOMAINS=corp.com         # just-in-time accounts as viewers, never owner
   ```
-- **Hardening:** strict script Content-Security-Policy, secrets redacted from logs before analysis, alerts and display (the raw output is kept in your own database), prompt-injection isolation, SSRF guard on every outbound webhook (cloud metadata and loopback always blocked, DNS rebinding checked), per-client and global rate limits, circuit breaker on the model. See [SECURITY.md](SECURITY.md).
+- **Hardening:** strict script Content-Security-Policy, secrets (passwords, tokens, keys, credentials in URLs, `mysql -p…`) redacted from job output and commands as they arrive, before anything is queued or stored, prompt-injection isolation, SSRF guard on every outbound webhook (cloud metadata and loopback always blocked, DNS rebinding checked), per-client and global rate limits, circuit breaker on the model. See [SECURITY.md](SECURITY.md).
 
 ---
 

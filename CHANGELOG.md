@@ -8,6 +8,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [Unreleased]
 
 ### Sécurité
+- **Secrets masqués dès l'entrée** : la sortie des jobs et leur commande sont nettoyées par la route `/ping` avant la file Redis, la base, la file des échecs et les alertes (auparavant, la sortie brute était stockée en base). Nouveaux motifs : mot de passe collé à `-p` (mysql, mysqldump), guillemets compris, et `sshpass -p`. Migration v21 : masquage, une seule fois, des sorties déjà stockées.
 - Page de statut publique : `GET /status/<id non UUID>` arrêtait le processus API (rejet non géré) — n'importe quel visiteur pouvait le faire tomber en boucle. Renvoie 404.
 - CSP stricte pour les scripts : plus aucun handler inline (103 `onclick`/`oninput`/`onchange` remplacés par des attributs `data-click`… et un écouteur délégué), blocs `<script>` autorisés par empreinte SHA-256 calculée au démarrage. `script-src` n'a plus `'unsafe-inline'`.
 - Rapport hebdomadaire : nom du job, environnement, cause et action étaient insérés sans échappement dans le mail (injection HTML, ex. lien piégé via un nom de monitor). Échappés.

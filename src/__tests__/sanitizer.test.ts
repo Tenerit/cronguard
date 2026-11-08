@@ -116,6 +116,27 @@ describe('sanitizeLogs', () => {
       expect(clean).toBe(short)
     })
   })
+
+  describe('commandes de cron (envoyées par le SDK)', () => {
+    it.each([
+      ['mysqldump -u root -pS3cretPass db > /b/db.sql', 'S3cretPass'],
+      ['mysql -h db -u app -p\'p@ss word\' -e "select 1"', 'word'],   // guillemets : tout le mot de passe
+      ['sshpass -p hunter2 scp a b:/c', 'hunter2'],
+      ['sshpass -phunter2 ssh b', 'hunter2'],
+    ])('%s', (cmd, secret) => {
+      expect(sanitizeLogs(cmd).clean).not.toContain(secret)
+    })
+    it('ne touche pas un -p qui n\'est pas un mot de passe mysql', () => {
+      expect(sanitizeLogs('mkdir -p /backups && rsync -p a b').clean).toBe('mkdir -p /backups && rsync -p a b')
+    })
+  })
+
+  it('idempotent : masquer deux fois ne change rien (rattrapage des logs déjà stockés)', () => {
+    const raw = 'password=hunter2 https://u:p@x.io Bearer abcdefghijklmnopqrstuvwxyz mysqldump -pS3cret db sk_live_4xKj9mNpQrSt8uVwXyZa3b5c7d'
+    const once = sanitizeLogs(raw).clean
+    expect(sanitizeLogs(once).clean).toBe(once)
+    expect(sanitizeLogs(once).redactedCount).toBe(0)
+  })
 })
 
 describe('hashError', () => {

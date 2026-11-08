@@ -4,6 +4,7 @@ import { z }         from 'zod'
 import { db }        from '../../db'
 import { pingQueue } from '../../queue'
 import { logger }    from '../../config/logger'
+import { sanitizeLogs } from '../../services/sanitizer'
 import { asyncHandler } from '../middleware/async-handler'
 
 export const pingRouter = Router()
@@ -72,8 +73,10 @@ async function enqueuePing(monitor: MonitorRow, data: PingData): Promise<'succes
     await pingQueue.add('ping', {
       monitorId: monitor.id, clientId: monitor.client_id, status,
       durationMs: data.duration_ms, records,
-      exitCode: data.exit_code, output: data.output,
-      command: data.command, runContext: data.context,
+      // Secrets masqués DÈS l'entrée : la file Redis, la base, la file des échecs et les alertes ne
+      // voient jamais un mot de passe ou un jeton présent dans la sortie du job ou sa commande.
+      exitCode: data.exit_code, output: data.output && sanitizeLogs(data.output).clean,
+      command: data.command && sanitizeLogs(data.command).clean, runContext: data.context,
     })
   } catch (e) {
     // Redis down : le ping ne peut pas être enregistré. Loggue + rethrow → la route

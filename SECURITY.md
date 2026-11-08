@@ -14,8 +14,12 @@ Only the latest release on `master` receives security fixes.
 
 ## Design choices that matter for security
 
-- **No data egress by default.** Analysis runs on a local model (Ollama). A cloud LLM is opt-in
-  (`LLM_BASE_URL`), and logs are stripped of secrets before they reach any model.
+- **No data egress.** Analysis runs on a local model (Ollama or another local server).
+- **Secrets are redacted on arrival.** Job output and the cron command are cleaned by the `/ping`
+  route (passwords, tokens, API keys, JWTs, credentials in URLs, `mysql -p…`, `sshpass -p`) before
+  they are queued, stored, analysed or sent in an alert. Output stored by earlier versions is
+  cleaned once by migration v21. Redaction is pattern-based: an unusual secret format can slip
+  through, so keep secrets out of job output where you can.
 - **Outgoing webhooks are SSRF-guarded.** Loopback, link-local and cloud metadata addresses are
   always blocked; private ranges can be blocked too with `WEBHOOK_BLOCK_PRIVATE=true`.
 - **API keys are only accepted in the `X-API-Key` header**, never in the URL.

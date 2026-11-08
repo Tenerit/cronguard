@@ -113,7 +113,7 @@ Par défaut **`llama3.2:3b` via Ollama**, rapide sur CPU. **Le modèle est facul
 
 ## Sécurité et accès
 
-Clés API stockées en empreinte SHA-256, rôles `viewer < member < admin < owner`, invitations par lien, rotation de clés, journal d'audit. SSO par votre reverse-proxy (oauth2-proxy, Authelia, Pomerium, passerelle SAML/OIDC) : l'application ne contacte jamais de fournisseur d'identité. CSP stricte pour les scripts, secrets masqués avant l'analyse, les alertes et l'affichage (la sortie brute reste dans votre base), garde SSRF sur tous les webhooks sortants. Voir [SECURITY.md](SECURITY.md).
+Clés API stockées en empreinte SHA-256, rôles `viewer < member < admin < owner`, invitations par lien, rotation de clés, journal d'audit. SSO par votre reverse-proxy (oauth2-proxy, Authelia, Pomerium, passerelle SAML/OIDC) : l'application ne contacte jamais de fournisseur d'identité. CSP stricte pour les scripts, secrets (mots de passe, jetons, clés, identifiants dans les URL, `mysql -p…`) masqués dans la sortie des jobs et leurs commandes dès leur arrivée, avant toute file d'attente ou tout stockage, garde SSRF sur tous les webhooks sortants. Voir [SECURITY.md](SECURITY.md).
 
 ---
 
