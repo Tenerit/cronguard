@@ -247,6 +247,16 @@ No log ever leaves your infrastructure.
 **Out of sample (public failures)** — 11 real failures copied from public issues and forums, each with its source and the cause established in the thread ([eval/public-cases.ts](eval/public-cases.ts), `npx tsx eval/run.ts --set public`). Labels were fixed before the model ran and nothing was tuned afterwards. 3 runs, 2026-11-07 ([eval/results.public.json](eval/results.public.json)): **73%** exact category (always answering "network" scores 36%), the cause mentions the expected fact **79%** of the time and the action **76%** (loose keyword check), **0%** invented identifiers, 100% parsable. The related log lines hold the expected fact **91%** of the time (30/33), and none of the 10 known fixes shipped then fired on these 11 cases. Known fixes added afterwards cover 10 of them, so that coverage is in sample, not a measurement. Read this with its limits: 11 cases is a wide margin of error; most of these logs state the error plainly, and the model mostly **restates the symptom** ("server version mismatch") rather than the deeper cause found in the thread (an older `pg_dump` on cron's PATH, a stale AAAA record). Severity was not labelled, so it is not measured here.
 
 **Treat the suggested action as a lead, not an instruction:** it is often too vague and sometimes wrong, even on these clean logs. **Severity is not reliable yet:** 57% exact against 46% for always answering `high`, over two sessions. It is shown for information and never decides whether an alert is sent.
+**Diagnosis score /10 (2026-11-08)** — every answer is graded automatically ([eval/rubric.ts](eval/rubric.ts)): mechanism named 4, correct and safe action 3, category 1, nothing invented 1, decisive log line linked 1, ±1 for honest or overconfident answers. `npx tsx eval/score.ts --set final --runs 3` writes [eval/REPORT.md](eval/REPORT.md). Known-fix sheets (89) give the cause when their pattern matches; the model handles the rest.
+
+| Set | Score /10 | What it is |
+|---|---|---|
+| Failures a known fix covers (45 cases) | **8.7** | standard tool messages; partly in sample |
+| Failures no fix covers (23 cases) | **3.1** | the model alone (llama3.2:3b) |
+| **public3 — held-out test, 14 StackExchange cron failures** | **3.5** (runs 3.4–3.6) | collected after every tuning decision; raw model without the sheets: 2.0 |
+
+The honest headline is the held-out one: **3.5/10**. Real-world cron failures posted online are mostly one-off mistakes (unquoted paths, a space after `-p`, an unactivated virtualenv) that no sheet describes and that a 3B model restates instead of explaining; one sheet also fired on the wrong failure there. On standard messages the sheets reach 8.7. Prompting the model with cron traps (+0.1, not significant) and a 7B model (−0.2, 1.7× slower) did not help; reports for each experiment are in `eval/REPORT.*.md`.
+
 These fixtures are deliberately unambiguous, so treat this as an **upper bound, not a field number** — it measures the model on clean cases we authored, and the category score swings run-to-run (the model is non-deterministic).
 
 **Measure it on YOUR logs (the number that matters).** The harness reports **mean ± std over N runs** and takes an independent real-incident set:

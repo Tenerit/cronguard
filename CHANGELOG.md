@@ -24,6 +24,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Mesuré — note du diagnostic /10 (2026-11-08)
+- Notation automatique (`eval/rubric.ts`, `eval/score.ts`), rapport `eval/REPORT.md`. Départ 4,4/10. Fiches connues 25 → 89, dont la cause remplace celle du modèle : +2,7 (IC +2,1 à +3,3). Connaissance cron dans le prompt : +0,1 (non significatif, non adoptée). qwen2.5:7b : −0,2 et 1,7× plus lent (non adopté).
+- Note finale 6,8/10 tous jeux confondus, mais **3,5/10 sur public3**, le seul jeu hors échantillon (14 pannes StackExchange collectées après toutes les décisions ; modèle brut 2,0). Pannes couvertes par une fiche 8,7 ; non couvertes 3,1. C'est 3,5 qu'il faut retenir.
+
 ### Mesuré — cause profonde (2026-11-08, non adopté)
 - A/B apparié pré-enregistré (`eval/ab-root-cause.ts`, 3 runs, même session, ordre alterné) : consigne « cause = le POURQUOI, pas le message recopié » contre la consigne actuelle. Cause profonde (regex du mécanisme, écartée si elle correspond déjà au log ; 9 cas publics) : **0 % dans les deux bras**, le modèle recopie le symptôme quelle que soit la consigne. Catégorie 73,0 → 75,7 % (IC −4,6 à +10, non significatif), identifiants inventés 2,7 → 1,8 %. Critère principal non rempli : prompt inchangé. Le mécanisme vient aujourd'hui des corrections connues (déterministes), pas du modèle. Résultats : `eval/results.ab-root-cause.json`.
 
