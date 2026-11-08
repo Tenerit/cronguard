@@ -74,7 +74,9 @@ create_monitor() {   # $1 nom, $2 JSON des champs de planning → ping_key sur s
     -H "X-API-Key: $CRONGUARD_API_KEY" -d "$body" -w $'\n%{http_code}' || true)"
   code="${resp##*$'\n'}"; resp="${resp%$'\n'*}"
   if [[ "$code" != 201 ]]; then echo "✗ $1 : HTTP $code $resp" >&2; return 0; fi
-  printf '%s' "$resp" | sed -n 's/.*"ping_key":"\([^"]*\)".*/\1/p'
+  local key; key="$(printf '%s' "$resp" | sed -n 's/.*"ping_key"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  [[ -z "$key" ]] && echo "✗ $1 : monitor créé mais ping_key absente de la réponse : $resp" >&2
+  printf '%s' "$key"
 }
 
 # ── Timers systemd ────────────────────────────────────────────────────────────

@@ -56,7 +56,7 @@ describe.skipIf(!hasBash)('timers systemd', () => {
       req.on('end', () => {
         if (req.url?.startsWith('/ping/')) { pings.push({ key: req.url.slice(6), body: JSON.parse(body) }); res.end('{}'); return }
         const m = JSON.parse(body); created.push(m)
-        res.writeHead(201, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ping_key: `pk-${created.length}` }))
+        res.writeHead(201, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ping_key: `pk-${created.length}` }).replace('":"', '": "'))
       })
     })
     await new Promise<void>(r => server.listen(0, '127.0.0.1', r))
