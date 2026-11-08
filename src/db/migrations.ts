@@ -333,6 +333,13 @@ async function v15(client: {query(sql: string, params?: unknown[]): Promise<unkn
 // `diagnosis`, parsé à la lecture côté serveur). Le blob reste écrit (contrat client
 // dashboard). Backfill depuis le blob existant — PG16 `IS JSON` ignore les blobs
 // dégradés (non-JSON) sans faire échouer la transaction.
+// ─── V19 : alertes Teams + secret serveur des liens signés (valider / corriger une analyse depuis
+// l'alerte, sans se connecter). Le secret est créé une fois en base : il survit aux redémarrages.
+async function v19(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE clients ADD COLUMN IF NOT EXISTS teams_webhook TEXT`)
+  await client.query(`CREATE TABLE IF NOT EXISTS app_secrets (name TEXT PRIMARY KEY, value TEXT NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW())`)
+}
+
 // ─── V18 : clés API stockées en empreinte SHA-256 (une fuite de la base n'ouvre aucun compte).
 // Idempotent : le préfixe sha256: marque les lignes déjà converties. Les clés en clair des
 // utilisateurs restent valides : l'auth compare l'empreinte de la clé présentée.
@@ -389,8 +396,9 @@ export async function runMigrations() {
     await v16(client)
     await v17(client)
     await v18(client)
+    await v19(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v18)')
+    logger.info('[DB] Migrations terminées (v1 → v19)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

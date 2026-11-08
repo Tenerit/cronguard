@@ -73,6 +73,7 @@ beforeAll(async () => {
       api_key     TEXT UNIQUE NOT NULL,
       slack_webhook TEXT,
       webhook_url TEXT,
+      teams_webhook TEXT,
       app_url     TEXT,
       escalation_email     TEXT,
       escalation_webhook   TEXT,

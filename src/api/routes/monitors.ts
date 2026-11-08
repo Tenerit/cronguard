@@ -6,10 +6,10 @@ import { asyncHandler }                  from '../middleware/async-handler'
 import { audit }                         from '../middleware/audit'
 import { acknowledgeAlert, snoozeAlert } from '../../services/alerts/dedup'
 import { sendAlert }                     from '../../services/alerts'
-import { rememberIncident }              from '../../services/llm/incident-memory'
 import { sanitizeLogs }                  from '../../services/sanitizer'
 import { withLogHints, evidenceLines }   from '../../services/llm/evidence'
 import { knownFix }                      from '../../services/llm/known-fixes'
+import { findAnalysis, recordFeedback, recordFix } from '../../services/analysis-feedback'
 import { lintCommand }                   from '../../services/llm/command-lint'
 import { monitorLimitFor }               from '../../config/plans'
 
@@ -206,7 +206,7 @@ monitorsRouter.post('/:id/resume', requireRole('admin'), ownsMonitor, asyncHandl
 
 monitorsRouter.post('/:id/test', ownsMonitor, asyncHandler(async (req, res) => {
   const { rows: [monitor] } = await db.query(`
-    SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url
+    SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url, c.teams_webhook
     FROM monitors m JOIN clients c ON c.id = m.client_id
     WHERE m.id = $1
   `, [req.params.id])
@@ -231,7 +231,7 @@ monitorsRouter.post('/:id/test', ownsMonitor, asyncHandler(async (req, res) => {
     },
     alertCount:    1,
     statusPageUrl: `${process.env.APP_URL ?? 'http://localhost:3000'}/status/${req.params.id}`,
-    client: { email: monitor.email, slackWebhook: monitor.slack_webhook, webhookUrl: monitor.webhook_url },
+    client: { email: monitor.email, slackWebhook: monitor.slack_webhook, webhookUrl: monitor.webhook_url, teamsWebhook: monitor.teams_webhook },
   })
 
   await audit(res, 'monitor.test', 'monitor', req.params.id)
@@ -253,38 +253,12 @@ monitorsRouter.get('/:id/audit', ownsMonitor, asyncHandler(async (req, res) => {
 // ─── POST /analyses/:analysisId/feedback — feedback utilisateur sur une analyse ─
 
 monitorsRouter.post('/analyses/:analysisId/feedback', asyncHandler(async (req, res) => {
-  const { analysisId } = req.params
   const { feedback } = req.body  // 'positive' | 'negative'
-
   if (!['positive', 'negative'].includes(feedback))
     return res.status(400).json({ error: "feedback doit être 'positive' ou 'negative'" })
-
-  // Vérifie que l'analyse appartient au client (et récupère les logs pour la mémoire)
-  const { rows: [analysis] } = await db.query(`
-    SELECT a.id, a.monitor_id, a.error_hash, p.output AS logs FROM analyses a
-    JOIN monitors m      ON m.id = a.monitor_id
-    LEFT JOIN pings p    ON p.id = a.ping_id
-    WHERE a.id = $1 AND m.client_id = $2
-  `, [analysisId, res.locals.clientId])
-
+  const analysis = await findAnalysis(req.params.analysisId, res.locals.clientId)
   if (!analysis) return res.status(404).json({ error: 'Analysis not found' })
-
-  await db.query(
-    `UPDATE analyses SET user_feedback = $2 WHERE id = $1`,
-    [analysisId, feedback]
-  )
-
-  // 👎 : la correction mémorisée pour cette panne n'est plus fiable, elle ne doit plus être resservie.
-  if (feedback === 'negative') {
-    await db.query(
-      `UPDATE analyses SET verified_fix = NULL, fix_verified_at = NULL WHERE monitor_id = $1 AND error_hash = $2`,
-      [analysis.monitor_id, analysis.error_hash]
-    )
-  }
-
-  // Validé 👍 → mémorise l'incident (embedding) pour le few-shot par similarité (no-op si MEMORY off)
-  if (feedback === 'positive') await rememberIncident(analysisId, analysis.logs ?? '')
-
+  await recordFeedback(analysis, feedback)
   res.json({ ok: true, feedback })
 }))
 
@@ -294,23 +268,10 @@ monitorsRouter.post('/analyses/:analysisId/feedback', asyncHandler(async (req, r
 monitorsRouter.post('/analyses/:analysisId/fix', requireRole('member'), asyncHandler(async (req, res) => {
   const parsed = z.object({ fix: z.string().trim().min(3).max(500) }).safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
-
-  const { rows: [analysis] } = await db.query(`
-    SELECT a.id, a.monitor_id, p.output AS logs FROM analyses a
-    JOIN monitors m   ON m.id = a.monitor_id
-    LEFT JOIN pings p ON p.id = a.ping_id
-    WHERE a.id = $1 AND m.client_id = $2
-  `, [req.params.analysisId, res.locals.clientId])
+  const analysis = await findAnalysis(req.params.analysisId, res.locals.clientId)
   if (!analysis) return res.status(404).json({ error: 'Analysis not found' })
-
-  // Le texte repart ensuite dans le prompt et les alertes : un secret collé par erreur ne doit pas y aller.
-  const fix = sanitizeLogs(parsed.data.fix).clean
-  await db.query(
-    `UPDATE analyses SET verified_fix = $2, fix_verified_at = NOW(), user_feedback = 'positive' WHERE id = $1`,
-    [analysis.id, fix]
-  )
+  const fix = await recordFix(analysis, parsed.data.fix)
   await audit(res, 'analysis.fix_recorded', 'monitor', analysis.monitor_id, { analysisId: analysis.id })
-  await rememberIncident(analysis.id, analysis.logs ?? '')
   res.json({ ok: true, verified_fix: fix })
 }))
 

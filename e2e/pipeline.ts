@@ -7,6 +7,7 @@
  */
 import 'dotenv/config'
 import { spawn, execSync, ChildProcess } from 'child_process'
+import * as crypto from 'crypto'
 import * as fs from 'fs'
 import * as http from 'http'
 import { AddressInfo } from 'net'
@@ -196,6 +197,28 @@ async function main() {
   const badCtx = await fetch(`http://localhost:${API_PORT}/ping/${mon.ping_key}`, { method: 'POST', headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ status: 'fail', output: 'x', context: { path: 'x'.repeat(5000) } }) })
   check('Contexte : champ trop long refusé (400)', badCtx.status === 400, String(badCtx.status))
+
+  // ─── Lien signé d'une alerte : valider / corriger sans se connecter ─────────
+  // Jeton recalculé ici avec le même format que review-links.ts (id.exp.hmac), secret lu en base.
+  await db.query(`INSERT INTO app_secrets (name, value) VALUES ('review_links', $1) ON CONFLICT (name) DO NOTHING`, [crypto.randomBytes(32).toString('hex')])
+  const sec = Buffer.from((await db.query(`SELECT value FROM app_secrets WHERE name='review_links'`)).rows[0].value, 'hex')
+  const tok = (id: string, exp: number) => `${id}.${exp}.${crypto.createHmac('sha256', sec).update(`${id}.${exp}`).digest('base64url')}`
+  const later = Math.floor(Date.now() / 1000) + 3600
+  const rev = (p: string, init?: RequestInit) => fetch(`http://localhost:${API_PORT}/r/${p}`, init)
+  const form = (body: string) => ({ method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body })
+  const target = String(d.id)
+  const pageRes = await rev(tok(target, later))
+  const pageHtml = await pageRes.text()
+  check('Lien signé : la page montre la cause, sans rien enregistrer', pageRes.status === 200 && pageHtml.includes('Cette analyse était-elle juste')
+    && (await db.query(`SELECT user_feedback FROM analyses WHERE id=$1`, [target])).rows[0].user_feedback === null, String(pageRes.status))
+  check('Lien signé : jeton altéré refusé', (await rev(tok(target, later).slice(0, -2) + 'xx')).status === 404)
+  check('Lien signé : jeton expiré refusé', (await rev(tok(target, Math.floor(Date.now() / 1000) - 60))).status === 404)
+  check('Lien signé : ✅ enregistre la validation', (await rev(`${tok(target, later)}/ok`, form(''))).status === 200
+    && (await db.query(`SELECT user_feedback FROM analyses WHERE id=$1`, [target])).rows[0].user_feedback === 'positive')
+  const fixRes = await rev(`${tok(target, later)}/fix`, form('fix=' + encodeURIComponent('ajouté --single-transaction au mysqldump')))
+  const savedFix = (await db.query(`SELECT verified_fix FROM analyses WHERE id=$1`, [target])).rows[0].verified_fix
+  check('Lien signé : ✏️ enregistre la correction (resservie ensuite)', fixRes.status === 200 && savedFix === 'ajouté --single-transaction au mysqldump', savedFix)
+  check('Lien signé : action tracée dans l\'audit', (await db.query(`SELECT COUNT(*)::int AS n FROM audit_logs WHERE actor='lien signé'`)).rows[0].n >= 2)
 
   // ─── Page de statut publique : un id invalide ne doit pas arrêter l'API ──────
   const bad = await fetch(`http://localhost:${API_PORT}/status/not-a-uuid`)

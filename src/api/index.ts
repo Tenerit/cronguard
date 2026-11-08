@@ -36,6 +36,7 @@ import { asyncHandler }   from './middleware/async-handler'
 import { metricsHandler } from './routes/metrics'
 import { pingRouter }     from './routes/ping'
 import { monitorsRouter } from './routes/monitors'
+import { reviewRouter }   from './routes/review'
 import { dashboardRouter } from './routes/dashboard'
 import { clientsRouter }       from './routes/clients'
 import { maintenanceRouter }   from './routes/maintenance'
@@ -143,6 +144,8 @@ app.get('/pricing', (_req, res) => {
 })
 
 app.use('/monitors',             apiLimiter, requireApiKey, monitorsRouter)
+// Lien signé d'une alerte : sans clé API, le jeton ne vaut que pour UNE analyse (review-links.ts).
+app.use('/r',                    apiLimiter, reviewRouter)
 app.use('/dashboard',            apiLimiter, requireApiKey, dashboardRouter)
 app.use('/clients',              apiLimiter, requireApiKey, clientsRouter)
 app.use('/maintenance-windows',  apiLimiter, requireApiKey, maintenanceRouter)

@@ -1518,6 +1518,16 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
+              <div class="settings-label" data-i18n="set.teams">Webhook Microsoft Teams</div>
+              <div class="field-hint" data-i18n="set.teamsHint">Workflow Teams « publier dans un canal quand une requête webhook est reçue ». L'alerte porte les boutons ✅ Analyse juste / ✏️ Corriger.</div>
+            </div>
+          </div>
+          <div class="settings-input-row">
+            <input class="field-input" id="set-teams" placeholder="https://prod-00.westeurope.logic.azure.com/workflows/...">
+            <button class="btn btn-ghost" data-click="saveTeams" data-i18n="set.save">enregistrer</button>
+          </div>
+          <div class="settings-row" style="margin-top:12px">
+            <div>
               <div class="settings-label" data-i18n="set.generic">Webhook générique</div>
               <div class="field-hint" data-i18n="set.genericHint">Reçoit le JSON d'alerte (Discord, Teams, PagerDuty, n8n...)</div>
             </div>
@@ -1933,7 +1943,7 @@ const I18N = {
     'logs.failures':'échecs','logs.aiAnalyzed':'analysés ia','live':'en direct',
     'set.account':'compte','set.email':'Email','set.plan':'Offre','set.activeMonitors':'Services actifs',
     'set.apiKey':'Clé API','set.show':'afficher','set.hide':'masquer','set.copy':'copier','set.save':'enregistrer',
-    'set.notifications':'notifications','set.slack':'Webhook Slack','set.slackHint':'URL de votre Incoming Webhook Slack',
+    'set.notifications':'notifications','set.slack':'Webhook Slack','set.slackHint':'URL de votre Incoming Webhook Slack','set.teams':'Webhook Microsoft Teams','set.teamsHint':'Workflow Teams « publier dans un canal quand une requête webhook est reçue ». L\x27alerte porte les boutons ✅ Analyse juste / ✏️ Corriger.','toast.teamsSaved':'Webhook Teams enregistré',
     'set.generic':'Webhook générique','set.genericHint':'Reçoit le JSON d\'alerte (Discord, Teams, PagerDuty, n8n...)',
     'set.timezone':'Fuseau horaire','set.timezoneHint':'Affichage des heures dans votre fuseau','set.tzAuto':'Automatique (navigateur)',
     'set.escalation':'escalade automatique','set.escalationDesc':'Si une alerte n\'est pas acquittée après le délai, un second contact est notifié (astreinte, manager...).',
@@ -2054,7 +2064,7 @@ const I18N = {
     'logs.failures':'failures','logs.aiAnalyzed':'ai analyzed','live':'live',
     'set.account':'account','set.email':'Email','set.plan':'Plan','set.activeMonitors':'Active services',
     'set.apiKey':'API key','set.show':'show','set.hide':'hide','set.copy':'copy','set.save':'save',
-    'set.notifications':'notifications','set.slack':'Slack webhook','set.slackHint':'Your Slack Incoming Webhook URL',
+    'set.notifications':'notifications','set.slack':'Slack webhook','set.slackHint':'Your Slack Incoming Webhook URL','set.teams':'Microsoft Teams webhook','set.teamsHint':'Teams workflow « post to a channel when a webhook request is received ». Alerts carry ✅ Analysis right / ✏️ Correct buttons.','toast.teamsSaved':'Teams webhook saved',
     'set.generic':'Generic webhook','set.genericHint':'Receives the alert JSON (Discord, Teams, PagerDuty, n8n...)',
     'set.timezone':'Timezone','set.timezoneHint':'How times are displayed in your zone','set.tzAuto':'Automatic (browser)',
     'set.escalation':'automatic escalation','set.escalationDesc':'If an alert is not acknowledged within the delay, a second contact is notified (on-call, manager...).',
@@ -3665,6 +3675,7 @@ async function loadSettings() {
     document.getElementById('set-status-url').textContent = `${BASE_URL}/status/{monitor_id}`
 
     if (c.slack_webhook)        document.getElementById('set-slack').value       = c.slack_webhook
+    if (c.teams_webhook)        document.getElementById('set-teams').value       = c.teams_webhook
     if (c.webhook_url)          document.getElementById('set-webhook').value     = c.webhook_url
     if (c.escalation_email)     document.getElementById('set-esc-email').value   = c.escalation_email
     if (c.escalation_webhook)   document.getElementById('set-esc-webhook').value = c.escalation_webhook
@@ -3695,6 +3706,14 @@ async function saveSlack() {
   try {
     await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ slack_webhook: webhook || '' }) })
     toast(t('toast.slackSaved'), 'ok')
+  } catch(e) { toast(e.message, 'err') }
+}
+
+async function saveTeams() {
+  const url = document.getElementById('set-teams').value.trim()
+  try {
+    await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ teams_webhook: url || '' }) })
+    toast(t('toast.teamsSaved'), 'ok')
   } catch(e) { toast(e.message, 'err') }
 }
 

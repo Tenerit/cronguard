@@ -194,7 +194,10 @@ notification ("✅ resolved", with downtime duration) when the job goes green ag
 |---------|---------------|
 | Email | `SMTP_*` variables |
 | Slack | incoming webhook — Settings › Notifications |
-| Generic webhook | custom URL (Discord, Teams, PagerDuty, n8n…) — receives the alert/recovery/escalation JSON |
+| Microsoft Teams | Workflows webhook ("post to a channel when a webhook request is received") — Settings › Notifications; native card |
+| Generic webhook | custom URL (Discord, PagerDuty, n8n…) — receives the alert/recovery/escalation JSON |
+
+**Validate or correct from the alert, on call, without logging in.** Every failure alert (Teams, Slack, email) carries two buttons, **✅ Analysis right** and **✏️ Correct**. They open a page signed for that one analysis (HMAC, 30 days, no API key) where one tap confirms the diagnosis, or a short note records what really fixed it. That fix is then served as is the next time the same failure happens. The link itself never records anything: chat apps open links to build previews, so only the page's button does. `APP_URL` must be reachable from the on-call phone (VPN or intranet is fine).
 
 Outbound generic webhooks can be **HMAC-signed** for authenticity: set `WEBHOOK_SIGNING_SECRET` and each request carries `X-CronGuard-Signature: sha256=<hmac>` over `<X-CronGuard-Timestamp>.<raw body>`. Receivers recompute it (constant-time compare) and reject stale timestamps to prevent replay. Slack uses its own scheme and is left untouched.
 

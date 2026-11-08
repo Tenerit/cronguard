@@ -73,7 +73,7 @@ clientsRouter.post('/dlq/replay', requireRole('admin'), asyncHandler(async (_req
 
 clientsRouter.get('/me', asyncHandler(async (req, res) => {
   const { rows: [client] } = await db.query(`
-    SELECT id, email, plan, slack_webhook, webhook_url,
+    SELECT id, email, plan, slack_webhook, webhook_url, teams_webhook,
            escalation_email, escalation_webhook, escalation_after_min,
            created_at,
       (SELECT COUNT(*) FROM monitors WHERE client_id = $1 AND active = true) AS monitor_count
@@ -86,6 +86,7 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
   const Schema = z.object({
     slack_webhook:          z.string().url().optional().or(z.literal('')),
     webhook_url:            z.string().url().optional().or(z.literal('')),
+    teams_webhook:          z.string().url().optional().or(z.literal('')),
     app_url:                z.string().url().optional(),
     escalation_email:       z.string().email().optional().or(z.literal('')),
     escalation_webhook:     z.string().url().optional().or(z.literal('')),
@@ -100,6 +101,7 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
   const webhookGiven = d.webhook_url            !== undefined
   const escEmailGiven   = d.escalation_email    !== undefined
   const escWebhookGiven = d.escalation_webhook  !== undefined
+  const teamsGiven      = d.teams_webhook       !== undefined
 
   const { rows: [client] } = await db.query(`
     UPDATE clients
@@ -108,9 +110,10 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
         app_url              = COALESCE($6, app_url),
         escalation_email     = CASE WHEN $8  THEN $7  ELSE escalation_email     END,
         escalation_webhook   = CASE WHEN $10 THEN $9  ELSE escalation_webhook   END,
-        escalation_after_min = COALESCE($11, escalation_after_min)
+        escalation_after_min = COALESCE($11, escalation_after_min),
+        teams_webhook        = CASE WHEN $13 THEN $12 ELSE teams_webhook        END
     WHERE id = $1
-    RETURNING id, email, plan, slack_webhook, webhook_url, app_url,
+    RETURNING id, email, plan, slack_webhook, webhook_url, teams_webhook, app_url,
               escalation_email, escalation_webhook, escalation_after_min
   `, [
     res.locals.clientId,
@@ -124,6 +127,8 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
     d.escalation_webhook  || null,   // $9
     escWebhookGiven,                 // $10
     d.escalation_after_min ?? null,  // $11
+    d.teams_webhook       || null,   // $12
+    teamsGiven,                      // $13
   ])
   await audit(res, 'settings.updated', 'client', res.locals.clientId, { fields: Object.keys(d) })
   res.json(client)

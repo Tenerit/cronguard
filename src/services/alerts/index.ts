@@ -10,7 +10,7 @@ import type { AnalysisResult } from '../llm/analyzer'
 // Compteur cross-process des échecs de LIVRAISON de notification. Exposé en /metrics
 // (cronguard_notification_failures_total) → un canal qui tombe en silence (SMTP mal
 // configuré, webhook injoignable) devient visible/alertable, pas seulement loggé.
-function bumpNotifyFail(channel: 'email' | 'slack' | 'webhook'): void {
+function bumpNotifyFail(channel: 'email' | 'slack' | 'webhook' | 'teams'): void {
   redis.incr(`metrics:notify_fail:${channel}`).catch(() => { /* best-effort, non bloquant */ })
 }
 
@@ -53,10 +53,12 @@ export interface AlertPayload {
   firstFired?:   Date         // début de l'incident
   statusPageUrl: string
   fixUrl?:       string       // ouvre le dashboard sur « ce qui a réglé la panne »
+  reviewUrl?:    string       // lien signé : valider / corriger cette analyse sans se connecter (/r/<jeton>)
   client: {
     email:         string
     slackWebhook?: string
     webhookUrl?:   string
+    teamsWebhook?: string
   }
 }
 
@@ -126,7 +128,10 @@ export async function sendSlackAlert(payload: AlertPayload) {
       url:  payload.statusPageUrl,
       style: 'primary',
     },
-    ...(payload.fixUrl ? [{
+    ...(payload.reviewUrl ? [
+      { type: 'button', text: { type: 'plain_text', text: '✅ Analyse juste' }, url: payload.reviewUrl },
+      { type: 'button', text: { type: 'plain_text', text: '✏️ Corriger' }, url: `${payload.reviewUrl}?v=fix` },
+    ] : payload.fixUrl ? [{
       type: 'button',
       text: { type: 'plain_text', text: 'Ce qui a réglé la panne' },
       url:  payload.fixUrl,
@@ -189,7 +194,9 @@ export async function sendEmailAlert(payload: AlertPayload) {
               border-radius:6px;text-decoration:none;margin-top:8px;">
       Voir la page de statut →
     </a>
-    ${payload.fixUrl ? `<a href="${escapeHtml(payload.fixUrl)}" style="display:inline-block;color:#6c63ff;padding:10px 20px;margin-top:8px;">Ce qui a réglé la panne →</a>` : ''}
+    ${payload.reviewUrl
+      ? `<a href="${escapeHtml(payload.reviewUrl)}" style="display:inline-block;color:#238636;padding:10px 20px;margin-top:8px;">✅ Analyse juste</a><a href="${escapeHtml(payload.reviewUrl)}?v=fix" style="display:inline-block;color:#1f6feb;padding:10px 20px;margin-top:8px;">✏️ Corriger</a>`
+      : payload.fixUrl ? `<a href="${escapeHtml(payload.fixUrl)}" style="display:inline-block;color:#6c63ff;padding:10px 20px;margin-top:8px;">Ce qui a réglé la panne →</a>` : ''}
     <p style="color:#aaa;font-size:12px;margin-top:24px;">
       CronGuard · <a href="#">Gérer les alertes</a>
     </p>
@@ -236,6 +243,7 @@ export async function sendWebhookAlert(payload: AlertPayload) {
     last_ping_at:  payload.lastPingAt ?? null,
     status_page:   payload.statusPageUrl,
     fix_url:       payload.fixUrl ?? null,
+    review_url:    payload.reviewUrl ?? null,
     timestamp:     new Date().toISOString(),
   }
   try {
@@ -251,11 +259,51 @@ export async function sendWebhookAlert(payload: AlertPayload) {
   }
 }
 
+// ─── Microsoft Teams ──────────────────────────────────────────────────────────
+// Webhook « Workflows » de Teams (les connecteurs Office 365 historiques sont retirés) : il attend
+// une carte adaptative. Lisible en 5 s à 2h40 : cause, action, ligne décisive, deux boutons de retour.
+// Les boutons ouvrent la page signée /r/<jeton> : pas de bot Azure, rien à déclarer chez Microsoft.
+export function teamsCard(payload: AlertPayload): object {
+  const a = payload.analysis
+  const facts = a ? [
+    { title: 'Cause',  value: a.cause },
+    { title: actionLabel(a), value: a.verifiedFix ? a.action : a.action },
+    { title: 'Sévérité', value: `${a.severity} · confiance ${a.confidence}` },
+  ] : [{ title: 'Analyse', value: 'Indisponible (voir les logs)' }]
+  const body: object[] = [
+    { type: 'TextBlock', size: 'Large', weight: 'Bolder', wrap: true, color: 'Attention',
+      text: `${SEVERITY_EMOJI[a?.severity ?? 'medium']} ${payload.jobName} en échec (${payload.env})` },
+    { type: 'FactSet', facts },
+  ]
+  const line = a?.evidence?.[0]
+  if (line) body.push({ type: 'TextBlock', text: line, wrap: true, fontType: 'Monospace', size: 'Small', isSubtle: true })
+  const actions: object[] = payload.reviewUrl ? [
+    { type: 'Action.OpenUrl', title: '✅ Analyse juste', url: payload.reviewUrl },
+    { type: 'Action.OpenUrl', title: '✏️ Corriger', url: `${payload.reviewUrl}?v=fix` },
+  ] : []
+  actions.push({ type: 'Action.OpenUrl', title: 'Page de statut', url: payload.statusPageUrl })
+  return { type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', contentUrl: null,
+    content: { $schema: 'http://adaptivecards.io/schemas/adaptive-card.json', type: 'AdaptiveCard', version: '1.4', body, actions } }] }
+}
+
+export async function sendTeamsAlert(payload: AlertPayload) {
+  const url = payload.client.teamsWebhook
+  if (!url || !(await isSafeWebhookTarget(url))) return
+  try {
+    await axios.post(url, teamsCard(payload), { timeout: 5000 })
+    logger.info('[Alert] Teams sent', { job: payload.jobName })
+  } catch (err) {
+    logger.error('[Alert] Teams failed', { err: (err as Error).message })
+    bumpNotifyFail('teams')
+  }
+}
+
 export async function sendAlert(payload: AlertPayload) {
   await Promise.allSettled([
     sendSlackAlert(payload),
     sendEmailAlert(payload),
     sendWebhookAlert(payload),
+    sendTeamsAlert(payload),
   ])
 }
 
@@ -271,6 +319,7 @@ export interface RecoveryPayload {
     email:         string
     slackWebhook?: string
     webhookUrl?:   string
+    teamsWebhook?: string
   }
 }
 
@@ -319,7 +368,16 @@ export async function sendRecovery(p: RecoveryPayload) {
     })
   }
 
-  const results = await Promise.allSettled([slack(), email(), webhook()])
+  const teams = async () => {
+    if (!p.client.teamsWebhook || !(await isSafeWebhookTarget(p.client.teamsWebhook))) return
+    await axios.post(p.client.teamsWebhook, { type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', contentUrl: null,
+      content: { $schema: 'http://adaptivecards.io/schemas/adaptive-card.json', type: 'AdaptiveCard', version: '1.4', body: [
+        { type: 'TextBlock', size: 'Large', weight: 'Bolder', color: 'Good', wrap: true, text: `✅ Rétabli : ${p.jobName} (${p.env})` },
+        ...(downtime ? [{ type: 'TextBlock', text: `Durée de l'incident : ${downtime}`, wrap: true }] : []),
+      ] } }] }, { timeout: 5000 })
+  }
+
+  const results = await Promise.allSettled([slack(), email(), webhook(), teams()])
   for (const r of results) if (r.status === 'rejected') logger.error('[Alert] Recovery channel failed', { err: r.reason })
   logger.info('[Alert] Recovery sent', { job: p.jobName, downtime })
 }

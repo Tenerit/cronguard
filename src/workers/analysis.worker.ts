@@ -16,6 +16,7 @@ import { hashError, sanitizeLogs } from '../services/sanitizer'
 import { getPingQueue, getAnalysisQueue, PingJob, AnalysisJob } from '../queue'
 import { getRedis }      from '../config/redis'
 import { writeHeartbeat } from './self-monitor.worker'
+import { signReviewToken } from '../services/review-links'
 
 const APP_URL = process.env.APP_URL ?? 'http://localhost:3000'
 
@@ -105,7 +106,7 @@ function createPingWorker() {
             la?.severity ?? null, la?.category ?? null, la?.data_impact ?? null, rootCause, la?.id ?? null])
 
         const { rows: [rc] } = await db.query(`
-          SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url
+          SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url, c.teams_webhook
           FROM monitors m JOIN clients c ON c.id = m.client_id WHERE m.id = $1
         `, [monitorId])
         if (rc) {
@@ -113,7 +114,7 @@ function createPingWorker() {
             jobName: rc.name, env: rc.env,
             downMs:  durationMs,
             statusPageUrl: `${APP_URL}/status/${monitorId}`,
-            client: { email: rc.email, slackWebhook: rc.slack_webhook, webhookUrl: rc.webhook_url },
+            client: { email: rc.email, slackWebhook: rc.slack_webhook, webhookUrl: rc.webhook_url, teamsWebhook: rc.teams_webhook },
           })
         }
       }
@@ -310,7 +311,7 @@ function createAnalysisWorker() {
 
     // Guard : client et monitor doivent toujours exister
     const { rows: [client] } = await db.query(
-      `SELECT email, slack_webhook, webhook_url, plan FROM clients WHERE id=$1`, [ctx.clientId]
+      `SELECT email, slack_webhook, webhook_url, teams_webhook, plan FROM clients WHERE id=$1`, [ctx.clientId]
     )
     if (!client) { logger.warn('[Worker] Client supprimé, job ignoré', { clientId: ctx.clientId }); return }
 
@@ -395,7 +396,9 @@ function createAnalysisWorker() {
         analysis, alertCount: alertState.alertCount, firstFired: alertState.firstFired,
         statusPageUrl: `${APP_URL}/status/${ctx.monitorId}`,
         fixUrl: analysisId ? `${APP_URL}/dashboard#fix=${analysisId}` : undefined,
-        client: { email: client.email, slackWebhook: client.slack_webhook, webhookUrl: client.webhook_url },
+        // Valider / corriger depuis l'alerte, sans se connecter (astreinte) : lien signé pour CETTE analyse.
+        reviewUrl: analysisId ? `${APP_URL}/r/${await signReviewToken(analysisId)}` : undefined,
+        client: { email: client.email, slackWebhook: client.slack_webhook, webhookUrl: client.webhook_url, teamsWebhook: client.teams_webhook },
       })
     }
 

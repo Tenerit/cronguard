@@ -56,14 +56,10 @@ export async function metricsHandler(req: Request, res: Response) {
     try { dlqDepth   = await redis.llen('cronguard:dlq:llm-analysis') } catch { /* idem */ }
 
     // Échecs de livraison de notification (counter cumulé, incrémenté par les workers).
-    const notifyFail: Record<string, number> = { email: 0, slack: 0, webhook: 0 }
+    const notifyFail: Record<string, number> = { email: 0, slack: 0, webhook: 0, teams: 0 }
     try {
-      const [e, s, w] = await Promise.all([
-        redis.get('metrics:notify_fail:email'),
-        redis.get('metrics:notify_fail:slack'),
-        redis.get('metrics:notify_fail:webhook'),
-      ])
-      notifyFail.email = Number(e ?? 0); notifyFail.slack = Number(s ?? 0); notifyFail.webhook = Number(w ?? 0)
+      const vals = await Promise.all(Object.keys(notifyFail).map(c => redis.get(`metrics:notify_fail:${c}`)))
+      Object.keys(notifyFail).forEach((c, i) => { notifyFail[c] = Number(vals[i] ?? 0) })
     } catch { /* redis down → 0 */ }
 
     const statusCounts: Record<string, number> = { ok: 0, late: 0, failed: 0, unknown: 0 }
