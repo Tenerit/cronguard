@@ -33,6 +33,13 @@ const EXPECTED: Record<string, string | null> = {
   'query-statement-timeout': 'pg-statement-timeout',
   'fork-cannot-allocate':    'fork-failed',
   'csv-encoding-garbage':    'utf8-decode',
+  // Fiches génériques ajoutées d'après les échecs du labo (jeu de réglage) :
+  'econnreset-mid-transfer':  'connection-reset',
+  'route-unreachable-vpn':    'host-unreachable',
+  'http-client-timeout':      'network-timeout',
+  'api-key-revoked-401':      'http-401',
+  'vendor-maintenance-503':   'http-503',
+  'geocoding-quota-exceeded': 'api-quota',
 }
 
 // Messages standard des outils (forme documentée), un par pack ajouté, plus des voisins
@@ -108,11 +115,16 @@ const SAMPLES: Array<[string, string | null]> = [
   ["UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe9 in position 10: invalid continuation byte", 'utf8-decode'],
   ['SyntaxError: Unexpected token \'<\', "<!DOCTYPE "... is not valid JSON', 'json-not-json'],
   ['file has vanished: "/var/log/app/x.log.1"\nrsync warning: some files vanished before they could be transferred (code 24) at main.c(1338)', 'rsync-vanished'],
+  ['docker: Error response from daemon: no space left on device.', 'docker-no-space'],
+  ['PHP Warning:  mysqli::__construct(): (HY000/2002): No such file or directory', 'mysql-socket-env'],
+  ["mysqldump: Got error: 1045: Access denied for user 'u'@'localhost' (using password: NO) when trying to connect", 'mysql-no-password-sent'],
+  ['WebDriverException: Message: unknown error: Chrome failed to start: exited abnormally', 'chrome-failed-start'],
+  ['/usr/local/bin/redmine-email.sh: line 5: rake: command not found', 'command-not-found'],
   // Voisins à ne pas confondre
   ['GET /api/orders/42 -> 404 Not Found', null],
   ['Error: not found: invoice 8812', null],
-  ['401 Unauthorized: the provided authorization grant is invalid, expired, or revoked', null],
-  ['Permission denied: /var/log/app.log', null],
+  ['401 Unauthorized: the provided authorization grant is invalid, expired, or revoked', 'http-401'],   // pas « identifiants cloud expirés »
+  ['Permission denied: /var/log/app.log', 'permission-denied'],   // générique, en dernier
   ['certificate has expired', 'tls-cert-expired'],   // expiré ≠ CA inconnue : le pack « expiré » passe avant
   ['x509: certificate has expired or is not yet valid', 'tls-cert-expired'],          // pas « horloge décalée »
   ['FATAL: JavaScript heap out of memory\nAborted (core dumped)', 'node-heap-oom'],   // pas « segfault »
