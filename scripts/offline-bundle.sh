@@ -16,6 +16,8 @@ OLLAMA_IMAGE="${OLLAMA_IMAGE:-ollama/ollama:0.5.7}"
 TAG="cronguard:$(git rev-parse --short HEAD 2>/dev/null || echo local)"
 cd "$(dirname "$0")/.."
 mkdir -p "$OUT"
+# Monté dans un conteneur : "$PWD/$OUT" casse si OUT est absolu ; pwd -W = chemin Windows sous Git Bash.
+OUT_ABS="$(cd "$OUT" && { pwd -W 2>/dev/null || pwd; })"
 
 echo "▸ Image CronGuard ($TAG)"
 docker build -q -f Dockerfile.allinone -t "$TAG" . >/dev/null
@@ -28,7 +30,7 @@ if [[ $WITH_MODEL -eq 1 ]]; then
   vol="cg-bundle-models-$$"
   docker run --rm -v "$vol:/root/.ollama" --entrypoint sh "$OLLAMA_IMAGE" \
     -c "ollama serve >/dev/null 2>&1 & sleep 3 && ollama pull $MODEL"
-  docker run --rm -v "$vol:/m" -v "$PWD/$OUT:/out" --entrypoint sh "$TAG" -c 'cd /m && tar czf /out/ollama-models.tar.gz .'
+  docker run --rm -v "$vol:/m" -v "$OUT_ABS:/out" --entrypoint sh "$TAG" -c 'cd /m && tar czf /out/ollama-models.tar.gz .'
   docker volume rm "$vol" >/dev/null
 fi
 
