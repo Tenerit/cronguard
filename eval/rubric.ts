@@ -87,6 +87,26 @@ export const LABELS: Record<string, Label> = {
   'pub-s3-upload-expired-token':            { mech: /\bsts\b|temporaire|temporary|durée|duration|session/i, act: /renouvel|refresh|nouveau jeton|nouveaux identifiants|credentials|durée|duration|rôle|role/i, key: /ExpiredToken|expired/ },
   'pub-node-heap-oom-backup':               { mech: /défaut|default|volume|taille|trop (gros|grand|volumineux)|max-old-space|NODE_OPTIONS/i,
                                               act: /max-old-space|NODE_OPTIONS|mémoire|memory|heap|tas|\blots?\b|morceaux/i, key: /heap/ },
+
+  // ── Public2 (TEST, collecté après le gel des fiches ; cause = réponse acceptée) ──
+  'p2-cron-perm-denied-owner':   { mech: /utilisateur|propriétaire|owner|www-data|apache|droits? (sur|du|d'écriture)/i, act: /chown|chmod|www-data|utilisateur|crontab -u|\bsu\b/i, key: /permission denied/i },
+  'p2-php-mysqli-env-vars':      { mech: /variables?|environnement|DB_SERVER|non définies?|vides?/i, act: /variables?|crontab|export|environnement|DB_/i, key: /No such file or directory/ },
+  'p2-rake-path-rvm':            { mech: /\bpath\b|rvm|chemin/i, act: /\bpath\b|chemin|absolu|rvm|which/i, key: /command not found/ },
+  'p2-crontab-percent':          { mech: /%|pourcent|percent/i, act: /%|échapp|escape/i, key: /backquote|Syntax error/ },
+  'p2-mysqldump-p-space':        { mech: /espace|space|-p ?(collé|sans espace)|mot de passe (n'est |n'a )?(pas|jamais) (été )?(transmis|passé|fourni|envoyé)|sans mot de passe/i,
+                                   act: /espace|space|-p|my\.cnf|defaults-extra-file/i, key: /1045/ },
+  'p2-pg-dump-pgpass-root':      { mech: /\broot\b|\.pgpass|pgpass|\bhome\b|utilisateur du cron/i, act: /\.pgpass|pgpass|\broot\b|crontab -e|PGPASSWORD|PGPASSFILE/i, key: /no password supplied/ },
+  'p2-docker-no-space':          { mech: /--rm|conteneurs?|volumes? docker|images? docker|docker (system )?prune/i, act: /--rm|prune|conteneurs?|volumes?|images?/i, key: /no space left/i },
+  'p2-cron-malware':             { mech: /compromis|malware|virus|piraté|intrus|attaque|crypto-?min|malveillant/i, act: /compromis|réinstall|malware|nettoy|mot de passe|\bssh\b|isoler|supprim/i, key: /\.X17-unix|\.bashtemp/ },
+  'p2-curl-60-ca-bundle':        { mech: /\bca\b|bundle|cacert|autorit|certificats? (racines?|ca)|update-ca|magasin/i, act: /update-ca|cacert|bundle|\bca\b|certificats?/i, key: /\b60\b/ },
+  'p2-spring-sftp-duplicate':    { mech: /\bbug\b|version|plusieurs instances|concurren|simultan|on conflict|doublon|duplicate/i, act: /mettre à jour|upgrade|version|on conflict|verrou|lock|une seule instance/i, key: /MessagingException|synchroniz/ },
+  'p2-ffmpeg-display-boot':      { mech: /pas (encore )?(prête|démarrée|lancée|disponible)|au démarrage|après (le )?(re)?démarrage|reboot|attendre|délai/i, act: /attendre|délai|sleep|après|plus tard|@reboot/i, key: /Cannot open display/ },
+  'p2-python-ascii-encode':      { mech: /locale|encodage (par défaut|du terminal|de sortie)|default encoding|utf-?8|lc_all|\blang\b/i, act: /utf-?8|encode|lc_all|\blang\b|pythonioencoding|locale/i, key: /UnicodeEncodeError/ },
+  'p2-node-path-global':         { mech: /node_path|modules? globa|environnement|npm (install )?-g|chemin des modules/i, act: /node_path|npm install|chemin|environnement/i, key: /Cannot find module/ },
+  'p2-php-oom-ssh-safe-mode':    { mech: /\bssh\b|mode (sans échec|safe)|cpanel/i, act: /\bssh\b|cpanel|redémarr|\bport\b/i, key: /Out of memory/ },
+  'p2-aws-env-cron':             { mech: /variables? d'environnement|environnement (du )?cron|crontab|aws_access_key|non définies?|\bhome\b|profil/i, act: /crontab|variables?|aws_access_key|aws configure|environnement|profil|credentials/i, key: /Unable to locate credentials/ },
+  'p2-selenium-path':            { mech: /\bpath\b|chemin|\/usr\/s?bin/i, act: /\bpath\b|chemin|\/usr\/s?bin/i, key: /Chrome failed to start/ },
+  'p2-git-ssh-key-cron':         { mech: /clé ssh|ssh key|\bagent\b|passphrase|mot de passe|clé (privée|dédiée)/i, act: /clé|\bkey\b|https|ssh-keygen|\bagent\b/i, key: /Permission denied/ },
 }
 
 // Actions qui aggravent ou masquent la panne : 0 point d'action, même si la regex ACT passe.

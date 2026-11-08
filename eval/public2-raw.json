@@ -1,0 +1,242 @@
+[
+  {
+    "query": "cron permission denied",
+    "site": "stackoverflow",
+    "title": "Cron job and folders permissions - permission denied",
+    "url": "https://stackoverflow.com/questions/10598530/cron-job-and-folders-permissions-permission-denied",
+    "logs": "permission denied",
+    "answer": "The probable answer is that the cron job executes under your user - and the directory is owned by apache (or www-data or nobody or whatever user your web server runs as). To get it to work, you could set up the cron job to run as the web server user. Something like this: su -l www-data -c 'crontab -e' Alternatively, you could change the permissions to 775 (read-write-execute for the owner and group, and read-execute for others) and set the group ownership of the folder to the user running the cron job. However, you have to make sure that if you're deleting something or descending into folder which is created by apache, you could still run into problems (apache would create a file which it it"
+  },
+  {
+    "query": "cron no such file or directory",
+    "site": "stackoverflow",
+    "title": "PHP Warning: mysqli::__construct(): (HY000/2002): No such file or directory (Debian GNU/Linux 9)",
+    "url": "https://stackoverflow.com/questions/53660726/php-warning-mysqli-construct-hy000-2002-no-such-file-or-directory-deb",
+    "logs": "function db_connect() {\n    $connection = new mysqli(DB_SERVER, DB_USER, DB_PASS, DB_NAME);\n    confirm_db_connect($connection);\n    return $connection;\n}\n\nfunction confirm_db_connect($connection) {\n    if ($connection->connect_errno) {\n        $msg = 'Database connection failed: ';\n        $msg .= $connection->connect_error;\n        $msg .= ' (' . $connection->connect_errno . ')';\n        exit($msg);\n    }\n}\n",
+    "answer": "I solved the issue! I placed my variables into crontab -e file before cron jobs but without export command. DB_SERVER='*here db credential*' DB_USER='*here db credential*' DB_PASS='*here db credential*' DB_NAME='*here db credential*' It makes the variables accessible for all cron jobs. So when I am using cron jobs it works just fine! "
+  },
+  {
+    "query": "cron command not found",
+    "site": "stackoverflow",
+    "title": "Rake: command not found when running cron job",
+    "url": "https://stackoverflow.com/questions/32135701/rake-command-not-found-when-running-cron-job",
+    "logs": "Date: Fri, 21 Aug 2015 08:23:01 GMT\nMessage-Id: <201508210823.t7L8N1U6031959@ip-172-xx-xx-xxx>\nX-Authentication-Warning: ip-172-xx-xx-xxx: ec2-user set sender to root using -f\nFrom: root@ip-172-xx-xx-xxx (Cron Daemon)\nTo: ec2-user@ip-172-xx-xx-xxx\nSubject: Cron <ec2-user@ip-172-xx-xx-xxx> sh /usr/local/bin/redmine-email.sh\nContent-Type: text/plain; charset=UTF-8\nAuto-Submitted: auto-generated\nX-Cron-Env: <LANG=en_US.UTF-8>\nX-Cron-Env: <SHELL=/bin/sh>\nX-Cron-Env: <HOME=/home/ec2-user>\nX-Cron-Env: <PATH=/usr/bin:/bin>\nX-Cron-Env: <LOGNAME=ec2-user>\nX-Cron-Env: <USER=ec2-user>\n\n/usr/local/bin/redmine-email.sh: line 5: rake: command not found\n",
+    "answer": "The issue here was that cron didn't have the PATH information. Added this and the job runs without an issue. The following information was entered into crontab and voila. PATH=\"/home/ec2-user/.rvm/gems/ruby-1.9.3-p551/bin:/home/ec2-user/.rvm/gems/ruby-1.9.3-p551@global/bin:/home/ec2-user/.rvm/rubies/ruby-1.9.3-p551/bin:/home/ec2-user/.rvm/gems/ruby-1.9.3-p551/bin:/home/ec2-user/.rvm/gems/ruby-1.9.3-p551@global/bin:/home/ec2-user/.rvm/rubies/ruby-1.9.3-p551/bin:/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/opt/aws/bin:/home/ec2-user/.rvm/bin:/home/ec2-user/bin\" GEM_HOME='/home/ec2-user/.rvm/gems/ruby-1.9.3-p551' GEM_PATH='/home/ec2-user/.rvm/gems/ruby-1.9.3-p551:/home/ec2-user"
+  },
+  {
+    "query": "cron python ModuleNotFoundError",
+    "site": "stackoverflow",
+    "title": "ModuleNotFoundError: No module named 'pandas' in GitHub Actions",
+    "url": "https://stackoverflow.com/questions/70636392/modulenotfounderror-no-module-named-pandas-in-github-actions",
+    "logs": "Traceback (most recent call last):\n  File \"/home/runner/work/review_reports/review_reports/review_reports.py\", line 7, in <module>\n    import pandas as pd\nModuleNotFoundError: No module named 'pandas'\n",
+    "answer": "You actually need to install python dependencies (after the setup) before running your python script: Something like this (in an intermediary step for example): - name: Install Python dependencies run: python -m pip install --upgrade pip pandas Note: You will need to install all necessary dependencies that way, or use a requirements.txt file, or even a virtual environment for example. If this is the only dependency your python script needs, your workflow could therefore look like this: name: run_script on: schedule: - cron: \"8 0 * * *\" #runs at 08:00 UTC everyday jobs: run_review_reports: runs-on: ubuntu-latest steps: - name: checkout repo content uses: actions/checkout@v2 # checkout the rep"
+  },
+  {
+    "query": "cron not a tty",
+    "site": "stackoverflow",
+    "title": "How do I pickle a file containing strings?",
+    "url": "https://stackoverflow.com/questions/57019753/how-do-i-pickle-a-file-containing-strings",
+    "logs": "Apr 29 06:56:48 example-server sshd[38254]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=123.183.209.132  user=root\nApr 29 06:56:50 example-server CRON[33299]: pam_unix(cron:session): session closed for user root\nApr 29 06:56:50 example-server sshd[38254]: Failed password for root from 123.183.209.132 port 55181 ssh2\nApr 29 06:56:56 example-server sshd[38254]: message repeated 2 times: [ Failed password for root from 123.183.209.132 port 55181 ssh2]\nApr 29 06:56:59 example-server sshd[38254]: fatal: Read from socket failed: Connection reset by peer [preauth]\nApr 29 06:56:59 example-server sshd[38254]: PAM 2 more authentication failures; logname= uid=0 euid=0 tty=ssh ruser= rhost=123.183.209.132  user=root\n\n---\nTypeError: a bytes-like object is required, not 'str'\n",
+    "answer": "Seams like your log file wasn't created by the pickle module. The pickle module implements binary protocols for serializing and de-serializing a Python object structure. “Pickling” is the process whereby a Python object hierarchy is converted into a byte stream, and “unpickling” is the inverse operation [1] So a better approach might be loading your log file and parsing it as text. For example you could select all fatal errors using something like: db = [] with open('auth.log', 'r') as logs: for log in logs: #for each line if 'fatal' in log: db.append(log) You can find more about log file parsing here. "
+  },
+  {
+    "query": "crontab syntax error",
+    "site": "stackoverflow",
+    "title": "CRONTAB syntax error",
+    "url": "https://stackoverflow.com/questions/7068759/crontab-syntax-error",
+    "logs": "Subject: Cron <root> ET=`date --date 'yesterday' + (failed)\nContent-Type: text/plain; charset=ANSI_X3.4-1968\nX-Cron-Env: <SHELL=/bin/sh>\nX-Cron-Env: <HOME=/root>\nX-Cron-Env: <PATH=/usr/bin:/bin>\nX-Cron-Env: <LOGNAME=root>\n\n/bin/sh: Syntax error: EOF in backquote substitution\n",
+    "answer": "Cron needs to escape the % sign - http://www.hcidata.info/crontab.htm Try it with a backslash: 57 1 * * 2-6 ET=`date --date 'yesterday' +\\%Y\\%m\\%d`;echo $ET "
+  },
+  {
+    "query": "cron Host key verification failed",
+    "site": "stackoverflow",
+    "title": "When I enable SSL on apache2 ubuntu server both http and https does not work",
+    "url": "https://stackoverflow.com/questions/59129627/when-i-enable-ssl-on-apache2-ubuntu-server-both-http-and-https-does-not-work",
+    "logs": "<IfModule mod_ssl.c>\n        <VirtualHost _default_:443>\n                ServerAdmin admin@MyWebSit.com\n                ServerName MyWebSite.com\n                ServerAlias www.MyWebSite.com\n\n                DocumentRoot /var/www/html\n\n                # Available loglevels: trace8, ..., trace1, debug, info, notice, warn,\n                # error, crit, alert, emerg.\n                # It is also possible to configure the loglevel for particular\n                # modules, e.g.\n                #LogLevel info ssl:warn\n\n                ErrorLog ${APACHE_LOG_DIR}/error.log\n                CustomLog ${APACHE_LOG_DIR}/access.log combined\n\n                # For most configuration files from conf-available/, which are\n                # enabled or disabled at a global level, it is possible to\n                # include a line for only one particular virtual host. For example the\n                # following line enables the CGI configuration for this host only\n                # after it has been globally disabled with \"a2disconf\".\n                #Include conf-available/serve-cgi-bin.conf\n\n                #   SSL Engine Switch:\n                #   Enable/Disable SSL for this virtual host.\n                SSLEngine on\n\n                #   A self-signed (snakeoil) certificate can be created by installing\n                #   the ssl-cert package. See\n                #   /usr/share/doc/apache2/README.Debian.gz for more info.\n                #   If both key and certificate are stored in the sam",
+    "answer": "After a lot of searching I found out that it was due to my key being corrupt. I was able to determine this by checking the apache error log: sudo nano /var/log/apache2/error.log [Mon Dec 02 11:08:57.784521 2019] [ssl:error] [pid 4560] AH02579: Init: Private key not found [Mon Dec 02 11:08:57.784840 2019] [ssl:error] [pid 4560] SSL Library Error: error:0D0680A8:asn1 encoding routines:asn1_check_tlen:wrong tag [Mon Dec 02 11:08:57.784922 2019] [ssl:error] [pid 4560] SSL Library Error: error:0D08303A:asn1 encoding routines:asn1_template_noexp_d2i:nested asn1 error [Mon Dec 02 11:08:57.784990 2019] [ssl:error] [pid 4560] SSL Library Error: error:0D0680A8:asn1 encoding routines:asn1_check_tlen:wr"
+  },
+  {
+    "query": "cron mysqldump error",
+    "site": "stackoverflow",
+    "title": "cron mysqldump saying not using password",
+    "url": "https://stackoverflow.com/questions/22561223/cron-mysqldump-saying-not-using-password",
+    "logs": "Enter password: mysqldump: Got error: 1045: Access denied for user 'user_name'@'localhost' (using password: NO) when trying to connect\n",
+    "answer": "There shouldn't be any space between the -p and your password. For example, this is correct: -pPASSWORD This is wrong -p PASSWORD And you are doing: -p \".$dbpass.\" ^ space here "
+  },
+  {
+    "query": "cron pg_dump",
+    "site": "stackoverflow",
+    "title": "Why pg_dump was not getting the password in cron job?",
+    "url": "https://stackoverflow.com/questions/24542823/why-pg-dump-was-not-getting-the-password-in-cron-job",
+    "logs": "pg_dump: [archiver (db)] connection to database \"mydbname\" failed: fe_sendauth: no password supplied\n",
+    "answer": "If, as you stated in the comments, you did sudo crontab -e then you are editing the crontab of root, not the crontab of your own user. Therefore the home directory that will be used will be root's home directory (normally /root, but I am not certain for Ubuntu). Although you did not explicitly say so I am guessing you put the .pgpass file in the home directory of your user. It is not necessary, or even a good idea, to run pg_backup as root, so I recommend putting your backup job in the crontab of your regular user. "
+  },
+  {
+    "query": "cron rsync error",
+    "site": "stackoverflow",
+    "title": "Python rsync error in reading remote root-level files",
+    "url": "https://stackoverflow.com/questions/32934158/python-rsync-error-in-reading-remote-root-level-files",
+    "logs": "local server:$ backup.py\nbash: sudo rsync: command not found\nrsync: connection unexpectedly closed (0 bytes received so far) [Receiver]\nrsync error: remote command not found (code 127) at io.c(226) [Receiver=3.1.0]\n...\n",
+    "answer": "It is most likely a spacing error or something small, the way I debug commands is to make sure to prints out. OS.system is a great alternative thats easier although subprocess is better. I am not around my computer to test it but you can either set your subprocess like that, or use this example. This is assuming your on Linux or Mac. import os cmd = ('rsync -ave --delete root' +str(src_host) + str(src_directory) + '' + str(dst_dir)) #variable you can call anytime os.system(cmd) # actually performs the command print x # how to test and make sure "
+  },
+  {
+    "query": "cron No space left on device",
+    "site": "stackoverflow",
+    "title": "No space left on device due to docker/cron",
+    "url": "https://stackoverflow.com/questions/56381961/no-space-left-on-device-due-to-docker-cron",
+    "logs": "docker: Error response from daemon: no space left on device.\n",
+    "answer": "When running containers that you do not need to keep in a stopped state, it's a good practice to use docker run --rm ... to automatically cleanup the stopped container. If the container generates volumes, visible in docker volume ls, you'll likely want to clean these once the data is no longer needed. with the --rm flag on run, anonymous volumes (which appear as a long unique id) will be automatically deleted. Docker also provides the command: docker system prune which you can automate to cleanup images, containers, networks, and even volumes. Note that you should take time to understand what this command does before running it, and especially before automating it. When scripting this comman"
+  },
+  {
+    "query": "cron Killed",
+    "site": "stackoverflow",
+    "title": "cron killed by system",
+    "url": "https://stackoverflow.com/questions/59411428/cron-killed-by-system",
+    "logs": "Dec 18 23:59:01 localhost CRON[32201]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 60 2)\nDec 19 00:00:01 localhost CRON[1147]: (root) CMD (/tmp/.X17-unix/.rsync/c/aptitude>/dev/null 2>&1)\nDec 19 00:00:01 localhost CRON[1149]: (wp) CMD (/var/lib/docker/volumes/root_wp_data/_data/.bashtemp/a/upd>/dev/null 2>&1)\nDec 19 00:00:01 localhost CRON[1148]: (root) CMD (/usr/lib/armbian/armbian-apt-updates)\nDec 19 00:00:01 localhost CRON[1150]: (root) CMD (/usr/lib/armbian/armbian-truncate-logs)\nDec 19 00:00:01 localhost CRON[1153]: (root) CMD (test -x /usr/bin/certbot -a \\! -d /run/systemd/system && perl -e 'sleep int(rand(43200))' && certbot -q renew)\nDec 19 00:00:01 localhost CRON[1152]: (root) CMD (/root/.nullcache/a/upd>/dev/null 2>&1)\nDec 19 00:00:01 localhost CRON[1158]: (wp) CMD (/tmp/.X19-unix/.rsync/c/aptitude>/dev/null 2>&1)\nDec 19 00:00:01 localhost systemd[1]: cron.service: Main process exited, code=killed, status=9/KILL\nDec 19 00:00:01 localhost systemd[1]: cron.service: Unit entered failed state.\nDec 19 00:00:01 localhost systemd[1]: cron.service: Failed with result 'signal'.\nDec 19 00:58:57 localhost dhclient[2585]: DHCPREQUEST of 192.168.1.11 on wlan0 to 192.168.1.1 port 67 (xid=0x5584c9ee)\nDec 19 02:08:42 localhost dhclient[2585]: message repeated 312 times: [ DHCPREQUEST of 192.168.1.11 on wlan0 to 192.168.1.1 port 67 (xid=0x5584c9ee)]\n\n---\n● cron.service - Regular background program processing daemon\n   Loaded: loaded (/lib/systemd/system/cron.service;",
+    "answer": "Your account was compromised (I had the similar issue just couple of days ago). Look at this for quik solution: crond64/tsm virus in Ubuntu. And also very good detailed report (in Russian): Тайная жизнь Linux сервера или веерная брутфорс атака на подсистему SSH, translated as something like: The secret life of a Linux server or fan brute force attack on the SSH subsystem. "
+  },
+  {
+    "query": "cron curl certificate",
+    "site": "stackoverflow",
+    "title": "How to fix Curl error 60 without downloading cert",
+    "url": "https://stackoverflow.com/questions/50973313/how-to-fix-curl-error-60-without-downloading-cert",
+    "logs": "[Thu Jun 21 14:55:36 2018] [error] [client xxx.xx.xxx.xx] PHP Fatal error:  Uncaught exception 'Guzzle\\\\Http\\\\Exception\\\\CurlException' with message '[curl] 60:  [url] https://identity.api.rackspacecloud.com/v2.0/tokens' in \n\n/var/www/passline.com/vendor/guzzle/http/Guzzle/Http/Curl/CurlMulti.php:359\\nStack trace:\\n#0\n\n/var/www/passline.com/vendor/guzzle/http/Guzzle/Http/Curl/CurlMulti.php(292): Guzzle\\\\Http\\\\Curl\\\\CurlMulti->isCurlException(Object(Guzzle\\\\Http\\\\Message\\\\EntityEnclosingRequest), Object(Guzzle\\\\Http\\\\Curl\\\\CurlHandle), Array)\\n#1    \n\n/var/www/passline.com/vendor/guzzle/http/Guzzle/Http/Curl/CurlMulti.php(257): Guzzle\\\\Http\\\\Curl\\\\CurlMulti->processResponse(Object(Guzzle\\\\Http\\\\Message\\\\EntityEnclosingRequest), \nObject(Guzzle\\\\Http\\\\Curl\\\\CurlHandle), Array)\\n#2     \n\n/var/www/passline.com/vendor/guzzle/http/Guzzle/Http/Curl/CurlMulti.php(240): Guzzle\\\\Http\\\\Curl\\\\CurlMulti->processMessages()\\n#3    \n\n/var/www/passline.com/vendor/guzzle/http/Guzzle/Http/Curl/CurlMulti.php(224): Guzzle\\\\Http\\\\Curl\\\\CurlMulti->executeHandles()\\n#4\n\n/var/www/passline.com/vendor/guzzle/http/Guzzle/Http/Curl/CurlMulti.php(111)\n",
+    "answer": "This issue was caused by the change in the certificates of curl. From https://curl.haxx.se/docs/caextract.html This bundle was generated at Wed Jun 20 03:12:06 2018 GMT . There is a tool on linux called update-ca-certificates who solves this problem, also, the curl site say's you can run curl --remote-name --time-cond cacert.pem https://curl.haxx.se/ca/cacert.pem Just consider any of these commands may be needed to run again in the future if the certificates are renovated again. "
+  },
+  {
+    "query": "cron Could not resolve host",
+    "site": "stackoverflow",
+    "title": "Artifactory hosted Chef Supermarket + Chef Server integration",
+    "url": "https://stackoverflow.com/questions/58339771/artifactory-hosted-chef-supermarket-chef-server-integration",
+    "logs": "user@workstation:~/chef-ops$ knife ssh 'name:vm01' sudo chef-client -x <user> -P <password>\nvm01 knife sudo password:\nvm01\nvm01 Starting Chef Infra Client, version 15.3.14\nvm01 resolving cookbooks for run list: [\"repository\"]\nvm01\nvm01 ================================================================================\nvm01 Error Resolving Cookbooks for Run List:\nvm01 ================================================================================\nvm01\nvm01 Missing Cookbooks:\nvm01 ------------------\nvm01 The following cookbooks are required by the client but don't exist on the server:\nvm01 * repository\nvm01\nvm01\nvm01 Expanded Run List:\nvm01 ------------------\nvm01 * repository\nvm01\nvm01 System Info:\nvm01 ------------\nvm01 chef_version=15.3.14\nvm01 platform=ubuntu\nvm01 platform_version=18.04\nvm01 ruby=ruby 2.6.4p104 (2019-08-28 revision 67798) [x86_64-linux]\nvm01 program_name=/usr/bin/chef-client\nvm01 executable=/opt/chef/bin/chef-client\nvm01\nvm01\nvm01 Running handlers:\nvm01 [2019-10-11T10:28:05+00:00] ERROR: Running exception handlers\nvm01 Running handlers complete\nvm01 [2019-10-11T10:28:05+00:00] ERROR: Exception handlers complete\nvm01 Chef Infra Client failed. 0 resources updated in 04 seconds\nvm01 [2019-10-11T10:28:05+00:00] FATAL: Stacktrace dumped to /var/chef/cache/chef-stacktrace.out\nvm01 [2019-10-11T10:28:05+00:00] FATAL: Please provide the contents of the stacktrace.out file if you file a bug report\nvm01 [2019-10-11T10:28:05+00:00] FATAL: Net::HTTPServerException: 412 \"P",
+    "answer": "AFAIK: Chef Supermarket and Chef Infra Server (Bookshelf) are not connected so there is no automatic cookbook resolution. You would need a process that uploads the cookbooks from the supermarket/Artifactory to the Chef server or use the Policyfiles https://docs.chef.io/policyfile.html approach. "
+  },
+  {
+    "query": "cron database is locked",
+    "site": "stackoverflow",
+    "title": "How can I ensure that multiple instances of my Spring Integration application do not process the same SFTP file simultaneously?",
+    "url": "https://stackoverflow.com/questions/78979169/how-can-i-ensure-that-multiple-instances-of-my-spring-integration-application-do",
+    "logs": "2024-09-13T10:50:02.499-04:00 ERROR 16323 --- [some-service] [   scheduling-1] o.s.integration.handler.LoggingHandler   : org.springframework.messaging.MessagingException: Problem occurred while synchronizing '/remote-file-path' to local directory\n    at org.springframework.integration.file.remote.synchronizer.AbstractInboundFileSynchronizer.synchronizeToLocalDirectory(AbstractInboundFileSynchronizer.java:345)\n    at org.springframework.integration.file.remote.synchronizer.AbstractInboundFileSynchronizingMessageSource.doReceive(AbstractInboundFileSynchronizingMessageSource.java:266)\n    at org.springframework.integration.file.remote.synchronizer.AbstractInboundFileSynchronizingMessageSource.doReceive(AbstractInboundFileSynchronizingMessageSource.java:69)\n    at org.springframework.integration.endpoint.AbstractFetchLimitingMessageSource.doReceive(AbstractFetchLimitingMessageSource.java:47)\n    at org.springframework.integration.endpoint.AbstractMessageSource.receive(AbstractMessageSource.java:142)\n    at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)\n    at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)\n    at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)\n    at java.base/java.lang.reflect.Method.invoke(Method.java:568)\n    at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:355)\n    at org.springframe",
+    "answer": "We have confirmed that this is a bug in Spring Integration and it has a fix for this issue: https://github.com/spring-projects/spring-integration/issues/9481. The releases for 6.2.9, 6.3.4 and 6.4.0-M3 are going to happen today. The problem is that PostgreSQL rollbacks transaction in case of query failure. In our case we have to add ON CONFLICT DO NOTHING for the INSERT operation. In case of MySQL-based vendors, we receive CannotAcquireLockException instead of DataIntegrityViolationException. So, that one is included into the logic as well. "
+  },
+  {
+    "query": "cron cannot open display",
+    "site": "stackoverflow",
+    "title": "ffmpeg doesn't work when the script is launched by cron - No protocol specified, Cannot open display :0.0",
+    "url": "https://stackoverflow.com/questions/76178140/ffmpeg-doesnt-work-when-the-script-is-launched-by-cron-no-protocol-specified",
+    "logs": "#!/bin/bash\nlog=/var/log/log2/log2.txt\n\necho ______________ $(date) >> \"$log\"\necho \"$\"\"DISPLAY\" \"=      \"  \"$DISPLAY\" >> \"$log\" ;\necho whoami '         ' $(whoami) >> \"$log\" \necho pwd '            ' $(pwd) >> \"$log\" \necho \"$\"\"USER\" \"=\" '        ' \"$USER\" >> \"$log\"\necho PATH '           ' \"$PATH\" >> \"$log\"\necho which ffmpeg '   ' $(which ffmpeg)>> \"$log\" \necho whereis ffmpeg ' ' $(whereis ffmpeg) >> \"$log\" \necho \"\\nls -l /bin/* | grep ffmpeg\" '        ' >> \"$log\"\nls -l /usr/bin/* | grep ffmpeg >> \"$log\"\necho \"ls -l /var/log | grep log2\" ' '>> \"$log\"\nls -l /var/log | grep log2 >> \"$log\"\n\nffmpeg -y -f x11grab -s 1366x768 -i :0.0 -r 25 /var/log/log2/test.mp4 -loglevel error 2>>\"$log\" &\n\necho \"pid ffmpeg \"\"$\"\"!\"\" = \" \"$!\" >> \"$log\" \nsleep 5\nkill \"$!\"\necho exit >> \"$log\"\nexit\n\n---\n______________ ven. 05 mai 2023 04:10:01 CEST\n$DISPLAY =       \nwhoami           root\npwd              /root\n$USER =          \nPATH             /usr/bin:/bin\nwhich ffmpeg     /usr/bin/ffmpeg\nwhereis ffmpeg   ffmpeg: /usr/bin/ffmpeg /usr/share/ffmpeg /usr/share/man/man1/ffmpeg.1.gz\nls -l /usr/bin/* | grep ffmpeg  \n-rwxr-xr-x 1 root   root      284976 mai   18  2022 /usr/bin/ffmpeg\nls -l /var/log | grep log2  \ndrwxrwxrwx  2 root              root               4096 mai    5 04:09 log2\npid ffmpeg $! =  74590\nNo protocol specified\n[x11grab @ 0x56244aa06740] Cannot open display :0.0, error 1.\n:0.0: Input/output error\nexit\n",
+    "answer": "The problem was solved, the script should just wait a little after restarting the computer "
+  },
+  {
+    "query": "cron UnicodeEncodeError",
+    "site": "stackoverflow",
+    "title": "UnicodeEncodeError only when running as a cron job",
+    "url": "https://stackoverflow.com/questions/9932406/unicodeencodeerror-only-when-running-as-a-cron-job",
+    "logs": "UnicodeEncodeError: 'ascii' codec can't encode character\nu'\\xa7' in position 13: ordinal not in range(128)\n",
+    "answer": "Aside: This is a common problem; as such this is probably a duplicate question. The default encoding on 2.7 is ascii. You need to provide an encoding for your program's output. A common encoding to use is 'utf8'. So you'd do instead: print title.encode('utf8') Here's one way to check the default encoding: import sys sys.getdefaultencoding() # -> 'ascii' "
+  },
+  {
+    "query": "cron node Cannot find module",
+    "site": "stackoverflow",
+    "title": "can't import modules into a node script if it runs from cron",
+    "url": "https://stackoverflow.com/questions/25776173/cant-import-modules-into-a-node-script-if-it-runs-from-cron",
+    "logs": "Date: Wed, 10 Sep 2014 16:26:01 -0600\nFrom: Cron Daemon <root@db.local>\nTo: olmo@db.local\nSubject: Cron <olmo@db> /usr/local/bin/node /home/olmo/project/processDrivesMultiUser.js\n\n\nmodule.js:340\n    throw err;\n          ^\nError: Cannot find module 'underscore'\n    at Function.Module._resolveFilename (module.js:338:15)\n    at Function.Module._load (module.js:280:25)\n    at Module.require (module.js:364:17)\n    at require (module.js:380:17)\n    at Object.<anonymous> (/home/olmo/sandbox/api_ievwebapp/parseAdminScripts/processDrivesMultiUser.js:20:9)\n    at Module._compile (module.js:456:26)\n    at Object.Module._extensions..js (module.js:474:10)\n    at Module.load (module.js:356:32)\n    at Function.Module._load (module.js:312:12)\n    at Function.Module.runMain (module.js:497:10)\n",
+    "answer": "I could find the answer based on the comment by mu is too short. I modified the crontab to include the environmental variable NODE_PATH 3,18,33,48, * * * * export NODE_PATH=/usr/local/lib/node_modules/ && /usr/local/bin/node /home/olmo/project/processDrivesMultiUser.js now I'm able to use modules in node.js if called by cron. "
+  },
+  {
+    "query": "cron php Allowed memory size",
+    "site": "stackoverflow",
+    "title": "PHP CLI \"Out of memory\" error on VPS server running CentOS with cPanel",
+    "url": "https://stackoverflow.com/questions/15849775/php-cli-out-of-memory-error-on-vps-server-running-centos-with-cpanel",
+    "logs": "Fatal error: Out of memory (allocated 20185088) (tried to allocate 71 bytes)\n",
+    "answer": "It turns out that following an unwanted cPanel update my SSH port was changed from the default value and I was unable to login. I restarted SSH in safe mode in order to login. Today, on a hunch, I looked at the SSH port in /etc/ssh/sshd-config, restarted SSH in \"normal\" mode, and logged in with the correct port: the scripts now run perfectly. So the cause was using SSH in safe mode, just that. Hopefully this very specific problem will be useful to someone else: never use SSH safe mode for daily use unless you absolutely need to. "
+  },
+  {
+    "query": "cron docker exec",
+    "site": "stackoverflow",
+    "title": "How do i run a single docker exec command against multiple containers",
+    "url": "https://stackoverflow.com/questions/57372761/how-do-i-run-a-single-docker-exec-command-against-multiple-containers",
+    "logs": "OCI runtime exec failed: exec failed: container_linux.go:344: starting container process caused \"exec: \\\"ee89958ce4bc\\\": executable file not found in $PATH\": unknown",
+    "answer": "you can use for loop: for con in `docker ps -q` ; do echo \"$con\" && docker exec -it $con ls -l; done "
+  },
+  {
+    "query": "cron gpg",
+    "site": "stackoverflow",
+    "title": "GPG in a cron script",
+    "url": "https://stackoverflow.com/questions/30049187/gpg-in-a-cron-script",
+    "logs": "c/usr/bin/gpg --no-tty -vv --exit-on-status-write-error --batch --passphrase-file /home/backup/full/pass --cipher-algo AES256 --symmetric  fullbackup.tar.bz2 > error.log 2>&1\n\n---\n#!/bin/bash\n\n#creating the tar\ntar -cpjf /home/backup/full/fullbackup.tar.bz2 --directory=/to_backup\n#enc it\n/usr/bin/gpg --no-tty -vv --exit-on-status-write-error --batch --passphrase-file /home/backup/full/pass --cipher-algo AES256 --symmetric  fullbackup.tar.bz2 > error.log 2>&1\n\n#[...] ftp upload\n",
+    "answer": "As pointed out by Jens Erat, gpg was needing the full path to the file to encrypt. "
+  },
+  {
+    "query": "cron aws s3 Unable to locate credentials",
+    "site": "unix",
+    "title": "awscli can't see environment variables but only from cron?",
+    "url": "https://unix.stackexchange.com/questions/398110/awscli-cant-see-environment-variables-but-only-from-cron",
+    "logs": "Unable to locate credentials. You can configure credentials by running \"aws configure\"",
+    "answer": "Environment variables can be set directly in the crontab(5); this will avoid the cost and complication of the additional shell execution and source steps. That is, your hello-cron file would instead contain something like AWS_ACCESS_KEY_ID=(key removed) AWS_SECRET_ACCESS_KEY=(secret removed) AWS_DEFAULT_REGION=us-west-2 */2 * * * * root echo $AWS_DEFAULT_REGION >> /test1 2>&1 */2 * * * * root aws s3 ls >> /test2 2>&1 "
+  },
+  {
+    "query": "cron selenium chromedriver",
+    "site": "stackoverflow",
+    "title": "Selenium with chromedriver doesn't start via cron",
+    "url": "https://stackoverflow.com/questions/50117377/selenium-with-chromedriver-doesnt-start-via-cron",
+    "logs": "selenium.common.exceptions.WebDriverException: Message: unknown error: Chrome failed to start: exited abnormally (Driver info: chromedriver=2.38.552522\n\n---\nException in thread <name>:\nTraceback (most recent call last):\n  File \"/usr/lib64/python3.6/threading.py\", line 916, in _bootstrap_inner\n    self.run()\n  File \"/usr/lib64/python3.6/threading.py\", line 864, in run\n    self._target(*self._args, **self._kwargs)\n  File \"/path/to/script.py\", line 53, in start\n    self.site_scrape(test_run)\n  File \"/path/to/script.py\", line 65, in site\n    self.driver = webdriver.Chrome(chrome_options=options)\n  File \"/home/<user>/.virtualenvs/selenium/lib64/python3.6/site-packages/selenium/webdriver/chrome/webdriver.py\", line 69, in __init__\n    desired_capabilities=desired_capabilities)\n  File \"/home/<user>/.virtualenvs/selenium/lib64/python3.6/site-packages/selenium/webdriver/remote/webdriver.py\", line 98, in __init__\n    self.start_session(desired_capabilities, browser_profile)\n  File \"/home/<user>/.virtualenvs/selenium/lib64/python3.6/site-packages/selenium/webdriver/remote/webdriver.py\", line 188, in start_session\n    response = self.execute(Command.NEW_SESSION, parameters)\n  File \"/home/<user>/.virtualenvs/selenium/lib64/python3.6/site-packages/selenium/webdriver/remote/webdriver.py\", line 256, in execute\n    self.error_handler.check_response(response)\n  File \"/home/<user>/.virtualenvs/selenium/lib64/python3.6/site-packages/selenium/webdriver/remote/errorhandler.py\", line 194, in check_r",
+    "answer": "Finally found the solution. Boy this was bugging me for far too long. Issue was following missing PATH directories: /usr/bin, /usr/sbin in cron. Complete cron looks now like this: SHELL=/bin/bash PATH=/usr/local/bin/:/usr/bin:/usr/sbin * * * * * cd /to/path && /to/path/.virtualenvs/selenium/bin/python /to/path/script.py -t arg1 arg2 > /to/path/log.txt 2>&1 "
+  },
+  {
+    "query": "cron Segmentation fault",
+    "site": "stackoverflow",
+    "title": "How to find the error which is causing a segmentation fault in a script run by cron job",
+    "url": "https://stackoverflow.com/questions/13515263/how-to-find-the-error-which-is-causing-a-segmentation-fault-in-a-script-run-by-c",
+    "logs": "/var/log/httpd/error_log\n---\n[Thu Nov 21 21:30:32 2012] [notice] child pid 8985 exit signal Segmentation fault (11)\n",
+    "answer": "Try this 0 20 * * * /usr/bin/wget --timeout=10800 \\ -O /home/File.txt http://www.site.com/script.php >> /home/log.txt 2>&1 the 2>&1 part tells to send the STDERR to the same place as STDOUT. "
+  },
+  {
+    "query": "cron Connection refused",
+    "site": "stackoverflow",
+    "title": "Keep getting error status on Kubernetes Cron Job with connection refused?",
+    "url": "https://stackoverflow.com/questions/67217346/keep-getting-error-status-on-kubernetes-cron-job-with-connection-refused",
+    "logs": "---\napiVersion: batch/v1beta1\nkind: CronJob\nmetadata:\n  name: {{ .Chart.Name }}-cronjob\n  labels:\n    app: {{ .Release.Name }}\n    chart: {{ .Chart.Name }}-{{ .Chart.Version }}\n    release: {{ .Release.Name }}\nspec:\n  concurrencyPolicy: Forbid\n  successfulJobsHistoryLimit: 2\n  failedJobsHistoryLimit: 2\n  startingDeadlineSeconds: 1800\n  jobTemplate:\n    spec:\n      template:\n        metadata:\n          name: {{ .Chart.Name }}-cronjob\n          labels:\n            app: {{ .Chart.Name }}\n        spec:\n          restartPolicy: OnFailure\n          containers:\n            - name: demo\n              image: \"{{ .Values.image.repository }}:{{ .Values.image.tag }}\"\n              command: [\"/bin/sh\", \"-c\", \"curl http://localhost:8080/hello\"]\n              readinessProbe:\n                httpGet:\n                  path: \"/healthcheck\"\n                  port: 8081\n                initialDelaySeconds: 300\n                periodSeconds: 60\n                timeoutSeconds: 30\n                failureThreshold: 3\n              livenessProbe:\n                httpGet:\n                  path: \"/healthcheck\"\n                  port: 8081\n                initialDelaySeconds: 300\n                periodSeconds: 60\n                timeoutSeconds: 30\n                failureThreshold: 3\n              resources:\n                requests:\n                  cpu: 200m\n                  memory: 2Gi\n                limits:\n                  cpu: 1\n                  memory: 6Gi\n  schedule: \"*/5 * * * *\"\n\n---\n*cu",
+    "answer": "You are trying to connect to localhost:8080 with your curl which doesn't make sense from what I understand of your CronJob definition. From the docs (at https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#define-a-command-and-arguments-when-you-create-a-pod ) The command and arguments that you define in the configuration file override the default command and arguments provided by the container image. If you define args, but do not define a command, the default command is used with your new arguments. Note: The command field corresponds to entrypoint in some container runtimes. Refer to the Notes below. If you define a command for the image, even if the"
+  },
+  {
+    "query": "cron timeout",
+    "site": "stackoverflow",
+    "title": "How do I timeout a method after fixed time in java using concurrency executor future?",
+    "url": "https://stackoverflow.com/questions/57208112/how-do-i-timeout-a-method-after-fixed-time-in-java-using-concurrency-executor-fu",
+    "logs": "@Scheduled(cron = \"*/30 * * * * *\")\n    public boolean cronTest()\n    {\n        System.out.println(\"Inside cron - start \");\n        DateFormat dateFormat = new SimpleDateFormat(\"yyyy/MM/dd HH:mm:ss\");\n        Date date = new Date();\n        System.out.println(dateFormat.format(date));\n        System.out.println(\"Inside cron - end \");\n\n        ExecutorService executor = Executors.newCachedThreadPool();\n        Callable<Object> task = new Callable<Object>() {\n           public Object call() {\n              int i=1;\n              while(i<100)\n              {\n                  System.out.println(\"i: \"+ i++);\n                  try {\n                      TimeUnit.SECONDS.sleep(1);\n                  }\n                  catch(Exception e)\n                  {\n                  }\n              }\n              return null;\n           }\n        };\n        Future<Object> future = executor.submit(task);\n        try {\n           Object result = future.get(10, TimeUnit.SECONDS); \n        } catch (Exception e) \n        } finally {\n           future.cancel(true);\n           return true;\n        }\n    }\n",
+    "answer": "The first problem is in this part of code: catch(Exception e) { } When you invoke future.cancel(true); your thread is being interrupted with Thread.interrupt() Which means that when a thread is sleeping, it gets awoken and throws InterruptedException which is caught by the catch block and ignored. To fix this problem you have to handle this exception: catch(InterruptedException e) { break; //breaking from the loop } catch(Exception e) { } The second problem: Thread.interrupt() may be invoked while the thread is not sleeping. In this case InterruptedException is not thrown. Instead, the interrupted flag of the thread is raised. What you have to do is to check for this flag from time to time, "
+  },
+  {
+    "query": "cron Too many open files",
+    "site": "stackoverflow",
+    "title": "How to find which process is leaking file handles in Linux?",
+    "url": "https://stackoverflow.com/questions/22715102/how-to-find-which-process-is-leaking-file-handles-in-linux",
+    "logs": "less /var/log/syslog\n\nMar 27 06:54:01 xeon CRON[16084]: (CRON) error (grandchild #16090 failed with exit status 1)\nMar 27 06:54:21 xeon kernel: [8848865.426732] VFS: file-max limit 205900 reached\nMar 27 06:54:29 xeon postfix/master[1435]: warning: master_wakeup_timer_event: service pickup(public/pickup): Too many open files in system\nMar 27 06:54:29 xeon kernel: [8848873.611491] VFS: file-max limit 205900 reached\nMar 27 06:54:32 xeon kernel: [8848876.293525] VFS: file-max limit 205900 reached\n",
+    "answer": "Probably the root cause is a bug in NFSv4 implementation: https://stackoverflow.com/a/5205459/280758 They have similar symptoms. "
+  },
+  {
+    "query": "cron wget ERROR 403",
+    "site": "stackoverflow",
+    "title": "What starts this docker process on my laptop?",
+    "url": "https://stackoverflow.com/questions/44144422/what-starts-this-docker-process-on-my-laptop",
+    "logs": "$ wget localhost/\n--2017-05-23 22:09:55--  http://localhost/\nResolving localhost (localhost)... 127.0.0.1\nConnecting to localhost (localhost)|127.0.0.1|:80... connected.\nHTTP request sent, awaiting response... 403 Forbidden\n2017-05-23 22:09:55 ERROR 403: Forbidden.\n",
+    "answer": "Docker is being started by systemd in your environment. You can disable the entire engine by running: sudo systemctl disable docker sudo systemctl stop docker You can also stop only the container that is running (the shim and Jenkins application): sudo docker ps # lists the running containers along with their container id sudo docker update --restart=no $container_id sudo docker stop $container_id If you know that you do not need this container and want to permanently delete it, you can run this instead of the above two last commands: sudo docker rm -f $container_id The -f switch also stops the container if it's currently running. Edit: from your comment, your container is running under swar"
+  },
+  {
+    "query": "cron git pull Permission denied publickey",
+    "site": "unix",
+    "title": "Crontab with SVN and Git",
+    "url": "https://unix.stackexchange.com/questions/40934/crontab-with-svn-and-git",
+    "logs": "X-Cron-Env: <SHELL=/bin/sh>\nX-Cron-Env: <HOME=/home/guyfawkes>\nX-Cron-Env: <PATH=/usr/bin:/bin>\nX-Cron-Env: <LOGNAME=guyfawkes>\nX-Cron-Env: <USER=guyfawkes>\n\nupd crm\n\nFetching external item into 'public/old'\nExternal at revision 32674.\n\nAt revision 483.\nupdate crm completed\n-------\nupd sql\nAt revision 29.\nupdate sql completed\n-------\nupd old\nAt revision 32674.\nupdate old completed\n-------\nupd mysqldiff\nPermission denied (publickey,keyboard-interactive).\nfatal: The remote end hung up unexpectedly\nupdate mysqlidff completed\nPermission denied (publickey).\nfatal: The remote end hung up unexpectedly\npush to github completed\n-------\nupd mmmm\nPermission denied (publickey,keyboard-interactive).\nfatal: The remote end hung up unexpectedly\nmmm updated\nupd data\nPermission denied (publickey,keyboard-interactive).\nfatal: The remote end hung up unexpectedly\ndata updated\n",
+    "answer": "The problem is you are trying to update from github which requires an ssh key. Either create a dedicated ssh key without a password on your server and add it to your github account or use the http-readonly uri to update your repository: git pull --mirror https://github.com/account/repository.git "
+  },
+  {
+    "query": "cron Read-only file system",
+    "site": "stackoverflow",
+    "title": "Difference between Cron and Crontab?",
+    "url": "https://stackoverflow.com/questions/21789148/difference-between-cron-and-crontab",
+    "logs": "1 0 * * *  printf > /var/log/apache/error_log\n",
+    "answer": "cron is the general name for the service that runs scheduled actions. crond is the name of the daemon that runs in the background and reads crontab files. A crontab is a file containing jobs in the format minute hour day-of-month month day-of-week command crontabs are normally stored by the system in /var/spool/<username>/crontab. These files are not meant to be edited directly. You can use the crontab command to invoke a text editor (what you have defined for the EDITOR env variable) to modify a crontab file. There are various implementations of cron. Commonly there will be per-user crontab files (accessed with the command crontab -e) as well as system crontabs in /etc/cron.daily, /etc/cron"
+  }
+]

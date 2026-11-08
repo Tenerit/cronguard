@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import { CASES } from '../eval/cases'
 import { PUBLIC_CASES } from '../eval/public-cases'
+import { PUBLIC2_CASES } from '../eval/public-cases-2'
 import { LABELS, grade } from '../eval/rubric'
 import type { AnalysisResult } from '../src/services/llm/analyzer'
 
 // La grille note le produit : si elle se trompe, toute la mesure ment. On vérifie qu'elle
 // distingue bien une cause (mécanisme) d'un symptôme recopié, et qu'elle punit le dangereux.
-const ALL = [...CASES, ...PUBLIC_CASES]
+const ALL = [...CASES, ...PUBLIC_CASES, ...PUBLIC2_CASES]
 const base = (over: Partial<AnalysisResult>): AnalysisResult => ({
   cause: '', action: '', prevention: '', checks: [], severity: 'medium', category: 'database',
   confidence: 'medium', data_impact: 'none', fix_minutes: 15, fromCache: false, model: 't', ...over,

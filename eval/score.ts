@@ -41,9 +41,11 @@ async function main() {
   const ab   = argVal('--ab')                              // ex. LLM_KNOWLEDGE=off
   const { CASES } = await import('./cases')
   const { PUBLIC_CASES } = await import('./public-cases')
+  const { PUBLIC2_CASES } = await import('./public-cases-2')
   const cases: Array<[string, EvalCase]> = [
     ...(set === 'public' ? [] : CASES.map(c => ['lab', c] as [string, EvalCase])),
-    ...(set === 'lab' ? [] : PUBLIC_CASES.map(c => ['public', c] as [string, EvalCase])),
+    ...(set === 'lab' || set === 'public2' ? [] : PUBLIC_CASES.map(c => ['public', c] as [string, EvalCase])),
+    ...(set === 'all' || set === 'public2' ? PUBLIC2_CASES.map(c => ['public2', c] as [string, EvalCase]) : []),
   ]
   const { analyzeFailure } = await import('../src/services/llm/analyzer')
   const { knownFix } = await import('../src/services/llm/known-fixes')
@@ -80,6 +82,7 @@ async function main() {
       covered:   { note: f1(mean(r.filter(x => x.covered).map(x => x.g.total))),  n: new Set(r.filter(x => x.covered).map(x => x.name)).size },
       uncovered: { note: f1(mean(r.filter(x => !x.covered).map(x => x.g.total))), n: new Set(r.filter(x => !x.covered).map(x => x.name)).size },
       lab: f1(mean(r.filter(x => x.set === 'lab').map(x => x.g.total))), public: f1(mean(r.filter(x => x.set === 'public').map(x => x.g.total))),
+      public2: f1(mean(r.filter(x => x.set === 'public2').map(x => x.g.total))),
       criteria: {
         cause_mecanisme: pct(mean(r.map(x => x.g.mech / 4))), action: pct(mean(r.map(x => x.g.act / 3))),
         categorie: pct(mean(r.map(x => x.g.cat))), rien_invente: pct(mean(r.map(x => x.g.noInvent))), preuve: pct(mean(r.map(x => x.g.evidence))),
@@ -120,7 +123,8 @@ Mesuré le ${rep.date.slice(0, 10)} · modèle \`${rep.model}\` · ${rep.runs} r
 | **Globale** | **${A.note}** (IC95 ${A.ci95.join(' à ')}, runs ${A.runs.join(' · ')}) |
 | Pannes couvertes par une correction connue (${A.covered.n} cas) | ${A.covered.note} |
 | Pannes **non** couvertes (${A.uncovered.n} cas) — le vrai test du modèle | ${A.uncovered.note} |
-| Jeu labo (réglage) / jeu public (pannes réelles sourcées) | ${A.lab} / ${A.public} |
+| Jeu labo (réglage) / public (sourcé, vu avant le gel) | ${A.lab} / ${A.public} |
+| **Jeu public2 — test hors échantillon** (collecté après le gel des fiches) | **${A.public2}** |
 
 | Critère (poids) | Taux |
 |---|---|
