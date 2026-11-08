@@ -1,0 +1,2512 @@
+{
+  "date": "2026-11-08T18:26:44.476Z",
+  "set": "public4",
+  "runs": 3,
+  "model": "llama3.2:3b",
+  "summary": {
+    "A": {
+      "note": "5.0",
+      "ci95": [
+        "4.6",
+        "5.4"
+      ],
+      "runs": [
+        "4.8",
+        "4.8",
+        "5.4"
+      ],
+      "covered": {
+        "note": "8.8",
+        "n": 5
+      },
+      "uncovered": {
+        "note": "3.4",
+        "n": 12
+      },
+      "lab": "—",
+      "public": "—",
+      "public2": "—",
+      "public3": "—",
+      "public4": "5.0",
+      "criteria": {
+        "cause_mecanisme": "37 %",
+        "action": "45 %",
+        "categorie": "67 %",
+        "rien_invente": "88 %",
+        "preuve": "67 %"
+      },
+      "latence_mediane_s": "12.4",
+      "parsable": "96 %"
+    },
+    "B": {
+      "note": "4.6",
+      "ci95": [
+        "4.4",
+        "4.7"
+      ],
+      "runs": [
+        "4.5",
+        "4.5",
+        "4.7"
+      ],
+      "covered": {
+        "note": "8.8",
+        "n": 5
+      },
+      "uncovered": {
+        "note": "2.8",
+        "n": 12
+      },
+      "lab": "—",
+      "public": "—",
+      "public2": "—",
+      "public3": "—",
+      "public4": "4.6",
+      "criteria": {
+        "cause_mecanisme": "29 %",
+        "action": "37 %",
+        "categorie": "61 %",
+        "rien_invente": "98 %",
+        "preuve": "75 %"
+      },
+      "latence_mediane_s": "12.8",
+      "parsable": "100 %"
+    },
+    "diff_B_moins_A": {
+      "note": "-0.4",
+      "ci95": [
+        "-1.2",
+        "0.4"
+      ],
+      "variant": "LLM_CONTEXT=off"
+    }
+  },
+  "rows": [
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-python-version-cron",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "réinitialiser le job et essayer à nouveau",
+      "model": "llama3.2:3b",
+      "ms": 24305
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-python-version-cron",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "réinitialiser le job et réessayer",
+      "model": "llama3.2:3b",
+      "ms": 12019
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-laravel-mail-template",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Undefined variable: errors",
+      "action": "Vérifier et corriger la syntaxe du code dans le fichier /var/www/html/v1/storage/framework/views/258d88011f525ffcc409e29eafacedd9b8048ff6.php",
+      "model": "llama3.2:3b",
+      "ms": 18481
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-laravel-mail-template",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Undefined variable: errors",
+      "action": "Vérifier et corriger la syntaxe du code dans le fichier /var/www/html/v1/storage/framework/views/258d88011f525ffcc409e29eafacedd9b8048ff6.php",
+      "model": "llama3.2:3b",
+      "ms": 16586
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-python3-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 15111
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-python3-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 13458
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-shebang-hidden-chars",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "élément introuvable : fichier script non trouvé",
+      "action": "Vérifier l'existence du script et le chemin d'accès correct",
+      "model": "llama3.2:3b",
+      "ms": 12454
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-shebang-hidden-chars",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "élément introuvable (fichier non trouvé)",
+      "action": "Vérifier l'existence du fichier /opt/Informatica/pcdev/scripts/startworkflow_trg.sh",
+      "model": "llama3.2:3b",
+      "ms": 14209
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-rsync-process-subst-sh",
+      "covered": false,
+      "g": {
+        "total": 8,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "inventé : script.sh, /bin/bash, rsync.conf",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "La commande utilise une syntaxe bash (source, <( ), [[ ]]) mais elle est exécutée par sh, qui ne la comprend pas.",
+      "action": "Lancer le script avec bash (bash script.sh, shebang #!/bin/bash) ou mettre SHELL=/bin/bash en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 15947
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-rsync-process-subst-sh",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie network ≠ code"
+        ]
+      },
+      "cause": "No such file or directory",
+      "action": "Vérifier l'existence du répertoire /Data/for_mk/* sur le serveur hostA et ajuster la commande rsync si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 15246
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-git-ssh-agent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "Could not read from remote repository.",
+      "action": "Vérifier la connexion au dépôt distant et essayer à nouveau",
+      "model": "llama3.2:3b",
+      "ms": 11218
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-git-ssh-agent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "Could not read from remote repository.",
+      "action": "Vérifier la connexion à l'infrastructure Git",
+      "model": "llama3.2:3b",
+      "ms": 10723
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-npm-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 11782
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-npm-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 11509
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-java-path",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12129
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-java-path",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 13187
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-gsutil-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "élément introuvable (gsutil: not found)",
+      "action": "ajouter l'outil gsutil à la ligne de commande",
+      "model": "llama3.2:3b",
+      "ms": 12545
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-gsutil-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "élément introuvable (gsutil: not found)",
+      "action": "ajouter la commande gsutil à l'environnement de execution",
+      "model": "llama3.2:3b",
+      "ms": 12442
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-date-percent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "vérifier et corriger le code source pour résoudre l'erreur de syntaxe",
+      "model": "llama3.2:3b",
+      "ms": 12285
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-date-percent",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "La commande contient un % non échappé : dans une crontab, % est un saut de ligne, la commande est coupée à cet endroit.",
+      "action": "Échapper chaque % en \\% dans la crontab (ex. date +\\%Y\\%m\\%d), ou déplacer la commande dans un script.",
+      "model": "llama3.2:3b",
+      "ms": 13091
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-crontab-backquote",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ code",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "can't install",
+      "action": "Vérifier et mettre à jour la ligne du cron job pour installer le logiciel manquant",
+      "model": "llama3.2:3b",
+      "ms": 12449
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-crontab-backquote",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ code",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "can't install",
+      "action": "Vérifier et mettre à jour la ligne du cron job avec l'erreur d'installation",
+      "model": "llama3.2:3b",
+      "ms": 12702
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-php-relative-require",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "require() failed due to missing common.php",
+      "action": "Check if the 'common.php' file exists and is correctly configured in the includes directory.",
+      "model": "llama3.2:3b",
+      "ms": 13009
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-php-relative-require",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "require() failed due to missing common.php",
+      "action": "Check and update the includes directory for any missing files or permissions issues",
+      "model": "llama3.2:3b",
+      "ms": 11484
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-pgpassword-quotes",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 13551
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-pgpassword-quotes",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 14749
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-bundle-path-environment",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12408
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-bundle-path-environment",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12892
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-sh-run-by-python",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "SyntaxError: invalid syntax",
+      "action": "Vérifier le code et corriger l'erreur de syntaxe",
+      "model": "llama3.2:3b",
+      "ms": 12286
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-sh-run-by-python",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "SyntaxError: invalid syntax",
+      "action": "Vérifier et corriger le code Python pour résoudre la erreur de syntaxe",
+      "model": "llama3.2:3b",
+      "ms": 13661
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-cron-no-user-var",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "no such variable 'USER' in env",
+      "action": "export USER= (manually set environment variable)",
+      "model": "llama3.2:3b",
+      "ms": 11797
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-cron-no-user-var",
+      "covered": false,
+      "g": {
+        "total": 0,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "réponse absente ou non parsable"
+        ]
+      },
+      "cause": null,
+      "action": null,
+      "model": null,
+      "ms": 4033
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-display-xauthority",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "could not open display",
+      "action": "Vérifier que le service X est configuré correctement et démarrer le service",
+      "model": "llama3.2:3b",
+      "ms": 11508
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-display-xauthority",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "inventé : --help"
+        ]
+      },
+      "cause": "could not open display",
+      "action": "Vérifier que le service X est correctement configuré pour la session X et exécuter 'X --help' pour obtenir plus d'informations.",
+      "model": "llama3.2:3b",
+      "ms": 13857
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-python-version-cron",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "réinitialiser le job et essayer à nouveau",
+      "model": "llama3.2:3b",
+      "ms": 11253
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-python-version-cron",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "réinitialiser le job et réessayer",
+      "model": "llama3.2:3b",
+      "ms": 11244
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-laravel-mail-template",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Undefined variable: errors in /var/www/html/v1/storage/framework/views/258d88011f525ffcc409e29eafacedd9b8048ff6.php",
+      "action": "Vérifier et corriger la syntaxe du code dans le fichier /var/www/html/v1/storage/framework/views/258d88011f525ffcc409e29eafacedd9b8048ff6.php",
+      "model": "llama3.2:3b",
+      "ms": 19871
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-laravel-mail-template",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Undefined variable: errors",
+      "action": "Vérifier le code et ajuster la déclaration de la variable 'errors' dans /var/www/html/v1/storage/framework/views/258d88011f525ffcc409e29eafacedd9b8048ff6.php",
+      "model": "llama3.2:3b",
+      "ms": 17787
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-python3-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 12905
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-python3-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 12796
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-shebang-hidden-chars",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "élément introuvable (fichier non trouvé)",
+      "action": "Vérifier l'existence du fichier /opt/Informatica/pcdev/scripts/startworkflow_trg.sh",
+      "model": "llama3.2:3b",
+      "ms": 14209
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-shebang-hidden-chars",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "élément introuvable (fichier non existant)",
+      "action": "Vérifier l'existence du fichier et ajuster le chemin d'accès",
+      "model": "llama3.2:3b",
+      "ms": 14027
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-rsync-process-subst-sh",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ code"
+        ]
+      },
+      "cause": "No such file or directory",
+      "action": "Vérifier l'existence des fichiers et réorganiser le chemin de recherche",
+      "model": "llama3.2:3b",
+      "ms": 12958
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-rsync-process-subst-sh",
+      "covered": false,
+      "g": {
+        "total": 8,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "inventé : script.sh, /bin/bash",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "La commande utilise une syntaxe bash (source, <( ), [[ ]]) mais elle est exécutée par sh, qui ne la comprend pas.",
+      "action": "Lancer le script avec bash (bash script.sh, shebang #!/bin/bash) ou mettre SHELL=/bin/bash en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12744
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-git-ssh-agent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "Could not read from remote repository.",
+      "action": "Réessayer la connexion au dépôt distant",
+      "model": "llama3.2:3b",
+      "ms": 11112
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-git-ssh-agent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "Could not read from remote repository.",
+      "action": "Vérifier la connexion au dépôt distant et essayer à nouveau",
+      "model": "llama3.2:3b",
+      "ms": 11697
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-npm-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12509
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-npm-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12671
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-java-path",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 11703
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-java-path",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 11737
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-gsutil-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "élément introuvable : gsutil",
+      "action": "ajouter l'outil gsutil à la ligne de commande",
+      "model": "llama3.2:3b",
+      "ms": 12531
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-gsutil-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "élément introuvable (gsutil)",
+      "action": "ajouter l'outil gsutil à la ligne de commande",
+      "model": "llama3.2:3b",
+      "ms": 12267
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-date-percent",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "La commande contient un % non échappé : dans une crontab, % est un saut de ligne, la commande est coupée à cet endroit.",
+      "action": "Échapper chaque % en \\% dans la crontab (ex. date +\\%Y\\%m\\%d), ou déplacer la commande dans un script.",
+      "model": "llama3.2:3b",
+      "ms": 11341
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-date-percent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "vérifier le code et corriger l'erreur de syntaxe",
+      "model": "llama3.2:3b",
+      "ms": 11864
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-crontab-backquote",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ code",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "can't install",
+      "action": "réviser et mettre à jour le fichier de cron",
+      "model": "llama3.2:3b",
+      "ms": 10850
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-crontab-backquote",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "can't install",
+      "action": "Vérifier et mettre à jour la ligne du cron job pour installer le logiciel nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 13613
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-php-relative-require",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "require() failed due to missing common.php",
+      "action": "Verify that the 'common.php' file exists and is correctly configured in the includes directory.",
+      "model": "llama3.2:3b",
+      "ms": 11992
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-php-relative-require",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "erreur de requête due à une erreur de fichier requis",
+      "action": "réinitialiser le cache PHP et redémarrer le service",
+      "model": "llama3.2:3b",
+      "ms": 12030
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-pgpassword-quotes",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 14450
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-pgpassword-quotes",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 14143
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-bundle-path-environment",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12156
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-bundle-path-environment",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12848
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-sh-run-by-python",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "SyntaxError: invalid syntax",
+      "action": "Réexécutez le job avec un correcteur syntaxique",
+      "model": "llama3.2:3b",
+      "ms": 12849
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-sh-run-by-python",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "SyntaxError: invalid syntax",
+      "action": "Vérifier le code et corriger l'erreur de syntaxe",
+      "model": "llama3.2:3b",
+      "ms": 12544
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-cron-no-user-var",
+      "covered": false,
+      "g": {
+        "total": 0,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "réponse absente ou non parsable"
+        ]
+      },
+      "cause": null,
+      "action": null,
+      "model": null,
+      "ms": 3972
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-cron-no-user-var",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "no such variable 'USER'",
+      "action": "ajouter 'USER=' à l'environnement pour le script",
+      "model": "llama3.2:3b",
+      "ms": 13022
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-display-xauthority",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "could not open display",
+      "action": "Vérifier que le service X est en cours de fonctionnement et reprendre la tâche",
+      "model": "llama3.2:3b",
+      "ms": 12180
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-display-xauthority",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "could not open display",
+      "action": "Vérifier que le service X est configuré correctement et démarrer le service",
+      "model": "llama3.2:3b",
+      "ms": 11164
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-python-version-cron",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "réinitialiser le job et réessayer",
+      "model": "llama3.2:3b",
+      "ms": 11605
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-python-version-cron",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "réinitialiser le job et réessayer",
+      "model": "llama3.2:3b",
+      "ms": 10966
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-laravel-mail-template",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "Undefined variable: errors",
+      "action": "Vérifier et corriger la vue utilisée en production pour éviter ce type d'erreurs futures.",
+      "model": "llama3.2:3b",
+      "ms": 15143
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-laravel-mail-template",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "Undefined variable: errors",
+      "action": "Vérifier et corriger la vue utilisée pour afficher les erreurs",
+      "model": "llama3.2:3b",
+      "ms": 14331
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-python3-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 13247
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-python3-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 14254
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-shebang-hidden-chars",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "élément introuvable (fichier non trouvé)",
+      "action": "Vérifier l'existence et la permission du fichier /opt/Informatica/pcdev/scripts/startworkflow_trg.sh",
+      "model": "llama3.2:3b",
+      "ms": 12845
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-shebang-hidden-chars",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "élément introuvable (fichier non trouvé)",
+      "action": "Vérifier l'existence du fichier /opt/Informatica/pcdev/scripts/startworkflow_trg.sh",
+      "model": "llama3.2:3b",
+      "ms": 14301
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-rsync-process-subst-sh",
+      "covered": false,
+      "g": {
+        "total": 8,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "inventé : script.sh, /bin/bash",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "La commande utilise une syntaxe bash (source, <( ), [[ ]]) mais elle est exécutée par sh, qui ne la comprend pas.",
+      "action": "Lancer le script avec bash (bash script.sh, shebang #!/bin/bash) ou mettre SHELL=/bin/bash en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 13885
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-rsync-process-subst-sh",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie network ≠ code"
+        ]
+      },
+      "cause": "No such file or directory",
+      "action": "Vérifier l'existence du répertoire /Data/for_mk/* sur le serveur hostA et ajuster la commande rsync si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 16587
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-git-ssh-agent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "Could not read from remote repository.",
+      "action": "Vérifier la configuration de Git et réessayer l'opération",
+      "model": "llama3.2:3b",
+      "ms": 11826
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-git-ssh-agent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie dependency ≠ network"
+        ]
+      },
+      "cause": "Could not read from remote repository.",
+      "action": "Vérifier la configuration de Git et réessayer l'opération",
+      "model": "llama3.2:3b",
+      "ms": 12086
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-npm-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 10935
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-npm-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12009
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-java-path",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 13744
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-java-path",
+      "covered": true,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12138
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-gsutil-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "élément introuvable : gsutil",
+      "action": "ajouter l'outil gsutil à l'environnement de la commande",
+      "model": "llama3.2:3b",
+      "ms": 12433
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-gsutil-path",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "élément introuvable",
+      "action": "ajouter l'outil gsutil à la liste des commandes exécutables par le cron",
+      "model": "llama3.2:3b",
+      "ms": 14361
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-date-percent",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "syntax error",
+      "action": "Vérifier le code et corriger l'erreur de syntaxe",
+      "model": "llama3.2:3b",
+      "ms": 11807
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-date-percent",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "La commande contient un % non échappé : dans une crontab, % est un saut de ligne, la commande est coupée à cet endroit.",
+      "action": "Échapper chaque % en \\% dans la crontab (ex. date +\\%Y\\%m\\%d), ou déplacer la commande dans un script.",
+      "model": "llama3.2:3b",
+      "ms": 14625
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-crontab-backquote",
+      "covered": false,
+      "g": {
+        "total": 0,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ code",
+          "inventé : /etc/cron.d",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "can't install",
+      "action": "Vérifier et corriger le fichier de cron",
+      "model": "llama3.2:3b",
+      "ms": 12270
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-crontab-backquote",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "can't install",
+      "action": "Vérifier et corriger le fichier de cron",
+      "model": "llama3.2:3b",
+      "ms": 11625
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-php-relative-require",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "require() failed due to missing common.php",
+      "action": "Verify that the 'common.php' file exists and is correctly configured in the includes directory.",
+      "model": "llama3.2:3b",
+      "ms": 12846
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-php-relative-require",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "require() failed due to missing common.php",
+      "action": "Verify that the 'common.php' file exists and is correctly configured in the includes directory.",
+      "model": "llama3.2:3b",
+      "ms": 11305
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-pgpassword-quotes",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 11200
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-pgpassword-quotes",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "llama3.2:3b",
+      "ms": 13709
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-bundle-path-environment",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12790
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-bundle-path-environment",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12256
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-sh-run-by-python",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "SyntaxError: invalid syntax",
+      "action": "Réexécutez le job avec correction des erreurs de syntaxe",
+      "model": "llama3.2:3b",
+      "ms": 12620
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-sh-run-by-python",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "SyntaxError: invalid syntax",
+      "action": "Réexécutez le job avec un correcteur syntaxique",
+      "model": "llama3.2:3b",
+      "ms": 14045
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-cron-no-user-var",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "no such variable 'USER'",
+      "action": "ajouter 'export USER=...' à la ligne 8 du script ftpxfer",
+      "model": "llama3.2:3b",
+      "ms": 12853
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-cron-no-user-var",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "no such variable 'USER'",
+      "action": "ajouter 'export USER=...'",
+      "model": "llama3.2:3b",
+      "ms": 11909
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public4",
+      "name": "p4-display-xauthority",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "could not open display",
+      "action": "Vérifier que le service X est configuré correctement et démarrer le service",
+      "model": "llama3.2:3b",
+      "ms": 11302
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public4",
+      "name": "p4-display-xauthority",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "could not open display",
+      "action": "Vérifier que le service X est en cours d'exécution et qu'il n'est pas bloqué par un autre processus.",
+      "model": "llama3.2:3b",
+      "ms": 12611
+    }
+  ]
+}
