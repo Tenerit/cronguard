@@ -39,7 +39,8 @@ echo 'pg_dump: starting'
 echo 'Killed'
 `
 
-describe.skipIf(!hasBash)('timers systemd', () => {
+// 30 s : le script lance des dizaines de sous-processus (systemctl, sed…), lents sous Git Bash.
+describe.skipIf(!hasBash)('timers systemd', { timeout: 30_000 }, () => {
   let server: Server, url = '', dir = ''
   const created: Array<Record<string, unknown>> = []
   const pings: Array<{ key: string; body: Record<string, unknown> }> = []
