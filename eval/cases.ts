@@ -16,6 +16,7 @@ export interface EvalCase {
   exitCode: number
   logs:     string
   source?:  string                                   // URL publique (jeu --set public)
+  command?: string                                   // commande lancée par le cron, recopiée de la source
   facts?:   { cause: RegExp; action: RegExp }        // sinon FACTS[name] (quality.ts)
 }
 

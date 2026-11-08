@@ -122,6 +122,25 @@ export const LABELS: Record<string, Label> = {
   'p3-venv-activate-path':          { mech: /activate|virtualenv|venv|saut de ligne|retour (à la ligne|chariot)|crlf/i, act: /bin\/python|python du (venv|virtualenv)|chemin absolu|sans activate|retirer/i, key: /activate/ },
   'p3-activate-path-bashrc':        { mech: /\bpath\b|\.bashrc|\.profile|chemin/i, act: /chemin (complet|absolu)|\bpath\b|source/i, key: /activate/ },
   'p3-git-push-root-home':          { mech: /\broot\b|\bhome\b|utilisateur|\.ssh/i, act: /\bhome\b|\.ssh|\broot\b|crontab de|utilisateur/i, key: /Permission denied \(publickey\)/ },
+  // ── Public4 (TEST, collecté avant les leviers contexte d'exécution / vérification de commande) ──
+  'p4-python-version-cron':     { mech: /version|python ?2|interpréteur|ancien python|autre python/i, act: /python ?2\.7|python3|shebang|chemin|version/i, key: /SyntaxError/ },
+  'p4-laravel-mail-template':   { mech: /template|\bvue\b|\bview\b|welcome/i, act: /emails\.welcome|template|\bvue\b|\bview\b/i, key: /Undefined variable: errors/ },
+  'p4-python3-import':          { mech: /python ?3|version|interpréteur|python 2/i, act: /python3|chemin|interpréteur|shebang/i, key: /No module named/ },
+  'p4-shebang-hidden-chars':    { mech: /caractères? (invisibles?|cachés?|parasites?)|\bbom\b|crlf|encodage|\\r|fins? de ligne/i, act: /recréer|dos2unix|retaper|réécrire|\bbom\b|encodage|fins? de ligne/i, key: /#!\/bin\/bash: No such file/ },
+  'p4-rsync-process-subst-sh':  { mech: /\bsh\b|\bdash\b|substitution|<\(/i, act: /\bbash\b|retirer sh|sans sh/i, key: /failed to open files-from/ },
+  'p4-git-ssh-agent':           { mech: /ssh_auth_sock|\bagent\b|session/i, act: /clé|ssh-keygen|sans (mot de passe|passphrase)|keychain|ssh_auth_sock|-i\b/i, key: /Could not read from remote repository/ },
+  'p4-npm-path':                { mech: /\bpath\b|\.bashrc|chemin/i, act: /\bpath\b|which|chemin (complet|absolu)/i, key: /command not found/ },
+  'p4-java-path':               { mech: /\bpath\b|chemin/i, act: /\bpath\b|chemin (complet|absolu)|\/usr\/bin\/java|which/i, key: /java: not found/ },
+  'p4-gsutil-path':             { mech: /\bpath\b|chemin/i, act: /chemin (complet|absolu)|\/usr\/local\/bin|\bpath\b/i, key: /gsutil: not found/ },
+  'p4-date-percent':            { mech: /%|pourcent|percent/i, act: /\\%|%|échapp/i, key: /unexpected EOF/ },
+  'p4-crontab-backquote':       { mech: /backquotes?|backticks?|`|%|accents? graves?/i, act: /\$\(|%|échapp/i, key: /bad ` sign/ },
+  'p4-php-relative-require':    { mech: /chemin relatif|relatif|dossier (courant|de travail)|répertoire (courant|de travail)|\bcwd\b/i, act: /chemin (complet|absolu)|__DIR__|dirname|set_include_path|\bcd\b/i, key: /Failed opening required/ },
+  'p4-pgpassword-quotes':       { mech: /caractères? spéciaux|guillemets?|quot|échapp|\$/i, act: /guillemets simples|apostrophes|single quotes|échapp|'/i, key: /password authentication failed/ },
+  'p4-bundle-path-environment': { mech: /\bpath\b|\/etc\/environment|bash_profile|environnement/i, act: /\/etc\/environment|bash_profile|\bpath\b|chemin/i, key: /bundle: command not found/ },
+  'p4-sh-run-by-python':        { mech: /python|interpréteur|shebang/i, act: /\bbash\b|\bsh\b|shebang|#!\/bin\/(ba)?sh/i, key: /SyntaxError: invalid syntax/ },
+  'p4-cron-no-user-var':        { mech: /\buser\b|variable (absente|non définie)|environnement (minimal|réduit)|logname/i, act: /logname|\buser\b|définir|crontab/i, key: /env\(USER\)/ },
+  'p4-display-xauthority':      { mech: /variable display|display (non|n'est pas|absente|vide)|xauthority|session (graphique|x)/i, act: /display|xauthority|export/i, key: /could not open display/ },
+
   'p3-notify-send-display':         { mech: /variable display|display (non|n'est pas|absente|vide)|xauthority|dbus_session|session (graphique|x)/i, act: /display|xauthority|export|dbus/i, key: /could not open display/ },
 }
 

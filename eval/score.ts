@@ -44,12 +44,14 @@ async function main() {
   const { PUBLIC_CASES } = await import('./public-cases')
   const { PUBLIC2_CASES } = await import('./public-cases-2')
   const { PUBLIC3_CASES } = await import('./public-cases-3')
+  const { PUBLIC4_CASES } = await import('./public-cases-4')
   const cases: Array<[string, EvalCase]> = [
-    ...(set === 'public' || set === 'public2' || set === 'public3' ? [] : CASES.map(c => ['lab', c] as [string, EvalCase])),
-    ...(set === 'lab' || set === 'public2' || set === 'public3' ? [] : PUBLIC_CASES.map(c => ['public', c] as [string, EvalCase])),
+    ...(set === 'public' || set === 'public2' || set === 'public3' || set === 'public4' ? [] : CASES.map(c => ['lab', c] as [string, EvalCase])),
+    ...(set === 'lab' || set === 'public2' || set === 'public3' || set === 'public4' ? [] : PUBLIC_CASES.map(c => ['public', c] as [string, EvalCase])),
     ...(set === 'all' || set === 'final' || set === 'public2' ? PUBLIC2_CASES.map(c => ['public2', c] as [string, EvalCase]) : []),
     // public3 = test final : seulement avec --set final (ou public3), jamais dans les expériences de réglage.
     ...(set === 'final' || set === 'public3' ? PUBLIC3_CASES.map(c => ['public3', c] as [string, EvalCase]) : []),
+    ...(set === 'final' || set === 'public4' ? PUBLIC4_CASES.map(c => ['public4', c] as [string, EvalCase]) : []),
   ]
   const { analyzeFailure } = await import('../src/services/llm/analyzer')
   const { knownFix } = await import('../src/services/llm/known-fixes')
@@ -67,7 +69,7 @@ async function main() {
         if (abKey) { if (arm === 'B') process.env[abKey] = abVal; else if (before === undefined) delete process.env[abKey]; else process.env[abKey] = before }
         const t0 = Date.now()
         const res = await analyzeFailure({ jobName: `job-${Date.now().toString(36)}-${arm}${run}-${k}`, clientId: 'eval', monitorId: 'eval',
-          exitCode: c.exitCode, env: 'production', logs: c.logs }, 120_000, { skipRateLimit: true })
+          exitCode: c.exitCode, env: 'production', logs: c.logs, command: c.command }, 120_000, { skipRateLimit: true })
         rows.push({ run, arm, set: s, name: c.name, covered: !!knownFix(c.logs), g: grade(c.name, c.category, c.logs, res),
           cause: res?.cause ?? null, action: res?.action ?? null, model: res?.model ?? null, ms: Date.now() - t0 })
       }
@@ -86,7 +88,7 @@ async function main() {
       note: f1(mean(r.map(x => x.g.total))), ci95: ci95(all).map(f1), runs: all.map(f1),
       covered:   { note: f1(mean(r.filter(x => x.covered).map(x => x.g.total))),  n: new Set(r.filter(x => x.covered).map(x => x.name)).size },
       uncovered: { note: f1(mean(r.filter(x => !x.covered).map(x => x.g.total))), n: new Set(r.filter(x => !x.covered).map(x => x.name)).size },
-      lab: bySet('lab'), public: bySet('public'), public2: bySet('public2'), public3: bySet('public3'),
+      lab: bySet('lab'), public: bySet('public'), public2: bySet('public2'), public3: bySet('public3'), public4: bySet('public4'),
       criteria: {
         cause_mecanisme: pct(mean(r.map(x => x.g.mech / 4))), action: pct(mean(r.map(x => x.g.act / 3))),
         categorie: pct(mean(r.map(x => x.g.cat))), rien_invente: pct(mean(r.map(x => x.g.noInvent))), preuve: pct(mean(r.map(x => x.g.evidence))),
@@ -129,7 +131,8 @@ Mesuré le ${rep.date.slice(0, 10)} · modèle \`${rep.model}\` · ${rep.runs} r
 | Pannes **non** couvertes (${A.uncovered.n} cas) — le vrai test du modèle | ${A.uncovered.note} |
 | Jeu labo (réglage) / public (sourcé, vu avant le gel) | ${A.lab} / ${A.public} |
 | Jeu public2 (collecté après le gel des fiches, puis lu : devenu réglage) | ${A.public2} |
-| **Jeu public3 — TEST FINAL hors échantillon** | **${A.public3}** |
+| Jeu public3 (test du 2026-11-08 avant les leviers contexte / commande) | ${A.public3} |
+| **Jeu public4 — TEST hors échantillon des leviers contexte / commande** | **${A.public4}** |
 
 | Critère (poids) | Taux |
 |---|---|
