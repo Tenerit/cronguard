@@ -98,6 +98,30 @@ cg_ping_fail() {
     "{\"status\":\"fail\",\"exit_code\":$exit_code,\"output\":$escaped}"
 }
 
+# ── cg_systemd_report : service lancé par un timer systemd ───────────────────
+# À mettre en ExecStopPost= (drop-in généré par cronguard-import.sh --systemd) :
+#   ExecStopPost=/bin/bash -c 'source /usr/local/lib/cronguard.sh && cg_systemd_report <ping-key> %n'
+# systemd ≥ 232 fournit SERVICE_RESULT, EXIT_STATUS et INVOCATION_ID : les logs envoyés sont
+# ceux de CETTE exécution (journal filtré par invocation), pas les précédentes.
+cg_systemd_report() {
+  local ping_key="$1" unit="${2:-}" start end duration="" code output
+  if [[ -n "$unit" ]]; then
+    start=$(systemctl show -P ExecMainStartTimestampMonotonic "$unit" 2>/dev/null)
+    end=$(systemctl show -P ExecMainExitTimestampMonotonic "$unit" 2>/dev/null)
+    [[ "$start" =~ ^[1-9][0-9]*$ && "$end" =~ ^[1-9][0-9]*$ && $end -ge $start ]] && duration=",\"duration_ms\":$(( (end - start) / 1000 ))"
+  fi
+  if [[ "${SERVICE_RESULT:-success}" == success ]]; then
+    _cg_ping "$ping_key" "{\"status\":\"success\",\"exit_code\":0$duration}"
+    return 0
+  fi
+  # EXIT_STATUS vaut un nombre, ou un nom de signal (KILL, TERM…) quand le service a été tué.
+  code="${EXIT_STATUS:-1}"; [[ "$code" =~ ^[0-9]+$ ]] || code=1
+  output=$( { journalctl -q -o cat "_SYSTEMD_INVOCATION_ID=${INVOCATION_ID:-none}" 2>/dev/null | tail -c 2800
+              echo "systemd: unit=$unit result=$SERVICE_RESULT exit_status=${EXIT_STATUS:-?}"; } | python3 -c \
+    "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null || echo '""')
+  _cg_ping "$ping_key" "{\"status\":\"fail\",\"exit_code\":$code$duration,\"output\":$output}"
+}
+
 # ── Interne ───────────────────────────────────────────────────────────────────
 _cg_ping() {
   curl -s -m 5 -X POST \

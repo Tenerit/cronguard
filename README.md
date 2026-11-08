@@ -129,7 +129,14 @@ sudo cp sdk/bash/cronguard.sh /usr/local/lib/cronguard.sh
 CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh            # preview
 CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --apply    # create monitors
 ```
-For `/etc/crontab` or `/etc/cron.d/*` (extra user column), pass the file and `--system`. systemd timers are not imported.
+For `/etc/crontab` or `/etc/cron.d/*` (extra user column), pass the file and `--system`.
+
+**systemd timers:** `--systemd` creates one monitor per enabled timer (or the `x.timer` names you pass) and prints a root script that adds a drop-in to each service: `ExecStopPost=` reports the result, exit status and the journal of that run. The service's own command is not changed.
+```bash
+CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --systemd --apply > add-cronguard.sh
+less add-cronguard.sh && sudo sh add-cronguard.sh
+```
+Common `OnCalendar=` forms become cron schedules; others (`OnUnitActiveSec=`, minute steps) use a grace period of 1.5 × the interval. System timers only, not `--user`.
 
 ### Bash (simplest)
 ```bash
