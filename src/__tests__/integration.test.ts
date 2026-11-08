@@ -74,6 +74,7 @@ beforeAll(async () => {
       slack_webhook TEXT,
       webhook_url TEXT,
       teams_webhook TEXT,
+      channels JSONB NOT NULL DEFAULT '{}',
       app_url     TEXT,
       escalation_email     TEXT,
       escalation_webhook   TEXT,
@@ -582,6 +583,18 @@ describe('Clients — profil et paramètres', () => {
       .set('X-API-Key', client.api_key)
     // pg-mem peut avoir du mal avec le subquery COUNT
     expect([200, 500]).toContain(res.status)
+  })
+
+  it('PATCH /clients/settings : autres plateformes fusionnées, \'\' efface, clé PagerDuty validée', async () => {
+    const client = await createTestClient()
+    const patch = (channels: object) => request(app).patch('/clients/settings').set('X-API-Key', client.api_key).send({ channels })
+    await patch({ discord: 'https://discord.com/api/webhooks/1/abc' })
+    await patch({ ntfy: 'https://ntfy.example.org/cronguard-ops' })
+    const res = await patch({ discord: '' })
+    expect(res.status).toBe(200)
+    expect(res.body.channels).toEqual({ ntfy: 'https://ntfy.example.org/cronguard-ops' })
+    expect((await patch({ pagerduty: 'trop-courte' })).status).toBe(400)
+    expect((await patch({ telegram: 'x' })).status).toBe(400)   // plateforme inconnue refusée
   })
 
   it('PATCH /clients/settings met à jour le slack webhook', async () => {

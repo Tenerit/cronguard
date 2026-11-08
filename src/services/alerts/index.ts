@@ -6,6 +6,7 @@ import { isSafeWebhookTarget } from '../webhook-guard'
 import { escapeHtml }   from '../escape'
 import { redis }        from '../../config/redis'
 import type { AnalysisResult } from '../llm/analyzer'
+import { sendChannelAlerts, sendChannelRecovery, type Channels } from './channels'
 
 // Compteur cross-process des échecs de LIVRAISON de notification. Exposé en /metrics
 // (cronguard_notification_failures_total) → un canal qui tombe en silence (SMTP mal
@@ -59,6 +60,7 @@ export interface AlertPayload {
     slackWebhook?: string
     webhookUrl?:   string
     teamsWebhook?: string
+    channels?:     Channels     // Discord, Google Chat, Mattermost, ntfy, PagerDuty (channels.ts)
   }
 }
 
@@ -304,6 +306,7 @@ export async function sendAlert(payload: AlertPayload) {
     sendEmailAlert(payload),
     sendWebhookAlert(payload),
     sendTeamsAlert(payload),
+    sendChannelAlerts(payload, payload.client.channels),
   ])
 }
 
@@ -320,6 +323,7 @@ export interface RecoveryPayload {
     slackWebhook?: string
     webhookUrl?:   string
     teamsWebhook?: string
+    channels?:     Channels     // Discord, Google Chat, Mattermost, ntfy, PagerDuty (channels.ts)
   }
 }
 
@@ -377,7 +381,7 @@ export async function sendRecovery(p: RecoveryPayload) {
       ] } }] }, { timeout: 5000 })
   }
 
-  const results = await Promise.allSettled([slack(), email(), webhook(), teams()])
+  const results = await Promise.allSettled([slack(), email(), webhook(), teams(), sendChannelRecovery(p, p.client.channels)])
   for (const r of results) if (r.status === 'rejected') logger.error('[Alert] Recovery channel failed', { err: r.reason })
   logger.info('[Alert] Recovery sent', { job: p.jobName, downtime })
 }

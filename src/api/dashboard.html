@@ -1528,8 +1528,39 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           </div>
           <div class="settings-row" style="margin-top:12px">
             <div>
+              <div class="settings-label" data-i18n="set.channels">Autres plateformes</div>
+              <div class="field-hint" data-i18n="set.channelsHint">Mêmes alertes et mêmes boutons ✅ / ✏️. ntfy : notification push sur le téléphone, auto-hébergeable. PagerDuty : l'incident se résout tout seul au rétablissement.</div>
+            </div>
+          </div>
+          <div class="settings-input-row">
+            <span class="field-hint" style="min-width:150px">Discord</span>
+            <input class="field-input" id="set-ch-discord" placeholder="https://discord.com/api/webhooks/..." aria-label="Discord">
+            <button class="btn btn-ghost" data-click="saveChannel" data-args='["discord"]' data-i18n="set.save">enregistrer</button>
+          </div>
+          <div class="settings-input-row">
+            <span class="field-hint" style="min-width:150px">Google Chat</span>
+            <input class="field-input" id="set-ch-gchat" placeholder="https://chat.googleapis.com/v1/spaces/..." aria-label="Google Chat">
+            <button class="btn btn-ghost" data-click="saveChannel" data-args='["gchat"]' data-i18n="set.save">enregistrer</button>
+          </div>
+          <div class="settings-input-row">
+            <span class="field-hint" style="min-width:150px">Mattermost / Rocket.Chat</span>
+            <input class="field-input" id="set-ch-mattermost" placeholder="https://chat.exemple.fr/hooks/..." aria-label="Mattermost / Rocket.Chat">
+            <button class="btn btn-ghost" data-click="saveChannel" data-args='["mattermost"]' data-i18n="set.save">enregistrer</button>
+          </div>
+          <div class="settings-input-row">
+            <span class="field-hint" style="min-width:150px">ntfy</span>
+            <input class="field-input" id="set-ch-ntfy" placeholder="https://ntfy.exemple.fr/cronguard-astreinte" aria-label="ntfy">
+            <button class="btn btn-ghost" data-click="saveChannel" data-args='["ntfy"]' data-i18n="set.save">enregistrer</button>
+          </div>
+          <div class="settings-input-row">
+            <span class="field-hint" style="min-width:150px">PagerDuty</span>
+            <input class="field-input" id="set-ch-pagerduty" placeholder="clé de routage (32 caractères)" aria-label="PagerDuty">
+            <button class="btn btn-ghost" data-click="saveChannel" data-args='["pagerduty"]' data-i18n="set.save">enregistrer</button>
+          </div>
+          <div class="settings-row" style="margin-top:12px">
+            <div>
               <div class="settings-label" data-i18n="set.generic">Webhook générique</div>
-              <div class="field-hint" data-i18n="set.genericHint">Reçoit le JSON d'alerte (Discord, Teams, PagerDuty, n8n...)</div>
+              <div class="field-hint" data-i18n="set.genericHint">Reçoit le JSON d'alerte (n8n, Zapier, outil maison...)</div>
             </div>
           </div>
           <div class="settings-input-row">
@@ -1943,8 +1974,8 @@ const I18N = {
     'logs.failures':'échecs','logs.aiAnalyzed':'analysés ia','live':'en direct',
     'set.account':'compte','set.email':'Email','set.plan':'Offre','set.activeMonitors':'Services actifs',
     'set.apiKey':'Clé API','set.show':'afficher','set.hide':'masquer','set.copy':'copier','set.save':'enregistrer',
-    'set.notifications':'notifications','set.slack':'Webhook Slack','set.slackHint':'URL de votre Incoming Webhook Slack','set.teams':'Webhook Microsoft Teams','set.teamsHint':'Workflow Teams « publier dans un canal quand une requête webhook est reçue ». L\x27alerte porte les boutons ✅ Analyse juste / ✏️ Corriger.','toast.teamsSaved':'Webhook Teams enregistré',
-    'set.generic':'Webhook générique','set.genericHint':'Reçoit le JSON d\'alerte (Discord, Teams, PagerDuty, n8n...)',
+    'set.notifications':'notifications','set.slack':'Webhook Slack','set.slackHint':'URL de votre Incoming Webhook Slack','set.teams':'Webhook Microsoft Teams','set.teamsHint':'Workflow Teams « publier dans un canal quand une requête webhook est reçue ». L\x27alerte porte les boutons ✅ Analyse juste / ✏️ Corriger.','toast.teamsSaved':'Webhook Teams enregistré','set.channels':'Autres plateformes','set.channelsHint':'Mêmes alertes et mêmes boutons ✅ / ✏️. ntfy : notification push sur le téléphone, auto-hébergeable. PagerDuty : l\x27incident se résout tout seul au rétablissement.','toast.channelSaved':'Plateforme enregistrée',
+    'set.generic':'Webhook générique','set.genericHint':'Reçoit le JSON d\'alerte (n8n, Zapier, outil maison...)',
     'set.timezone':'Fuseau horaire','set.timezoneHint':'Affichage des heures dans votre fuseau','set.tzAuto':'Automatique (navigateur)',
     'set.escalation':'escalade automatique','set.escalationDesc':'Si une alerte n\'est pas acquittée après le délai, un second contact est notifié (astreinte, manager...).',
     'set.escDelay':'Délai avant escalade','set.escDelayHint':'Minutes d\'inaction avant la notification d\'escalade','set.minutes':'minutes',
@@ -2064,8 +2095,8 @@ const I18N = {
     'logs.failures':'failures','logs.aiAnalyzed':'ai analyzed','live':'live',
     'set.account':'account','set.email':'Email','set.plan':'Plan','set.activeMonitors':'Active services',
     'set.apiKey':'API key','set.show':'show','set.hide':'hide','set.copy':'copy','set.save':'save',
-    'set.notifications':'notifications','set.slack':'Slack webhook','set.slackHint':'Your Slack Incoming Webhook URL','set.teams':'Microsoft Teams webhook','set.teamsHint':'Teams workflow « post to a channel when a webhook request is received ». Alerts carry ✅ Analysis right / ✏️ Correct buttons.','toast.teamsSaved':'Teams webhook saved',
-    'set.generic':'Generic webhook','set.genericHint':'Receives the alert JSON (Discord, Teams, PagerDuty, n8n...)',
+    'set.notifications':'notifications','set.slack':'Slack webhook','set.slackHint':'Your Slack Incoming Webhook URL','set.teams':'Microsoft Teams webhook','set.teamsHint':'Teams workflow « post to a channel when a webhook request is received ». Alerts carry ✅ Analysis right / ✏️ Correct buttons.','toast.teamsSaved':'Teams webhook saved','set.channels':'Other platforms','set.channelsHint':'Same alerts and same ✅ / ✏️ buttons. ntfy: push notification to your phone, self-hostable. PagerDuty: the incident resolves itself on recovery.','toast.channelSaved':'Platform saved',
+    'set.generic':'Generic webhook','set.genericHint':'Receives the alert JSON (n8n, Zapier, in-house tool...)',
     'set.timezone':'Timezone','set.timezoneHint':'How times are displayed in your zone','set.tzAuto':'Automatic (browser)',
     'set.escalation':'automatic escalation','set.escalationDesc':'If an alert is not acknowledged within the delay, a second contact is notified (on-call, manager...).',
     'set.escDelay':'Escalation delay','set.escDelayHint':'Minutes of inaction before the escalation notification','set.minutes':'minutes',
@@ -3676,6 +3707,7 @@ async function loadSettings() {
 
     if (c.slack_webhook)        document.getElementById('set-slack').value       = c.slack_webhook
     if (c.teams_webhook)        document.getElementById('set-teams').value       = c.teams_webhook
+    for (const [k, v] of Object.entries(c.channels || {})) { const el = document.getElementById('set-ch-' + k); if (el) el.value = v }
     if (c.webhook_url)          document.getElementById('set-webhook').value     = c.webhook_url
     if (c.escalation_email)     document.getElementById('set-esc-email').value   = c.escalation_email
     if (c.escalation_webhook)   document.getElementById('set-esc-webhook').value = c.escalation_webhook
@@ -3714,6 +3746,14 @@ async function saveTeams() {
   try {
     await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ teams_webhook: url || '' }) })
     toast(t('toast.teamsSaved'), 'ok')
+  } catch(e) { toast(e.message, 'err') }
+}
+
+async function saveChannel(type) {
+  const value = document.getElementById('set-ch-' + type).value.trim()
+  try {
+    await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ channels: { [type]: value } }) })
+    toast(t('toast.channelSaved'), 'ok')
   } catch(e) { toast(e.message, 'err') }
 }
 

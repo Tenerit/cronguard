@@ -333,6 +333,12 @@ async function v15(client: {query(sql: string, params?: unknown[]): Promise<unkn
 // `diagnosis`, parsé à la lecture côté serveur). Le blob reste écrit (contrat client
 // dashboard). Backfill depuis le blob existant — PG16 `IS JSON` ignore les blobs
 // dégradés (non-JSON) sans faire échouer la transaction.
+// ─── V20 : autres plateformes de notification (Discord, Google Chat, Mattermost, ntfy, PagerDuty) dans
+// une seule colonne JSON : en ajouter une ne demandera plus de migration.
+async function v20(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE clients ADD COLUMN IF NOT EXISTS channels JSONB NOT NULL DEFAULT '{}'::jsonb`)
+}
+
 // ─── V19 : alertes Teams + secret serveur des liens signés (valider / corriger une analyse depuis
 // l'alerte, sans se connecter). Le secret est créé une fois en base : il survit aux redémarrages.
 async function v19(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
@@ -397,8 +403,9 @@ export async function runMigrations() {
     await v17(client)
     await v18(client)
     await v19(client)
+    await v20(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v19)')
+    logger.info('[DB] Migrations terminées (v1 → v20)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

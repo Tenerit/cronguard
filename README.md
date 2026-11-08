@@ -195,7 +195,8 @@ notification ("✅ resolved", with downtime duration) when the job goes green ag
 | Email | `SMTP_*` variables |
 | Slack | incoming webhook — Settings › Notifications |
 | Microsoft Teams | Workflows webhook ("post to a channel when a webhook request is received") — Settings › Notifications; native card |
-| Generic webhook | custom URL (Discord, PagerDuty, n8n…) — receives the alert/recovery/escalation JSON |
+| Discord · Google Chat · Mattermost / Rocket.Chat · ntfy · PagerDuty | Settings › Notifications › Other platforms — same alert and ✅ / ✏️ buttons; ntfy pushes to the phone and can be self-hosted; PagerDuty incidents resolve on recovery |
+| Generic webhook | custom URL (n8n, Zapier, in-house tool…) — receives the alert/recovery/escalation JSON |
 
 **Validate or correct from the alert, on call, without logging in.** Every failure alert (Teams, Slack, email) carries two buttons, **✅ Analysis right** and **✏️ Correct**. They open a page signed for that one analysis (HMAC, 30 days, no API key) where one tap confirms the diagnosis, or a short note records what really fixed it. That fix is then served as is the next time the same failure happens. The link itself never records anything: chat apps open links to build previews, so only the page's button does. `APP_URL` must be reachable from the on-call phone (VPN or intranet is fine).
 

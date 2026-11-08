@@ -73,7 +73,7 @@ clientsRouter.post('/dlq/replay', requireRole('admin'), asyncHandler(async (_req
 
 clientsRouter.get('/me', asyncHandler(async (req, res) => {
   const { rows: [client] } = await db.query(`
-    SELECT id, email, plan, slack_webhook, webhook_url, teams_webhook,
+    SELECT id, email, plan, slack_webhook, webhook_url, teams_webhook, channels,
            escalation_email, escalation_webhook, escalation_after_min,
            created_at,
       (SELECT COUNT(*) FROM monitors WHERE client_id = $1 AND active = true) AS monitor_count
@@ -87,6 +87,14 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
     slack_webhook:          z.string().url().optional().or(z.literal('')),
     webhook_url:            z.string().url().optional().or(z.literal('')),
     teams_webhook:          z.string().url().optional().or(z.literal('')),
+    // Autres plateformes (channels.ts). '' efface une plateforme ; absente → inchangée.
+    channels: z.object({
+      discord:    z.string().url().regex(/^https:\/\//).max(512).or(z.literal('')),
+      gchat:      z.string().url().regex(/^https:\/\//).max(512).or(z.literal('')),
+      mattermost: z.string().url().max(512).or(z.literal('')),
+      ntfy:       z.string().url().max(512).regex(/\/[\w-]{1,64}\/?$/, 'URL ntfy = https://serveur/topic').or(z.literal('')),
+      pagerduty:  z.string().regex(/^[A-Za-z0-9]{32}$/, 'clé de routage PagerDuty : 32 caractères').or(z.literal('')),
+    }).partial().strict().optional(),
     app_url:                z.string().url().optional(),
     escalation_email:       z.string().email().optional().or(z.literal('')),
     escalation_webhook:     z.string().url().optional().or(z.literal('')),
@@ -102,6 +110,15 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
   const escEmailGiven   = d.escalation_email    !== undefined
   const escWebhookGiven = d.escalation_webhook  !== undefined
   const teamsGiven      = d.teams_webhook       !== undefined
+  // Plateformes : fusion avec l'existant (clé envoyée remplace, '' supprime), faite ici pour rester portable.
+  let channels: string | null = null
+  if (d.channels) {
+    const { rows: [cur] } = await db.query(`SELECT channels FROM clients WHERE id = $1`, [res.locals.clientId])
+    const prev = typeof cur?.channels === 'string' ? JSON.parse(cur.channels) : (cur?.channels ?? {})   // jsonb lu en texte selon le driver
+    const merged: Record<string, string> = { ...prev, ...d.channels }
+    for (const k of Object.keys(merged)) if (!merged[k]) delete merged[k]
+    channels = JSON.stringify(merged)
+  }
 
   const { rows: [client] } = await db.query(`
     UPDATE clients
@@ -111,9 +128,10 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
         escalation_email     = CASE WHEN $8  THEN $7  ELSE escalation_email     END,
         escalation_webhook   = CASE WHEN $10 THEN $9  ELSE escalation_webhook   END,
         escalation_after_min = COALESCE($11, escalation_after_min),
-        teams_webhook        = CASE WHEN $13 THEN $12 ELSE teams_webhook        END
+        teams_webhook        = CASE WHEN $13 THEN $12 ELSE teams_webhook        END,
+        channels             = COALESCE($14::jsonb, channels)
     WHERE id = $1
-    RETURNING id, email, plan, slack_webhook, webhook_url, teams_webhook, app_url,
+    RETURNING id, email, plan, slack_webhook, webhook_url, teams_webhook, channels, app_url,
               escalation_email, escalation_webhook, escalation_after_min
   `, [
     res.locals.clientId,
@@ -129,6 +147,7 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
     d.escalation_after_min ?? null,  // $11
     d.teams_webhook       || null,   // $12
     teamsGiven,                      // $13
+    channels,                        // $14
   ])
   await audit(res, 'settings.updated', 'client', res.locals.clientId, { fields: Object.keys(d) })
   res.json(client)
