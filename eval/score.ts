@@ -133,8 +133,8 @@ Mesuré le ${rep.date.slice(0, 10)} · modèle \`${rep.model}\` · ${rep.runs} r
 | Pannes **non** couvertes (${A.uncovered.n} cas) — le vrai test du modèle | ${A.uncovered.note} |
 | Jeu labo (réglage) / public (sourcé, vu avant le gel) | ${A.lab} / ${A.public} |
 | Jeu public2 (collecté après le gel des fiches, puis lu : devenu réglage) | ${A.public2} |
-| Jeu public3 (test du 2026-11-08 avant les leviers contexte / commande) | ${A.public3} |
-| **Jeu public4 — TEST hors échantillon des leviers contexte / commande** | **${A.public4}** |
+| Jeu public3 (lu le 2026-11-08 : devenu réglage) | ${A.public3} |
+| Jeu public4 (lu le 2026-11-08 : devenu réglage) | ${A.public4} |
 
 | Critère (poids) | Taux |
 |---|---|
