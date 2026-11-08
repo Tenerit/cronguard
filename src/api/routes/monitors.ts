@@ -10,6 +10,7 @@ import { rememberIncident }              from '../../services/llm/incident-memor
 import { sanitizeLogs }                  from '../../services/sanitizer'
 import { withLogHints, evidenceLines }   from '../../services/llm/evidence'
 import { knownFix }                      from '../../services/llm/known-fixes'
+import { lintCommand }                   from '../../services/llm/command-lint'
 import { monitorLimitFor }               from '../../config/plans'
 
 export const monitorsRouter = Router()
@@ -311,6 +312,15 @@ monitorsRouter.post('/analyses/:analysisId/fix', requireRole('member'), asyncHan
   await audit(res, 'analysis.fix_recorded', 'monitor', analysis.monitor_id, { analysisId: analysis.id })
   await rememberIncident(analysis.id, analysis.logs ?? '')
   res.json({ ok: true, verified_fix: fix })
+}))
+
+// ─── POST /lint — risques d'une commande de cron, AVANT toute panne ──────────
+// Utilisé par cronguard-import.sh : signale %, -p espacé, syntaxe bash sous sh… à l'import.
+// Lecture seule, rien n'est stocké. La réponse ne recopie pas la commande (mot de passe possible).
+monitorsRouter.post('/lint', asyncHandler(async (req, res) => {
+  const parsed = z.object({ command: z.string().min(1).max(1000) }).safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: 'command requis (1000 caractères max)' })
+  res.json({ findings: lintCommand(parsed.data.command) })
 }))
 
 // ─── POST /analyze/preview — Analyse immédiate avec diagnostic complet ────────

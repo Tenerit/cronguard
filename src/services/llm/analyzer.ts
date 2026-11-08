@@ -7,6 +7,7 @@ import { mineTemplates } from './drain'
 import { knownFix }      from './known-fixes'
 import { commandFinding } from './command-lint'
 import { contextFinding } from './run-context'
+import { toolCodeFinding, exitCodeFinding } from './exit-codes'
 import { evidenceLines } from './evidence'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -449,7 +450,7 @@ export function llmEnabled(): boolean {
 // (command-lint) puis son environnement réel (run-context, relevé par le SDK). Un fait observé
 // prime sur une fiche générale. LLM_CONTEXT=off coupe ces deux sources (A/B, eval/score.ts --ab).
 export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'action' | 'category' | 'checks' | 'confidence' | 'knownFix' | 'finding'>>(
-  res: T, cleanLogs: string, job?: Pick<JobContext, 'command' | 'runContext'>,
+  res: T, cleanLogs: string, job?: Pick<JobContext, 'command' | 'runContext' | 'exitCode'>,
 ): T {
   if (process.env.LLM_KNOWLEDGE === 'off') return res
   const kf = knownFix(cleanLogs)
@@ -457,9 +458,17 @@ export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'act
     : commandFinding(job?.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job?.runContext)
   if (observed) return { ...res, cause: observed.cause, action: observed.action, category: observed.category,
     checks: kf ? kf.steps.slice(0, 3) : res.checks, confidence: 'high', finding: observed.id, ...(kf ? { knownFix: kf } : {}) }
-  // Sans fiche, la cause vient seule du modèle : il se dit « high » sur un symptôme recopié.
-  // Une confiance haute n'est affichée que si une fiche connue l'appuie.
-  if (!kf) return res.confidence === 'high' ? { ...res, confidence: 'medium' } : res
+  // Sans fiche : sens officiel d'un code (curl / rsync dans les logs, sinon code de sortie 126/127/128+N).
+  // Un code de sortie dit CE QUI s'est passé (tué, introuvable), pas toujours pourquoi : confiance moyenne.
+  if (!kf) {
+    const tool = process.env.LLM_CODES === 'off' ? null : toolCodeFinding(cleanLogs)
+    const exit = tool || process.env.LLM_CODES === 'off' ? null : exitCodeFinding(job?.exitCode)
+    const coded = tool ?? exit
+    if (coded) return { ...res, cause: coded.cause, action: coded.action, category: coded.category,
+      confidence: tool ? 'high' : 'medium', finding: coded.id }
+    // Sans fiche ni code, la cause vient seule du modèle : il se dit « high » sur un symptôme recopié.
+    return res.confidence === 'high' ? { ...res, confidence: 'medium' } : res
+  }
   return { ...res, cause: kf.cause, action: kf.action, category: kf.category, checks: kf.steps.slice(0, 3), confidence: 'high', knownFix: kf }
 }
 

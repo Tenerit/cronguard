@@ -129,6 +129,8 @@ sudo cp sdk/bash/cronguard.sh /usr/local/lib/cronguard.sh
 CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh            # preview
 CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --apply    # create monitors
 ```
+With an API key, the import also warns about risky commands before they ever fail (unescaped `%`, a password after `-p `, bash syntax run by `sh`, a relative script path, `sudo`…).
+
 For `/etc/crontab` or `/etc/cron.d/*` (extra user column), pass the file and `--system`.
 
 **systemd timers:** `--systemd` creates one monitor per enabled timer (or the `x.timer` names you pass) and prints a root script that adds a drop-in to each service: `ExecStopPost=` reports the result, exit status and the journal of that run. The service's own command is not changed.

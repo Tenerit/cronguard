@@ -183,6 +183,15 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   name="$(job_name "$rest")"
   if [[ -n "${seen[$name]:-}" ]]; then seen[$name]=$(( ${seen[$name]} + 1 )); name="$name-${seen[$name]}"; else seen[$name]=1; fi
 
+  # Prévention : risques connus de la commande (%, -p espacé, syntaxe bash sous sh…), avant toute panne.
+  if [[ -n "${CRONGUARD_API_KEY:-}" ]]; then
+    lint="$(curl -sS -m 10 -X POST "$CRONGUARD_URL/monitors/lint" -H 'Content-Type: application/json' \
+      -H "X-API-Key: $CRONGUARD_API_KEY" -d "{\"command\":$(json_str "$rest")}" 2>/dev/null || true)"
+    while IFS= read -r risk; do
+      if [[ -n "$risk" ]]; then echo "  ⚠ $name : $risk" >&2; fi
+    done < <(printf '%s' "$lint" | grep -o '"cause":"[^"]*"' | sed 's/^"cause":"//; s/"$//' || true)
+  fi
+
   key="<ping-key-$name>"
   if [[ $apply -eq 1 ]]; then
     key="$(create_monitor "$name" "\"schedule\":$(json_str "$sched")")"

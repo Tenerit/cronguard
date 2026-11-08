@@ -5,6 +5,7 @@ import { createServer, Server } from 'http'
 import { mkdtempSync, writeFileSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
+import { lintCommand } from '../src/services/llm/command-lint'
 
 // Import de crontab (sdk/bash/cronguard-import.sh) : la ligne réécrite doit exécuter
 // EXACTEMENT la commande d'origine, sinon on casse les crons du client en les surveillant.
@@ -28,6 +29,7 @@ const CRONTAB = [
 describe.skipIf(!hasBash)('cronguard-import.sh', () => {
   let server: Server, url = '', dir = ''
   const created: Array<Record<string, string>> = []
+  const linted: string[] = []
 
   beforeAll(async () => {
     dir = mkdtempSync(join(tmpdir(), 'cg-import-'))
@@ -39,6 +41,11 @@ describe.skipIf(!hasBash)('cronguard-import.sh', () => {
       req.on('data', c => { body += c })
       req.on('end', () => {
         if (req.headers['x-api-key'] !== 'cg_test') { res.writeHead(401).end(); return }
+        if (req.url === '/monitors/lint') {   // prévention : renvoie le vrai résultat de lintCommand
+          linted.push(JSON.parse(body).command)
+          res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ findings: lintCommand(JSON.parse(body).command) }))
+          return
+        }
         const m = JSON.parse(body); created.push(m)
         res.writeHead(201, { 'Content-Type': 'application/json' })
           .end(JSON.stringify({ id: 'x', ping_key: `pk-${created.length}`, name: m.name }))
@@ -78,6 +85,16 @@ describe.skipIf(!hasBash)('cronguard-import.sh', () => {
     }
     const ran = readFileSync(join(dir, 'ran'), 'utf8').trimEnd().split('\n')
     expect(ran).toEqual(COMMANDS.map((c, i) => `pk-${i + 1}|${c}`))
+  })
+
+  it('prévention : signale les risques de la commande avant toute panne', async () => {
+    writeFileSync(join(dir, 'crontab'), '0 1 * * * mysqldump -u root -p S3cret db > /b/db_$(date +%F).sql')
+    const { stderr } = await promisify(execFile)('bash', [SCRIPT, join(dir, 'crontab')], {
+      env: { ...process.env, CRONGUARD_URL: url, CRONGUARD_API_KEY: 'cg_test', CRONGUARD_LIB: join(dir, 'lib.sh').replace(/\\/g, '/') },
+      encoding: 'utf8', timeout: 20_000 })
+    expect(stderr).toMatch(/⚠ mysqldump : La commande contient un % non échappé/)
+    expect(stderr).toMatch(/⚠ mysqldump : Le mot de passe est séparé de -p/)
+    expect(stderr).not.toContain('S3cret')   // la réponse ne recopie jamais la commande
   })
 
   it('ne réenveloppe pas une ligne déjà surveillée', async () => {
