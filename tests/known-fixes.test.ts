@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { knownFix } from '../src/services/llm/known-fixes'
+import { knownFix, KNOWN_FIX_COUNT } from '../src/services/llm/known-fixes'
 import { CASES } from '../eval/cases'
 import { PUBLIC_CASES } from '../eval/public-cases'
 
@@ -28,6 +28,11 @@ const EXPECTED: Record<string, string | null> = {
   'pub-aws-s3-sync-sso-expired':            'cloud-token-expired',
   'pub-s3-upload-expired-token':            'cloud-token-expired',
   'pub-node-heap-oom-backup':               'node-heap-oom',
+  // Fiches du 2026-11-08 qui reconnaissent des scénarios labo (jeu de réglage) :
+  'watchdog-sigkill':        'killed-by-timeout',
+  'query-statement-timeout': 'pg-statement-timeout',
+  'fork-cannot-allocate':    'fork-failed',
+  'csv-encoding-garbage':    'utf8-decode',
 }
 
 // Messages standard des outils (forme documentée), un par pack ajouté, plus des voisins
@@ -49,12 +54,70 @@ const SAMPLES: Array<[string, string | null]> = [
   ['backup@nas.internal: Permission denied (publickey,password).', 'ssh-publickey-denied'],
   ["Error: EMFILE: too many open files, open '/data/x.csv'", 'too-many-open-files'],
   ['OSError: [Errno 24] Too many open files', 'too-many-open-files'],
+  // Fiches du 2026-11-08 : message standard de chaque outil
+  ['tar: /home/u/a.tar: Cannot write: Disk quota exceeded', 'disk-quota'],
+  ['cp: cannot create regular file \'/mnt/backup/x\': Read-only file system', 'read-only-fs'],
+  ['Exception in thread "main" java.lang.OutOfMemoryError: Java heap space', 'java-heap'],
+  ['PHP Fatal error:  Allowed memory size of 134217728 bytes exhausted (tried to allocate 20480 bytes)', 'php-memory'],
+  ['Traceback (most recent call last):\n  File "etl.py", line 12, in <module>\nMemoryError', 'python-memoryerror'],
+  ['ERROR 1205 (HY000) at line 1: Lock wait timeout exceeded; try restarting transaction', 'db-lock-wait'],
+  ['ERROR:  could not serialize access due to concurrent update', 'pg-serialization'],
+  ['pg_dump: error: Dumping the contents of table "events" failed: PQgetResult() failed.\npg_dump: error: server closed the connection unexpectedly', 'pg-server-closed'],
+  ['mysqldump: Error 2013: Lost connection to MySQL server during query when dumping table `logs`', 'mysql-gone-away'],
+  ["ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)", 'mysql-socket'],
+  ['ERROR 1040 (HY000): Too many connections', 'mysql-too-many-connections'],
+  ["mysqldump: Couldn't execute 'SELECT COLUMN_NAME FROM information_schema.COLUMN_STATISTICS': Unknown table 'COLUMN_STATISTICS' in information_schema (1109)", 'mysqldump-column-statistics'],
+  ['mysqldump: Error: \'Access denied; you need (at least one of) the PROCESS privilege(s) for this operation\' when trying to dump tablespaces', 'mysqldump-process-privilege'],
+  ['psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  Peer authentication failed for user "backup"', 'pg-peer-auth'],
+  ['psql: error: FATAL:  role "root" does not exist', 'pg-role-missing'],
+  ['pg_dump: error: query failed: ERROR:  permission denied for table invoices', 'pg-permission-denied'],
+  ['sqlite3.OperationalError: database is locked', 'sqlite-locked'],
+  ["/opt/jobs/backup.sh: line 2: $'\\r': command not found", 'crlf-line-endings'],
+  ['/opt/jobs/sync.sh: 5: Syntax error: "(" unexpected', 'sh-not-bash'],
+  ['/opt/jobs/sync.sh: 12: [[: not found', 'sh-not-bash'],
+  ['/bin/sh: /opt/jobs/report.py: /usr/local/bin/python3.11: bad interpreter: No such file or directory', 'bad-interpreter'],
+  ['the input device is not a TTY', 'not-a-tty'],
+  ['Error: cannot open display: :0', 'no-display'],
+  ["UnicodeEncodeError: 'ascii' codec can't encode character '\\xe9' in position 4: ordinal not in range(128)", 'ascii-locale'],
+  ['TERM environment variable not set.', 'term-not-set'],
+  ["Error: Cannot find module 'dotenv'\nRequire stack:\n- /home/app/job.js", 'node-module-missing'],
+  ['/bin/sh: 1: /opt/jobs/rotate.sh: Permission denied', 'exec-permission-denied'],
+  ["fatal: detected dubious ownership in repository at '/srv/site'", 'git-dubious-ownership'],
+  ['@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @\nHost key verification failed.', 'ssh-host-key-changed'],
+  ['Host key verification failed.\nrsync: connection unexpectedly closed (0 bytes received so far) [sender]', 'ssh-host-key-verification'],
+  ['sign_and_send_pubkey: signing failed for RSA "/root/.ssh/id_rsa" from agent: agent refused operation', 'ssh-agent-missing'],
+  ['ssh: connect to host backup.example.net port 22: Connection timed out', 'ssh-connect-timeout'],
+  ['gpg: 0x1234ABCD: skipped: No public key\ngpg: [stdin]: encryption failed: No public key', 'gpg-no-key'],
+  ['gpg: signing failed: Inappropriate ioctl for device', 'gpg-no-tty'],
+  ['Fatal: wrong password or no key found', 'backup-repo-password'],
+  ['unable to create lock in backend: repository is already locked by PID 4211 on host1 by root', 'stale-lock'],
+  ['Failed to create/acquire the lock /backup/repo/lock.exclusive (timeout).', 'stale-lock'],
+  ['An error occurred (RequestTimeTooSkewed) when calling the PutObject operation: The difference between the request time and the current time is too large.', 'clock-skew'],
+  ['Problem binding to port 80: Could not bind to IPv4 or IPv6.', 'acme-port-busy'],
+  ['Error creating new order :: too many certificates already issued for: example.com', 'acme-rate-limit'],
+  ['Error: connect ECONNREFUSED 127.0.0.1:6379', 'connection-refused'],
+  ['curl: (22) The requested URL returned error: 502 Bad Gateway', 'http-gateway'],
+  ['Error response from daemon: toomanyrequests: You have reached your pull rate limit.', 'docker-pull-limit'],
+  ['Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?', 'docker-daemon'],
+  ['upload failed: ./x to s3://b/x Unable to locate credentials', 'cloud-no-credentials'],
+  ['An error occurred (AccessDenied) when calling the PutObject operation: Access Denied', 'cloud-access-denied'],
+  ['smtplib.SMTPAuthenticationError: (535, b\'5.7.8 Username and Password not accepted.\')', 'smtp-auth'],
+  ['timeout: sending signal TERM to command \'pg_dump\'', 'killed-by-timeout'],
+  ['/usr/bin/rm: Argument list too long', 'argument-list-too-long'],
+  ['/opt/jobs/convert.sh: line 9:  4211 Segmentation fault      (core dumped) ./resize', 'segfault'],
+  ["UnicodeDecodeError: 'utf-8' codec can't decode byte 0xe9 in position 10: invalid continuation byte", 'utf8-decode'],
+  ['SyntaxError: Unexpected token \'<\', "<!DOCTYPE "... is not valid JSON', 'json-not-json'],
+  ['file has vanished: "/var/log/app/x.log.1"\nrsync warning: some files vanished before they could be transferred (code 24) at main.c(1338)', 'rsync-vanished'],
   // Voisins à ne pas confondre
   ['GET /api/orders/42 -> 404 Not Found', null],
   ['Error: not found: invoice 8812', null],
   ['401 Unauthorized: the provided authorization grant is invalid, expired, or revoked', null],
   ['Permission denied: /var/log/app.log', null],
   ['certificate has expired', 'tls-cert-expired'],   // expiré ≠ CA inconnue : le pack « expiré » passe avant
+  ['x509: certificate has expired or is not yet valid', 'tls-cert-expired'],          // pas « horloge décalée »
+  ['FATAL: JavaScript heap out of memory\nAborted (core dumped)', 'node-heap-oom'],   // pas « segfault »
+  ['GET /api/orders/42 -> 504 Not Found in cache', null],
+  ['the job printed: no tty needed here', null],
 ]
 
 describe('corrections connues (packs)', () => {
@@ -79,8 +142,10 @@ describe('corrections connues (packs)', () => {
       seen.add(f.id)
       expect(f.category).toBeTruthy()
       expect(f.title.length).toBeGreaterThan(5)
-      expect(f.steps.length).toBeGreaterThanOrEqual(2)
+      expect(f.steps.length).toBeGreaterThanOrEqual(1)
+      expect(f.cause.length).toBeGreaterThan(20)
+      expect(f.action.length).toBeGreaterThan(15)
     }
-    expect(seen.size).toBe(25)   // tous les packs sont exercés par au moins un exemple
+    expect(seen.size).toBe(KNOWN_FIX_COUNT)   // tous les packs sont exercés par au moins un exemple
   })
 })

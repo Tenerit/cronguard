@@ -21,9 +21,9 @@ describe('IA optionnelle', () => {
 
   it('pack reconnu : cause, catégorie et étapes viennent du pack, modèle « none »', () => {
     const a = analysisWithoutModel({ logs: 'tar: write error\nENOSPC: no space left on device, write' })
-    expect(a.cause).toBe('Disque plein')
+    expect(a.cause).toMatch(/volume de destination est plein/)
     expect(a.category).toBe('resources')
-    expect(a.action).toContain('df -h')
+    expect(a.action).toMatch(/rétention/)
     expect(a.model).toBe('none')
     expect(a.confidence).toBe('medium')
   })

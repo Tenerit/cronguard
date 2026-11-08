@@ -417,6 +417,17 @@ export function llmEnabled(): boolean {
   return process.env.LLM_ENABLED !== 'false' && !!process.env.LLM_BASE_URL
 }
 
+// Fiche connue déclenchée par les logs → sa cause (le mécanisme), son action et sa catégorie
+// remplacent celles du modèle : mesuré le 2026-11-08, llama3.2:3b recopie le symptôme quelle
+// que soit la consigne (eval/ab-root-cause.ts). Le modèle garde prévention, sévérité, impact.
+// LLM_KNOWLEDGE=off rend la sortie brute du modèle (comparaison A/B, eval/score.ts --ab).
+export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'action' | 'category' | 'checks' | 'confidence' | 'knownFix'>>(res: T, cleanLogs: string): T {
+  if (process.env.LLM_KNOWLEDGE === 'off') return res
+  const kf = knownFix(cleanLogs)
+  if (!kf) return res
+  return { ...res, cause: kf.cause, action: kf.action, category: kf.category, checks: kf.steps.slice(0, 3), confidence: 'high', knownFix: kf }
+}
+
 // Analyse sans modèle : tout vient des logs (pack déclenché, sinon dernière ligne d'erreur).
 // Sert quand l'IA est désactivée, et en repli quand le LLM est en panne ou saturé.
 export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
@@ -425,8 +436,8 @@ export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
   const kf = knownFix(clean)
   const line = evidenceLines(clean, kf?.title ?? '')[0]
   return {
-    cause:       kf ? kf.title : line ? `Échec du job, dernière erreur : ${line}` : 'Échec du job : aucune ligne d\'erreur reconnue dans les logs.',
-    action:      kf ? kf.steps[0] : 'Lire les lignes de log liées et la sortie complète du job.',
+    cause:       kf ? kf.cause : line ? `Échec du job, dernière erreur : ${line}` : 'Échec du job : aucune ligne d\'erreur reconnue dans les logs.',
+    action:      kf ? kf.action : 'Lire les lignes de log liées et la sortie complète du job.',
     prevention:  kf ? kf.steps[kf.steps.length - 1] : 'Activer l\'analyse IA locale pour une cause détaillée (LLM_BASE_URL).',
     checks:      kf ? kf.steps.slice(1, 3) : [],
     severity:    (ctx.failCount7d ?? 0) >= 3 ? 'high' : 'medium',
@@ -455,8 +466,9 @@ export async function analyzeFailure(
     // Le cache est keyé sur l'empreinte d'erreur, pas sur la récurrence. Un incident
     // désormais récurrent ne doit pas hériter de la sévérité (souvent "medium") du 1er
     // passage : on applique la règle « récurrent → au moins high » au moment de
-    // servir. N'augmente jamais vers le bas → sûr.
-    return atLeastHighIfRecurring(cached, ctx)
+    // servir. N'augmente jamais vers le bas → sûr. La fiche aussi s'applique au service :
+    // une réponse mise en cache avant une nouvelle fiche en profite sans purge.
+    return groundWithKnownFix(atLeastHighIfRecurring(cached, ctx), clean)
   }
 
   if (await isOpen()) { logger.warn('[LLM] Circuit open'); return null }
@@ -512,7 +524,7 @@ export async function analyzeFailure(
     if (!parsed) { logger.warn('[LLM] Réponse invalide', { raw: raw.slice(0, 150) }); return null }
 
     const result: AnalysisResult = {
-      ...atLeastHighIfRecurring(parsed, ctx),
+      ...groundWithKnownFix(atLeastHighIfRecurring(parsed, ctx), clean),
       fromCache:          false,
       correlatedMonitors: ctx.correlatedFailures,
       tokensIn:           anthropic ? data.usage?.input_tokens  : data.usage?.prompt_tokens,

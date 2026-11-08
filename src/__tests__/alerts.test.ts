@@ -193,7 +193,7 @@ describe('lignes de log liées', () => {
 })
 
 describe('correction connue (pack)', () => {
-  const kf = { id: 'disk-full', category: 'resources' as const, title: 'Disque <plein>', steps: ['df -h', 'du -xh / | sort -h'] }
+  const kf = { id: 'disk-full', category: 'resources' as const, title: 'Disque <plein>', cause: 'Volume plein', action: 'Purger', steps: ['df -h', 'du -xh / | sort -h'] }
   const withKf = { ...payloadWithAI, analysis: { ...payloadWithAI.analysis!, knownFix: kf } }
   it('mail (échappé), Slack et webhook la présentent comme « à adapter »', async () => {
     await sendEmailAlert(withKf)

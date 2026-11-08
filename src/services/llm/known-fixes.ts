@@ -1,29 +1,35 @@
 // Corrections connues pour des pannes courantes, livrées avec CronGuard : la mémoire des
 // corrections est vide au premier jour, celles-ci servent dès la première panne.
 //
-// Déclenchées par le TEXTE des logs (regex précise), jamais par le modèle. Ce sont des
-// étapes de diagnostic standard, pas une correction vérifiée chez le client : l'interface
-// les présente comme « correction connue, à adapter ». Ordre = priorité (le plus précis
-// d'abord : WAL plein avant disque plein, inodes avant disque plein).
+// Déclenchées par le TEXTE des logs (regex précise), jamais par le modèle. Chaque fiche dit le
+// MÉCANISME (cause), le correctif (action) et les étapes de diagnostic. Quand une fiche se
+// déclenche, sa cause et son action remplacent celles du modèle (analyzer.ts) : un petit modèle
+// local recopie le symptôme (mesuré, eval/ab-root-cause.ts), la fiche donne le pourquoi.
+// Ordre = priorité (le plus précis d'abord : WAL plein avant disque plein).
 //
 // N'ajouter qu'une panne au message stable et une procédure qu'un ops validerait sans
 // contexte. Chaque entrée a un test qui la déclenche et des fixtures qui ne doivent pas.
+// Fiches 26+ écrites le 2026-11-08 d'après les messages standard des outils (taxonomie des
+// pannes de cron), AVANT la collecte du jeu de test public suivant : elles n'ont pas vu ces cas.
 
 import type { ErrorCategory } from './analyzer'
 
 export interface KnownFix {
-  id:    string
+  id:       string
   category: ErrorCategory
-  title: string
-  steps: string[]
+  title:    string
+  cause:    string     // le mécanisme, en une phrase
+  action:   string     // le correctif, en une phrase impérative
+  steps:    string[]
 }
 
 const FIXES: Array<KnownFix & { match: RegExp }> = [
   {
-    id: 'pg-wal-full',
-    category: 'database',
+    id: 'pg-wal-full', category: 'database',
     match: /pg_wal\/\S*["']?:? No space left on device|could not write to file "pg_wal/i,
     title: 'PostgreSQL : disque plein dans pg_wal',
+    cause: "Le volume de PostgreSQL est plein à cause de pg_wal : un slot de réplication inactif ou un archivage en échec empêche le recyclage des WAL.",
+    action: "Supprimer le slot de réplication abandonné (ou réparer l'archivage) puis libérer ou agrandir le volume, sans toucher à pg_wal à la main.",
     steps: [
       'Ne pas supprimer de fichiers dans pg_wal à la main (corruption).',
       "Slot de réplication inactif qui retient le WAL : SELECT slot_name, active, restart_lsn FROM pg_replication_slots;",
@@ -32,10 +38,11 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'inodes-exhausted',
-    category: 'resources',
+    id: 'inodes-exhausted', category: 'resources',
     match: /inodes? (exhausted|épuisés)|no free inodes|out of inodes/i,
     title: 'Inodes épuisés (disque pas forcément plein)',
+    cause: "Le système de fichiers n'a plus d'inodes : trop de petits fichiers, alors qu'il reste de l'espace disque.",
+    action: 'Purger ou regrouper en archive les dossiers aux millions de petits fichiers (du --inodes pour les trouver).',
     steps: [
       'Confirmer : df -i (IUse% à 100 %) alors que df -h montre de la place.',
       'Trouver les dossiers aux millions de petits fichiers : du --inodes -x / 2>/dev/null | sort -n | tail',
@@ -43,10 +50,19 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'disk-full',
-    category: 'resources',
+    id: 'disk-quota', category: 'resources',
+    match: /Disk quota exceeded|EDQUOT/,
+    title: "Quota disque de l'utilisateur dépassé",
+    cause: "L'utilisateur qui exécute le job a atteint son quota disque, même si le volume a encore de la place.",
+    action: "Libérer de la place dans les fichiers de cet utilisateur ou relever son quota (quota -s, edquota).",
+    steps: ['Voir le quota : quota -s (ou repquota -a en root).', 'Purger les anciens fichiers du job ou relever le quota.'],
+  },
+  {
+    id: 'disk-full', category: 'resources',
     match: /No space left on device|ENOSPC/i,
     title: 'Disque plein',
+    cause: "Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.",
+    action: 'Libérer de la place (purger les anciennes sauvegardes et logs) et ajouter une rétention au job.',
     steps: [
       'Voir le volume plein : df -h',
       'Trouver ce qui occupe : du -xh <point_de_montage> 2>/dev/null | sort -h | tail -20',
@@ -55,10 +71,19 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'oom-killed',
-    category: 'resources',
+    id: 'read-only-fs', category: 'resources',
+    match: /Read-only file system|EROFS/,
+    title: 'Système de fichiers en lecture seule',
+    cause: "Le volume est monté en lecture seule : le noyau l'a repassé en ro après des erreurs disque, ou il est monté ro.",
+    action: "Vérifier les erreurs disque (dmesg), réparer le système de fichiers (fsck) puis le remonter en écriture.",
+    steps: ['Voir les erreurs : dmesg -T | grep -i -E "ext4|xfs|i/o error|remount"', 'Vérifier le montage : findmnt <chemin> (option ro ?)', 'Planifier fsck et surveiller la santé du disque (smartctl -a).'],
+  },
+  {
+    id: 'oom-killed', category: 'resources',
     match: /Out of memory: Killed process|OOMKilled|oom-kill|exit code:? 137\b/i,
     title: 'Processus tué par manque de mémoire (OOM, code 137)',
+    cause: "Le processus a dépassé la mémoire disponible ou la limite du conteneur : le noyau l'a tué (OOM killer, code 137).",
+    action: 'Réduire le pic mémoire en traitant par lots, ou augmenter la limite mémoire du conteneur ou de la machine.',
     steps: [
       'Confirmer : dmesg -T | grep -i -E "out of memory|killed process"',
       'Réduire la mémoire par exécution (traitement par lots, streaming au lieu de tout charger).',
@@ -66,10 +91,43 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'pg-connection-refused',
-    category: 'database',
+    id: 'fork-failed', category: 'resources',
+    match: /fork: (retry: )?(Resource temporarily unavailable|Cannot allocate memory)|Cannot fork|fork failed/i,
+    title: 'Impossible de créer un processus (fork)',
+    cause: "Le système refuse de créer de nouveaux processus : mémoire libre épuisée ou limite de processus (ulimit -u, pids du cgroup) atteinte, souvent par trop de tâches en parallèle.",
+    action: 'Réduire le nombre de processus lancés en parallèle par le job, ou relever la limite de processus et la mémoire disponible.',
+    steps: ['Mémoire libre : free -m', 'Limite de processus : ulimit -u (et TasksMax= pour un service systemd).', 'Réduire le parallélisme du job (moins de workers).'],
+  },
+  {
+    id: 'java-heap', category: 'resources',
+    match: /java\.lang\.OutOfMemoryError|GC overhead limit exceeded/,
+    title: 'Java : mémoire du tas épuisée',
+    cause: 'Le programme Java a dépassé la taille de tas maximale (-Xmx) fixée pour la JVM.',
+    action: 'Augmenter -Xmx dans la commande du job (sans dépasser la RAM), ou traiter les données par lots.',
+    steps: ['Voir la limite effective : java -XX:+PrintFlagsFinal -version | grep MaxHeapSize', 'Ajuster -Xmx / JAVA_OPTS dans la commande du cron.'],
+  },
+  {
+    id: 'php-memory', category: 'resources',
+    match: /Allowed memory size of \d+ bytes exhausted/,
+    title: 'PHP : memory_limit atteint',
+    cause: "Le script PHP dépasse memory_limit ; en ligne de commande, PHP lit un php.ini différent de celui du serveur web.",
+    action: "Relever memory_limit pour ce job (php -d memory_limit=512M script.php) ou traiter par lots.",
+    steps: ['Voir le php.ini du CLI : php --ini', 'Lancer avec php -d memory_limit=<valeur> dans la crontab.'],
+  },
+  {
+    id: 'python-memoryerror', category: 'resources',
+    match: /^MemoryError\b|\nMemoryError\b/m,
+    title: 'Python : MemoryError',
+    cause: 'Le script Python a tenté de charger plus de données que la mémoire disponible.',
+    action: 'Traiter les données par morceaux (chunks, itérateurs) au lieu de tout charger, ou donner plus de mémoire.',
+    steps: ['Repérer la ligne qui charge tout en mémoire (read(), list(), DataFrame complet).', 'Utiliser chunksize / un générateur.'],
+  },
+  {
+    id: 'pg-connection-refused', category: 'database',
     match: /port 5432 failed: Connection refused|could not connect to server: Connection refused/i,
     title: 'PostgreSQL injoignable (connexion refusée)',
+    cause: "Le serveur PostgreSQL n'écoute pas à cette adresse : service arrêté ou redémarré, ou listen_addresses / pare-feu qui bloque.",
+    action: 'Vérifier et redémarrer le service PostgreSQL (systemctl status postgresql, pg_isready), puis relancer le job.',
     steps: [
       'Le serveur répond-il ? pg_isready -h <hôte> -p 5432',
       'Service arrêté ? systemctl status postgresql (ou docker ps pour un conteneur)',
@@ -77,10 +135,11 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'pg-too-many-connections',
-    category: 'database',
+    id: 'pg-too-many-connections', category: 'database',
     match: /too many clients already|remaining connection slots are reserved/i,
     title: 'PostgreSQL : plus de connexions disponibles',
+    cause: 'Toutes les connexions PostgreSQL sont prises (limite max_connections atteinte), souvent par des connexions oubliées ou un pool mal dimensionné.',
+    action: "Libérer les connexions inactives (idle in transaction) et passer par un pooler (PgBouncer) plutôt qu'augmenter max_connections.",
     steps: [
       'Qui tient les connexions : SELECT usename, application_name, state, count(*) FROM pg_stat_activity GROUP BY 1,2,3 ORDER BY 4 DESC;',
       "Connexions oubliées : état 'idle in transaction' ; régler idle_in_transaction_session_timeout.",
@@ -88,10 +147,11 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'db-deadlock',
-    category: 'database',
+    id: 'db-deadlock', category: 'database',
     match: /deadlock detected|Deadlock found when trying to get lock/i,
     title: 'Interblocage (deadlock) entre transactions',
+    cause: 'Deux transactions concurrentes verrouillent les mêmes lignes dans un ordre différent : la base en a annulé une (deadlock).',
+    action: 'Relancer la transaction et prendre les verrous dans le même ordre partout, avec des lots plus petits.',
     steps: [
       'Relancer la transaction : un deadlock est transitoire, la base en a annulé une.',
       'Prendre les verrous dans le même ordre partout (trier les ids avant les UPDATE).',
@@ -99,47 +159,83 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'dns-resolution',
-    category: 'network',
-    match: /Could not resolve host|getaddrinfo (ENOTFOUND|EAI_AGAIN)|Temporary failure in name resolution|Name or service not known/i,
-    title: 'Résolution DNS en échec',
-    steps: [
-      'Tester depuis la machine du job : getent hosts <nom> (ou dig <nom>)',
-      'Vérifier le résolveur : cat /etc/resolv.conf',
-      'Nom mal orthographié ou enregistrement supprimé côté fournisseur ?',
-    ],
+    id: 'db-lock-wait', category: 'database',
+    match: /Lock wait timeout exceeded|canceling statement due to lock timeout|could not obtain lock on/i,
+    title: 'Attente de verrou trop longue',
+    cause: "Une autre transaction tient un verrou sur les mêmes lignes ou tables trop longtemps (job concurrent, transaction restée ouverte).",
+    action: 'Identifier la session bloquante et la terminer, puis décaler le job ou raccourcir les transactions concurrentes.',
+    steps: ['MySQL : SHOW ENGINE INNODB STATUS; / PostgreSQL : SELECT * FROM pg_stat_activity WHERE wait_event_type = \'Lock\';', 'Chercher un autre job planifié à la même heure.'],
   },
   {
-    id: 'tls-cert-expired',
-    category: 'network',
-    match: /certificate has expired|CERT_HAS_EXPIRED|certificate verify failed: certificate has expired/i,
-    title: 'Certificat TLS expiré',
-    steps: [
-      "Voir la date d'expiration : echo | openssl s_client -connect <hôte>:443 -servername <hôte> 2>/dev/null | openssl x509 -noout -enddate",
-      "Si c'est votre certificat Let's Encrypt : certbot renew --dry-run, puis vérifier le timer (systemctl list-timers | grep certbot).",
-      "Si c'est celui d'un tiers : le prévenir ; ne pas désactiver la vérification TLS.",
-    ],
+    id: 'pg-serialization', category: 'database',
+    match: /could not serialize access due to (concurrent update|read\/write dependencies)/i,
+    title: 'PostgreSQL : conflit de sérialisation',
+    cause: 'Une transaction concurrente a modifié les mêmes données sous un niveau d\'isolation strict (REPEATABLE READ / SERIALIZABLE).',
+    action: 'Relancer la transaction automatiquement en cas d\'erreur de sérialisation (code SQLSTATE 40001).',
+    steps: ['Ajouter une boucle de retry sur SQLSTATE 40001.', 'Éviter de faire tourner deux jobs sur les mêmes lignes en même temps.'],
   },
   {
-    id: 'http-429',
-    category: 'dependency',
-    match: /\b429\b.*(Too Many Requests|rate limit)|(Too Many Requests|rate limit exceeded).*\b429\b|RateLimitError/i,
-    title: 'Limite de débit de l\'API atteinte (429)',
-    steps: [
-      'Respecter l\'en-tête Retry-After et réessayer avec un délai exponentiel.',
-      'Étaler les appels (moins de parallélisme, lots plus petits).',
-      'Vérifier qu\'un autre job n\'utilise pas la même clé au même moment.',
-    ],
+    id: 'pg-statement-timeout', category: 'timeout',
+    match: /canceling statement due to statement timeout/i,
+    title: 'PostgreSQL : requête annulée par statement_timeout',
+    cause: "La requête dépasse statement_timeout : la table a grossi ou un index manque, la requête est devenue trop lente.",
+    action: "Optimiser la requête (index sur le filtre, EXPLAIN ANALYZE) ou la découper, plutôt que de relever statement_timeout.",
+    steps: ['EXPLAIN (ANALYZE, BUFFERS) <requête> pour voir le scan coûteux.', 'Ajouter l\'index manquant ou traiter par tranches de dates.'],
   },
-
-  // ── Pannes courantes des jobs planifiés (sauvegardes, ETL, synchronisations) ──
-  // Regex écrites d'après les messages standard des outils (PostgreSQL, MySQL, OpenSSL/Go,
-  // AWS, Node, rsync, tar, OpenSSH, Python), pas d'après un log précis.
   {
-    id: 'pg-dump-version-mismatch',
-    category: 'database',
+    id: 'pg-server-closed', category: 'database',
+    match: /server closed the connection unexpectedly/i,
+    title: 'PostgreSQL a coupé la connexion',
+    cause: "Le serveur PostgreSQL a fermé la connexion : processus serveur tué (OOM, crash), redémarrage, ou coupure réseau / timeout d'inactivité.",
+    action: 'Lire les logs du serveur PostgreSQL au même moment pour savoir qui a coupé, puis relancer le job.',
+    steps: ['journalctl -u postgresql ou le log PostgreSQL à l\'heure du job.', 'dmesg -T | grep -i "killed process" (OOM côté serveur ?).'],
+  },
+  {
+    id: 'mysql-gone-away', category: 'database',
+    match: /MySQL server has gone away|Lost connection to MySQL server during query/i,
+    title: 'MySQL a coupé la connexion',
+    cause: 'MySQL a fermé la connexion : paquet plus gros que max_allowed_packet, connexion inactive au-delà de wait_timeout, ou serveur redémarré.',
+    action: 'Relever max_allowed_packet (dump/import de gros champs) ou reconnecter avant les requêtes longues ; vérifier un redémarrage du serveur.',
+    steps: ["SHOW VARIABLES LIKE 'max_allowed_packet'; et 'wait_timeout';", 'Pour mysqldump : --max-allowed-packet=512M.'],
+  },
+  {
+    id: 'mysql-socket', category: 'database',
+    match: /Can't connect to local MySQL server through socket/i,
+    title: 'MySQL local injoignable (socket)',
+    cause: "Le serveur MySQL local est arrêté, ou le client cherche le socket à un autre chemin que celui du serveur.",
+    action: 'Vérifier et démarrer le service MySQL, ou passer par TCP (-h 127.0.0.1) / le bon --socket.',
+    steps: ['systemctl status mysql (ou mariadb)', 'Chemin du socket : mysqladmin variables | grep socket'],
+  },
+  {
+    id: 'mysql-too-many-connections', category: 'database',
+    match: /ERROR 1040|Too many connections/,
+    title: 'MySQL : plus de connexions disponibles',
+    cause: 'MySQL a atteint max_connections : des connexions restent ouvertes (fuite, jobs concurrents).',
+    action: 'Fermer les connexions inactives et corriger la fuite, puis ajuster max_connections si nécessaire.',
+    steps: ['SHOW PROCESSLIST; pour voir qui tient les connexions.', "SHOW VARIABLES LIKE 'max_connections';"],
+  },
+  {
+    id: 'mysqldump-column-statistics', category: 'database',
+    match: /Unknown table 'COLUMN_STATISTICS' in information_schema/i,
+    title: 'mysqldump 8 contre un serveur MySQL 5.7 / MariaDB',
+    cause: "Le client mysqldump 8 interroge COLUMN_STATISTICS, absente du serveur plus ancien (MySQL 5.7 ou MariaDB).",
+    action: 'Ajouter --column-statistics=0 à mysqldump, ou utiliser le client de la même version que le serveur.',
+    steps: ['mysqldump --version et SELECT VERSION(); pour comparer.', 'Ajouter --column-statistics=0 dans la commande du cron.'],
+  },
+  {
+    id: 'mysqldump-process-privilege', category: 'database',
+    match: /need \(at least one of\) the PROCESS privilege/i,
+    title: 'mysqldump : privilège PROCESS manquant (tablespaces)',
+    cause: "Depuis MySQL 8.0.21, mysqldump lit les tablespaces, ce qui exige le privilège PROCESS que le compte de sauvegarde n'a pas.",
+    action: "Ajouter --no-tablespaces à mysqldump, ou accorder GRANT PROCESS ON *.* au compte de sauvegarde.",
+    steps: ['Ajouter --no-tablespaces (le plus simple).', "Ou : GRANT PROCESS ON *.* TO '<user>'@'<hôte>';"],
+  },
+  {
+    id: 'pg-dump-version-mismatch', category: 'database',
     match: /pg_dump: (error: )?aborting because of server version mismatch/i,
     title: 'pg_dump plus ancien que le serveur PostgreSQL',
+    cause: 'Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).',
+    action: 'Appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.',
     steps: [
       'pg_dump doit être au moins de la version majeure du serveur (voir « server version » et « pg_dump version » dans le log).',
       "Vérifier quel pg_dump le cron utilise : son PATH est minimal, ce n'est souvent pas celui de votre shell.",
@@ -147,10 +243,19 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'pg-auth-failed',
-    category: 'database',
+    id: 'pg-peer-auth', category: 'database',
+    match: /Peer authentication failed for user/i,
+    title: 'PostgreSQL : authentification « peer » refusée',
+    cause: "En connexion locale « peer », PostgreSQL exige que l'utilisateur système du cron porte le même nom que le rôle demandé.",
+    action: 'Se connecter en TCP (-h localhost) avec un mot de passe dans ~/.pgpass, ou lancer le job sous l\'utilisateur système du même nom.',
+    steps: ['Voir la méthode dans pg_hba.conf (ligne « local … peer »).', 'Utiliser -h localhost et un ~/.pgpass en chmod 600.'],
+  },
+  {
+    id: 'pg-auth-failed', category: 'database',
     match: /password authentication failed for user|no pg_hba\.conf entry for host|fe_sendauth: no password supplied/i,
     title: 'PostgreSQL refuse l\'authentification',
+    cause: "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+    action: "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
     steps: [
       "Le cron tourne sous un autre utilisateur : son ~/.pgpass existe-t-il, en chmod 600 ? (ou PGPASSFILE)",
       'Mot de passe changé ou rotation récente du secret ?',
@@ -158,10 +263,27 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'mysql-lock-tables',
-    category: 'database',
+    id: 'pg-role-missing', category: 'database',
+    match: /(role|database) "[^"]+" does not exist/i,
+    title: 'PostgreSQL : rôle ou base inexistant',
+    cause: "Le job se connecte avec un rôle ou une base qui n'existe pas : sans -U/-d, psql prend le nom de l'utilisateur système du cron (souvent root).",
+    action: 'Préciser explicitement -U <rôle> et -d <base> dans la commande du cron.',
+    steps: ['Lister les rôles : \\du ; les bases : \\l', 'Ajouter -U et -d (ou PGUSER / PGDATABASE) à la commande.'],
+  },
+  {
+    id: 'pg-permission-denied', category: 'database',
+    match: /permission denied for (table|relation|schema|sequence|database)/i,
+    title: 'PostgreSQL : droits insuffisants sur un objet',
+    cause: "Le rôle du job n'a pas le droit de lire ou d'écrire cet objet (table créée depuis, ou rôle de sauvegarde sans SELECT).",
+    action: "Accorder le droit au rôle du job (GRANT SELECT … ou rôle pg_read_all_data pour une sauvegarde).",
+    steps: ['\\dp <table> pour voir les droits.', 'Sauvegarde : GRANT pg_read_all_data TO <rôle>; (PostgreSQL 14+).'],
+  },
+  {
+    id: 'mysql-lock-tables', category: 'database',
     match: /Access denied for user .* when using LOCK TABLES/i,
     title: 'mysqldump : droit LOCK TABLES manquant',
+    cause: "Le compte de sauvegarde n'a pas le privilège LOCK TABLES exigé par mysqldump.",
+    action: 'Ajouter --single-transaction (tables InnoDB) ou accorder GRANT LOCK TABLES au compte du cron.',
     steps: [
       "Tables InnoDB : ajouter --single-transaction (sauvegarde cohérente sans verrouiller).",
       "Sinon accorder le droit : GRANT LOCK TABLES ON <base>.* TO '<user>'@'<hôte>';",
@@ -169,40 +291,245 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'mysql-access-denied',
-    category: 'database',
+    id: 'mysql-access-denied', category: 'database',
     match: /ERROR 1045 \(28000\)|Got error: 1045|Access denied for user '[^']*'@'[^']*' \(using password/i,
     title: 'MySQL refuse l\'authentification',
+    cause: "MySQL refuse les identifiants du job : mot de passe changé, fichier ~/.my.cnf absent pour l'utilisateur du cron, ou compte limité à un autre hôte.",
+    action: "Vérifier les identifiants du fichier d'options lu par le cron (--defaults-extra-file) et les droits du compte.",
     steps: [
       "Le cron tourne sous un autre utilisateur : son fichier d'options (~/.my.cnf, --defaults-extra-file) est-il lisible et à jour ?",
       'Mot de passe changé, ou compte limité à un autre hôte (\'user\'@\'localhost\' ≠ \'user\'@\'%\') ?',
     ],
   },
   {
-    id: 'command-not-found',
-    category: 'dependency',
+    id: 'sqlite-locked', category: 'database',
+    match: /database is locked|SQLITE_BUSY/,
+    title: 'SQLite : base verrouillée',
+    cause: "Un autre processus écrit dans le même fichier SQLite au même moment : exécutions du job qui se chevauchent, ou application qui garde une transaction ouverte.",
+    action: "Empêcher les exécutions simultanées (flock) et régler un busy_timeout, ou passer à une vraie base pour les écritures concurrentes.",
+    steps: ['Exécutions qui se chevauchent ? Envelopper le job : flock -n /tmp/<job>.lock <commande>', 'PRAGMA busy_timeout = 5000;'],
+  },
+
+  // ── Environnement du cron : la cause n°1 des « marche à la main, pas en cron » ──
+  {
+    id: 'crlf-line-endings', category: 'code',
+    match: /\$'\\r': command not found|\r': command not found|bad interpreter: [^\n]*\^M|syntax error near unexpected token `\$'\\r''/,
+    title: 'Script aux fins de ligne Windows (CRLF)',
+    cause: 'Le script a été enregistré avec des fins de ligne Windows (CRLF) : le \\r final casse chaque commande sous Linux.',
+    action: 'Convertir le script en fins de ligne Unix (dos2unix script.sh, ou sed -i \'s/\\r$//\').',
+    steps: ['Vérifier : file script.sh (« with CRLF line terminators »).', 'dos2unix script.sh ; régler l\'éditeur / .gitattributes en LF.'],
+  },
+  {
+    id: 'sh-not-bash', category: 'code',
+    match: /Syntax error: "?\(?"? unexpected|\[\[: not found|source: not found|Bad substitution/,
+    title: 'Script bash exécuté par sh (dash)',
+    cause: "cron lance la commande avec /bin/sh (dash sur Debian/Ubuntu), qui refuse la syntaxe bash ([[ ]], source, tableaux, ${…/…}).",
+    action: "Lancer le script avec bash explicitement (bash script.sh) ou mettre SHELL=/bin/bash en tête de la crontab, avec un shebang #!/bin/bash.",
+    steps: ['Vérifier le shebang du script (#!/bin/bash, pas #!/bin/sh).', 'Ajouter SHELL=/bin/bash en tête de la crontab.'],
+  },
+  {
+    id: 'bad-interpreter', category: 'dependency',
+    match: /bad interpreter: No such file or directory|\/usr\/bin\/env: '?[\w.]+'?: No such file or directory/,
+    title: "Interpréteur du shebang introuvable",
+    cause: "L'interpréteur indiqué par le shebang (#!) n'existe pas à ce chemin, ou /usr/bin/env ne le trouve pas dans le PATH minimal du cron.",
+    action: "Mettre le chemin absolu correct de l'interpréteur dans le shebang (command -v python3 pour le trouver).",
+    steps: ['head -1 script pour voir le shebang.', 'command -v <interpréteur> sous l\'utilisateur du cron.'],
+  },
+  {
+    id: 'command-not-found', category: 'dependency',
     match: /(^|\s)(\/bin\/)?(ba|da)?sh: (line \d+: |\d+: )?[\w.\/-]+: (command )?not found/m,
     title: 'Commande introuvable (PATH minimal du cron)',
+    cause: 'cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.',
+    action: 'Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.',
     steps: [
       "cron démarre avec un PATH réduit (souvent /usr/bin:/bin) : un outil sous /usr/local/bin, nvm ou pyenv y est invisible.",
       'Appeler la commande en chemin absolu (command -v <outil> pour le trouver), ou définir PATH= en tête de la crontab.',
     ],
   },
   {
-    id: 'python-module-missing',
-    category: 'dependency',
-    match: /ModuleNotFoundError: No module named/,
+    id: 'not-a-tty', category: 'dependency',
+    match: /the input device is not a TTY|not a tty|Pseudo-terminal will not be allocated|stdin: is not a tty/i,
+    title: 'La commande demande un terminal (TTY)',
+    cause: "Une commande du job demande un terminal interactif (docker -it, ssh -t, bash -l) alors que cron n'en fournit aucun.",
+    action: 'Retirer les options interactives : docker exec/run sans -t/-it, ssh -T, pas de bash -l.',
+    steps: ['Chercher -it / -t dans les commandes docker et ssh du script.', 'Remplacer docker exec -it par docker exec -i (ou sans option).'],
+  },
+  {
+    id: 'no-display', category: 'dependency',
+    match: /cannot open display|Can't open display|Cannot autolaunch D-Bus without X11|no display name and no \$DISPLAY/i,
+    title: 'Programme graphique lancé sans session (DISPLAY)',
+    cause: "Le job lance un programme graphique ou D-Bus, mais cron n'a pas de session graphique : DISPLAY et DBUS_SESSION_BUS_ADDRESS sont absents.",
+    action: 'Utiliser un mode sans affichage (headless, xvfb-run) ou définir DISPLAY et DBUS_SESSION_BUS_ADDRESS de la session dans la crontab.',
+    steps: ['Navigateur : option --headless ; autre : xvfb-run <commande>.', 'Notifications : DISPLAY=:0 et DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/<uid>/bus'],
+  },
+  {
+    id: 'ascii-locale', category: 'dependency',
+    match: /UnicodeEncodeError: 'ascii' codec|'ascii' codec can't (en|de)code/,
+    title: 'Locale ASCII sous cron (accents)',
+    cause: 'cron s\'exécute avec la locale POSIX/C (ASCII) : le programme ne peut pas écrire ou lire de caractères non ASCII.',
+    action: 'Définir LC_ALL=C.UTF-8 (ou LANG=fr_FR.UTF-8) en tête de la crontab ; pour Python, PYTHONIOENCODING=utf-8.',
+    steps: ['Comparer : locale dans votre shell et dans le job (env > /tmp/cron-env).', 'Ajouter LC_ALL=C.UTF-8 en tête de la crontab.'],
+  },
+  {
+    id: 'term-not-set', category: 'dependency',
+    match: /TERM environment variable not set|TERM: (unbound variable|not set)|'unknown': unknown terminal type/i,
+    title: 'Variable TERM absente sous cron',
+    cause: "Une commande interactive (clear, tput, top) demande la variable TERM, que cron ne définit pas.",
+    action: 'Retirer la commande interactive du script, ou définir TERM=xterm (top : utiliser top -b).',
+    steps: ['Chercher clear / tput / top dans le script.', 'top -b -n 1 pour un usage non interactif.'],
+  },
+  {
+    id: 'python-module-missing', category: 'dependency',
+    match: /ModuleNotFoundError: No module named|ImportError: No module named/,
     title: 'Module Python introuvable (mauvais environnement)',
+    cause: "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+    action: 'Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).',
     steps: [
       "Le cron n'active pas le virtualenv : appeler le python du venv en chemin absolu (/chemin/venv/bin/python script.py).",
       'Vérifier que la dépendance est installée dans CE venv (pip install … avec ce python).',
     ],
   },
   {
-    id: 'tls-unknown-ca',
-    category: 'network',
-    match: /certificate signed by unknown authority|unable to get local issuer certificate|self[- ]signed certificate in certificate chain|UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN/i,
+    id: 'node-module-missing', category: 'dependency',
+    match: /Error: Cannot find module '|Cannot find module '/,
+    title: 'Module Node.js introuvable',
+    cause: "Node ne trouve pas le module : node_modules non installés à cet endroit, ou cron lance le script depuis un autre dossier (cwd = HOME).",
+    action: "Faire cd dans le dossier du projet avant de lancer node (ou chemin absolu), après npm ci.",
+    steps: ['Dans la crontab : cd /chemin/projet && node script.js', 'Vérifier que node_modules existe (npm ci).'],
+  },
+  {
+    id: 'exec-permission-denied', category: 'code',
+    match: /(^|\s)(\/bin\/)?(ba|da)?sh: (line \d+: |\d+: )?[\w.\/-]+: Permission denied/m,
+    title: 'Script non exécutable',
+    cause: "Le script n'a pas le droit d'exécution pour l'utilisateur du cron, ou se trouve sur un volume monté noexec.",
+    action: 'Donner le droit d\'exécution (chmod +x script.sh) ou le lancer via son interpréteur (bash script.sh).',
+    steps: ['ls -l <script> (bit x ?) ; findmnt -T <script> (option noexec ?)', 'chmod +x ou bash <script> dans la crontab.'],
+  },
+  {
+    id: 'git-dubious-ownership', category: 'dependency',
+    match: /detected dubious ownership in repository/i,
+    title: "Git refuse un dépôt d'un autre propriétaire",
+    cause: "Le cron tourne sous un autre utilisateur (souvent root) que le propriétaire du dépôt : Git refuse d'y travailler par sécurité.",
+    action: "Lancer le job sous l'utilisateur propriétaire du dépôt, ou déclarer le dossier : git config --global --add safe.directory <chemin>.",
+    steps: ['ls -ld <dépôt> pour voir le propriétaire.', 'Préférer la crontab de cet utilisateur à celle de root.'],
+  },
+
+  // ── SSH / GPG ──────────────────────────────────────────────────────────────
+  {
+    id: 'ssh-host-key-changed', category: 'network',
+    match: /REMOTE HOST IDENTIFICATION HAS CHANGED/i,
+    title: 'Clé d\'hôte SSH du serveur changée',
+    cause: "La clé d'hôte du serveur distant ne correspond plus à celle de known_hosts : serveur réinstallé ou remplacé (ou interception).",
+    action: "Vérifier avec l'administrateur que le changement est légitime, puis remplacer l'ancienne clé : ssh-keygen -R <hôte>.",
+    steps: ['Confirmer l\'empreinte attendue hors bande avant de faire confiance.', 'ssh-keygen -R <hôte> dans le compte du cron, puis reconnecter.'],
+  },
+  {
+    id: 'ssh-host-key-verification', category: 'network',
+    match: /Host key verification failed/i,
+    title: 'Clé d\'hôte SSH inconnue pour l\'utilisateur du cron',
+    cause: "L'hôte n'est pas dans le known_hosts de l'utilisateur qui exécute le cron (souvent root, différent de votre compte) : SSH ne peut pas demander confirmation sans terminal.",
+    action: "Ajouter la clé d'hôte au known_hosts de l'utilisateur du cron (ssh-keyscan <hôte> >> ~/.ssh/known_hosts, après vérification de l'empreinte).",
+    steps: ['Se connecter une fois en tant que cet utilisateur : sudo -u <user> ssh <hôte>', 'Ou ssh-keyscan puis vérifier l\'empreinte.'],
+  },
+  {
+    id: 'ssh-agent-missing', category: 'dependency',
+    match: /Could not open a connection to your authentication agent|agent refused operation|sign_and_send_pubkey: signing failed/i,
+    title: 'Pas d\'agent SSH sous cron',
+    cause: "La clé SSH est chargée dans l'agent de votre session, que cron ne voit pas (SSH_AUTH_SOCK absent).",
+    action: "Utiliser une clé dédiée au job, sans passphrase ou via keychain, indiquée par ssh -i / IdentityFile.",
+    steps: ['Créer une clé dédiée restreinte (from=, command= dans authorized_keys).', 'ssh -i /chemin/cle -o IdentitiesOnly=yes'],
+  },
+  {
+    id: 'ssh-publickey-denied', category: 'network',
+    match: /Permission denied \(publickey/i,
+    title: 'SSH refuse la clé (publickey)',
+    cause: "Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, ou clé absente d'authorized_keys.",
+    action: "Préciser la clé dédiée (ssh -i ou IdentityFile) de l'utilisateur du cron et vérifier authorized_keys côté serveur.",
+    steps: [
+      "Le cron n'a pas d'agent SSH : préciser la clé (ssh -i <clé> ou IdentityFile dans ~/.ssh/config de l'utilisateur du cron).",
+      'Droits de la clé : chmod 600 ; clé publique bien présente dans authorized_keys du compte distant.',
+    ],
+  },
+  {
+    id: 'ssh-connect-timeout', category: 'network',
+    match: /ssh: connect to host \S+ port \d+: (Connection timed out|No route to host)/i,
+    title: 'SSH : hôte injoignable',
+    cause: "L'hôte SSH ne répond pas : machine éteinte, pare-feu qui jette les paquets, ou route/VPN absent.",
+    action: "Vérifier que l'hôte est joignable depuis la machine du job (ping, nc -zv <hôte> 22) et le pare-feu ou VPN.",
+    steps: ['nc -zv <hôte> <port>', 'Route ou VPN nécessaire ? ip route get <ip>'],
+  },
+  {
+    id: 'gpg-no-key', category: 'dependency',
+    match: /gpg: [^\n]*(No public key|Unusable public key|No secret key)|no default secret key|decryption failed: No secret key/i,
+    title: 'GPG : clé introuvable ou inutilisable',
+    cause: "La clé GPG est dans le trousseau d'un autre utilisateur (HOME / GNUPGHOME différent sous cron), ou elle a expiré.",
+    action: "Pointer GNUPGHOME vers le bon trousseau (ou importer la clé chez l'utilisateur du cron) et vérifier sa date d'expiration.",
+    steps: ['gpg --list-keys sous l\'utilisateur du cron.', 'Clé expirée ? gpg --list-keys --with-colons | grep ^pub'],
+  },
+  {
+    id: 'gpg-no-tty', category: 'dependency',
+    match: /Inappropriate ioctl for device|pinentry/i,
+    title: 'GPG demande une passphrase sans terminal',
+    cause: 'GPG veut demander la passphrase via pinentry, impossible sans terminal sous cron.',
+    action: 'Passer la passphrase de façon non interactive (--batch --pinentry-mode loopback --passphrase-file) ou utiliser une clé dédiée.',
+    steps: ['gpg --batch --pinentry-mode loopback --passphrase-file <fichier protégé>'],
+  },
+  {
+    id: 'backup-repo-password', category: 'dependency',
+    match: /wrong password or no key found|passphrase supplied in BORG_PASSPHRASE[^\n]*incorrect|Enter passphrase for key|repository password/i,
+    title: 'Mot de passe du dépôt de sauvegarde absent sous cron',
+    cause: "Le mot de passe du dépôt (restic, borg) n'est pas fourni au job : la variable RESTIC_PASSWORD / BORG_PASSPHRASE est définie dans votre shell, pas dans l'environnement du cron.",
+    action: "Fournir le mot de passe au job via un fichier protégé (RESTIC_PASSWORD_FILE, BORG_PASSCOMMAND) chargé par le script.",
+    steps: ['Ne pas compter sur ~/.bashrc : cron ne le lit pas.', 'RESTIC_PASSWORD_FILE=/root/.restic-pass (chmod 600).'],
+  },
+  {
+    id: 'stale-lock', category: 'timeout',
+    match: /repository is already locked|Failed to create\/acquire the lock|unable to acquire lock|another instance is (already )?running|lock file [^\n]* exists|Could not get lock \/var\/lib\/dpkg/i,
+    title: 'Verrou déjà pris (exécutions qui se chevauchent)',
+    cause: "Une exécution précédente du job tourne encore, ou s'est arrêtée en laissant un verrou périmé.",
+    action: "Vérifier qu'aucune exécution n'est en cours, supprimer le verrou périmé (restic unlock, borg break-lock), et empêcher les chevauchements (flock).",
+    steps: ['ps aux | grep <outil> : une exécution tourne-t-elle encore ?', 'Si non : restic unlock / borg break-lock ; ajouter flock -n au cron.'],
+  },
+
+  // ── Réseau, TLS, horloge ───────────────────────────────────────────────────
+  {
+    id: 'dns-resolution', category: 'network',
+    match: /Could not resolve host|getaddrinfo (ENOTFOUND|EAI_AGAIN)|Temporary failure in name resolution|Name or service not known/i,
+    title: 'Résolution DNS en échec',
+    cause: "Le nom d'hôte ne se résout pas : résolveur DNS injoignable, nom erroné ou enregistrement supprimé.",
+    action: 'Tester la résolution depuis la machine du job (getent hosts <nom>) et corriger le résolveur ou le nom.',
+    steps: [
+      'Tester depuis la machine du job : getent hosts <nom> (ou dig <nom>)',
+      'Vérifier le résolveur : cat /etc/resolv.conf',
+      'Nom mal orthographié ou enregistrement supprimé côté fournisseur ?',
+    ],
+  },
+  {
+    id: 'clock-skew', category: 'network',
+    match: /certificate is not yet valid|RequestTimeTooSkewed|Request time too skewed|clock skew|Signature expired: \d+ is now earlier/i,
+    title: 'Horloge de la machine décalée',
+    cause: "L'horloge de la machine du job est décalée : certificats « pas encore valides » ou signatures d'API refusées.",
+    action: 'Resynchroniser l\'horloge (timedatectl, chrony/NTP) et vérifier que le service NTP tourne.',
+    steps: ['timedatectl status (System clock synchronized: yes ?)', 'systemctl status chronyd / systemd-timesyncd'],
+  },
+  {
+    id: 'tls-cert-expired', category: 'network',
+    match: /certificate has expired|CERT_HAS_EXPIRED|certificate verify failed: certificate has expired/i,
+    title: 'Certificat TLS expiré',
+    cause: 'Le certificat TLS du serveur appelé est expiré : son renouvellement automatique n\'a pas eu lieu.',
+    action: "Renouveler le certificat (certbot renew pour Let's Encrypt) ou prévenir le tiers ; ne pas désactiver la vérification.",
+    steps: [
+      "Voir la date d'expiration : echo | openssl s_client -connect <hôte>:443 -servername <hôte> 2>/dev/null | openssl x509 -noout -enddate",
+      "Si c'est votre certificat Let's Encrypt : certbot renew --dry-run, puis vérifier le timer (systemctl list-timers | grep certbot).",
+      "Si c'est celui d'un tiers : le prévenir ; ne pas désactiver la vérification TLS.",
+    ],
+  },
+  {
+    id: 'tls-unknown-ca', category: 'network',
+    match: /certificate signed by unknown authority|unable to get local issuer certificate|self[- ]signed certificate in certificate chain|UNABLE_TO_VERIFY_LEAF_SIGNATURE|SELF_SIGNED_CERT_IN_CHAIN|CERTIFICATE_VERIFY_FAILED/i,
     title: 'Certificat émis par une autorité inconnue (CA interne non approuvée)',
+    cause: 'Le certificat est signé par une autorité (CA interne ou auto-signée) absente du magasin de confiance de la machine du job.',
+    action: "Ajouter la CA au magasin de confiance (update-ca-certificates) ou la passer à l'outil (--cacert, REQUESTS_CA_BUNDLE).",
     steps: [
       "Ajouter la CA interne au magasin système (update-ca-certificates / update-ca-trust) sur la machine ou dans l'image du job.",
       'Ou la donner à l\'outil : SSL_CERT_FILE, REQUESTS_CA_BUNDLE (Python), NODE_EXTRA_CA_CERTS (Node), --cacert.',
@@ -210,41 +537,22 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'tls-hostname-mismatch',
-    category: 'network',
+    id: 'tls-hostname-mismatch', category: 'network',
     match: /legacy Common Name field|certificate is not valid for any names|Hostname mismatch|doesn't match any of the subject alternative names|ERR_TLS_CERT_ALTNAME_INVALID/i,
     title: 'Certificat qui ne couvre pas ce nom d\'hôte (SAN)',
+    cause: "Le certificat ne couvre pas ce nom d'hôte dans ses SAN (Subject Alternative Names) ; le Common Name seul n'est plus accepté.",
+    action: "Régénérer le certificat avec le bon SAN, ou appeler l'hôte par un nom qu'il couvre.",
     steps: [
       'Le nom appelé doit figurer dans les Subject Alternative Names du certificat (le Common Name seul ne suffit plus).',
       "Régénérer le certificat avec les SAN corrects, ou appeler l'hôte par un nom qu'il couvre.",
     ],
   },
   {
-    id: 'cloud-token-expired',
-    category: 'dependency',
-    match: /ExpiredToken|security token included in the request is expired|SSO session associated with this profile has expired/i,
-    title: 'Identifiants cloud temporaires expirés',
-    steps: [
-      "Le cron utilise des identifiants de session (SSO, assume-role) d'un shell interactif : ils expirent.",
-      "Donner au job ses propres identifiants : rôle d'instance / IRSA, ou un compte de service limité.",
-      'Job plus long que la durée du jeton : rafraîchir les identifiants en cours de route ou allonger la durée de session.',
-    ],
-  },
-  {
-    id: 'node-heap-oom',
-    category: 'resources',
-    match: /JavaScript heap out of memory|Reached heap limit Allocation failed/i,
-    title: 'Node.js : limite de mémoire du tas atteinte',
-    steps: [
-      'Augmenter la limite : NODE_OPTIONS=--max-old-space-size=<Mo> (sans dépasser la RAM disponible).',
-      'Traiter par lots ou en flux au lieu de tout charger en mémoire.',
-    ],
-  },
-  {
-    id: 'acme-challenge-timeout',
-    category: 'network',
+    id: 'acme-challenge-timeout', category: 'network',
     match: /Timeout during connect \(likely firewall problem\)/i,
     title: 'Let\'s Encrypt ne joint pas le serveur (port 80)',
+    cause: "Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.",
+    action: 'Ouvrir le port 80 depuis Internet et corriger les enregistrements A/AAAA, puis certbot renew --dry-run.',
     steps: [
       "Le port 80 doit être joignable depuis Internet : pare-feu du serveur, groupe de sécurité, box ou FAI.",
       "Les enregistrements DNS A et AAAA doivent pointer vers CE serveur (un AAAA périmé suffit à faire échouer).",
@@ -252,10 +560,171 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'rsync-partial-transfer',
-    category: 'data',
+    id: 'acme-port-busy', category: 'network',
+    match: /Could not bind TCP port 80|Problem binding to port 80/i,
+    title: 'certbot ne peut pas prendre le port 80',
+    cause: 'En mode standalone, certbot doit écouter sur le port 80, déjà occupé par le serveur web.',
+    action: 'Passer en mode webroot ou plugin nginx/apache, ou arrêter le serveur web via --pre-hook / --post-hook.',
+    steps: ['sudo ss -ltnp | grep :80', 'certbot renew --pre-hook "systemctl stop nginx" --post-hook "systemctl start nginx"'],
+  },
+  {
+    id: 'acme-rate-limit', category: 'dependency',
+    match: /too many certificates (already )?issued|urn:ietf:params:acme:error:rateLimited/i,
+    title: "Limite de Let's Encrypt atteinte",
+    cause: "Trop de certificats demandés pour ce domaine dans la fenêtre de Let's Encrypt (essais répétés ou renouvellements forcés).",
+    action: "Attendre la fin de la fenêtre de limite et tester avec --dry-run (serveur de staging) plutôt que de redemander.",
+    steps: ['Ne pas utiliser --force-renewal en boucle.', 'Tester avec certbot renew --dry-run.'],
+  },
+  {
+    id: 'connection-refused', category: 'network',
+    match: /ECONNREFUSED|Connection refused/,
+    title: 'Service cible injoignable (connexion refusée)',
+    cause: "Rien n'écoute sur l'adresse et le port appelés : service arrêté ou redémarré, mauvais port, ou service lié à une autre interface.",
+    action: "Vérifier que le service cible tourne et écoute sur ce port (systemctl status, ss -ltnp), puis relancer le job.",
+    steps: ['nc -zv <hôte> <port> depuis la machine du job.', 'Sur la cible : ss -ltnp | grep <port>'],
+  },
+  {
+    id: 'http-gateway', category: 'dependency',
+    match: /\b502 Bad Gateway|\b504 Gateway Time-?out/i,
+    title: 'Proxy en amont sans réponse (502/504)',
+    cause: "Le reverse proxy n'obtient pas de réponse du service derrière lui : application arrêtée, surchargée ou trop lente.",
+    action: "Vérifier l'état et les logs du service derrière le proxy, puis réessayer avec un délai.",
+    steps: ['Logs du proxy (nginx error.log) à l\'heure de l\'appel.', 'État du service amont.'],
+  },
+  {
+    id: 'http-429', category: 'dependency',
+    match: /\b429\b.*(Too Many Requests|rate limit)|(Too Many Requests|rate limit exceeded).*\b429\b|RateLimitError/i,
+    title: 'Limite de débit de l\'API atteinte (429)',
+    cause: "Trop de requêtes envoyées à l'API dans la fenêtre autorisée : sa limite de débit est atteinte.",
+    action: 'Respecter Retry-After avec un délai exponentiel et étaler les appels.',
+    steps: [
+      'Respecter l\'en-tête Retry-After et réessayer avec un délai exponentiel.',
+      'Étaler les appels (moins de parallélisme, lots plus petits).',
+      'Vérifier qu\'un autre job n\'utilise pas la même clé au même moment.',
+    ],
+  },
+  {
+    id: 'docker-pull-limit', category: 'dependency',
+    match: /toomanyrequests: You have reached your pull rate limit/i,
+    title: 'Docker Hub : limite de téléchargements atteinte',
+    cause: 'Docker Hub limite les téléchargements anonymes par adresse IP : le job tire l\'image trop souvent.',
+    action: "S'authentifier (docker login) ou passer par un miroir / registre interne, et ne tirer l'image que si elle a changé.",
+    steps: ['docker login avec un compte de service.', 'Utiliser --pull=missing plutôt que de tirer à chaque exécution.'],
+  },
+  {
+    id: 'docker-daemon', category: 'dependency',
+    match: /Cannot connect to the Docker daemon|permission denied while trying to connect to the Docker daemon socket/i,
+    title: 'Démon Docker inaccessible',
+    cause: "Le démon Docker est arrêté, ou l'utilisateur du cron n'a pas accès à /var/run/docker.sock (pas dans le groupe docker).",
+    action: "Démarrer Docker (systemctl status docker) ou exécuter le job sous un utilisateur du groupe docker.",
+    steps: ['systemctl status docker', 'id <user> (groupe docker ?)'],
+  },
+  {
+    id: 'cloud-no-credentials', category: 'dependency',
+    match: /Unable to locate credentials|NoCredentialsError|could not find default credentials|No valid credential sources found/i,
+    title: 'Identifiants cloud introuvables sous cron',
+    cause: "Le SDK cloud ne trouve pas d'identifiants : ~/.aws (ou équivalent) est dans le HOME d'un autre utilisateur, ou AWS_PROFILE n'est pas défini dans l'environnement du cron.",
+    action: "Donner au job ses propres identifiants (rôle d'instance, fichier dans le HOME de l'utilisateur du cron, AWS_PROFILE explicite).",
+    steps: ['Sous l\'utilisateur du cron : aws sts get-caller-identity', 'Préférer un rôle d\'instance / IRSA aux clés statiques.'],
+  },
+  {
+    id: 'cloud-access-denied', category: 'dependency',
+    match: /An error occurred \(AccessDenied\)|AccessDeniedException|is not authorized to perform/i,
+    title: 'Permission cloud refusée (IAM)',
+    cause: "L'identité utilisée par le job n'a pas la permission IAM nécessaire sur cette ressource (ou ce n'est pas l'identité attendue).",
+    action: "Vérifier l'identité effective (aws sts get-caller-identity) et ajouter la permission manquante à sa politique.",
+    steps: ['Lire l\'action refusée dans le message (s3:PutObject…).', 'Comparer avec la politique attachée au rôle.'],
+  },
+  {
+    id: 'cloud-token-expired', category: 'dependency',
+    match: /ExpiredToken|security token included in the request is expired|SSO session associated with this profile has expired/i,
+    title: 'Identifiants cloud temporaires expirés',
+    cause: 'Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.',
+    action: "Donner au job des identifiants durables (rôle d'instance, compte de service) ou les rafraîchir avant expiration.",
+    steps: [
+      "Le cron utilise des identifiants de session (SSO, assume-role) d'un shell interactif : ils expirent.",
+      "Donner au job ses propres identifiants : rôle d'instance / IRSA, ou un compte de service limité.",
+      'Job plus long que la durée du jeton : rafraîchir les identifiants en cours de route ou allonger la durée de session.',
+    ],
+  },
+  {
+    id: 'smtp-auth', category: 'dependency',
+    match: /535[ -][\d.]* ?(Authentication|authentication) (credentials invalid|failed)|Username and Password not accepted|SMTPAuthenticationError/i,
+    title: 'Serveur mail : authentification refusée',
+    cause: "Le serveur SMTP refuse les identifiants : mot de passe changé, mot de passe d'application exigé (2FA), ou méthode d'authentification désactivée.",
+    action: "Mettre à jour les identifiants SMTP du job (mot de passe d'application si 2FA) et tester l'envoi.",
+    steps: ['Le fournisseur exige-t-il un mot de passe d\'application ?', 'Tester : swaks --auth --server <smtp> …'],
+  },
+
+  // ── Exécution, données ─────────────────────────────────────────────────────
+  {
+    id: 'killed-by-timeout', category: 'timeout',
+    match: /timeout: sending signal|exceeded (soft|hard) limit|start operation timed out|TimeoutStartSec|Job .* timed out/i,
+    title: 'Job tué par sa limite de durée',
+    cause: 'Le job a dépassé la durée maximale qui lui est accordée (timeout, TimeoutStartSec, watchdog) et a été tué avant la fin.',
+    action: 'Réduire la durée du job (traitement incrémental, découpage) ou ajuster la limite si la durée est devenue normale.',
+    steps: ['Comparer la durée habituelle et celle-ci (volume en hausse ?).', 'Rendre le job reprenable : traiter par tranches.'],
+  },
+  {
+    id: 'node-heap-oom', category: 'resources',
+    match: /JavaScript heap out of memory|Reached heap limit Allocation failed/i,
+    title: 'Node.js : limite de mémoire du tas atteinte',
+    cause: 'Le traitement charge plus de données que la limite de tas Node.js par défaut.',
+    action: 'Traiter par lots, ou augmenter NODE_OPTIONS=--max-old-space-size sans dépasser la RAM.',
+    steps: [
+      'Augmenter la limite : NODE_OPTIONS=--max-old-space-size=<Mo> (sans dépasser la RAM disponible).',
+      'Traiter par lots ou en flux au lieu de tout charger en mémoire.',
+    ],
+  },
+  {
+    id: 'too-many-open-files', category: 'resources',
+    match: /Too many open files|EMFILE/,
+    title: 'Trop de fichiers ouverts',
+    cause: 'Le processus a atteint sa limite de descripteurs de fichiers (ulimit -n), souvent par fuite de fichiers ou de connexions non fermés.',
+    action: 'Corriger la fuite de descripteurs, puis ajuster la limite (ulimit -n / LimitNOFILE).',
+    steps: [
+      'Voir la limite : ulimit -n (et LimitNOFILE= pour un service systemd).',
+      "Chercher une fuite de descripteurs (fichiers ou connexions jamais fermés) avant d'augmenter la limite.",
+    ],
+  },
+  {
+    id: 'argument-list-too-long', category: 'code',
+    match: /Argument list too long/,
+    title: 'Liste d\'arguments trop longue',
+    cause: "Un joker (*) s'étend sur trop de fichiers pour une seule commande (limite ARG_MAX), typiquement rm ou mv sur un gros dossier.",
+    action: 'Remplacer la commande par find … -delete ou find … -exec … + (ou xargs).',
+    steps: ['find <dossier> -name "*.tmp" -mtime +7 -delete'],
+  },
+  {
+    id: 'segfault', category: 'code',
+    match: /Segmentation fault|SIGSEGV|core dumped/i,
+    title: 'Plantage du programme (segfault)',
+    cause: "Le programme a planté sur un accès mémoire invalide : bug, ou bibliothèque système incompatible après une mise à jour.",
+    action: 'Vérifier les mises à jour récentes du programme et de ses bibliothèques, et reproduire à la main pour obtenir la trace.',
+    steps: ['journalctl -k | grep segfault (bibliothèque en cause).', 'Mises à jour récentes : historique apt / dnf.'],
+  },
+  {
+    id: 'utf8-decode', category: 'data',
+    match: /'utf-8' codec can't decode byte|invalid byte sequence for encoding "UTF8"|Malformed UTF-8/i,
+    title: 'Fichier source pas en UTF-8',
+    cause: "Le fichier reçu n'est pas encodé en UTF-8 (UTF-16, Latin-1…) : le fournisseur a changé d'encodage ou d'outil d'export.",
+    action: "Convertir le fichier (iconv -f <encodage> -t UTF-8) ou lire avec le bon encodage, et prévenir le fournisseur.",
+    steps: ['file -i <fichier> pour voir l\'encodage.', 'iconv -f UTF-16 -t UTF-8 entrée > sortie'],
+  },
+  {
+    id: 'json-not-json', category: 'dependency',
+    match: /Unexpected token '?<'? in JSON|JSONDecodeError: Expecting value: line 1 column 1|is not valid JSON/i,
+    title: 'Réponse attendue en JSON, reçu autre chose',
+    cause: "Le service a renvoyé autre chose que du JSON (page d'erreur HTML, page de connexion, corps vide) : erreur côté service ou authentification.",
+    action: "Afficher le statut HTTP et le début du corps de la réponse pour voir l'erreur réelle, puis la corriger.",
+    steps: ['curl -i <url> avec les mêmes en-têtes.', 'Vérifier une redirection vers une page de connexion (jeton expiré ?).'],
+  },
+  {
+    id: 'rsync-partial-transfer', category: 'data',
     match: /rsync error: some files\/attrs were not transferred.*\(code 23\)/i,
     title: 'rsync : transfert partiel (code 23)',
+    cause: "rsync n'a pas pu lire ou écrire certains fichiers (droits insuffisants pour l'utilisateur du cron) : sauvegarde incomplète.",
+    action: "Corriger les droits ou exclure les fichiers concernés, en testant sous l'utilisateur du cron.",
     steps: [
       'Chercher les lignes « Permission denied » juste au-dessus : fichiers illisibles ou destination non inscriptible.',
       'Relancer à la main sous le même utilisateur que le cron (sudo -u <user> rsync …) pour reproduire.',
@@ -263,33 +732,22 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     ],
   },
   {
-    id: 'tar-file-changed',
-    category: 'data',
+    id: 'rsync-vanished', category: 'data',
+    match: /some files vanished before they could be transferred.*\(code 24\)/i,
+    title: 'rsync : fichiers disparus pendant la copie (code 24)',
+    cause: 'Des fichiers ont été supprimés pendant la copie (fichiers temporaires, rotation de logs) : bénin si ce sont des fichiers éphémères.',
+    action: 'Exclure les fichiers temporaires de la sauvegarde, ou traiter le code 24 comme un avertissement.',
+    steps: ['Lister les fichiers « vanished » dans le log.', '--exclude pour les dossiers temporaires.'],
+  },
+  {
+    id: 'tar-file-changed', category: 'data',
     match: /file changed as we read it/i,
     title: 'tar : fichier modifié pendant la sauvegarde',
+    cause: "Des fichiers sont modifiés pendant l'archivage : la sauvegarde n'est pas cohérente.",
+    action: "Sauvegarder un instantané (LVM/ZFS) ou utiliser l'outil de dump de l'application.",
     steps: [
       'Sauvegarder un instantané (LVM, ZFS, snapshot cloud) ou arrêter l\'écriture pendant l\'archive.',
       'Pour une base de données, utiliser son outil de dump plutôt que tar sur les fichiers.',
-    ],
-  },
-  {
-    id: 'ssh-publickey-denied',
-    category: 'network',
-    match: /Permission denied \(publickey/i,
-    title: 'SSH refuse la clé (publickey)',
-    steps: [
-      "Le cron n'a pas d'agent SSH : préciser la clé (ssh -i <clé> ou IdentityFile dans ~/.ssh/config de l'utilisateur du cron).",
-      'Droits de la clé : chmod 600 ; clé publique bien présente dans authorized_keys du compte distant.',
-    ],
-  },
-  {
-    id: 'too-many-open-files',
-    category: 'resources',
-    match: /Too many open files|EMFILE/,
-    title: 'Trop de fichiers ouverts',
-    steps: [
-      'Voir la limite : ulimit -n (et LimitNOFILE= pour un service systemd).',
-      "Chercher une fuite de descripteurs (fichiers ou connexions jamais fermés) avant d'augmenter la limite.",
     ],
   },
 ]
@@ -297,5 +755,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
 export function knownFix(logs: string): KnownFix | null {
   if (!logs) return null
   const f = FIXES.find(x => x.match.test(logs))
-  return f ? { id: f.id, category: f.category, title: f.title, steps: f.steps } : null
+  return f ? { id: f.id, category: f.category, title: f.title, cause: f.cause, action: f.action, steps: f.steps } : null
 }
+
+export const KNOWN_FIX_COUNT = FIXES.length
