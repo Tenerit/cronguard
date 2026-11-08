@@ -32,6 +32,19 @@ interface MonitorResult {
   [key: string]: unknown
 }
 
+// Environnement réel du job à l'échec (noms, chemins, booléens ; aucune valeur secrète) : permet au
+// serveur d'établir les pannes « marche à la main, pas en cron » (locale, HOME, agent SSH…).
+function runContext() {
+  const e = process.env
+  let user = ''
+  try { user = require('os').userInfo().username } catch { /* conteneur sans entrée passwd */ }
+  return {
+    user, home: e.HOME ?? '', path: (e.PATH ?? '').slice(0, 1024), shell: e.SHELL ?? '',
+    lang: e.LC_ALL || e.LANG || '', cwd: process.cwd().slice(0, 256),
+    display: !!e.DISPLAY, sshAgent: !!e.SSH_AUTH_SOCK,
+  }
+}
+
 export class CronGuard {
   constructor(private readonly baseUrl: string) {}
 
@@ -40,7 +53,7 @@ export class CronGuard {
   }
 
   async fail(pingKey: string, opts: PingOptions = {}) {
-    return this.ping(pingKey, { status: 'fail', ...opts })
+    return this.ping(pingKey, { status: 'fail', ...opts, context: runContext() })
   }
 
   // ── Wrapper "fire and forget" ─────────────────────────────────────────────

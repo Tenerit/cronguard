@@ -118,19 +118,19 @@ async function main() {
   redis.on('error', () => {})
   const cache = redis
 
-  async function fail(output?: string) {
+  async function fail(output?: string, extra: Record<string, unknown> = {}) {
     const count = async () => Number((await db.query(`SELECT COUNT(*) FROM analyses WHERE monitor_id=$1`, [mon.id])).rows[0].count)
     const before = await count(), firstPrompt = prompts.length
     const r = await fetch(`http://localhost:${API_PORT}/ping/${mon.ping_key}`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ status: 'fail', exit_code: 1, duration_ms: 5000, output }),
+      body: JSON.stringify({ status: 'fail', exit_code: 1, duration_ms: 5000, output, ...extra }),
     })
     if (!r.ok) throw new Error(`ping refusé : HTTP ${r.status}`)
     for (let i = 0; i < 120; i++) {
       if (await count() > before) {
         await sleep(500)
         const { rows: [row] } = await db.query(
-          `SELECT id, from_cache, severity, category, confidence, model_used, action, verified_fix FROM analyses WHERE monitor_id=$1 ORDER BY created_at DESC LIMIT 1`, [mon.id])
+          `SELECT id, from_cache, severity, category, confidence, model_used, cause, action, verified_fix FROM analyses WHERE monitor_id=$1 ORDER BY created_at DESC LIMIT 1`, [mon.id])
         const sent = prompts.slice(firstPrompt)
         return { ...row, llm: sent.length, recurring: sent.some(p => p.includes('Même erreur déjà vue')) }
       }
@@ -188,6 +188,14 @@ async function main() {
   execSync('npx tsx src/db/migrations.ts', { env: { ...process.env, DATABASE_URL: dbUrl.toString() }, stdio: 'ignore' })
   const twice = (await db.query(`SELECT api_key FROM clients WHERE id = $1`, [legacy.id])).rows[0].api_key
   check('Clé : migration idempotente (pas de double hash)', twice === migrated)
+
+  // ─── Contexte d'exécution (SDK) : le fait constaté donne la cause ─────────────
+  const ctxRun = await fail('/opt/jobs/deploy.sh: line 5: rake: command not found', {
+    command: '/opt/jobs/deploy.sh', context: { user: 'root', home: '/root', path: '/usr/bin:/bin', shell: '/bin/sh', found: { rake: '/usr/local/rvm/gems/ruby-3.2/bin/rake' } } })
+  check('Contexte : la cause cite où la commande existe vraiment', String(ctxRun.cause).includes('/usr/local/rvm/gems/ruby-3.2/bin'), ctxRun.cause)
+  const badCtx = await fetch(`http://localhost:${API_PORT}/ping/${mon.ping_key}`, { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'fail', output: 'x', context: { path: 'x'.repeat(5000) } }) })
+  check('Contexte : champ trop long refusé (400)', badCtx.status === 400, String(badCtx.status))
 
   // ─── Page de statut publique : un id invalide ne doit pas arrêter l'API ──────
   const bad = await fetch(`http://localhost:${API_PORT}/status/not-a-uuid`)

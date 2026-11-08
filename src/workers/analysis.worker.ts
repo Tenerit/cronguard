@@ -53,7 +53,7 @@ async function drainQueuesFirst(): Promise<void> {
 
 function createPingWorker() {
   return new Worker<PingJob>('ping-processor', async (job: Job<PingJob>) => {
-    const { monitorId, clientId, status, durationMs, records, exitCode, output } = job.data
+    const { monitorId, clientId, status, durationMs, records, exitCode, output, command, runContext } = job.data
 
     // Guard : monitor peut avoir été supprimé entre l'enqueue et le traitement
     const { rows: [exists] } = await db.query(
@@ -280,7 +280,7 @@ function createPingWorker() {
       lastSuccess: ctx.last_success?.toISOString(),
       durationMs, avgDuration: Math.round(ctx.avg_dur ?? 0),
       records, expectedMin: ctx.expected_min, expectedMax: ctx.expected_max,
-      exitCode, logs: output ?? '',
+      exitCode, logs: output ?? '', command, runContext,
       failCount7d:        fails7d,
       successRate7d:      successRate,
       durationTrend,
@@ -330,6 +330,7 @@ function createAnalysisWorker() {
           exitCode:    ctx.exitCode, records: ctx.records,
           expectedMin: ctx.expectedMin, expectedMax: ctx.expectedMax,
           logs:        ctx.logs,
+          command:     ctx.command, runContext: ctx.runContext,
           failCount7d:        ctx.failCount7d,
           successRate7d:      ctx.successRate7d,
           durationTrend:      ctx.durationTrend,
@@ -337,7 +338,7 @@ function createAnalysisWorker() {
           correlatedFailures: ctx.correlatedFailures,
           timePattern:        ctx.timePattern,
           fewShotExamples:    ctx.fewShotExamples as import('../services/llm/analyzer').FewShotExample[] | undefined,
-        }) ?? analysisWithoutModel({ logs: ctx.logs,
+        }) ?? analysisWithoutModel({ logs: ctx.logs, command: ctx.command, runContext: ctx.runContext,
           failCount7d: ctx.failCount7d, exitCode: ctx.exitCode, correlatedFailures: ctx.correlatedFailures })   // LLM en panne ou saturé : on garde ce que les logs disent
       : null
 

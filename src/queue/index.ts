@@ -32,6 +32,8 @@ export interface PingJob {
   records?:    number
   exitCode?:   number
   output?:     string
+  command?:    string
+  runContext?: import('../services/llm/run-context').RunContext
 }
 
 export interface AnalysisJob {
@@ -40,6 +42,8 @@ export interface AnalysisJob {
   pingId?:          string
   jobName:          string
   env:              string
+  command?:         string
+  runContext?:      import('../services/llm/run-context').RunContext
   schedule?:        string
   notes?:           string
   lastSuccess?:     string

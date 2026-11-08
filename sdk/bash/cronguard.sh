@@ -39,20 +39,22 @@ cg_end() {
   end_time=$(date +%s%3N)
   local duration_ms=$(( end_time - _CG_START_TIME ))
 
-  local output=""
+  local output='""' context=""          # '""' : sans fichier de sortie, le JSON reste valide
   if [[ -f "$_CG_OUTPUT_FILE" ]]; then
     # Tronque les logs à 3000 chars, échappe les guillemets
     output=$(tail -c 3000 "$_CG_OUTPUT_FILE" | python3 -c \
       "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null || echo '""')
-    rm -f "$_CG_OUTPUT_FILE"
   fi
+  # La sonde lit la sortie complète : avant la suppression du fichier.
+  if [[ "$exit_code" -ne 0 ]]; then context="$(_cg_context_fields)"; fi   # if, pas && : sûr sous set -e
+  rm -f "$_CG_OUTPUT_FILE"
 
   if [[ "$exit_code" -eq 0 ]]; then
     _cg_ping "$_CG_PING_KEY" \
       "{\"status\":\"success\",\"exit_code\":0,\"duration_ms\":$duration_ms$([ -n "$records" ] && echo ",\"records\":$records")}"
   else
     _cg_ping "$_CG_PING_KEY" \
-      "{\"status\":\"fail\",\"exit_code\":$exit_code,\"duration_ms\":$duration_ms,\"output\":$output}"
+      "{\"status\":\"fail\",\"exit_code\":$exit_code,\"duration_ms\":$duration_ms,\"output\":$output$context}"
   fi
 }
 
@@ -70,6 +72,8 @@ cg_run() {
   fi
 
   cg_start "$ping_key"
+  # Commande envoyée à l'échec (vérifiée côté serveur). Forme de l'import : cg_run KEY bash -c "<cmd>".
+  if [[ "${1:-}" == bash && "${2:-}" == -c ]]; then _CG_COMMAND="${3:-}"; else _CG_COMMAND="$*"; fi
 
   # Exécute la commande en capturant stdout + stderr
   "$@" > "$_CG_OUTPUT_FILE" 2>&1
@@ -123,6 +127,45 @@ cg_systemd_report() {
 }
 
 # ── Interne ───────────────────────────────────────────────────────────────────
+# Sonde de contexte, à l'échec seulement : l'environnement RÉEL du cron (utilisateur, HOME, PATH,
+# shell, locale, DISPLAY / agent SSH présents ou non) et, pour chaque « X: not found » de la sortie,
+# l'endroit où X existe sur la machine. Noms, chemins et booléens : aucune valeur secrète.
+# Renvoie ',"command":…,"context":{…}' à concaténer au JSON, ou rien si python3 manque.
+_cg_context_fields() {
+  local out="${_CG_OUTPUT_FILE:-}"
+  [[ -n "$out" ]] && command -v cygpath >/dev/null 2>&1 && out="$(cygpath -w "$out")"   # Git Bash : python Windows
+  python3 - "$out" "${_CG_COMMAND:-}" 2>/dev/null <<'PY' || true
+import getpass, glob, json, os, re, sys
+out = open(sys.argv[1], errors='replace').read()[-20000:] if sys.argv[1] and os.path.exists(sys.argv[1]) else ''
+names = list(dict.fromkeys(m.group(1) for m in re.finditer(r'(?:^|\s)([\w.+-]+): (?:command )?not found', out, re.M)))[:5]
+home = os.environ.get('HOME') or os.path.expanduser('~')   # HOME du cron (Windows ignore HOME dans expanduser)
+homes = list(dict.fromkeys([home, '/root'] + glob.glob('/home/*')))
+dirs = ['/usr/local/bin', '/usr/local/sbin', '/usr/sbin', '/sbin', '/snap/bin', '/opt/*/bin',
+        '/usr/local/rvm/bin', '/usr/local/rvm/gems/*/bin', '/usr/local/rvm/rubies/*/bin']
+for h in homes:
+    dirs += [h + s for s in ('/.local/bin', '/bin', '/.rvm/bin', '/.rvm/gems/*/bin', '/.nvm/versions/node/*/bin',
+                             '/.pyenv/shims', '/.rbenv/shims', '/.cargo/bin', '/go/bin', '/.npm-global/bin')]
+found = {}
+for n in names:
+    for d in dirs:
+        hit = next((p for p in sorted(glob.glob(os.path.join(d, n))) if os.access(p, os.X_OK)), None)
+        if hit:
+            found[n] = hit
+            break
+try:
+    user = getpass.getuser()           # USER est souvent absent sous cron
+except Exception:
+    user = ''
+ctx = {'user': user, 'home': home, 'path': os.environ.get('PATH', ''), 'shell': os.environ.get('SHELL', ''),
+       'lang': os.environ.get('LC_ALL') or os.environ.get('LANG') or '', 'cwd': os.getcwd(),
+       'display': bool(os.environ.get('DISPLAY')), 'sshAgent': bool(os.environ.get('SSH_AUTH_SOCK'))}
+if found:
+    ctx['found'] = found
+cmd = sys.argv[2][:1000]
+sys.stdout.write((',"command":' + json.dumps(cmd) if cmd else '') + ',"context":' + json.dumps(ctx))
+PY
+}
+
 _cg_ping() {
   curl -s -m 5 -X POST \
     -H "Content-Type: application/json" \

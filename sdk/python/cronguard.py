@@ -36,6 +36,21 @@ CRONGUARD_URL = os.environ.get('CRONGUARD_URL', 'http://localhost:3000')
 TIMEOUT_S = 5
 
 
+def _run_context() -> dict:
+    """Environnement réel du job à l'échec (noms, chemins, booléens ; aucune valeur secrète).
+    Permet au serveur d'établir les pannes « marche à la main, pas en cron » (locale, HOME, agent SSH…)."""
+    import getpass
+    try:
+        user = getpass.getuser()
+    except Exception:
+        user = ''
+    return {
+        'user': user, 'home': os.environ.get('HOME', ''), 'path': os.environ.get('PATH', '')[:1024],
+        'shell': os.environ.get('SHELL', ''), 'lang': os.environ.get('LC_ALL') or os.environ.get('LANG') or '',
+        'cwd': os.getcwd()[:256], 'display': bool(os.environ.get('DISPLAY')), 'sshAgent': bool(os.environ.get('SSH_AUTH_SOCK')),
+    }
+
+
 class CronGuard:
     def __init__(self, ping_key: str, base_url: str = CRONGUARD_URL):
         self.ping_key  = ping_key
@@ -54,6 +69,7 @@ class CronGuard:
             'exit_code':   exit_code,
             'output':      output[:3000],
             'duration_ms': duration_ms,
+            'context':     _run_context(),
         })
 
     def set_records(self, count: int):

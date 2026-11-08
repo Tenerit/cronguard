@@ -20,6 +20,21 @@ const Schema = z.object({
   records:     z.number().int().nonnegative().max(1_000_000_000).optional(),
   exit_code:   z.number().int().min(-999).max(999).optional(),
   output:      z.string().max(4000).optional(),
+  // Envoyés par le SDK à l'échec : la commande du cron et son environnement réel (noms, chemins,
+  // booléens ; jamais de valeurs secrètes). Bornés : un ping ne doit pas pouvoir gonfler la file.
+  command:     z.string().max(1000).optional(),
+  context:     z.object({
+    user:     z.string().max(64).optional(),
+    home:     z.string().max(256).optional(),
+    path:     z.string().max(1024).optional(),
+    shell:    z.string().max(128).optional(),
+    lang:     z.string().max(64).optional(),
+    cwd:      z.string().max(256).optional(),
+    display:  z.boolean().optional(),
+    sshAgent: z.boolean().optional(),
+    found:    z.record(z.string().max(64), z.string().max(256))
+                .refine(o => Object.keys(o).length <= 10, 'found: 10 entrées max').optional(),
+  }).optional(),
 })
 
 interface PingData {
@@ -28,6 +43,8 @@ interface PingData {
   records?:    number
   exit_code?:  number
   output?:     string
+  command?:    string
+  context?:    import('../../services/llm/run-context').RunContext
 }
 
 interface MonitorRow {
@@ -56,6 +73,7 @@ async function enqueuePing(monitor: MonitorRow, data: PingData): Promise<'succes
       monitorId: monitor.id, clientId: monitor.client_id, status,
       durationMs: data.duration_ms, records,
       exitCode: data.exit_code, output: data.output,
+      command: data.command, runContext: data.context,
     })
   } catch (e) {
     // Redis down : le ping ne peut pas être enregistré. Loggue + rethrow → la route

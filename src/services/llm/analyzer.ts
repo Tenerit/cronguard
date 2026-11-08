@@ -5,6 +5,8 @@ import { sanitizeLogs, hashError } from '../sanitizer'
 import { isOpen, onSuccess, onFailure } from './circuit-breaker'
 import { mineTemplates } from './drain'
 import { knownFix }      from './known-fixes'
+import { commandFinding } from './command-lint'
+import { contextFinding } from './run-context'
 import { evidenceLines } from './evidence'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -49,6 +51,8 @@ export interface JobContext {
   clientId:     string
   monitorId:    string
   schedule?:    string
+  command?:     string                    // commande lancée par le cron (SDK cg_run / import), vérifiée par command-lint
+  runContext?:  import('./run-context').RunContext   // environnement réel du cron au moment de l'échec (SDK)
   lastSuccess?: string
   duration?:    number
   avgDuration?: number
@@ -92,6 +96,7 @@ export interface AnalysisResult {
   correlatedMonitors?: string[]
   knownFix?:     import('./known-fixes').KnownFix | null   // correction connue déclenchée par les logs (pack)
   evidence?:     string[]      // lignes de log liées à la cause, recopiées (jamais générées)
+  finding?:      string        // cause établie par un fait constaté (command-lint / run-context), id de la règle
   verifiedFix?:  string        // date ISO : action = correction confirmée par un humain, pas une suggestion du modèle
 }
 
@@ -407,7 +412,7 @@ function recordsOutOfRange(ctx: JobContext): boolean {
 
 // Sans log ni autre preuve, le modèle inventait une cause (« high/database » sur du vide).
 // On ne l'appelle pas : mieux vaut dire qu'on ne sait pas et indiquer quoi faire.
-type LogOnlyContext = Pick<JobContext, 'logs' | 'exitCode' | 'failCount7d' | 'correlatedFailures'>
+type LogOnlyContext = Pick<JobContext, 'logs' | 'exitCode' | 'failCount7d' | 'correlatedFailures' | 'command' | 'runContext'>
 
 function analysisWithoutEvidence(ctx: LogOnlyContext): AnalysisResult {
   const exit = ctx.exitCode !== undefined ? ` (code de sortie ${ctx.exitCode})` : ''
@@ -440,9 +445,18 @@ export function llmEnabled(): boolean {
 // remplacent celles du modèle : mesuré le 2026-11-08, llama3.2:3b recopie le symptôme quelle
 // que soit la consigne (eval/ab-root-cause.ts). Le modèle garde prévention, sévérité, impact.
 // LLM_KNOWLEDGE=off rend la sortie brute du modèle (comparaison A/B, eval/score.ts --ab).
-export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'action' | 'category' | 'checks' | 'confidence' | 'knownFix'>>(res: T, cleanLogs: string): T {
+// Avant la fiche, ce que CronGuard CONSTATE sur la machine (2026-11-08) : la commande du cron
+// (command-lint) puis son environnement réel (run-context, relevé par le SDK). Un fait observé
+// prime sur une fiche générale. LLM_CONTEXT=off coupe ces deux sources (A/B, eval/score.ts --ab).
+export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'action' | 'category' | 'checks' | 'confidence' | 'knownFix' | 'finding'>>(
+  res: T, cleanLogs: string, job?: Pick<JobContext, 'command' | 'runContext'>,
+): T {
   if (process.env.LLM_KNOWLEDGE === 'off') return res
   const kf = knownFix(cleanLogs)
+  const observed = process.env.LLM_CONTEXT === 'off' ? null
+    : commandFinding(job?.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job?.runContext)
+  if (observed) return { ...res, cause: observed.cause, action: observed.action, category: observed.category,
+    checks: kf ? kf.steps.slice(0, 3) : res.checks, confidence: 'high', finding: observed.id, ...(kf ? { knownFix: kf } : {}) }
   // Sans fiche, la cause vient seule du modèle : il se dit « high » sur un symptôme recopié.
   // Une confiance haute n'est affichée que si une fiche connue l'appuie.
   if (!kf) return res.confidence === 'high' ? { ...res, confidence: 'medium' } : res
@@ -456,7 +470,7 @@ export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
   if (!clean.trim()) return analysisWithoutEvidence(ctx)
   const kf = knownFix(clean)
   const line = evidenceLines(clean, kf?.title ?? '')[0]
-  return {
+  const base: AnalysisResult = {
     cause:       kf ? kf.cause : line ? `Échec du job, dernière erreur : ${line}` : 'Échec du job : aucune ligne d\'erreur reconnue dans les logs.',
     action:      kf ? kf.action : 'Lire les lignes de log liées et la sortie complète du job.',
     prevention:  kf ? kf.steps[kf.steps.length - 1] : 'Activer l\'analyse IA locale pour une cause détaillée (LLM_BASE_URL).',
@@ -470,6 +484,9 @@ export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
     correlatedMonitors: ctx.correlatedFailures,
     model:       'none',
   }
+  // Un fait constaté (commande, environnement) vaut aussi sans modèle ; sinon la confiance reste « medium ».
+  const grounded = groundWithKnownFix(base, clean, ctx)
+  return grounded.finding ? grounded : base
 }
 
 export async function analyzeFailure(
@@ -489,7 +506,7 @@ export async function analyzeFailure(
     // passage : on applique la règle « récurrent → au moins high » au moment de
     // servir. N'augmente jamais vers le bas → sûr. La fiche aussi s'applique au service :
     // une réponse mise en cache avant une nouvelle fiche en profite sans purge.
-    return groundWithKnownFix(atLeastHighIfRecurring(cached, ctx), clean)
+    return groundWithKnownFix(atLeastHighIfRecurring(cached, ctx), clean, ctx)
   }
 
   if (await isOpen()) { logger.warn('[LLM] Circuit open'); return null }
@@ -545,7 +562,7 @@ export async function analyzeFailure(
     if (!parsed) { logger.warn('[LLM] Réponse invalide', { raw: raw.slice(0, 150) }); return null }
 
     const result: AnalysisResult = {
-      ...groundWithKnownFix(atLeastHighIfRecurring(parsed, ctx), clean),
+      ...groundWithKnownFix(atLeastHighIfRecurring(parsed, ctx), clean, ctx),
       fromCache:          false,
       correlatedMonitors: ctx.correlatedFailures,
       tokensIn:           anthropic ? data.usage?.input_tokens  : data.usage?.prompt_tokens,
