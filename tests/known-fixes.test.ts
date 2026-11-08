@@ -120,7 +120,22 @@ const SAMPLES: Array<[string, string | null]> = [
   ["mysqldump: Got error: 1045: Access denied for user 'u'@'localhost' (using password: NO) when trying to connect", 'mysql-no-password-sent'],
   ['WebDriverException: Message: unknown error: Chrome failed to start: exited abnormally', 'chrome-failed-start'],
   ['/usr/local/bin/redmine-email.sh: line 5: rake: command not found', 'command-not-found'],
+  // Familles récurrentes ajoutées avant public5
+  ["/bin/sh: -c: line 0: unexpected EOF while looking for matching `)'", 'crontab-percent'],
+  ['"/tmp/crontab.Xk3/crontab":3: bad minute\nerrors in crontab file, can\'t install.', 'crontab-rejected'],
+  ['/opt/jobs/run.sh: line 1: #!/bin/bash: No such file or directory', 'shebang-hidden-chars'],
+  ["Traceback (most recent call last):\n  File \"job.py\", line 4, in <module>\n    token = os.environ['API_TOKEN']\nKeyError: 'API_TOKEN'", 'env-var-missing'],
+  ['/opt/jobs/sync.sh: line 7: BACKUP_DIR: unbound variable', 'env-var-missing'],
+  ['Exception in thread "main" java.lang.NoClassDefFoundError: org/apache/commons/io/FileUtils', 'java-classpath'],
+  ["PHP Fatal error:  require(): Failed opening required '../config.php'", 'relative-path'],
+  ["python3: can't open file 'report.py': [Errno 2] No such file or directory", 'relative-path'],
+  ['/opt/jobs/etl.sh: line 3: venv/bin/activate: No such file or directory', 'venv-activate-missing'],
+  ['fatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights', 'git-remote-unreadable'],
+  ['/home/deploy/cron/job.sh: 5: /home/deploy/cron/job.sh: gsutil: not found', 'command-not-found'],
+  ['tee: /var/www/out.log: permission denied', 'permission-denied'],
   // Voisins à ne pas confondre
+  ["KeyError: 'total_amount'", null],                                   // clé de données, pas une variable d'environnement
+  ["python3: can't open file '/opt/jobs/report.py': [Errno 2] No such file or directory", null],   // chemin absolu
   ['GET /api/orders/42 -> 404 Not Found', null],
   ['Error: not found: invoice 8812', null],
   ['401 Unauthorized: the provided authorization grant is invalid, expired, or revoked', 'http-401'],   // pas « identifiants cloud expirés »

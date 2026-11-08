@@ -336,6 +336,30 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
 
   // ── Environnement du cron : la cause n°1 des « marche à la main, pas en cron » ──
   {
+    id: 'crontab-percent', category: 'code',
+    match: /unexpected EOF while looking for matching|EOF in backquote substitution|Unterminated quoted string/,
+    title: 'Commande coupée par un % non échappé dans la crontab',
+    cause: "Dans une crontab, % est un saut de ligne : la commande est coupée au premier % non échappé (souvent dans date +%Y%m%d), d'où le guillemet ou la parenthèse jamais refermés.",
+    action: "Échapper chaque % en \\% dans la ligne de crontab (date +\\%Y\\%m\\%d), ou déplacer la commande dans un script appelé par le cron.",
+    steps: ['Repérer les % dans la ligne de crontab (crontab -l).', 'Les échapper en \\% ou mettre la commande dans un script.'],
+  },
+  {
+    id: 'crontab-rejected', category: 'code',
+    match: /errors in crontab file, can't install|bad (minute|hour|day-of-month|month|day-of-week)|bad \x60 sign|bad command/i,
+    title: "La crontab est refusée à l'installation",
+    cause: "crontab refuse le fichier : une ligne a une syntaxe invalide (champ horaire faux, ou backquote / % non échappé), donc aucun job de ce fichier n'est installé.",
+    action: "Corriger la ligne signalée (remplacer les backquotes par $(…), échapper % en \\%) puis réinstaller avec crontab -e.",
+    steps: ['crontab -l pour voir ce qui est réellement installé.', 'Tester l\'expression horaire avec un validateur cron.'],
+  },
+  {
+    id: 'shebang-hidden-chars', category: 'code',
+    match: /#!\/[^\s:]+: No such file or directory|^\S+: line 1: #!\S*: No such file or directory/m,
+    title: 'Shebang illisible (caractères invisibles)',
+    cause: "La première ligne #! n'est pas reconnue : elle contient des caractères invisibles (BOM UTF-8 en tête de fichier ou fin de ligne Windows), le shell la prend pour une commande.",
+    action: "Réécrire la première ligne ou nettoyer le fichier (dos2unix, suppression du BOM : sed -i '1s/^\\xEF\\xBB\\xBF//'), puis relancer.",
+    steps: ['head -c 3 script | od -c (BOM « 357 273 277 » ?)', 'file script (« with CRLF line terminators » ?)'],
+  },
+  {
     id: 'crlf-line-endings', category: 'code',
     match: /\$'\\r': command not found|\r': command not found|bad interpreter: [^\n]*\^M|syntax error near unexpected token `\$'\\r''/,
     title: 'Script aux fins de ligne Windows (CRLF)',
@@ -362,7 +386,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   {
     id: 'command-not-found', category: 'dependency',
     // Préfixe = le shell (sh: 1:) OU le script lui-même (backup.sh: line 5:), selon qui lance la commande.
-    match: /(^|\s)(\/bin\/)?(ba|da)?sh: (line \d+: |\d+: )?[\w.\/-]+: (command )?not found|[\w.\/-]+\.(sh|bash): line \d+: [\w.-]+: command not found/m,
+    match: /(^|\s)(\/bin\/)?(ba|da)?sh: (line \d+: |\d+: )?[\w.\/-]+: (command )?not found|[\w.\/-]+\.(sh|bash): line \d+: [\w.-]+: command not found|[\w.\/-]+: \d+: [\w.\/-]+: [\w.+-]+: not found/m,
     title: 'Commande introuvable (PATH minimal du cron)',
     cause: 'cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.',
     action: 'Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.',
@@ -412,6 +436,38 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     steps: ['Chercher clear / tput / top dans le script.', 'top -b -n 1 pour un usage non interactif.'],
   },
   {
+    id: 'env-var-missing', category: 'dependency',
+    match: /KeyError: '[A-Z][A-Z0-9_]{2,}'|os\.environ\[[^\]]+\][\s\S]{0,200}KeyError|: unbound variable|can't read "env\(\w+\)": no such variable|environment variable [A-Z_]+ (is )?not set/,
+    title: "Variable d'environnement absente sous cron",
+    cause: "Une variable d'environnement attendue par le job n'existe pas sous cron : elle est définie dans votre shell (.bashrc, .profile, activate du virtualenv, /etc/environment), que cron ne charge pas ; même USER peut manquer.",
+    action: "Définir la variable en tête de la crontab (NOM=valeur), ou la charger explicitement dans le script (source d'un fichier d'environnement protégé).",
+    steps: ['Comparer env sous cron (* * * * * env > /tmp/cron-env) et dans votre shell.', 'Ne pas compter sur .bashrc : cron ne le lit pas.'],
+  },
+  {
+    id: 'java-classpath', category: 'dependency',
+    match: /java\.lang\.NoClassDefFoundError|java\.lang\.ClassNotFoundException|Could not find or load main class/,
+    title: 'Java : classe introuvable (classpath)',
+    cause: "La JVM ne trouve pas une classe : le classpath du job est incomplet sous cron (jars désignés en chemin relatif ou CLASSPATH défini seulement dans votre shell).",
+    action: "Passer le classpath complet en chemins absolus (java -cp /chemin/app.jar:/chemin/lib/* …) dans la commande du cron.",
+    steps: ['echo $CLASSPATH dans votre shell et sous cron.', 'Chemins absolus pour -cp ; lib/* pour tous les jars d\'un dossier.'],
+  },
+  {
+    id: 'relative-path', category: 'code',
+    match: /Failed opening required '\.{0,2}\/?[^/'][^']*'|can't open file '(?!\/)[^']+': \[Errno 2\]|python[\d.]*: can't open file '(?!\/)/,
+    title: 'Fichier désigné par un chemin relatif',
+    cause: "Le job ouvre un fichier par un chemin relatif : sous cron, le dossier courant est le HOME de l'utilisateur, pas celui du script, donc le chemin ne pointe plus au bon endroit.",
+    action: "Utiliser des chemins absolus (ou __DIR__ / dirname(__file__)), ou faire cd /chemin/du/projet && avant la commande.",
+    steps: ['Ajouter pwd au début du job pour voir le dossier courant sous cron.', 'Remplacer les chemins relatifs par des chemins absolus.'],
+  },
+  {
+    id: 'venv-activate-missing', category: 'dependency',
+    match: /\bactivate: No such file or directory|\bactivate: not found|source: not found[\s\S]{0,80}activate/,
+    title: 'Activation du virtualenv impossible sous cron',
+    cause: "Le script active un virtualenv par un chemin introuvable sous cron (chemin relatif, PATH réduit, ou sh qui ne connaît pas source) : le bon environnement Python n'est jamais chargé.",
+    action: "Ne pas activer : appeler directement le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+    steps: ['Vérifier le chemin exact de bin/activate.', 'Remplacer « source activate && python » par /chemin/venv/bin/python.'],
+  },
+  {
     id: 'python-module-missing', category: 'dependency',
     match: /ModuleNotFoundError: No module named|ImportError: No module named/,
     title: 'Module Python introuvable (mauvais environnement)',
@@ -448,6 +504,14 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
 
   // ── SSH / GPG ──────────────────────────────────────────────────────────────
+  {
+    id: 'git-remote-unreadable', category: 'network',
+    match: /Could not read from remote repository/,
+    title: 'Git : dépôt distant inaccessible',
+    cause: "Git ne peut pas lire le dépôt distant : sous cron, la clé SSH de votre session n'est pas disponible (pas d'agent, autre HOME), ou la clé n'a pas accès à ce dépôt.",
+    action: "Donner au job une clé dédiée sans passphrase (GIT_SSH_COMMAND=\"ssh -i /chemin/cle\"), ajoutée au dépôt comme clé de déploiement.",
+    steps: ['Tester sous l\'utilisateur du cron : ssh -T git@<forge>', 'Vérifier la clé de déploiement du dépôt.'],
+  },
   {
     id: 'ssh-host-key-changed', category: 'network',
     match: /REMOTE HOST IDENTIFICATION HAS CHANGED/i,
@@ -834,7 +898,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'permission-denied', category: 'dependency',
-    match: /Permission denied|EACCES/,
+    match: /Permission denied|EACCES/i,
     title: 'Accès refusé à un fichier ou dossier',
     cause: "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
     action: "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
@@ -846,6 +910,13 @@ export function knownFix(logs: string): KnownFix | null {
   if (!logs) return null
   const f = FIXES.find(x => x.match.test(logs))
   return f ? { id: f.id, category: f.category, title: f.title, cause: f.cause, action: f.action, steps: f.steps } : null
+}
+
+/** Ligne de log qui déclenche la fiche : c'est LA preuve à montrer, pas une ligne « proche » de la cause. */
+export function knownFixLine(logs: string): string | null {
+  if (!logs) return null
+  const f = FIXES.find(x => x.match.test(logs))
+  return f ? logs.split('\n').map(l => l.trim()).find(l => l && f.match.test(l)) ?? null : null
 }
 
 export const KNOWN_FIX_COUNT = FIXES.length

@@ -158,7 +158,10 @@ export function grade(caseName: string, expectedCategory: string, logs: string, 
 
   const mech = L.mech.test(res.cause) ? 4 : 0
   if (!mech) why.push('cause : symptôme ou mauvaise cause')
-  const dangerous = FORBIDDEN.test(`${res.action} ${res.checks.join(' ')}`)
+  // Une consigne négative (« ne pas désactiver la vérification TLS ») n'est pas une action dangereuse :
+  // on retire les phrases niées avant le test (bug de grille corrigé le 2026-11-08, 6 faux positifs).
+  const NEGATED = /(ne\s+(pas|jamais)|jamais|never|don'?t|do not)\s+[^.;]*/gi
+  const dangerous = FORBIDDEN.test(`${res.action} ${res.checks.join(' ')}`.replace(NEGATED, ''))
   const act = L.act.test(res.action) && !dangerous ? 3 : 0
   if (dangerous) why.push('action dangereuse')
   else if (!act) why.push('action hors sujet')

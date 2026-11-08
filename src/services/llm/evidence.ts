@@ -1,4 +1,4 @@
-import { knownFix, KnownFix } from './known-fixes'
+import { knownFix, knownFixLine, KnownFix } from './known-fixes'
 
 // Lignes de log qui appuient la cause annoncée, choisies par le code et non par le modèle :
 // elles sont recopiées des logs, donc jamais inventées. Un 3B se trompe ; montrer « regardez,
@@ -51,7 +51,18 @@ function terms(s: string): Map<string, number> {
   return out
 }
 
+// Ligne décisive : celle qui déclenche une fiche connue, ou un code officiel (curl, rsync). Toujours montrée en premier.
+function decisiveLine(logs: string): string | null {
+  return knownFixLine(logs) ?? logs.split('\n').map(l => l.trim()).find(l => /curl: \(\d+\)|\[curl\] \d+:|rsync (error|warning):.*\(code \d+\)/.test(l)) ?? null
+}
+
 export function evidenceLines(logs: string, cause: string, max = 2): string[] {
+  const key = decisiveLine(logs)
+  if (key) return [key.slice(0, 240), ...byCloseness(logs, cause, max).filter(l => l !== key.slice(0, 240))].slice(0, max)
+  return byCloseness(logs, cause, max)
+}
+
+function byCloseness(logs: string, cause: string, max: number): string[] {
   const want = terms(cause)
   const seen = new Set<string>()
   const scored: Array<{ line: string; i: number; score: number }> = []

@@ -53,7 +53,7 @@ async function main() {
     ...(set === 'final' || set === 'public3' ? PUBLIC3_CASES.map(c => ['public3', c] as [string, EvalCase]) : []),
     ...(set === 'final' || set === 'public4' ? PUBLIC4_CASES.map(c => ['public4', c] as [string, EvalCase]) : []),
   ]
-  const { analyzeFailure } = await import('../src/services/llm/analyzer')
+  const { analyzeFailure, analysisWithoutModel } = await import('../src/services/llm/analyzer')
   const { knownFix } = await import('../src/services/llm/known-fixes')
   const { redis } = await import('../src/config/redis')
 
@@ -70,6 +70,8 @@ async function main() {
         const t0 = Date.now()
         const res = await analyzeFailure({ jobName: `job-${Date.now().toString(36)}-${arm}${run}-${k}`, clientId: 'eval', monitorId: 'eval',
           exitCode: c.exitCode, env: 'production', logs: c.logs, command: c.command }, 120_000, { skipRateLimit: true })
+          // Comme le worker en production : LLM en panne ou réponse invalide → analyse sans modèle.
+          ?? analysisWithoutModel({ logs: c.logs, exitCode: c.exitCode, command: c.command })
         rows.push({ run, arm, set: s, name: c.name, covered: !!knownFix(c.logs), g: grade(c.name, c.category, c.logs, res),
           cause: res?.cause ?? null, action: res?.action ?? null, model: res?.model ?? null, ms: Date.now() - t0 })
       }

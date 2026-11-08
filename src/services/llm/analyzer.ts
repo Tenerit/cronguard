@@ -466,10 +466,30 @@ export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'act
     const coded = tool ?? exit
     if (coded) return { ...res, cause: coded.cause, action: coded.action, category: coded.category,
       confidence: tool ? 'high' : 'medium', finding: coded.id }
-    // Sans fiche ni code, la cause vient seule du modèle : il se dit « high » sur un symptôme recopié.
+    // Sans fiche ni code, la cause vient seule du modèle. S'il ne fait que recopier la ligne d'erreur,
+    // on ne le présente pas comme une cause : on le dit (mesuré : le 3B recopie le symptôme).
+    const echoed = process.env.LLM_HONEST === 'off' ? null : restatedLine(res.cause, cleanLogs)
+    if (echoed) return { ...res, cause: `Cause non établie par l'analyse : le job s'arrête sur « ${echoed} ». Voir les lignes liées.`, confidence: 'low' }
+    // Il se dit « high » sur un symptôme recopié : une confiance haute exige une fiche ou un fait.
     return res.confidence === 'high' ? { ...res, confidence: 'medium' } : res
   }
-  return { ...res, cause: kf.cause, action: kf.action, category: kf.category, checks: kf.steps.slice(0, 3), confidence: 'high', knownFix: kf }
+  // Fiche à plusieurs hypothèses (« A, B ou C ») : vraie en général, pas forcément ici → confiance moyenne.
+  // shortcut: détection par « ou » dans la cause ; une échelle de certitude par fiche serait plus juste.
+  const certain = !/\bou\b/.test(kf.cause)
+  return { ...res, cause: kf.cause, action: kf.action, category: kf.category, checks: kf.steps.slice(0, 3), confidence: certain ? 'high' : 'medium', knownFix: kf }
+}
+
+// La « cause » du modèle n'est-elle que la ligne d'erreur recopiée ? ≥ 70 % de ses mots sont dans une
+// même ligne du log, et elle est courte. Renvoie cette ligne, sinon null.
+function restatedLine(cause: string, logs: string): string | null {
+  const words = (x: string) => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9_]+/).filter(w => w.length >= 3)
+  const cw = words(cause)
+  if (!cw.length || cw.length > 15) return null
+  for (const raw of logs.split('\n')) {
+    const lw = new Set(words(raw))
+    if (lw.size && cw.filter(w => lw.has(w)).length / cw.length >= 0.7) return raw.trim().slice(0, 160)
+  }
+  return null
 }
 
 // Analyse sans modèle : tout vient des logs (pack déclenché, sinon dernière ligne d'erreur).
