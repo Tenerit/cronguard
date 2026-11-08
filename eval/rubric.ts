@@ -107,6 +107,22 @@ export const LABELS: Record<string, Label> = {
   'p2-aws-env-cron':             { mech: /variables? d'environnement|environnement (du )?cron|crontab|aws_access_key|non définies?|\bhome\b|profil/i, act: /crontab|variables?|aws_access_key|aws configure|environnement|profil|credentials/i, key: /Unable to locate credentials/ },
   'p2-selenium-path':            { mech: /\bpath\b|chemin|\/usr\/s?bin/i, act: /\bpath\b|chemin|\/usr\/s?bin/i, key: /Chrome failed to start/ },
   'p2-git-ssh-key-cron':         { mech: /clé ssh|ssh key|\bagent\b|passphrase|mot de passe|clé (privée|dédiée)/i, act: /clé|\bkey\b|https|ssh-keygen|\bagent\b/i, key: /Permission denied/ },
+
+  // ── Public3 (TEST FINAL, collecté après la lecture des sorties sur public2) ──
+  'p3-ruby-rvm-env':                { mech: /\brvm\b|environnement|\bpath\b|ruby (du|de) (système|rvm)/i, act: /\brvm\b|source|environnement|\bpath\b|wrapper|chemin/i, key: /exit status 1/ },
+  'p3-smtp-port-blocked':           { mech: /\bport\b|587|hébergeur|bluehost|bloqu|pare-feu|firewall/i, act: /\bport\b|443|\b80\b|relais|hébergeur|smtp|service/i, key: /Network is unreachable/ },
+  'p3-mysqldump-password-unquoted': { mech: /mot de passe|password|guillemets?|quot|caractères? spéciaux/i, act: /guillemets?|quot|échapp|my\.cnf|defaults-extra-file/i, key: /not found/ },
+  'p3-venv-env-var':                { mech: /activate|variable d'environnement|virtualenv|venv|non (chargé|sourcé)|environnement/i, act: /activate|source|variable|crontab|environnement/i, key: /KeyError/ },
+  'p3-crontab-percent-date':        { mech: /%|pourcent|percent/i, act: /%|échapp|escape|script/i, key: /unexpected EOF/ },
+  'p3-rsync-e-quotes':              { mech: /guillemets?|quot|un seul argument|option -e|-e ssh/i, act: /guillemets?|quot|-e ?["']/i, key: /link_stat/ },
+  'p3-node-full-path':              { mech: /\bpath\b|chemin (complet|absolu)|\/usr\/local\/bin/i, act: /\/usr\/local\/bin\/node|chemin (complet|absolu)|\bpath\b/i, key: /Can't open node|Syntax error/ },
+  'p3-java-classpath':              { mech: /classpath|-cp\b|\bjars?\b/i, act: /classpath|-cp\b|\bjars?\b/i, key: /NoClassDefFoundError/ },
+  'p3-scp-agent':                   { mech: /\bagent\b|session|clé (sans|dédiée)|passphrase|mot de passe/i, act: /clé|ssh-keygen|sans (mot de passe|passphrase)|authorized_keys|-i\b/i, key: /Permission denied \(publickey\)/ },
+  'p3-tar-path-spaces':             { mech: /espaces?|guillemets?|quot|dossier (n'existe|inexistant|absent)|répertoire (n'existe|inexistant|absent)/i, act: /guillemets?|quot|mkdir|créer/i, key: /Cannot open/ },
+  'p3-venv-activate-path':          { mech: /activate|virtualenv|venv|saut de ligne|retour (à la ligne|chariot)|crlf/i, act: /bin\/python|python du (venv|virtualenv)|chemin absolu|sans activate|retirer/i, key: /activate/ },
+  'p3-activate-path-bashrc':        { mech: /\bpath\b|\.bashrc|\.profile|chemin/i, act: /chemin (complet|absolu)|\bpath\b|source/i, key: /activate/ },
+  'p3-git-push-root-home':          { mech: /\broot\b|\bhome\b|utilisateur|\.ssh/i, act: /\bhome\b|\.ssh|\broot\b|crontab de|utilisateur/i, key: /Permission denied \(publickey\)/ },
+  'p3-notify-send-display':         { mech: /variable display|display (non|n'est pas|absente|vide)|xauthority|dbus_session|session (graphique|x)/i, act: /display|xauthority|export|dbus/i, key: /could not open display/ },
 }
 
 // Actions qui aggravent ou masquent la panne : 0 point d'action, même si la regex ACT passe.

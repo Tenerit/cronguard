@@ -1,0 +1,238 @@
+[
+  {
+    "query": "crontab not running script",
+    "site": "stackoverflow",
+    "title": "Crontab not running ruby script",
+    "url": "https://stackoverflow.com/questions/20366718/crontab-not-running-ruby-script",
+    "logs": "Dec  3 20:12:01 dahlia /USR/SBIN/CRON[13912]: (gigawatt) CMD (/bin/sh -c \"(export   PATH=/usr/bin:/bin; /home/gigawatt/drbronnersbot/drbronnersbot.rb)\")\nDec  3 20:12:01 dahlia /USR/SBIN/CRON[13910]: (CRON) error (grandchild #13912 failed with exit status 1)\n",
+    "answer": "Edit: I just noticed the user answered his own post, but I'll leave this up in case someone stumbles across here with a similar issue. I've found it's helpful for some. I've run into this and found that this is the solution for Ruby scripts. Ruby needs to be executed in a particular environment. RVM handles this by sourcing a ruby environment file for you particular version of ruby that sets all the required environment variables. For example if you have ruby 1.9.3 patch 448, you can look at the environment file that is sourced: cat /usr/local/rvm/environments/ruby-1.9.3-p484 export PATH=\"/usr/local/rvm/gems/ruby-1.9.3-p484/bin:/usr/local/rvm/gems/ruby-1.9.3-p484@global/bin:/usr/local/rvm/ru"
+  },
+  {
+    "query": "cron job fails silently",
+    "site": "stackoverflow",
+    "title": "Send an email from Python script, without outgoing port access?",
+    "url": "https://stackoverflow.com/questions/21867079/send-an-email-from-python-script-without-outgoing-port-access",
+    "logs": "socket.error: [Errno 101] Network is unreachable",
+    "answer": "Bluehost isn't allowing scripts access to other ports than 80 and 443 with a standard plan. Since your script tries to use port 587 it simply won't work. Check here for more details about Bluehosts policy: help page on Bluehost One suggestion would be for you to use another email service that allows sending emails via another port, i.e. HTTP. mailgun is one provider that offers this service. "
+  },
+  {
+    "query": "cron python script not working",
+    "site": "stackoverflow",
+    "title": "Cron python script not executing",
+    "url": "https://stackoverflow.com/questions/13593935/cron-python-script-not-executing",
+    "logs": "starting\nTraceback (most recent call last):\n  File \"/home/pi/ipsender.py\", line 7, in <module>\n    ifconfig_output = sp.check_output([\"ifconfig\", \"wwan0\"])\n  File \"/usr/lib/python2.7/subprocess.py\", line 537, in check_output\n    process = Popen(stdout=PIPE, *popenargs, **kwargs)\n  File \"/usr/lib/python2.7/subprocess.py\", line 679, in __init__\n    errread, errwrite)\n  File \"/usr/lib/python2.7/subprocess.py\", line 1249, in _execute_child\n    raise child_exception\nOSError: [Errno 2] No such file or directory\n",
+    "answer": "There are lots of gotchas with crons... In the absence of the MTA, see the output an easier way - try piping it to a file: */1 * * * * /home/pi/ipsender.py > /home/pi/ipsender.log 2>&1 Start your python file off with a print 'starting' to see if the python file starts to execute ok. "
+  },
+  {
+    "query": "cron shell script not executing",
+    "site": "stackoverflow",
+    "title": "database connection in shell script failed when execute from cron",
+    "url": "https://stackoverflow.com/questions/46359137/database-connection-in-shell-script-failed-when-execute-from-cron",
+    "logs": "#!/bin/bash\n\n# working directory\ndir_work=\"somedir/work\"\n\n# backup directory\ndir_bkup=\"somedir/bkup\"\n\n# db2 setting\n. $HOME/sqllib/db2profile\n\n# Get file by using SCP\ngetFilebyScp(){\n    scp -i KEY -p user@10.0.0.1:\"$download_file\" \"$dir_work\"\nRC=$?\n    if [ $RC -ne 0 ]; then\n      { echo 'Cannot get the file...'; exit $RC; }\n    fi\n}\n\n# Processing Start\necho 'START'\n\n# DB Connection\ndb2 connect to DATABASE user USERNAME using PASSWORD || { echo \"database connection failed.\"; exit 1; }\n\n# assign file_information to an array\nfile_info=\"($(db2 -x -t \"select status, file_path from SOME_TABLE \\\n                where id = 999 \\\n                and status = 2 \\\n                and entry_id = (select max(entry_id) from SOME_TABLE where id = 999)\"))\"\n                \ndownload_file=\"${file_info[1]}\"\n\n# check the status of file \nif [ \"${file_info[0]}\" -eq 2 ]; then\n  getFilebyScp\nelif [ \"${file_info[0]}\" -eq 1 ]; then\n  { echo 'Skip the process because output if the file is not finished yet.'; exit 1; }\nelse\n  { echo 'Skip the process because some error happen in output file.'; exit 1; }\nfi\n\nnew_file=\"$(basename \"${download_file// /_}\")\"\nmv -f \"$download_file\" \"$new_file\"\n\nbkup_file=${new_file%%.csv}'_'$(date +%Y%m%d%H%M%S).csv\nmv -f \"${new_file}\" \"${dir_bkup}\"/\"${bkup_file}\" || { 'Backup failed...'; exit 1; }\n\necho 'END'\n\n---\n#!/bin/bash\n\n# working directory\ndir_work=\"somedir/work\"\n\n# backup directory\ndir_bkup=\"somedir/bkup\"\n\n# db2 setting\n. $HOME/sqllib/db2profile\n\n# Get file by usin",
+    "answer": "$() command is executed as a sub shell, so the initial connection is not available in the sub shell. so I fixed the script like below. #!/bin/bash # working directory dir_work=\"somedir/work\" # backup directory dir_bkup=\"somedir/bkup\" # db2 setting . $HOME/sqllib/db2profile # Get file by using SCP getFilebyScp(){ scp -i KEY -p user@10.0.0.1:\"$download_file\" \"$dir_work\" RC=$? if [ $RC -ne 0 ]; then { echo 'Cannot get the file...'; exit $RC; } fi } # Processing Start echo 'START' # DB Connection db2 connect to DATABASE user USERNAME using PASSWORD || { echo \"database connection failed.\"; exit 1; } # assign file_informations db2 -txf \"/somedir/otherdir/status.sql\" > \"$dir_work\"/status db2 -txf \""
+  },
+  {
+    "query": "cron backup script fails",
+    "site": "stackoverflow",
+    "title": "mysqldump script fails on update from mysql 5.5 to 5.7",
+    "url": "https://stackoverflow.com/questions/68081952/mysqldump-script-fails-on-update-from-mysql-5-5-to-5-7",
+    "logs": "sh: 1: Gp+cYE2!6z: not found\n",
+    "answer": "Looks like a mistake in $command. Is Gp+cYE2!6z: a part of your password? Is it a full pass? Does it have spaces? Try: printf($command) to see the final text of the comand and try to execute it in terminal. You can also try to quote password as done followingly: mysqldump -u root -p'PASSWORD' "
+  },
+  {
+    "query": "cron php script not working",
+    "site": "stackoverflow",
+    "title": "PHP script not working to replace WordPress cron for multi-site",
+    "url": "https://stackoverflow.com/questions/11815851/php-script-not-working-to-replace-wordpress-cron-for-multi-site",
+    "logs": "register_activation_hook(__FILE__, array('wp_multisite_cron','plugin_activation'));\nadd_action('init', array('wp_multisite_cron', 'init'));\n\nclass wp_multisite_cron{\n\n    const LANG = 'wp_multisite_cron';\n    const LANG_DIR = '/lang/';\n\n    /**\n     * \n     * Plugin activation (sets default parameters)\n     */\n    public static function plugin_activation(){\n        if(!self::get_option('concurrent_crons'))\n            self::update_option('concurrent_crons', 100);\n    }\n\n    /**\n     * \n     * The main 'loader'\n     */\n    public static function init() {\n\n        //Setup the translation\n        load_plugin_textdomain(self::LANG, false, dirname(plugin_basename( __FILE__ ) ) . self::LANG_DIR);\n\n        //The multisite cron action     \n        add_action('wp_ajax_wp_multisite_cron_call', array('wp_multisite_cron','cron_call'));\n        add_action('wp_ajax_nopriv_wp_multisite_cron_call', array('wp_multisite_cron','cron_call'));\n\n        // admin actions and hooks\n        if (is_admin()) {\n            self::admin_hooks();\n        }\n    }\n\n    /**\n     * \n     * The admin hooks\n     */\n    public static function admin_hooks(){\n        //Setting menu\n        add_action('admin_menu', array('wp_multisite_cron', 'admin_menu'));\n        if(is_network_admin() && self::is_ready()){\n            add_action('network_admin_menu', array('wp_multisite_cron', 'network_admin_menu'));\n        }\n    }\n\n    /**\n     * \n     * Set up the admin menu(s)\n     */\n    public static function admin_menu(){\n ",
+    "answer": "Within your cron_call function, around line 200, you have this block: //Add the url to the stack $chs[$blog_id]=curl_init(); curl_setopt($chs[$blog_id], CURLOPT_URL, $cron_url); curl_setopt($chs[$blog_id], CURLOPT_HEADER, 0); curl_multi_add_handle($mh, $ch); So first you initialize your curl handlers in the $chs array. Then, instead of using those values, you try to add the $ch variable to your multi handler, which is null I presume. With proper error reporting settings and by checking the result of curl_multi_add_handle, you could probably see that the add handle operation failed. From the php manual: int curl_multi_add_handle ( resource $mh , resource $ch ) Return Values Returns 0 on succe"
+  },
+  {
+    "query": "cron environment variables",
+    "site": "stackoverflow",
+    "title": "Virtualenvwrapper environment variables when running crons",
+    "url": "https://stackoverflow.com/questions/54186439/virtualenvwrapper-environment-variables-when-running-crons",
+    "logs": "Traceback (most recent call last):\n  File \"my_script.py\", line 7, in <module>\n    main()\n  File \"my_script.py\", line 4, in main\n    print(os.environ['SOME_ENV_VARIABLE'])\n  File \"/home/ubuntu/.virtualenvs/testcron/lib/python3.5/os.py\", line 725, in __getitem__\n    raise KeyError(key) from None\nKeyError: 'SOME_ENV_VARIABLE'\n",
+    "answer": "Running python from the virtualenv (/home/ubuntu/.virtualenvs/testcron/bin/python3) allows access to the venv site-packages but it doesn't activate the venv. If you have something unusual in bin/activate you have to source it every time you need it: * * * * * cd /home/ubuntu/test_script && . /home/ubuntu/.virtualenvs/testcron/bin/activate && /home/ubuntu/.virtualenvs/testcron/bin/python3 my_script.py "
+  },
+  {
+    "query": "cron sudo",
+    "site": "stackoverflow",
+    "title": "Bash script does not execute in CRON (might be to do with Sudo commands?)",
+    "url": "https://stackoverflow.com/questions/34362798/bash-script-does-not-execute-in-cron-might-be-to-do-with-sudo-commands",
+    "logs": "#!bin/bash\n\n###\n#\n# PostgreSQL to MySQL Dump  program\n#\n# Filename: psqlimport\n# Description: This program dumps the 3 tables from a\n# remote PostgreSQL database, converts the dump file\n# into MySQL translatable INSERT INTO queries,\n# and inputs the data into the local\n#  MySQL Inbevdash6 database.\n#\n# Script can be copied to the\n# /etc/cron.daily folder for daily database updates.\n#\n#\n# Script written by ramabrahma@stackoverflow\n# Date: December 15, 2015\n# Version: 01\n#\n\n\n#Set the dump file and temp file\nDUMPFILE='psql.dump.sql' || (echo \"assign var failed\" 1>&2; exit 1)\nTMPFILE=`mktemp` || (echo \"mktemp failed\" 1>&2; exit 1)\n\n#Tables to dump: table1, table2, table3\n#Dump as INSERT queries statements\n\n\nsudo -E sshpass -p \"<remote host password>\" \\\nssh username@remote_host \\\npg_dump -U database_username -t table1 \\\n -t table2 -t table3 \\\n --column-inserts --data-only psqldatabase \\\n | awk '/^INSERT/ {i=1} /^SELECT/ {i=0} i' \\\n > \"$TMPFILE\" \\\n || (echo \"pg_dump failed\" 1>&2; exit 1)\n\n\n#Adding transaction blocks to the dump file\n(echo \"start transaction; truncate table table1; \"; \\\necho \"truncate table table2; \"; \\\necho \"truncate table table3; \"; \\\ncat \"$TMPFILE\"; echo 'commit;' ) \\\n > \"$DUMPFILE\" \\\n || (echo \"parsing dump file failed\" 1>&2; exit 1)\n\n#Inputting the dump file to the MySQL database\nmysql --defaults-file=\"/home/ubuntu/.mysql.db.cfg\" < \"$DUMPFILE\" \\\n  || (echo \"mysql failed\" 1>&2; exit 1)\n\n#Remove the temp file created\nrm \"$TMPFILE\"\nrm \"$DUMPFILE\"\n",
+    "answer": "You have an error in your shebang: #!bin/bash It should be #!/bin/bash bin/bash probably isn't a path to anything unless you're executing out of /. This wasn't a problem when you executed the script manually as bash psqlimport explicitly invokes bash to evaluate the script. You'll be able to see the problem in action if you try to run ./psqlimport to run the script. "
+  },
+  {
+    "query": "cron bash script works manually",
+    "site": "stackoverflow",
+    "title": "Execute bash script from PHP with arguments",
+    "url": "https://stackoverflow.com/questions/17137667/execute-bash-script-from-php-with-arguments",
+    "logs": "    sh: 1: /bin/bash /home/monu/myBash.sh var1 var2 var3: not found\n",
+    "answer": "escapeshellarg() should be used on each argument, not the command as a whole. exec(escapeshellarg('/bin/bash') . ' ' . escapeshellarg(\"/home/monu/myBash.sh\") . ' ' . escapeshellarg(...)); "
+  },
+  {
+    "query": "cron mysql backup",
+    "site": "stackoverflow",
+    "title": "What is wrong with using $(date \"+%Y-%m-%d_%H:%M:%S\") in a cron job?",
+    "url": "https://stackoverflow.com/questions/17603325/what-is-wrong-with-using-date-y-m-d-hms-in-a-cron-job",
+    "logs": "---------- Email message ----------\n\nFrom: Cron Daemon <root@MYSERVER>\n\nDate: Thu, Jul 11, 2013 at 9:37 PM\n\nSubject: Cron <MYUSERNAME@MYSERVER> mysqldump -u(USERNAME) -p(PASSWORD) --all-databases | \ngzip > /home/MYHOMEDIR/myDBBckups/full_backup$(date \"+\n\nTo: MYEMAIL@gmail.com\n\n\n/bin/sh: -c: line 0: unexpected EOF while looking for matching `\"'\n\n/bin/sh: -c: line 1: syntax error: unexpected end of file \n\n---------- End of Email message ----------\n",
+    "answer": "The % character in the command portion of a cron job is translated to a newline character. Either use \\% to denote a % character, or put the date command into an external script that you invoke from cron. "
+  },
+  {
+    "query": "cron postgresql backup",
+    "site": "stackoverflow",
+    "title": "How to check if postgresql backup was successful?",
+    "url": "https://stackoverflow.com/questions/6341321/how-to-check-if-postgresql-backup-was-successful",
+    "logs": "pg_dump: SQL command failed\npg_dump: Error message from server: ERROR: catalog is missing 17 attribute(s) from relid 20158\npd_dump: The command was: LOCK TABLE public.obvez IN ACCESS SHARE MODE\n",
+    "answer": "I write the outcome into a logfile, and at the end of the cronjob, I send the content of the logfile to my e-mail address. That way, I'll know when something went wrong. su postgres \"pg_dump our_database 2>> $LOG_FILE | gzip > /home/smb/shared/database_backup.bak.gz\" cat $LOG_FILE | mailx $MAINTAINERS -s \"Postgresql backup\" ADDENDUM: if you want to send the e-mail only if anything went wrong, you can check the return code of pg_dump: LOG_FILE=/tmp/pgdump.err if ! pg_dump -U backupuser \"our_database\" 2> $LOG_FILE then cat $LOG_FILE | mailx 'youremailaddress' -s \"Postgresql backup failure!\" fi "
+  },
+  {
+    "query": "cron rsync ssh",
+    "site": "stackoverflow",
+    "title": "Using rsync with ssh keygen",
+    "url": "https://stackoverflow.com/questions/60741478/using-rsync-with-ssh-keygen",
+    "logs": "rsync -ah -progress -delete -e ssh -i ~/.ssh/id_rsa_lb lxxxxxxxxx@1xx.1xx.1xx.1xx /var/opt/file /Volumes/USB-HDD\n\nrsync: link_stat \"/Users/yyyyy_yyyyy/.ssh/lxxxxxxxxx@1xx.1xx.1xx.1xx\" failed: No such file or directory (2)\nrsync: link_stat \"/var/opt/base.sql\" failed: No such file or directory (2)\nrsync error: some files could not be transferred (code 23) at /BuildRoot/Library/Caches/com.apple.xbs/Sources/rsync/rsync-54/rsync/main.c(996) [sender=2.6.9]\n",
+    "answer": "Use quotes, -e expects exactly one argument. rsync user@host:src_path local_dest_path ... -e \"ssh -i ~/.ssh/id_rsa_lb\" "
+  },
+  {
+    "query": "cron docker-compose",
+    "site": "stackoverflow",
+    "title": "docker-compose removing shared volume",
+    "url": "https://stackoverflow.com/questions/34865062/docker-compose-removing-shared-volume",
+    "logs": "Jan 18 22:10:14 core-1 docker-compose[11563]: Going to remove lemp_nginx, lemp_php, lemp_mariadb, lemp_ffmpeg, lemp_phpmyadmin, lemp_base, lemp_cadvisor\nJan 18 22:10:14 core-1 docker-compose[11563]: Removing lemp_nginx ...\nJan 18 22:10:14 core-1 docker-compose[11563]: Removing lemp_php ...\nJan 18 22:10:14 core-1 docker-compose[11563]: Removing lemp_mariadb ...\nJan 18 22:10:14 core-1 docker-compose[11563]: Removing lemp_ffmpeg ...\nJan 18 22:10:14 core-1 docker-compose[11563]: Removing lemp_phpmyadmin ...\nJan 18 22:10:14 core-1 docker-compose[11563]: Removing lemp_base ...\nJan 18 22:10:14 core-1 docker-compose[11563]: Removing lemp_cadvisor ...\n--> The deletion happening somewhere here\nJan 18 22:10:16 core-1 docker-compose[11563]: [303B blob data]\nJan 18 22:10:16 core-1 docker-compose[11563]: ERROR: for lemp_mariadb  Driver overlay failed to remove root filesystem 3f35133e0814235cc4b9814606798f50d22e472d415ca814beb3443df8b89e3c: remove /var/lib/docker/overlay/3f35133e0814235cc4b9814606798f50d22e472d415ca814beb3443df8b89e3c/merged/var/www/phpmyadmin: device or resource busy\nJan 18 22:10:17 core-1 docker-compose[11579]: Creating lemp_cadvisor\n\n---\nroot@0687540163a3:/var/log# cat syslog\nJan 22 14:45:04 0687540163a3 rsyslogd: [origin software=\"rsyslogd\" swVersion=\"8.4.2\" x-pid=\"13\" x-info=\"http://www.rsyslog.com\"] start\nJan 22 14:45:04 0687540163a3 rsyslogd: imklog: cannot open kernel log(/proc/kmsg): Operation not permitted.\nJan 22 14:45:04 0687540163a3 rsyslogd-2145: activation o",
+    "answer": "I met the same issue with you.I think that there are some problems with lemp_mariadb container. To solve this issue. You should try the steps below: Get lemp_mariadb container id: docker ps -a If you see lemp_mariadb status is Dead. You should go to /var/lib/docker/containers. You find the directory that has same name with lemp_mariadb container id and delete it rm -rf /var/lib/docker/containers/lemp_mariadb_container_id "
+  },
+  {
+    "query": "cron node script",
+    "site": "stackoverflow",
+    "title": "How can you execute a Node.js script via a cron job?",
+    "url": "https://stackoverflow.com/questions/5849402/how-can-you-execute-a-node-js-script-via-a-cron-job",
+    "logs": "steve@atom:~$ node -v\nv0.4.2\n\nsteve@atom:~$ sh node -v\nsh: Can't open node\n\nsteve@atom:~$ bash node -v\n/usr/local/bin/node: /usr/local/bin/node: cannot execute binary file\n\nsteve@atom:~$ /usr/local/bin/node -v\nv0.4.2\n\nsteve@atom:~$ sh /usr/local/bin/node -v\n/usr/local/bin/node: 1: Syntax error: \"(\" unexpected\n\nsteve@atom:~$ bash /usr/local/bin/node -v\n/usr/local/bin/node: /usr/local/bin/node: cannot execute binary file\n",
+    "answer": "just provide the full path to node /usr/local/bin/node in your cron job like: 30 6 1 * * /usr/local/bin/node /home/steve/example/script.js "
+  },
+  {
+    "query": "cron java jar",
+    "site": "stackoverflow",
+    "title": "How to run a Java program under cron and import the jars",
+    "url": "https://stackoverflow.com/questions/11840059/how-to-run-a-java-program-under-cron-and-import-the-jars",
+    "logs": "Exception in thread \"main\" java.lang.NoClassDefFoundError: com/gargoylesoftware/htmlunit/WebClient\n",
+    "answer": "Something like this: 0 0 * * * java -classpath .../MyDir/proj/:.../MyDir/proj/library/jar1.jar:.../MyDir/proj/library/jar2.jar myProj or if you are using a recent JVM you can use a wildcard to match all of the JAR files. 0 0 * * * java -classpath .../MyDir/proj/:.../MyDir/proj/library/\\* myProj (The backslash is probably unnecessary because 'globbing' is unlikely to match anything in that context ...) Better still, put the command (and any others that need to be run to prepare for the launch) into a shell script, and run the script from your crontab entry instead. "
+  },
+  {
+    "query": "cron wget",
+    "site": "stackoverflow",
+    "title": "cron & wget adding new line to each document write",
+    "url": "https://stackoverflow.com/questions/48188575/cron-wget-adding-new-line-to-each-document-write",
+    "logs": "{\"error\":0,\"result\":\"Password reset email successfully sent to 0 users, 0 emails failed to send\",\"jDateLastRun\":\"10 Jan 2018, 00:00:07\",\"jHandle\":\"check_password_resets\",\"jID\":\"9\"}{\"error\":0,\"result\":\"Password reset email successfully sent to 0 users, 0 emails failed to send\",\"jDateLastRun\":\"10 Jan 2018, 00:00:07\",\"jHandle\":\"check_password_resets\",\"jID\":\"9\"}\n\n---\n{\"error\":0,\"result\":\"Password reset email successfully sent to 0 users, 0 emails failed to send\",\"jDateLastRun\":\"10 Jan 2018, 00:00:07\",\"jHandle\":\"check_password_resets\",\"jID\":\"9\"}\n{\"error\":0,\"result\":\"Password reset email successfully sent to 0 users, 0 emails failed to send\",\"jDateLastRun\":\"10 Jan 2018, 00:00:07\",\"jHandle\":\"check_password_resets\",\"jID\":\"9\"}\n",
+    "answer": "Use | xargs echo to append the newline. Your entry would look something like this: 0 0 * * */1 wget -t 1 - \"http://urlto.job/job9\" -O - | xargs echo >> home/password_reset_log.txt Of course, this will only work if your URL always gives exactly one line each time. Here the demo for everyone to enjoy: user@host:~$ echo -n \"No newline\" No newlineuser@host:~$ echo -n \"With newline\" | xargs echo With newline user@host:~$ "
+  },
+  {
+    "query": "cron curl",
+    "site": "stackoverflow",
+    "title": "Prevent script requested by CURL (via CRON) from running in browser",
+    "url": "https://stackoverflow.com/questions/35633539/prevent-script-requested-by-curl-via-cron-from-running-in-browser",
+    "logs": "if ((in_array($_SERVER[\"HTTP_HOST\"], $this->config->item('live_domains'))) AND (IS_CURL)) {\n    show_error(\"Daily CRON tasks can only be run from the command line on the live server.\");\n}\n",
+    "answer": "If the cron script runs from the same server things are hosted on, you should be able to add: if ($_SERVER['REMOTE_ADDR'] != '127.0.0.1') { show_error(\"Daily CRON tasks can only be run from the command line on the live server.\"); } Or swap 127.0.0.1 with the allowed IP addresses it can run from. Other than that there is no bullet-proof way to distinguish the job is being run from cURL and is not being spoofed. Or as CollinD suggested, using a secret token as a parameter and check that. A better bet might be to use .htaccess: <Location /cron> Order Deny,Allow Deny from all Allow from 127.0.0.1 </Location> Using this method, you don't need to modify the PHP code, just use Apache to allow/deny "
+  },
+  {
+    "query": "cron scp",
+    "site": "stackoverflow",
+    "title": "Why does this bash script work at console but fails when run as a cron job?",
+    "url": "https://stackoverflow.com/questions/5499680/why-does-this-bash-script-work-at-console-but-fails-when-run-as-a-cron-job",
+    "logs": "#!/bin/bash\n\ncd /home/oompah/scripts/tests/\nscp -P 12345 file1 oompah@someserver.com:~/uploads\n\nif scp -P 12345 oompah@someserver.com:/path/to/file2.dat local.dat >&/dev/null ; then \n    echo \"INFO: transfer OK\" ; \nelse \n    echo \"ERROR: transfer failed\" ; \nfi\n\n---\nERROR: transfer failed\n\n---\nPermission denied (publickey).\nlost connection\n\n---\nExecuting: program /usr/bin/ssh host 12.34.56.78, user oompah, command scp -v -t ~/uploads\nOpenSSH_5.3p1 Debian-3ubuntu6, OpenSSL 0.9.8k 25 Mar 2009\ndebug1: Reading configuration data /etc/ssh/ssh_config\ndebug1: Applying options for *\ndebug1: Connecting to 12.34.56.78 [12.34.56.78] port 12345.\ndebug1: Connection established.\ndebug1: identity file /home/oompah/.ssh/id_rsa type 1\ndebug1: Checking blacklist file /usr/share/ssh/blacklist.RSA-2048\ndebug1: Checking blacklist file /etc/ssh/blacklist.RSA-2048\ndebug1: Remote protocol version 2.0, remote software version OpenSSH_5.3p1 Debian-3ubuntu3\ndebug1: match: OpenSSH_5.3p1 Debian-3ubuntu3 pat OpenSSH*\ndebug1: Enabling compatibility mode for protocol 2.0\ndebug1: Local version string SSH-2.0-OpenSSH_5.3p1 Debian-3ubuntu6\ndebug1: SSH2_MSG_KEXINIT sent\ndebug1: SSH2_MSG_KEXINIT received\ndebug1: kex: server->client aes128-ctr hmac-md5 none\ndebug1: kex: client->server aes128-ctr hmac-md5 none\ndebug1: SSH2_MSG_KEX_DH_GEX_REQUEST(1024<1024<8192) sent\ndebug1: expecting SSH2_MSG_KEX_DH_GEX_GROUP\ndebug1: SSH2_MSG_KEX_DH_GEX_INIT sent\ndebug1: expecting SSH2_MSG_KEX_DH_GEX_REPLY\ndebug1: Host '[12.34.56.7",
+    "answer": "You are probably running with an ssh-agent or have auth'ed you private key specifically. When you run in cron you do not have a session, and you do not have anything that goes along with sessions like ssh-agent or ttys to read a password from. Create a password-less key and add the public key to the target account under ~target/.ssh/authorized_keys. You will then be able to use the key you just created with scp to auth and copy the file. FYI: You may want to read the ssh server man page on command keys and how key access and authentication work. "
+  },
+  {
+    "query": "cron tar",
+    "site": "stackoverflow",
+    "title": "how to create tar file in date wise folder linux",
+    "url": "https://stackoverflow.com/questions/24649526/how-to-create-tar-file-in-date-wise-folder-linux",
+    "logs": "tar: /opt/lampp/htdocs/abc/app/2014_07_09/con_2014.07.09.54.168668034.tar: Cannot open: No such file or directory\ntar: Error is not recoverable: exiting now\n",
+    "answer": "It is probably not working because there are spaces in the date. So, to get around that, you will need to put the path inside double quotes: tar -cvf \"....path with spaces....\" then replace the double quotes in your date command with single ones like this: tar -cvf \".... $(date +'...') ...\" You may need to create the directory first: DIRECTORY=\"/home/abc/BackupNow/$(date)\" mkdir -p \"$DIRECTORY\" tar -cvf \"$DIRECTORY/user_$(date +'\\%Y.\\%m.\\%d.\\%S.\\%N').tar\" .... "
+  },
+  {
+    "query": "cron s3 sync",
+    "none": true
+  },
+  {
+    "query": "cron certbot renew",
+    "site": "serverfault",
+    "title": "How to automate certbot certificate renewal on Ubuntu 20.04",
+    "url": "https://serverfault.com/questions/1057412/how-to-automate-certbot-certificate-renewal-on-ubuntu-20-04",
+    "logs": "Command 'root' not found, but can be installed with: snap install root-framework\n",
+    "answer": "Since you're using snap, it's worth double checking to see if there's a second timer in place (other than certbot-renew) which is implemented by snap, and does do the renewal properly. Here you can see I have both a mask to make sure that the normal certbot.timer is disabled, but I also have a timer installed by snap: root@pi:/etc/systemd/system # ls -l *certbot* lrwxrwxrwx 1 root root 9 Oct 6 10:42 certbot.timer -> /dev/null -rw-r--r-- 1 root root 293 Oct 6 05:26 snap.certbot.renew.timer and I can see that this runs twice daily and is currently waiting: root@pi:/etc/systemd/system # systemctl list-units | grep certbot.renew snap.certbot.renew.timer loaded active waiting Timer renew for snap"
+  },
+  {
+    "query": "cron logrotate error",
+    "site": "stackoverflow",
+    "title": "I'm stuck on logrotate mystery",
+    "url": "https://stackoverflow.com/questions/27297024/im-stuck-on-logrotate-mystery",
+    "logs": "reading config file /etc/logrotate.d/nginx-size\ncompress_prog is now /usr/bin/bzip2\ncompress_options is now  -6\ncompress_ext is now .bz2\nuncompress_prog is now /usr/bin/bunzip2\n\nHandling 1 logs\n\nrotating pattern: /var/log/nginx/*.log \n/var/log/www/nginx/50x.log\n\n 2147483648 bytes (3 rotations)\nempty log files are not rotated, old logs are removed\nconsidering log /var/log/nginx/access.log\n  log does not need rotating\nconsidering log /var/log/nginx/error.log\n  log does not need rotating\nconsidering log /var/log/nginx/get.access.log\n  log does not need rotating\nconsidering log /var/log/nginx/post.access.log\n  log needs rotating\nconsidering log /var/log/www/nginx/50x.log\n  log does not need rotating\nrotating log /var/log/nginx/post.access.log, log->rotateCount is 3\ndateext suffix '-20141204'\nglob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'\nglob finding old rotated logs failed\nrenaming /var/log/nginx/post.access.log to /var/log/nginx/post.access.log-20141204\ncreating new /var/log/nginx/post.access.log mode = 0640 uid = 497 gid = 497\nrunning postrotate script\nrunning script with arg /var/log/nginx/*.log \n/var/log/www/nginx/50x.log\n\n: \"\n        [ -f /var/run/nginx.pid ] && kill -USR1 `cat /var/run/nginx.pid`\n\"\ncompressing log with: /usr/bin/bzip2\n",
+    "answer": "Your redirections are incorrect in those cron lines. They will not output error information to those files. Redirection order matters. You want >/tmp/logrotate_size 2>&1 to get what you want. The underlying issue here is one of the things covered by the \"Debugging crontab\" section of the cron info page. Namely \"Making assumptions about the environment\". Making assumptions about the environment Graphical programs (X11 apps), java programs, ssh and sudo are notoriously problematic to run as cron jobs. This is because they rely on things from interactive environments that may not be present in cron's environment. To more closely model cron's environment interactively, run env -i sh -c 'yourcomm"
+  },
+  {
+    "query": "cron virtualenv",
+    "site": "stackoverflow",
+    "title": "Scheduling django command within virtual env with cron",
+    "url": "https://stackoverflow.com/questions/27857846/scheduling-django-command-within-virtual-env-with-cron",
+    "logs": "/opt/django/myproj/myapp/cron/myscript.sh: line 2: /opt/virtualenvs/myvirtualenv\n/bin/activate\n: No such file or directory\nTraceback (most recent call last):\n  File \"/opt/django/myproj/manage.py\", line 10, in <module>\n    execute_from_command_line(sys.argv)\n  File \"/usr/local/lib/python2.7/dist-packages/django/core/management/__init__.py\", line 399, in execute_from_command_line\n    utility.execute()\n  File \"/usr/local/lib/python2.7/dist-packages/django/core/management/__init__.py\", line 392, in execute\n    self.fetch_command(subcommand).run_from_argv(self.argv)\n  File \"/usr/local/lib/python2.7/dist-packages/django/core/management/__init__.py\", line 261, in fetch_command\n    commands = get_commands()\n  File \"/usr/local/lib/python2.7/dist-packages/django/core/management/__init__.py\", line 107, in get_commands\n    apps = settings.INSTALLED_APPS\n  File \"/usr/local/lib/python2.7/dist-packages/django/conf/__init__.py\", line 54, in __getattr__\n    self._setup(name)\n  File \"/usr/local/lib/python2.7/dist-packages/django/conf/__init__.py\", line 49, in _setup\n    self._wrapped = Settings(settings_module)\n  File \"/usr/local/lib/python2.7/dist-packages/django/conf/__init__.py\", line 132, in __init__\n    % (self.SETTINGS_MODULE, e)\nImportError: Could not import settings 'myproj.settings\n\n' (Is it on sys.path? Is there an import error in the settings file?): No module named settings\n",
+    "answer": "I solved it by removing the virtualenv activation from the script: #!/bin/sh /opt/virtualenvs/myvirtualenv/bin/python /opt/django/myproj/manage.py testcommand "
+  },
+  {
+    "query": "cron conda",
+    "site": "stackoverflow",
+    "title": "Running a bash script from a cronjob fails with \"No such file or directory\"",
+    "url": "https://stackoverflow.com/questions/45743633/running-a-bash-script-from-a-cronjob-fails-with-no-such-file-or-directory",
+    "logs": "/path/to/script/send.bash: line 2: activate: No such file or directory\n",
+    "answer": "activate and deactivate are probably scripts located somewhere an entry in your $PATH variable points to. Usually, software installed locally for one user adds statements to your .profile file or .bashrc that extend your $PATH variable so that you can use the software's scripts without using full paths. While your bash loads .profile and .bashrc automatically, CRON won't do that. There are at least two solutions for this. A) Full Paths everywhere Either you use full paths in the script executed by your CRON job, like this: #!/bin/bash source /path/to/activate manage_oam_users python $HOME/path/to/script/send.py source /path/to/deactivate Also use $HOME instead of ~. You can find out the full"
+  },
+  {
+    "query": "cron Rscript",
+    "site": "stackoverflow",
+    "title": "Rscript stuck on a system call to python",
+    "url": "https://stackoverflow.com/questions/32862692/rscript-stuck-on-a-system-call-to-python",
+    "logs": "def main():\n    s = None\n    for res in socket.getaddrinfo(sys.argv[1], \"8728\", socket.AF_UNSPEC, socket.SOCK_STREAM):\n        af, socktype, proto, canonname, sa = res\n        try:\n             s = socket.socket(af, socktype, proto)\n        except (socket.error, msg):\n            s = None\n            continue\n        try:\n            s.connect(sa)\n        except (socket.error, msg):\n            s.close()\n            s = None\n            continue\n        break\n    if s is None:\n        print ('could not open socket')\n        sys.exit(1)\n\n    apiros = ApiRos(s);\n    apiros.login(sys.argv[2], sys.argv[3]);\n\n    inputsentence = ['/ip/hotspot/active/print', '=detail=']\n    apiros.writeSentence(inputsentence)\n\n    t_end = time.time() + 2\n    while time.time() < t_end:\n        r = select.select([s, sys.stdin], [], [], None)\n        if s in r[0]:\n            # something to read in socket, read sentence\n            x = apiros.readSentence()\n",
+    "answer": "I found a possible bug in the MikroTik API. The problem was in the sentence r = select.select([s, sys.stdin], [], [], None) I had to rewrite it to omit the sys.stdin r = select.select(s, [], [], 0.0) And for that to work I have to do a system call via R with the following arguments: system(ignore.stdout = F, ignore.stderr = T, \"python3 /home/XXX/XXX/MACsPrincipal.py 'Y.Y.Y.Y' 'user' 'password'\", intern = T) It doesn't work if you don't ignore the stderr output. "
+  },
+  {
+    "query": "cron perl",
+    "site": "stackoverflow",
+    "title": "User id in perl cron job",
+    "url": "https://stackoverflow.com/questions/16722898/user-id-in-perl-cron-job",
+    "logs": "abc@mymachine:crontab -e\n\n# Edit this file to introduce tasks to be run by cron.\n#\n# Each task to run has to be defined through a single line\n# indicating with different fields when the task will be run\n# and what command to run for the task\n#\n# To define the time you can provide concrete values for\n# minute (m), hour (h), day of month (dom), month (mon),\n# and day of week (dow) or use '*' in these fields (for 'any').#\n# Notice that tasks will be started based on the cron's system\n# daemon's notion of time and timezones.\n#\n# Output of the crontab jobs (including errors) is sent through\n# email to the user the crontab file belongs to (unless redirected).\n#\n# For example, you can run a backup of all your user accounts\n# at 5 a.m every week with:\n# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/\n#\n# For more information see the manual pages of crontab(5) and cron(8)\n#\n# m h  dom mon dow   command\n\n* * * * * /usr/bin/perl /var/www/web/myfolder/LoadPrograms.pl >> /var/www/web/log.txt\n",
+    "answer": "This works for me. Which should answer questions 1 and 2. Although it's not entirely clear what your actual issue is. Sounds like there might be pathing issue as well? /etc/crontab: * * * * * cblack /home/cblack/Misc/Tests/test.pl test.pl: my $username = $ENV{LOGNAME} || $ENV{USER} || getpwuid($<); open my $fh, \">>\", \"testfile\"; print $fh scalar(localtime) . \"-- testing for $username\\n\"; close $fh; /home/cblack/testfile Thu May 23 13:48:01 2013-- testing for cblack It wouldn't hurt to redirect STDERR and STDOUT to your log file. * * * * * /usr/bin/perl /var/www/web/myfolder/LoadPrograms.pl >> /var/www/web/log.txt 2>&1 "
+  },
+  {
+    "query": "cron ffmpeg",
+    "site": "stackoverflow",
+    "title": "ffmpeg works manually but not with cron?",
+    "url": "https://stackoverflow.com/questions/43736860/ffmpeg-works-manually-but-not-with-cron",
+    "logs": "Array\n(\n    [0] => ffmpeg version 2.6.8 Copyright (c) 2000-2016 the FFmpeg developers\n    [1] =>   built with gcc 4.8.5 (GCC) 20150623 (Red Hat 4.8.5-4)\n    [2] =>   configuration: --prefix=/usr --bindir=/usr/bin --datadir=/usr/share/ffmpeg --incdir=/usr/include/ffmpeg --libdir=/usr/lib64 --mandir=/usr/share/man --arch=x86_64 --optflags='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic' --enable-bzlib --disable-crystalhd --enable-gnutls --enable-ladspa --enable-libass --enable-libcdio --enable-libdc1394 --enable-libfaac --enable-nonfree --enable-libfdk-aac --enable-nonfree --disable-indev=jack --enable-libfreetype --enable-libgsm --enable-libmp3lame --enable-openal --enable-libopenjpeg --enable-libopus --enable-libpulse --enable-libschroedinger --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libvorbis --enable-libv4l2 --enable-libx264 --enable-libx265 --enable-libxvid --enable-x11grab --enable-avfilter --enable-avresample --enable-postproc --enable-pthreads --disable-static --enable-shared --enable-gpl --disable-debug --disable-stripping --shlibdir=/usr/lib64 --enable-runtime-cpudetect\n    [3] =>   libavutil      54. 20.100 / 54. 20.100\n    [4] =>   libavcodec     56. 26.100 / 56. 26.100\n    [5] =>   libavformat    56. 25.101 / 56. 25.101\n    [6] =>   libavdevice    56.  4.100 / 56.  4.100\n    [7] =>   libavfilter     5. 11.102 /  5. 11.102\n    [8] =>   libavresa",
+    "answer": "As it says, in the console: [libx264 @ 0x1d75240] height not divisible by 2 (250x135) Add -vf \"scale='2*trunc(iw/2)':'2*trunc(ih/2)'\" "
+  },
+  {
+    "query": "cron git",
+    "site": "stackoverflow",
+    "title": "cron git push with ssh key",
+    "url": "https://stackoverflow.com/questions/20852577/cron-git-push-with-ssh-key",
+    "logs": "Permission denied (publickey)\nfatal: The remote end hung up unexpectedly\n",
+    "answer": "As mentioned in one of your thread, you need to point the root user which executes your cron script to the right HOME (the one which contains $HOME/.ssh/id_rsa(.pub), your public and private keys. #!/bin/bash HOME=/home/yourAccount git push origin master If that doesn't work, start debugging your ssh command with #!/bin/bash HOME=/home/yourAccount ssh -Tvvv yourGitServer And check that with first a simple private key (not protected by a passphrase). Then, if you need a passphrase, make sure your ssh-agent is running in order to cache said passphrase (or using keychain, as I mentioned before). According to your logs, the public ssh key is proposed, but rejected. debug1: Trying private key: /h"
+  },
+  {
+    "query": "cron systemctl",
+    "site": "stackoverflow",
+    "title": "POSTGRESQL: cron job 1 connection failed",
+    "url": "https://stackoverflow.com/questions/68238078/postgresql-cron-job-1-connection-failed",
+    "logs": "2021-07-03 16:23:00.000 UTC [163769] LOG:  cron job 1 starting: CALL PROCESS_GPS();\n2021-07-03 16:23:00.013 UTC [163769] LOG:  cron job 1 connection failed\n",
+    "answer": "I guess you also executed CREATE EXTENSION pg_cron; otherwise the cron.schedule() call would have failed. Not sure why you have also allowed 0.0.0.0/0 in pg_hba.conf that means anywhere on earth (assuming IPv4 is not used outside of earth) ;) When calling the cron.schedule(), which should be executed on the ${cron.database_name} database, you only need the schedule and the command (optionally you can add a job_name as firsst parameter). You don't need to give any connection parameters. I did: postgresql.conf: shared_preload_libraries='pg_cron' cron.database_name='navstar_ankay' pg_hba.conf: host all all 127.0.0.1/32 trust at psql, connected to database navstar_ankay: CREATE EXTENSION pg_cron"
+  },
+  {
+    "query": "cron notify-send",
+    "site": "stackoverflow",
+    "title": "Cron scheduler of python script using notify-send",
+    "url": "https://stackoverflow.com/questions/20174784/cron-scheduler-of-python-script-using-notify-send",
+    "logs": "/usr/lib/python2.7/dist-packages/gtk-2.0/gtk/__init__.py:57: GtkWarning: could not open display\nwarnings.warn(str(e), _gtk.Warning)\n\n** (other.py:16509): WARNING **: Command line `dbus-launch --autolaunch=91bdcc4a583bfb56734fbe1200000010 --binary-syntax --close-stderr' exited with non-zero exit status 1: Autolaunch error: X11 initialization failed.\\n\n",
+    "answer": "When you run your program manually, it works because the variable DISPLAY is being set to your current display (:0 in most cases), however when running the script via cron, there is no such variable being set and notifications doesn't work. As mentionned in this answer, you should export both the display and the Xauthority, and finally running the script as your user (and not as root). Try something like this : * * * * * export DISPLAY=:0.0 && export XAUTHORITY=/home/<username>/.Xauthority && sudo -u <username> /usr/bin/python /path/to/python/email/program.py (change <username> with your username) "
+  }
+]
