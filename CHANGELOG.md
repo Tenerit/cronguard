@@ -27,6 +27,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ### Mesuré — rôle de l'IA n°1 « expliquer en langage simple » (2026-11-10, attentes fixées d'avance, NON adopté)
 - 80 cas où la cause est établie. Rien d'inventé : **98 %** (≥ 95 % ✅) · mécanisme gardé : **76 %** (≥ 90 % ❌) · 41 mots en médiane, mais jusqu'à 4 phrases (≤ 3 ❌) · 7,1 s (≤ 8 s ✅).
+- **qwen2.5:7b-instruct** (déjà installé, mêmes 80 cas, mêmes attentes) : rien d'inventé **99 %** ✅ · mécanisme gardé **87 %** (❌ de peu, 76 % pour le 3B) · 37 mots mais jusqu'à 4 phrases ❌ · **14,2 s** ❌. Nettement plus fidèle (« inodes » gardé) ; reste le même défaut : quand la cause liste des alternatives, il n'en garde qu'une (proxy absent sous cron perdu). Non adopté en l'état ; exemples dans `eval/EXPLAIN.qwen7b.md`.
 - Le modèle déforme en simplifiant : « plus d'inodes alors qu'il reste de l'espace » devient « système de fichiers plein » ; quand la cause liste des alternatives (« … ou proxy absent sous cron »), il en garde une et jette les autres — il recommence à deviner. Pas branché ; exemples dans `eval/EXPLAIN.md`.
 
 ### Amélioré — précision des fiches (2026-11-10, réglé sur les jeux déjà lus ; vérification prévue sur public7)
