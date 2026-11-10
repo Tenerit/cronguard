@@ -6,6 +6,7 @@ import { pingQueue } from '../../queue'
 import { logger }    from '../../config/logger'
 import { sanitizeLogs } from '../../services/sanitizer'
 import { asyncHandler } from '../middleware/async-handler'
+import { RUNNERS } from '../../services/llm/run-context'
 
 export const pingRouter = Router()
 
@@ -33,6 +34,7 @@ const Schema = z.object({
     cwd:      z.string().max(256).optional(),
     display:  z.boolean().optional(),
     sshAgent: z.boolean().optional(),
+    runner:   z.enum(RUNNERS).optional(),
     found:    z.record(z.string().max(64), z.string().max(256))
                 .refine(o => Object.keys(o).length <= 10, 'found: 10 entrées max').optional(),
   }).optional(),

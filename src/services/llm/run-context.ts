@@ -14,6 +14,21 @@ export interface RunContext {
   display?:   boolean                 // DISPLAY défini
   sshAgent?:  boolean                 // SSH_AUTH_SOCK défini
   found?:     Record<string, string>  // commande introuvable dans le PATH → chemin où elle existe sur la machine
+  runner?:    Runner                  // qui a lancé le job (relevé par le SDK) : la cause d'une panne en dépend
+}
+
+/** Lanceur du job. container-cron = démon cron DANS un conteneur ; container = conteneur lancé par un ordonnanceur externe. */
+export const RUNNERS = ['crontab', 'container-cron', 'container', 'systemd', 'kubernetes', 'launchd'] as const
+export type Runner = typeof RUNNERS[number]
+
+/** Lanceur : celui relevé par le SDK, sinon déduit des logs (traces propres à chaque lanceur), sinon inconnu. */
+export function inferRunner(logs: string, reported?: Runner): Runner | undefined {
+  if (reported) return reported
+  if (/\bkubectl\b|\bCronJob\b|OOMKilled|BackoffLimitExceeded|ImagePullBackOff|ErrImagePull|CreateContainerConfigError|\bpod\/[\w-]/.test(logs)) return 'kubernetes'
+  if (/\bsystemd\[\d+\]|\.timer\b|\.service: (Main process|Failed)|journalctl/.test(logs)) return 'systemd'
+  if (/\blaunchd\b|\blaunchctl\b/.test(logs)) return 'launchd'
+  if (/\bCRON\[\d+\]|\(CRON\)|\bcrond\[\d+\]|\banacron\b/.test(logs)) return 'crontab'
+  return undefined
 }
 
 export interface Finding { id: string; category: ErrorCategory; cause: string; action: string }

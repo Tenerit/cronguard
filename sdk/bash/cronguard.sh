@@ -161,6 +161,30 @@ ctx = {'user': user, 'home': home, 'path': os.environ.get('PATH', ''), 'shell': 
        'display': bool(os.environ.get('DISPLAY')), 'sshAgent': bool(os.environ.get('SSH_AUTH_SOCK'))}
 if found:
     ctx['found'] = found
+# Lanceur (même règle que sdk/python _runner) : la cause d'une panne en dépend.
+runner, cron, pid = '', False, os.getppid()
+try:
+    for _ in range(8):
+        if open('/proc/%d/comm' % pid).read().strip() in ('cron', 'crond', 'anacron'):
+            cron = True
+            break
+        pid = int(open('/proc/%d/stat' % pid).read().rsplit(')', 1)[1].split()[1])
+        if pid <= 1:
+            break
+except Exception:
+    pass
+if os.environ.get('KUBERNETES_SERVICE_HOST'):
+    runner = 'kubernetes'
+elif os.environ.get('INVOCATION_ID'):
+    runner = 'systemd'
+elif os.path.exists('/.dockerenv') or os.path.exists('/run/.containerenv'):
+    runner = 'container-cron' if cron else 'container'
+elif cron:
+    runner = 'crontab'
+elif os.environ.get('XPC_SERVICE_NAME', '0') not in ('', '0'):
+    runner = 'launchd'
+if runner:
+    ctx['runner'] = runner
 cmd = sys.argv[2][:1000]
 sys.stdout.write((',"command":' + json.dumps(cmd) if cmd else '') + ',"context":' + json.dumps(ctx))
 PY

@@ -34,14 +34,34 @@ interface MonitorResult {
 
 // Environnement réel du job à l'échec (noms, chemins, booléens ; aucune valeur secrète) : permet au
 // serveur d'établir les pannes « marche à la main, pas en cron » (locale, HOME, agent SSH…).
+// Qui a lancé le job (même règle que sdk/python _runner) : la cause d'une panne en dépend.
+function runner(): string {
+  const e = process.env, fs = require('fs')
+  if (e.KUBERNETES_SERVICE_HOST) return 'kubernetes'
+  if (e.INVOCATION_ID) return 'systemd'          // posé par systemd pour chaque unité
+  let cron = false
+  try {                                          // Linux : un ancêtre s'appelle cron / crond / anacron ?
+    let pid = process.ppid
+    for (let i = 0; i < 8 && pid > 1; i++) {
+      if (['cron', 'crond', 'anacron'].includes(fs.readFileSync(`/proc/${pid}/comm`, 'utf8').trim())) { cron = true; break }
+      pid = Number(fs.readFileSync(`/proc/${pid}/stat`, 'utf8').split(')').pop()!.trim().split(' ')[1])
+    }
+  } catch { /* pas de /proc (macOS, Windows) */ }
+  if (fs.existsSync('/.dockerenv') || fs.existsSync('/run/.containerenv')) return cron ? 'container-cron' : 'container'
+  if (cron) return 'crontab'
+  if (e.XPC_SERVICE_NAME && e.XPC_SERVICE_NAME !== '0') return 'launchd'
+  return ''
+}
+
 function runContext() {
   const e = process.env
   let user = ''
   try { user = require('os').userInfo().username } catch { /* conteneur sans entrée passwd */ }
+  const r = runner()
   return {
     user, home: e.HOME ?? '', path: (e.PATH ?? '').slice(0, 1024), shell: e.SHELL ?? '',
     lang: e.LC_ALL || e.LANG || '', cwd: process.cwd().slice(0, 256),
-    display: !!e.DISPLAY, sshAgent: !!e.SSH_AUTH_SOCK,
+    display: !!e.DISPLAY, sshAgent: !!e.SSH_AUTH_SOCK, ...(r ? { runner: r } : {}),
   }
 }
 

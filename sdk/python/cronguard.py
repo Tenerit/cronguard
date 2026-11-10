@@ -36,6 +36,35 @@ CRONGUARD_URL = os.environ.get('CRONGUARD_URL', 'http://localhost:3000')
 TIMEOUT_S = 5
 
 
+def _runner() -> str:
+    """Qui a lancé le job : la cause d'une panne en dépend (crontab, conteneur, systemd, Kubernetes, launchd).
+    Signaux posés par le lanceur lui-même ; vide si inconnu."""
+    e = os.environ
+    if e.get('KUBERNETES_SERVICE_HOST'):
+        return 'kubernetes'
+    if e.get('INVOCATION_ID'):                       # posé par systemd pour chaque unité lancée
+        return 'systemd'
+    cron = False
+    try:                                             # Linux : un ancêtre s'appelle cron / crond / anacron ?
+        pid = os.getppid()
+        for _ in range(8):
+            if open(f'/proc/{pid}/comm').read().strip() in ('cron', 'crond', 'anacron'):
+                cron = True
+                break
+            pid = int(open(f'/proc/{pid}/stat').read().rsplit(')', 1)[1].split()[1])
+            if pid <= 1:
+                break
+    except Exception:
+        pass
+    if os.path.exists('/.dockerenv') or os.path.exists('/run/.containerenv'):
+        return 'container-cron' if cron else 'container'
+    if cron:
+        return 'crontab'
+    if e.get('XPC_SERVICE_NAME', '0') not in ('', '0'):   # macOS : job lancé par launchd
+        return 'launchd'
+    return ''
+
+
 def _run_context() -> dict:
     """Environnement réel du job à l'échec (noms, chemins, booléens ; aucune valeur secrète).
     Permet au serveur d'établir les pannes « marche à la main, pas en cron » (locale, HOME, agent SSH…)."""
@@ -48,6 +77,7 @@ def _run_context() -> dict:
         'user': user, 'home': os.environ.get('HOME', ''), 'path': os.environ.get('PATH', '')[:1024],
         'shell': os.environ.get('SHELL', ''), 'lang': os.environ.get('LC_ALL') or os.environ.get('LANG') or '',
         'cwd': os.getcwd()[:256], 'display': bool(os.environ.get('DISPLAY')), 'sshAgent': bool(os.environ.get('SSH_AUTH_SOCK')),
+        **({'runner': r} if (r := _runner()) else {}),
     }
 
 

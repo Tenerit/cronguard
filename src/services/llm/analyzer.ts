@@ -6,7 +6,7 @@ import { isOpen, onSuccess, onFailure } from './circuit-breaker'
 import { mineTemplates } from './drain'
 import { knownFix }      from './known-fixes'
 import { commandFinding } from './command-lint'
-import { contextFinding } from './run-context'
+import { contextFinding, inferRunner } from './run-context'
 import { toolCodeFinding, exitCodeFinding } from './exit-codes'
 import { evidenceLines } from './evidence'
 import { chooseHypothesis } from './hypotheses'
@@ -565,7 +565,7 @@ export async function analyzeFailure(
   if (process.env.LLM_HYPOTHESES === 'on') {
     const { keyLines } = extractLogSignals(clean)
     const choice = await chooseHypothesis(keyLines, ctx.command && sanitizeLogs(ctx.command).clean,
-      timeoutMs ?? parseInt(process.env.LLM_TIMEOUT_MS ?? '60000'))
+      timeoutMs ?? parseInt(process.env.LLM_TIMEOUT_MS ?? '60000'), inferRunner(clean, ctx.runContext?.runner))
     if (choice) {
       const h = choice.hypothesis
       const result: AnalysisResult = atLeastHighIfRecurring({

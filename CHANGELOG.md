@@ -25,6 +25,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Mesuré — raisonnement par hypothèses v1 (2026-11-10, A/B apparié pré-enregistré, 97 cas × 2, NON adopté)
+- Le modèle cite la ligne décisive puis choisit un mécanisme parmi 16 (cause et action reprises de la liste). Pannes non couvertes : 3,9 → 4,3 (écart +0,4, IC95 −0,35 à +1,1). Critère fixé avant l'essai (≥ +1,0 et IC > 0) **non rempli** : reste désactivé (`LLM_HYPOTHESES`).
+- Cause juste sur 10 des 42 choix (24 %, contre environ 14 % en rédaction libre) ; fausses causes sûres d'elles inchangées (6 contre 6) ; latence médiane des pannes non couvertes 12,7 → 5,4 s.
+- Le modèle choisit mal parmi 16 options d'un coup (sh-au-lieu-de-bash et chemin relatif à tort), comme mesuré ailleurs : un jugement noyé dans une longue liste s'effondre.
+
+### Ajouté — lanceur du job (2026-11-10)
+- Les SDK (bash, Python, Node) relèvent le lanceur : crontab, cron dans un conteneur, conteneur, timer systemd, CronJob Kubernetes, launchd. À défaut, il est déduit des logs (`CRON[…]`, `systemd[…]`, `OOMKilled`…). Détection vérifiée en conteneur sous un vrai `crond` (SDK Node).
+- Le raisonnement par hypothèses ne montre que les mécanismes possibles pour ce lanceur, avec 5 mécanismes propres (variables non transmises au cron d'un conteneur, environnement d'une unité systemd, limite mémoire, planification et démarrage d'un CronJob Kubernetes). Non mesuré : les jeux d'éval ne contiennent presque que des crontabs.
+
 ### Mesuré — le modèle sert-il encore ? (2026-11-10, A/B apparié, 97 cas × 2 runs, `--ab LLM_ENABLED=false`)
 - Note 7,6 avec modèle contre 7,4 sans (écart −0,2, IC95 −0,4 à −0,1). Pannes couvertes par une fiche : 9,2 dans les deux bras (le modèle n'est plus appelé). Pannes non couvertes : 4,1 contre 3,4 (écart −0,7, IC95 −1,2 à −0,2).
 - Le gain du modèle tient à la catégorie (85 % contre 71 %) et à l'action (73 % contre 68 %), pas à la cause (67 % contre 66 %). Le modèle est conservé ; sans lui, CronGuard reste à 7,4.
