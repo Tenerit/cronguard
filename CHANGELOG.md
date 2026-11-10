@@ -25,6 +25,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Ajouté / corrigé — SDK Node et chemins non cités (2026-11-10)
+- **SDK Node** : mêmes commandes de test que bash et Python (shell de connexion : PATH, commandes trouvées, NOMS des variables ; chemins cités par l'erreur et leur dossier parent). Testé sous Windows en unitaire ; le test Linux en conteneur reste à faire (Docker arrêté).
+- **Bug corrigé dans les 3 SDK** : un chemin non cité (format GNU, `cat: data/input.csv: No such file…`) était extrait comme `/input.csv`, d'où un faux constat « /input.csv n'existe pas ». Le labo ne le voyait pas : busybox met des guillemets.
+- **Grille de notation** : la commande de reproduction construite par le code n'est plus comptée comme « inventée » (biais vu sur public6), corrigé avant public7.
+
 ### Mesuré — rôle de l'IA n°1 « expliquer en langage simple » (2026-11-10, attentes fixées d'avance, NON adopté)
 - 80 cas où la cause est établie. Rien d'inventé : **98 %** (≥ 95 % ✅) · mécanisme gardé : **76 %** (≥ 90 % ❌) · 41 mots en médiane, mais jusqu'à 4 phrases (≤ 3 ❌) · 7,1 s (≤ 8 s ✅).
 - **qwen2.5:7b-instruct** (déjà installé, mêmes 80 cas, mêmes attentes) : rien d'inventé **99 %** ✅ · mécanisme gardé **87 %** (❌ de peu, 76 % pour le 3B) · 37 mots mais jusqu'à 4 phrases ❌ · **14,2 s** ❌. Nettement plus fidèle (« inodes » gardé) ; reste le même défaut : quand la cause liste des alternatives, il n'en garde qu'une (proxy absent sous cron perdu). Non adopté en l'état ; exemples dans `eval/EXPLAIN.qwen7b.md`.

@@ -116,7 +116,8 @@ def _cg_paths(text):
     for line in text.splitlines():
         if not re.search(r"No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system", line, re.I):
             continue
-        for m in re.finditer(r"'([^'\s]{1,200})'|\"([^\"\s]{1,200})\"|((?:~|\.{1,2})?/[^\s:'\"]{1,200})", line):
+        # Chemin non cité : jeton entier depuis un début de mot (« data/input.csv », pas « /input.csv »).
+        for m in re.finditer(r"'([^'\s]{1,200})'|\"([^\"\s]{1,200})\"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+-]+(?:/[\w.@+-]+)+)", line):
             p = next(g for g in m.groups() if g)
             if ('/' in p or '.' in p) and p not in cands:
                 cands.append(p)
