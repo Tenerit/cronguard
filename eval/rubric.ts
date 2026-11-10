@@ -122,6 +122,20 @@ export const LABELS: Record<string, Label> = {
   'p3-venv-activate-path':          { mech: /activate|virtualenv|venv|saut de ligne|retour (à la ligne|chariot)|crlf/i, act: /bin\/python|python du (venv|virtualenv)|chemin absolu|sans activate|retirer/i, key: /activate/ },
   'p3-activate-path-bashrc':        { mech: /\bpath\b|\.bashrc|\.profile|chemin/i, act: /chemin (complet|absolu)|\bpath\b|source/i, key: /activate/ },
   'p3-git-push-root-home':          { mech: /\broot\b|\bhome\b|utilisateur|\.ssh/i, act: /\bhome\b|\.ssh|\broot\b|crontab de|utilisateur/i, key: /Permission denied \(publickey\)/ },
+  // ── Public5 (TEST, collecté le 2026-11-10 après tous les changements du 2026-11-08) ──
+  'p5-ruby-shebang-127':           { mech: /shebang|interpréteur|ruby (introuvable|absent|n'existe)|chemin (de|vers|du) ruby|\bpath\b/i, act: /shebang|chemin|which ruby|\bpath\b/i, key: /exit status 127/ },
+  'p5-crontab-percent-expr':       { mech: /%|pourcent|percent/i, act: /%|échapp/i, key: /exit status 2|expr/ },
+  'p5-cronhourly-crontab-syntax':  { mech: /cron\.hourly|run-parts|syntaxe (de )?crontab|ligne (de )?crontab|format (de )?crontab|path=.{0,40}script/i, act: /script|#!\/bin\/(ba)?sh|retirer|déplacer|crontab/i, key: /bin: command not found|return code 127/ },
+  'p5-svn-sshpass-noninteractive': { mech: /interacti|invite|prompt|\btty\b|terminal/i, act: /--force-interactive|--password|identifiants|credentials|interacti/i, key: /Authentication failed/ },
+  'p5-perl-env-login-shell':       { mech: /environnement|login|\.profile|perl5lib|\bpath\b|autre (perl|version)|shell de connexion/i, act: /-l -c|login|\.profile|perl5lib|environnement|\bpath\b/i, key: /not exported by the Time::Local/ },
+  'p5-python-version-import':      { mech: /version|python (différent|autre)|plusieurs python|interpréteur|virtualenv|venv/i, act: /chemin (complet|absolu)|\/usr\/local\/bin\/python|interpréteur/i, key: /No module named/ },
+  'p5-php-set-time-limit':         { mech: /set_time_limit|limite (de temps|d'exécution) (fixée|posée|définie)|max_execution_time/i, act: /set_time_limit|max_execution_time|ini_set/i, key: /Maximum execution time/ },
+  'p5-env-node-bashrc':            { mech: /\bpath\b|\.bashrc|environnement|\bnvm\b/i, act: /\bpath\b|chemin (complet|absolu)|environnement|source|script/i, key: /node: No such file/ },
+  'p5-unixcat-path':               { mech: /\bpath\b|chemin/i, act: /which|chemin (complet|absolu)|\bpath\b/i, key: /unixcat: command not found/ },
+  'p5-macos-tcc-trash':            { mech: /\btcc\b|confidentialit|privacy|accès complet au disque|full disk access|macos|sandbox/i, act: /accès complet|full disk access|launchd|autoriser|réglages|préférences/i, key: /Operation not permitted/ },
+  'p5-proxy-env-cron':             { mech: /proxy|http_proxy|variable d'environnement|environnement/i, act: /proxy|http_proxy|https_proxy|export|environnement/i, key: /timed out/ },
+  'p5-wget-ssl-status5':           { mech: /\bssl\b|\btls\b|certificat|https|redirection/i, act: /https|certificat|redirection|\bssl\b/i, key: /status 5/ },
+
   // ── Public4 (TEST, collecté avant les leviers contexte d'exécution / vérification de commande) ──
   'p4-python-version-cron':     { mech: /version|python ?2|interpréteur|ancien python|autre python/i, act: /python ?2\.7|python3|shebang|chemin|version/i, key: /SyntaxError/ },
   'p4-laravel-mail-template':   { mech: /template|\bvue\b|\bview\b|welcome/i, act: /emails\.welcome|template|\bvue\b|\bview\b/i, key: /Undefined variable: errors/ },
