@@ -45,6 +45,12 @@ const EXPECTED: Record<string, string | null> = {
 // Messages standard des outils (forme documentée), un par pack ajouté, plus des voisins
 // qui ne doivent PAS déclencher (même mot, autre panne).
 const SAMPLES: Array<[string, string | null]> = [
+  // Signaux décisifs qui masquaient une fiche générique (2026-11-10)
+  ['./dump.sh: line 2: --file: command not found\n./dump.sh: line 3: --table: command not found', 'broken-line-continuation'],
+  ['which: no searchd in (/usr/bin:/bin)\n./run.sh: line 8: --config: command not found', 'command-not-found'],   // une seule ligne : $(which x) vide (PATH), pas la continuation
+  ["Enter password: mysqldump: Got error: 1045: Access denied for user 'u'@'localhost' (using password: NO) when trying to connect", 'mysql-password-not-passed'],
+  ['No protocol specified\nCannot open display :0.0', 'x-auth-refused'],
+  ["Error: Can't open display: :0", 'no-display'],   // sans « No protocol specified » : pas de session X
   ['psql: error: connection to server at "db" (10.0.0.5), port 5432 failed: FATAL:  password authentication failed for user "backup"', 'pg-auth-failed'],
   ['FATAL:  no pg_hba.conf entry for host "10.0.0.9", user "etl", database "dw", no encryption', 'pg-auth-failed'],
   ["ERROR 1045 (28000): Access denied for user 'backup'@'localhost' (using password: YES)", 'mysql-access-denied'],

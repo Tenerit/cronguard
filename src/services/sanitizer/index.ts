@@ -26,7 +26,9 @@ const PATTERNS: Array<{ name: string; regex: RegExp; replace: string }> = [
   { name: 'private_ip',   regex: /\b(10\.\d{1,3}|172\.(1[6-9]|2\d|3[01])|192\.168)\.\d{1,3}\.\d{1,3}\b/g, replace: '[PRIVATE_IP]' },
 
   // Mots de passe inline
-  { name: 'password',     regex: /(password|passwd|pwd|secret)\s*[:=]\s*\S+/gi,                           replace: '$1=[REDACTED]' },
+  // Pas un secret, et c'est le diagnostic : « (using password: NO) » de MySQL (booléen) et le prompt
+  // « Enter password: » (le terminal n'affiche jamais la saisie). Les masquer cachait « mot de passe non transmis ».
+  { name: 'password',     regex: /(?<!Enter )(password|passwd|pwd|secret)\s*[:=]\s*(?!(?:YES|NO)\b)\S+/gi, replace: '$1=[REDACTED]' },
   // Mot de passe collé à -p (mysql, mysqldump, mysqladmin) et sshpass -p : présents dans les commandes de cron.
   { name: 'mysql_p',      regex: /(\bmysql(?:dump|admin|import)?\b[^\n|;&]*?\s-p)(?!\s|\[REDACTED\])(?:'[^'\n]*'|"[^"\n]*"|\S+)/gi, replace: '$1[REDACTED]' },
   { name: 'sshpass',      regex: /(\bsshpass\s+-p\s*)(?!\[REDACTED\])\S+/gi,                                  replace: '$1[REDACTED]' },

@@ -236,3 +236,13 @@ describe('hashError', () => {
     expect(fp).not.toContain('550e8400')
   })
 })
+
+describe('mot de passe : masquer le secret, garder le diagnostic', () => {
+  it('garde « (using password: NO) » et le prompt « Enter password: », masque une vraie valeur', () => {
+    const { clean } = sanitizeLogs("Enter password: mysqldump: Got error: 1045: Access denied for user 'u'@'localhost' (using password: NO)\nDB_PASSWORD=hunter2secret\npassword: S3cr3t!")
+    expect(clean).toContain('(using password: NO)')
+    expect(clean).toContain('Enter password: mysqldump')
+    expect(clean).not.toContain('hunter2secret')
+    expect(clean).not.toContain('S3cr3t!')
+  })
+})

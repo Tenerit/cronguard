@@ -25,6 +25,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Amélioré — précision des fiches (2026-11-10, réglé sur les jeux déjà lus ; vérification prévue sur public7)
+- Ratés (fiche qui répond à côté) : **15 → 5** sur lab + public à public6. Cause juste quand une fiche répond : public2 86 → 100 %, public3 75 → 88 %, public4 92 → 100 %, public5 71 → 86 %, public6 25 → 88 %.
+- **Signaux décisifs qui masquaient une fiche générique** (3 fiches en tête de liste) : continuation de ligne cassée (≥ 2 lignes `--option: command not found`, fins de ligne Windows) au lieu d'« identifiants refusés » ; mot de passe MySQL jamais transmis (`Enter password:` + `using password: NO`) ; serveur X qui refuse la connexion (`No protocol specified`) au lieu de « pas d'affichage ». Une seule ligne d'option orpheline ne suffit pas (variable vide, vérifié sur le corpus).
+- **Fiches génériques** (droits, 503, délai réseau, module Python, clé SSH, identifiants PostgreSQL/MySQL, socket MySQL) : la cause liste les vraies alternatives (umask, rotation de logs, utilisateur root, proxy absent sous cron, caractères spéciaux du mot de passe, disque plein) au lieu d'en affirmer une ; confiance moyenne.
+- **Masquage des secrets trop large** : `(using password: NO)` (booléen MySQL) et le prompt `Enter password:` étaient masqués, ce qui cachait le diagnostic « mot de passe non transmis ». Les vraies valeurs restent masquées (test ajouté, e2e vert).
+- Limite : réglé sur des jeux lus ; la mesure honnête sera public7 (requêtes figées, collecte demain : quota StackExchange atteint).
+
 ### Mesuré — public6, test hors échantillon (2026-11-10, 15 cas, 2 runs, A/B `LLM_DEDUCTION=on`)
 - Note avec la grille fixée d'avance : **3,9 sans déduction (défaut) contre 4,2 avec le modèle** (écart 0,4, IC95 −0,1 à +0,8, non significatif). Biais vu APRÈS le run : la grille compte comme « inventés » les chemins de la commande de reproduction (`/bin/sh`, `/usr/bin`, la commande du job), absents du log : −1 sur 7 cas. Sans ce biais : environ 4,4 contre 4,2.
 - **Causes fausses affirmées : 12 contre 20 sur 30** : retirer la déduction supprime les causes inventées par le modèle, sans perte de cause juste (20 % de mécanismes justes dans les deux bras).

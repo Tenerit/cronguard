@@ -24,6 +24,45 @@ export interface KnownFix {
 }
 
 const FIXES: Array<KnownFix & { match: RegExp }> = [
+  // ── Signaux décisifs qui MASQUENT une fiche générique (2026-11-10, ratés mesurés par eval:fiches) :
+  //    placés en tête, ils passent avant « identifiants refusés », « pas d'affichage »…
+  {
+    id: 'broken-line-continuation', category: 'code',
+    // Au moins 2 lignes d'options orphelines : une seule vient souvent d'une variable vide ($(which x) --config).
+    match: /line \d+: --?[\w-]+: (command )?not found[\s\S]*line \d+: --?[\w-]+: (command )?not found/i,
+    title: 'Continuation de ligne cassée (fins de ligne Windows)',
+    cause: "Les options de la commande se retrouvent seules sur une ligne : la continuation « \\ » est cassée (fins de ligne Windows \\r, ou espace après le \\), donc chaque ligne est lancée comme une commande à part.",
+    action: "Convertir le script (dos2unix script.sh) et vérifier qu'aucun espace ne suit les \\ en fin de ligne.",
+    steps: [
+      'Voir les fins de ligne : cat -A script.sh (« ^M$ » = Windows, « \\ $ » = espace après le \\).',
+      'Convertir : dos2unix script.sh (ou sed -i \'s/\\r$//\' script.sh).',
+      "Relancer : la commande doit recevoir toutes ses options.",
+    ],
+  },
+  {
+    id: 'mysql-password-not-passed', category: 'database',
+    match: /Enter password:[\s\S]{0,300}\(using password: NO\)/i,
+    title: "MySQL : le mot de passe n'est jamais transmis",
+    cause: "Le mot de passe n'est pas transmis : MySQL demande « Enter password: » sans terminal puis se connecte sans mot de passe — option -p suivie d'un espace (-p secret est lu comme un nom de base) ou variable du mot de passe vide sous cron.",
+    action: "Coller le mot de passe à -p (-pSECRET) ou, mieux, le lire depuis ~/.my.cnf (droits 600) de l'utilisateur du cron.",
+    steps: [
+      "Vérifier la commande : pas d'espace entre -p et le mot de passe.",
+      'Préférer un fichier ~/.my.cnf ([client] user=… password=…) en 600.',
+      'Si le mot de passe vient d\'une variable : vérifier qu\'elle existe sous cron.',
+    ],
+  },
+  {
+    id: 'x-auth-refused', category: 'dependency',
+    match: /No protocol specified[\s\S]{0,300}(cannot open display|Can't open display|cannot connect to X server)/i,
+    title: 'Serveur X : connexion refusée au job',
+    cause: "DISPLAY est défini mais le serveur X refuse la connexion : le cookie XAUTHORITY de la session n'est pas lisible sous cron, ou la session graphique n'est pas encore prête (job lancé au démarrage, @reboot).",
+    action: "Définir XAUTHORITY=/home/<utilisateur>/.Xauthority avec DISPLAY dans la crontab ; pour un job @reboot, attendre l'ouverture de la session graphique.",
+    steps: [
+      'Vérifier le fichier de cookie : ls -l ~/.Xauthority (lisible par l\'utilisateur du cron).',
+      'Job au démarrage : lancer depuis la session graphique (autostart) plutôt que @reboot.',
+      'Sans affichage nécessaire : mode headless ou xvfb-run.',
+    ],
+  },
   {
     id: 'pg-wal-full', category: 'database',
     match: /pg_wal\/\S*["']?:? No space left on device|could not write to file "pg_wal/i,
@@ -218,7 +257,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     id: 'mysql-socket', category: 'database',
     match: /Can't connect to local MySQL server through socket/i,
     title: 'MySQL local injoignable (socket)',
-    cause: "Le serveur MySQL local est arrêté, ou le client cherche le socket à un autre chemin que celui du serveur.",
+    cause: "Le serveur MySQL local ne tourne pas (arrêté, ou il n'a pas pu démarrer : disque plein, configuration invalide — voir son journal), ou le client cherche le socket à un autre chemin que celui du serveur.",
     action: 'Vérifier et démarrer le service MySQL, ou passer par TCP (-h 127.0.0.1) / le bon --socket.',
     steps: ['systemctl status mysql (ou mariadb)', 'Chemin du socket : mysqladmin variables | grep socket'],
   },
@@ -270,7 +309,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     id: 'pg-auth-failed', category: 'database',
     match: /password authentication failed for user|no pg_hba\.conf entry for host|fe_sendauth: no password supplied/i,
     title: 'PostgreSQL refuse l\'authentification',
-    cause: "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+    cause: "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, mot de passe dont les caractères spéciaux ($, !, guillemets) sont déformés par le shell, ou règle pg_hba.conf manquante.",
     action: "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
     steps: [
       "Le cron tourne sous un autre utilisateur : son ~/.pgpass existe-t-il, en chmod 600 ? (ou PGPASSFILE)",
@@ -318,7 +357,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     id: 'mysql-access-denied', category: 'database',
     match: /ERROR 1045 \(28000\)|Got error: 1045|Access denied for user '[^']*'@'[^']*' \(using password/i,
     title: 'MySQL refuse l\'authentification',
-    cause: "MySQL refuse les identifiants du job : mot de passe changé, fichier ~/.my.cnf absent pour l'utilisateur du cron, ou compte limité à un autre hôte.",
+    cause: "MySQL refuse les identifiants du job : mot de passe changé, fichier ~/.my.cnf absent pour l'utilisateur du cron, mot de passe dont les caractères spéciaux sont déformés par le shell, ou compte limité à un autre hôte.",
     action: "Vérifier les identifiants du fichier d'options lu par le cron (--defaults-extra-file) et les droits du compte.",
     steps: [
       "Le cron tourne sous un autre utilisateur : son fichier d'options (~/.my.cnf, --defaults-extra-file) est-il lisible et à jour ?",
@@ -543,7 +582,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     id: 'python-module-missing', category: 'dependency',
     match: /ModuleNotFoundError: No module named|ImportError: No module named/,
     title: 'Module Python introuvable (mauvais environnement)',
-    cause: "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+    cause: "Le module n'est pas installé pour l'interpréteur ou l'utilisateur du cron : autre interpréteur Python (virtualenv non activé, autre version), ou job lancé sous un autre utilisateur (root via sudo crontab) qui n'a pas vos paquets pip --user.",
     action: 'Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).',
     steps: [
       "Le cron n'active pas le virtualenv : appeler le python du venv en chemin absolu (/chemin/venv/bin/python script.py).",
@@ -612,7 +651,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     id: 'ssh-publickey-denied', category: 'network',
     match: /Permission denied \(publickey/i,
     title: 'SSH refuse la clé (publickey)',
-    cause: "Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, ou clé absente d'authorized_keys.",
+    cause: "Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, job lancé sous un autre utilisateur (root lit /root/.ssh, pas vos clés), ou clé absente d'authorized_keys.",
     action: "Préciser la clé dédiée (ssh -i ou IdentityFile) de l'utilisateur du cron et vérifier authorized_keys côté serveur.",
     steps: [
       "Le cron n'a pas d'agent SSH : préciser la clé (ssh -i <clé> ou IdentityFile dans ~/.ssh/config de l'utilisateur du cron).",
@@ -940,7 +979,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     id: 'http-503', category: 'dependency',
     match: /\b503 Service Unavailable|scheduled_maintenance/i,
     title: 'Service tiers indisponible (503)',
-    cause: 'Le service appelé est temporairement indisponible (maintenance ou surcharge) : la panne est chez le fournisseur.',
+    cause: 'Le service appelé répond 503 : maintenance ou surcharge chez le fournisseur, ou accès refusé aux clients non connectés ou non navigateurs (page réservée, pare-feu applicatif).',
     action: 'Réessayer après la fenêtre indiquée (Retry-After, page de statut du fournisseur) avec un délai exponentiel.',
     steps: ['Consulter la page de statut du fournisseur.', 'Respecter Retry-After ; ne pas marteler le service.'],
   },
@@ -964,7 +1003,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     id: 'network-timeout', category: 'timeout',
     match: /Operation timed out|ETIMEDOUT|Connection timed out|timed out after \d+/i,
     title: 'Le service distant ne répond pas à temps',
-    cause: 'Le service distant ne répond pas dans le délai : indisponible, surchargé, ou pare-feu qui jette les paquets sans refuser.',
+    cause: 'Le service distant ne répond pas dans le délai : indisponible, surchargé, pare-feu qui jette les paquets sans refuser, ou proxy défini dans votre session (http_proxy) mais absent sous cron.',
     action: "Vérifier l'état du service distant (page de statut, nc -zv) puis réessayer avec un délai exponentiel.",
     steps: ['nc -zv <hôte> <port> depuis la machine du job.', 'Le service a-t-il une page de statut ?'],
   },
@@ -972,7 +1011,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     id: 'permission-denied', category: 'dependency',
     match: /Permission denied|EACCES/i,
     title: 'Accès refusé à un fichier ou dossier',
-    cause: "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+    cause: "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…), ou le service qui l'écrit le crée avec des droits restrictifs (umask du service, rotation de logs).",
     action: "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
     steps: ['ls -l <chemin> pour voir le propriétaire.', "Comparer avec l'utilisateur du cron (crontab -l -u <user>)."],
   },
