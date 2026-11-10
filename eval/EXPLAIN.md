@@ -1,330 +1,322 @@
 # Rôle IA n°1 — expliquer une panne établie (2026-11-10)
 
-- **cas** : 80
-- **fidelite** : 98 % (attente ≥ 95 %)
-- **mecanisme_garde** : 76 % sur 75 (attente ≥ 90 %)
-- **mots_mediane** : 41 (attente ≤ 60)
-- **phrases_max** : 4 (attente ≤ 3)
-- **latence_mediane_s** : 7.1 (attente ≤ 8)
+- **cas** : 67
+- **rejetes_par_garde_fou** : 13
+- **couverture** : 84 % des 80 causes établies (essai 3 : attente ≥ 50 %)
+- **fidelite** : 100 % (attente ≥ 95 %)
+- **mecanisme_garde** : 97 % sur 64 (attente ≥ 90 %)
+- **mots_mediane** : 45 (attente ≤ 60)
+- **phrases_max** : 3 (attente ≤ 3)
+- **latence_mediane_s** : 15.5 (attente ≤ 8)
 
 ## Exemples (à relire)
 
-### pg-connection-refused — ⚠ mécanisme perdu
+### pg-connection-refused
 - Cause : Le serveur PostgreSQL n'écoute pas à cette adresse : service arrêté ou redémarré, ou listen_addresses / pare-feu qui bloque.
-- Explication : Le serveur PostgreSQL n'est pas en écoute sur l'adresse spécifiée. Vérifiez que le service est redémarré et relancez le job pour essayer de relier à nouveau.
+- Explication : Le serveur PostgreSQL n'écoute pas à cette adresse pour plusieurs raisons possibles : le service est arrêté ou redémarré, ou bien un pare-feu bloque l'accès. Vous devez vérifier si le service PostgreSQL est en cours d'exécution et s'il écoute sur la bonne interface. Ensuite, relancer le service si nécessaire.
 
 ### pg-too-many-connections
 - Cause : Toutes les connexions PostgreSQL sont prises (limite max_connections atteinte), souvent par des connexions oubliées ou un pool mal dimensionné.
-- Explication : Toutes les connexions PostgreSQL sont prises car la limite max_connections est atteinte. Pour résoudre le problème, il faut libérer les connexions inactives et utiliser un pooler (PgBouncer) plutôt que d'augmenter la limite de connexions.
+- Explication : Toutes les connexions PostgreSQL sont prises, souvent en raison de connexions oubliées ou d'un pool mal dimensionné. Il faut libérer les connexions inactives et passer par un pooler comme PgBouncer plutôt que d'augmenter max_connections.
 
 ### mysql-deadlock
 - Cause : Deux transactions concurrentes verrouillent les mêmes lignes dans un ordre différent : la base en a annulé une (deadlock).
-- Explication : Deux transactions ont bloqué l'autre en essayant de modifier la même ligne. Pour résoudre le problème, relancez la transaction et assurez-vous d'utiliser les mêmes verrous dans le même ordre pour éviter un nouveau deadlock.
+- Explication : Deux transactions ont essayé de verrouiller les mêmes lignes dans un ordre différent, et la base a annulé l'une d'elles en raison d'un deadlock. Pour résoudre le problème, relancez la transaction en prenant toujours les verrous dans le même ordre et en raccourcissant les transactions.
 
 ### pg-disk-full-wal
 - Cause : Le volume de PostgreSQL est plein à cause de pg_wal : un slot de réplication inactif ou un archivage en échec empêche le recyclage des WAL.
-- Explication : Le volume de PostgreSQL est plein et empêche le recyclage des WAL. Il faut supprimer le slot de réplication abandonné ou réparer l'archivage pour libérer du espace, puis agrandir ou libérer le volume pour résoudre le problème.
-
-### dns-resolution-failure
-- Cause : Le nom d'hôte ne se résout pas : résolveur DNS injoignable, nom erroné ou enregistrement supprimé.
-- Explication : Le nom d'hôte 'api.partner-feeds.com' ne peut pas être résolu. Vérifiez le nom et assurez-vous qu'il est correctement enregistré auprès de votre fournisseur. Essayez ensuite la résolution depuis votre machine du job avec 'getent hosts api.partner-feeds.com' ou 'dig api.partner-feeds.com'.
+- Explication : Le volume de PostgreSQL est plein en raison du fichier pg_wal. Cela peut être dû à un slot de réplication inactif ou à un archivage en échec qui empêche le recyclage des WAL. Vous devez supprimer le slot de réplication abandonné (ou réparer l'archivage) puis libérer ou agrandir le volume, sans toucher directement à pg_wal.
 
 ### tls-cert-expired
 - Cause : Le certificat TLS du serveur appelé est expiré : son renouvellement automatique n'a pas eu lieu.
-- Explication : Le certificat TLS du serveur appelé a expiré et n'a pas été renouvelé. Il faut donc renouveler le certificat ou prévenir le tiers qui utilise ce certificat pour éviter de générer des erreurs.
+- Explication : Le certificat TLS du serveur appelé a expiré, ce qui a provoqué l'erreur. Vous devez renouveler le certificat ou prévenir le tiers concerné. Ne pas désactiver la vérification de sécurité.
 
 ### econnreset-mid-transfer
 - Cause : L'autre côté a coupé la connexion en cours de route : redémarrage ou timeout côté serveur, équipement réseau qui ferme les connexions longues.
-- Explication : La connexion a été coupée par l'autre côté sans notre consentement. Pour continuer à travailler sur le transfert, il faut relancer la connexion avec reprise et essayer plusieurs fois pour éviter les erreurs de connexion.
+- Explication : La connexion a été coupée en cours de route par l'autre côté, ce qui peut être dû à un redémarrage du serveur distant ou à un timeout. Il est également possible que l'équipement réseau ait fermé les connexions longues. Pour résoudre le problème, relancez le transfert avec la reprise activée et effectuez des tentatives espacées.
 
-### route-unreachable-vpn — ⚠ mécanisme perdu
+### route-unreachable-vpn
 - Cause : Aucune route vers l'hôte : tunnel VPN ou lien réseau tombé, route manquante, ou trafic sortant bloqué.
-- Explication : Le problème est causé par un blocage de trafic sortant sur le port 636, qui est utilisé pour se connecter au serveur. Vérifiez le pare-feu sortant et assurez-vous que ce port n'est pas bloqué par votre fournisseur.
+- Explication : La connexion a échoué car il n'y a aucune route vers l'hôte, ce qui peut être dû à un tunnel VPN ou lien réseau défaillant, une route manquante, ou un trafic sortant bloqué. Il faut vérifier le tunnel VPN et la route vers l'hôte (en utilisant 'ip route get <ip>'), ainsi que le pare-feu sortant pour ce port. Après avoir effectué ces vérifications, redémarrer le service.
 
 ### watchdog-sigkill
 - Cause : Le job a dépassé la durée maximale qui lui est accordée (timeout, TimeoutStartSec, watchdog) et a été tué avant la fin.
-- Explication : Le job a dépassé la durée maximale autorisée et a été arrêté. Il faut réduire la durée du traitement ou ajuster la limite pour éviter cela à l'avenir.
+- Explication : Le job a été interrompu car il a dépassé la durée maximale autorisée. Pour résoudre ce problème, vous pouvez réduire la durée du job ou augmenter la limite de temps si la durée normale a changé.
 
 ### http-client-timeout
 - Cause : Le service distant ne répond pas dans le délai : indisponible, surchargé, pare-feu qui jette les paquets sans refuser, ou proxy défini dans votre session (http_proxy) mais absent sous cron.
-- Explication : Le service distant est indisponible ou surchargé, il faut vérifier son état et réessayer avec un délai plus long pour essayer de le contacter.
+- Explication : Le service distant ne répond pas dans le délai, il pourrait être indisponible, surchargé, affecté par un pare-feu ou un proxy incorrect. Vérifiez l'état du service et réessayez avec un délai exponentiel.
 
-### query-statement-timeout — ⚠ mécanisme perdu
+### query-statement-timeout
 - Cause : La requête dépasse statement_timeout : la table a grossi ou un index manque, la requête est devenue trop lente.
-- Explication : La requête a dépassé la limite de temps autorisé (statement_timeout) car elle est trop lente. Il faut optimiser la requête ou la découper pour éviter ce problème.
+- Explication : La requête a été annulée car elle dépasse le temps imparti (statement_timeout). Cela peut être dû à une table qui s'est agrandie ou à un manque d'index, rendant la requête trop lente. Vous pouvez optimiser la requête en ajoutant des index sur les filtres et en utilisant EXPLAIN ANALYZE, ou découper la requête pour éviter de dépasser le timeout.
 
 ### oom-killer-137
 - Cause : Le processus a dépassé la mémoire disponible ou la limite du conteneur : le noyau l'a tué (OOM killer, code 137).
-- Explication : Le système a dépassé la mémoire disponible et a tué le processus python3 pour éviter une panne. Pour résoudre ce problème, il faut réduire le pic de mémoire ou augmenter la limite mémoire du conteneur ou de la machine.
+- Explication : Le processus a été tué par le noyau en raison d'une mémoire insuffisante (OOM killer). Vous pouvez réduire la consommation de mémoire en traitant les données par lots ou augmenter la limite de mémoire du conteneur ou de la machine.
 
 ### disk-full-enospc
 - Cause : Le volume de destination est plein : des fichiers s'accumulent (sauvegardes, logs) faute de rétention.
-- Explication : Le volume de destination est plein, ce qui empêche l'enregistrement de nouveaux fichiers. Il faut libérer de la place en supprimant les anciennes sauvegardes et logs et en ajoutant une rétention au job pour éviter que cela se reproduise.
+- Explication : Le volume de destination est plein en raison de l'accumulation de fichiers (sauvegardes, logs). Il faut libérer de la place en purifiant les anciennes sauvegardes et logs et en configurant une rétention pour le job. Vérifiez le volume avec `df -h` et supprimez les fichiers inutiles.
 
 ### fork-cannot-allocate
 - Cause : Le système refuse de créer de nouveaux processus : mémoire libre épuisée ou limite de processus (ulimit -u, pids du cgroup) atteinte, souvent par trop de tâches en parallèle.
-- Explication : Le système refuse de créer de nouveaux processus car il n'y a plus de mémoire libre ou la limite de processus est atteinte. Pour résoudre le problème, vous pouvez réduire le nombre de processus lancés en parallèle ou relever la limite de processus et la mémoire disponible.
+- Explication : Le système refuse de créer de nouveaux processus en raison d'une mémoire insuffisante ou d'un nombre maximal de processus atteint. Vous devez réduire le nombre de tâches lancées en parallèle ou augmenter la limite de processus et la mémoire disponible. Vérifiez la mémoire libre avec `free -m` et la limite de processus avec `ulimit -u`.
 
-### inode-exhaustion — ⚠ mécanisme perdu
+### inode-exhaustion
 - Cause : Le système de fichiers n'a plus d'inodes : trop de petits fichiers, alors qu'il reste de l'espace disque.
-- Explication : Le système de fichiers est plein et ne peut plus gérer les petits fichiers. Il faut purger ou regrouper ces fichiers pour libérer de l'espace disque.
+- Explication : Le système de fichiers manque d'inodes car il y a trop de petits fichiers. Vous devez purger ou archiver les dossiers contenant de nombreux petits fichiers pour libérer des inodes.
 
 ### stripe-rate-limit-429
 - Cause : Trop de requêtes envoyées à l'API dans la fenêtre autorisée : sa limite de débit est atteinte.
-- Explication : Il y a eu trop de requêtes envoyées à l'API dans la fenêtre autorisée, ce qui a atteint le débit limite. Pour éviter cela, il faut respecter le délai indiqué par l'erreur (Retry-After) et étaler les appels en réduisant le parallélisme et en utilisant des lots plus petits. Il est également important de vérifier que personne d'autre n'utilise la même clé au même moment.
+- Explication : Trop de requêtes ont été envoyées à l'API dans la fenêtre autorisée, ce qui a dépassé sa limite de débit. Il faut respecter le délai indiqué dans Retry-After en utilisant un étalement exponentiel des appels et en vérifiant que seul un job utilise la clé API à la fois.
 
 ### api-key-revoked-401
 - Cause : L'API refuse l'identifiant du job : clé ou jeton révoqué, expiré ou remplacé (rotation des secrets) sans mise à jour côté job.
-- Explication : L'API refuse l'identifiant du job car la clé ou le jeton est révoqué, expiré ou remplacé sans mise à jour côté job. Il faut générer une nouvelle clé et mettre à jour le secret utilisé par le job pour résoudre ce problème.
+- Explication : Le job a reçu une erreur 401 car l'identifiant utilisé pour l'API est révoqué, expiré ou remplacé. Il faut générer ou récupérer la nouvelle clé et mettre à jour le secret utilisé par le job. Vérifiez si une rotation de secrets récente a eu lieu et testez la clé avec un appel curl minimal.
 
 ### vendor-maintenance-503
 - Cause : Le service appelé répond 503 : maintenance ou surcharge chez le fournisseur, ou accès refusé aux clients non connectés ou non navigateurs (page réservée, pare-feu applicatif).
-- Explication : Le serveur est actuellement indisponible en raison de maintenance ou surcharge. Il faut essayer à nouveau après quelques secondes, puis attendre la durée indiquée avant de réessayer.
+- Explication : Le service que nous appelons répond 503, ce qui signifie qu'il est en maintenance ou surchargé. Il peut aussi s'agir d'un accès refusé pour les clients non connectés ou non navigateurs. Attends la fenêtre indiquée (Retry-After) avant de réessayer avec un délai exponentiel.
 
 ### geocoding-quota-exceeded
 - Cause : Le quota alloué par le fournisseur pour la période (jour, minute) est épuisé : le job consomme plus que prévu, ou d'autres usages partagent la même clé.
-- Explication : Le quota alloué par le fournisseur pour la période est épuisé. Il faut attendre la remise à zéro du quota ou l'augmenter et répartir ou mettre en cache les appels pour éviter ce problème.
+- Explication : Le quota alloué par le fournisseur pour la période (jour, minute) est épuisé. Cela peut être dû au job consommant plus que prévu ou à d'autres usages partageant la même clé. Il faut attendre la remise à zéro du quota ou l'augmenter, et répartir ou mettre en cache les appels.
 
-### csv-encoding-garbage — ❌ inventé : ancien_encodage
-- Cause : Le fichier reçu n'est pas encodé en UTF-8 (UTF-16, Latin-1…) : le fournisseur a changé d'encodage ou d'outil d'export.
-- Explication : Le fichier reçu n'est pas encodé en UTF-8, il faut donc le convertir pour qu'il puisse être lu correctement. Pour cela, utilisez l'outil iconv pour changer l'encodage du fichier vers UTF-8 : `iconv -f <ancien_encodage> -t UTF-8 entrée > sortie`.
-
-### pub-pg-dump-version-mismatch-cron — ⚠ mécanisme perdu
+### pub-pg-dump-version-mismatch-cron
 - Cause : Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).
-- Explication : Le serveur PostgreSQL est à une version majeure supérieure au binaire pg_dump utilisé par le cron. Pour résoudre ce problème, il faut utiliser un pg_dump de la même version que celle du serveur ou l'installer à jour pour qu'il corresponde à la version actuelle du serveur.
+- Explication : Le cron utilise une ancienne version de pg_dump qui ne correspond pas à la version du serveur PostgreSQL. Vous devez utiliser un pg_dump à jour ou spécifier le chemin complet vers le bon binaire.
 
 ### pub-gitlab-backup-pg-dump-mismatch
 - Cause : Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).
-- Explication : Le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL, ce qui cause une incompatibilité. Pour résoudre le problème, il faut utiliser un pg_dump de la même version que celle du serveur ou l'installer à jour pour qu'il corresponde à la version actuelle du serveur.
+- Explication : Le binaire pg_dump utilisé par le cron est plus ancien que la version du serveur PostgreSQL, ce qui a causé un conflit de versions. Pour résoudre cela, utilisez une version de pg_dump correspondant à celle du serveur ou appelez directement le bon binaire en chemin absolu.
 
 ### pub-certbot-timeout-aaaa-old-provider
 - Cause : Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.
-- Explication : Le port 80 est bloqué par le pare-feu du serveur. Vous devez ouvrir ce port pour que Let's Encrypt puisse joindre votre serveur. Ensuite, vous devez corriger les enregistrements DNS A et AAAA pour qu'ils pointent vers votre serveur. Faites un test avec certbot renew --dry-run pour voir si cela fonctionne.
+- Explication : Le problème est que Let's Encrypt ne peut pas joindre le serveur sur le port 80. Cela pourrait être dû à un pare-feu, une redirection de port, ou des enregistrements DNS incorrects. Il faut donc ouvrir le port 80 depuis Internet et vérifier les enregistrements A/AAAA.
 
 ### pub-certbot-timeout-firewall-restarted
 - Cause : Let's Encrypt ne joint pas le serveur sur le port 80 : pare-feu, redirection de port, ou enregistrement DNS (A/AAAA) qui pointe ailleurs.
-- Explication : Le port 80 est bloqué par le pare-feu du serveur. Vérifiez que vous pouvez accéder depuis Internet et corrigez les enregistrements DNS pour qu'ils pointent vers votre serveur.
+- Explication : Le problème est que Let's Encrypt ne peut pas joindre le serveur sur le port 80. Cela pourrait être dû à un pare-feu, une redirection de port, ou des enregistrements DNS incorrects. Il faut donc ouvrir le port 80 depuis Internet et vérifier les enregistrements A/AAAA.
 
 ### pub-mysqldump-lock-tables-privilege
 - Cause : Le compte de sauvegarde n'a pas le privilège LOCK TABLES exigé par mysqldump.
-- Explication : Le compte de sauvegarde n'a pas le privilège LOCK TABLES, ce qui empêche mysqldump d'accéder aux tables pour effectuer la sauvegarde. Pour résoudre le problème, vous pouvez ajouter --single-transaction (tables InnoDB) ou accorder GRANT LOCK TABLES au compte du cron.
+- Explication : Le compte de sauvegarde n'a pas les privilèges nécessaires pour utiliser LOCK TABLES. Vous pouvez soit ajouter l'option --single-transaction à la commande mysqldump si vous utilisez des tables InnoDB, soit accorder le droit GRANT LOCK TABLES au compte du cron.
 
 ### pub-velero-x509-unknown-authority
 - Cause : Le certificat est signé par une autorité (CA interne ou auto-signée) absente du magasin de confiance de la machine du job.
-- Explication : Le certificat utilisé pour se connecter à un serveur distant n'est pas signé par une autorité de confiance connue. Pour résoudre le problème, il faut ajouter la CA interne au magasin système ou donner l'outil les informations nécessaires pour reconnaître la CA.
+- Explication : Le certificat utilisé par le serveur est signé par une autorité (CA interne ou auto-signée) qui n'est pas reconnue par la machine. Vous devez ajouter cette CA au magasin de confiance de la machine, soit en utilisant update-ca-certificates, soit en passant l'option --cacert à l'outil.
 
 ### pub-weaviate-x509-legacy-cn
 - Cause : Le certificat ne couvre pas ce nom d'hôte dans ses SAN (Subject Alternative Names) ; le Common Name seul n'est plus accepté.
-- Explication : Le certificat ne couvre pas le nom d'hôte de l'hôte qui vous contacte. Vous devez régénérer le certificat avec les SAN corrects ou appeler l'hôte par un nom qu'il couvre.
+- Explication : Le serveur ne reconnaît pas le nom d'hôte utilisé pour accéder aux données. Le certificat ne couvre pas ce nom dans ses SAN (Subject Alternative Names). Vous devez régénérer le certificat avec les bons SAN ou appeler l'hôte par un nom qu'il couvre.
 
-### pub-aws-s3-sync-sso-expired — ⚠ mécanisme perdu
+### pub-aws-s3-sync-sso-expired
 - Cause : Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.
-- Explication : Le job utilise des identifiants cloud temporaires qui ont expiré. Il faut donner au job des identifiants durables ou les rafraîchir avant expiration pour continuer à fonctionner.
+- Explication : Le job a échoué car les identifiants de session (SSO) ont expiré. Vous devez donner au job des identifiants durables, comme un rôle d'instance ou un compte de service, ou rafraîchir régulièrement les identifiants.
 
 ### pub-s3-upload-expired-token
 - Cause : Le job utilise des identifiants cloud temporaires (session SSO, STS) dont la durée de validité est dépassée.
-- Explication : Le job utilise des identifiants cloud temporaires qui ont expiré. Il faut donner au job des identifiants durables ou les rafraîchir avant expiration pour continuer à fonctionner.
+- Explication : Le job a échoué car les identifiants cloud temporaires utilisés sont expirés. Vous devez donner au job des identifiants durables ou les rafraîchir avant leur expiration.
 
-### pub-node-heap-oom-backup — ⚠ mécanisme perdu
+### pub-node-heap-oom-backup
 - Cause : Le traitement charge plus de données que la limite de tas Node.js par défaut.
-- Explication : Le traitement a chargé trop de données, ce qui a dépassé la limite de tas Node.js. Pour résoudre le problème, il faut traiter les données par lots ou augmenter la limite de tas pour éviter d'atteindre la limite de mémoire disponible.
-
-### p2-cron-perm-denied-owner
-- Cause : L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…), ou le service qui l'écrit le crée avec des droits restrictifs (umask du service, rotation de logs).
-- Explication : Le problème est que le service qui écrit les logs n'a pas les droits nécessaires sur le fichier ou dossier. Pour résoudre cela, vous pouvez lancer le job sous l'utilisateur propriétaire du fichier (crontab -u <user>) ou ajuster les droits du dossier concerné (chown / chmod).
+- Explication : Le programme a essayé de charger trop de données dans la mémoire, ce qui dépasse la limite par défaut de Node.js. Pour résoudre le problème, vous pouvez traiter les données par lots ou augmenter la taille du tas avec NODE_OPTIONS=--max-old-space-size, sans dépasser la capacité de votre RAM.
 
 ### p2-php-mysqli-env-vars
 - Cause : Le client se connecte par le socket local parce que l'hôte vaut localhost ou est vide : variables de connexion (DB_HOST…) non définies dans l'environnement du cron, ou socket absent à ce chemin.
-- Explication : Le client se connecte par le socket local car les variables de connexion (DB_HOST...) n'ont pas été définies dans l'environnement du cron. Pour résoudre ce problème, définissez ces variables dans la crontab ou le script et vérifiez le chemin du socket.
+- Explication : Le client se connecte par le socket local car l'hôte est défini comme localhost ou est vide. Les variables de connexion (DB_HOST...) ne sont pas définies dans l'environnement du cron, ou le socket n'existe pas à ce chemin. Pour résoudre cela, vous devez définir les variables de connexion dans la crontab ou le script, ou utiliser 127.0.0.1 au lieu de localhost pour forcer une connexion TCP.
 
 ### p2-rake-path-rvm
 - Cause : cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.
-- Explication : Le cron a démarré avec un chemin de recherche minimal, ce qui signifie qu'il ne peut pas trouver les outils installés dans /usr/local/bin, nvm ou pyenv. Pour résoudre le problème, vous pouvez appeler la commande en chemin absolu (comme command -v rake pour trouver son emplacement) ou définir PATH= en tête de la crontab pour qu'il puisse les trouver automatiquement.
+- Explication : La commande 'rake' ne peut pas être trouvée car cron démarre avec un PATH minimal qui ne contient pas /usr/local/bin. Vous devez appeler la commande en chemin absolu ou définir PATH= en tête de la crontab.
 
-### p2-crontab-percent
-- Cause : Dans une crontab, % est un saut de ligne : la commande est coupée au premier % non échappé (souvent dans date +%Y%m%d), d'où le guillemet ou la parenthèse jamais refermés.
-- Explication : Une commande de crontab contenait un % qui a été mal interprété. Pour résoudre le problème, il faut échapper chaque % en \\ ou déplacer la commande dans un script appelé par le cron.
-
-### p2-mysqldump-p-space
+### p2-mysqldump-p-space — ⚠ mécanisme perdu
 - Cause : Le mot de passe n'est pas transmis : MySQL demande « Enter password: » sans terminal puis se connecte sans mot de passe — option -p suivie d'un espace (-p secret est lu comme un nom de base) ou variable du mot de passe vide sous cron.
-- Explication : Le mot de passe n'a pas été transmis correctement. Pour résoudre le problème, assurez-vous d'avoir un espace entre l'option -p et le mot de passe, ou utilisez un fichier ~/.my.cnf pour stocker votre mot de passe sécurisé.
+- Explication : Le serveur MySQL demande un mot de passe car il n'a pas reçu les informations nécessaires. Cela peut se produire si le mot de passe est omis dans la commande ou si le fichier de configuration n'est pas correctement configuré sous cron. Pour résoudre ce problème, vous pouvez ajouter le mot de passe directement à la commande avec -p ou utiliser un fichier ~/.my.cnf pour stocker les informations d'identification.
 
 ### p2-pg-dump-pgpass-root
 - Cause : PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, mot de passe dont les caractères spéciaux ($, !, guillemets) sont déformés par le shell, ou règle pg_hba.conf manquante.
-- Explication : Le mot de passe du job a changé et le shell a déformé les caractères spéciaux. Pour résoudre ce problème, veuillez vérifier si votre ~/.pgpass est présent et en mode 600 pour l'utilisateur du cron, ou utiliser la variable PGPASSFILE. Si vous n'avez pas de règle dans pg_hba.conf, ajoutez une nouvelle règle pour l'hôte/utilisateur/base et exécutez SELECT pg_reload_conf();
+- Explication : PostgreSQL refuse les identifiants du job pour plusieurs raisons possibles : le mot de passe a été changé, le fichier ~/.pgpass manque ou est incorrect pour l'utilisateur du cron, des caractères spéciaux dans le mot de passe sont mal interprétés par le shell, ou une règle pg_hba.conf nécessaire n'existe pas. Il faut fournir le bon mot de passe via un fichier ~/.pgpass (avec chmod 600) pour l'utilisateur du cron, ajouter la règle manquante dans pg_hba.conf et redémarrer PostgreSQL.
 
 ### p2-docker-no-space
 - Cause : Le disque de Docker est plein : conteneurs arrêtés, images et volumes anonymes s'accumulent à chaque exécution (docker run sans --rm).
-- Explication : Le disque de Docker est plein, ce qui empêche l'exécution de nouveaux conteneurs. Pour résoudre le problème, il faut nettoyer les images et volumes inutiles avec docker system prune et docker volume prune, puis relancer les conteneurs du job avec --rm pour éviter la réutilisation des espaces.
+- Explication : Le disque est plein car Docker accumule des conteneurs, images et volumes non supprimés. Nettoyez le système Docker avec `docker system prune` et `docker volume prune`. Lors de l'exécution des conteneurs, ajoutez l'option `--rm`.
 
 ### p2-curl-60-ca-bundle
 - Cause : Le certificat du serveur n'est pas vérifiable avec les autorités connues de la machine (CA interne, chaîne incomplète, ou magasin de certificats périmé).
-- Explication : Le certificat du serveur n'est pas vérifiable avec les autorités connues de la machine, ce qui empêche le fonctionnement correct du job. Pour résoudre ce problème, mettez à jour le magasin de certificats ou passez la CA à utiliser pour éviter d'utiliser -k et relancez le job sous l'utilisateur approprié.
+- Explication : Le serveur a reçu un certificat qui ne peut pas être vérifié correctement par la machine en raison d'un magasin de certificats obsolète ou d'une chaîne incomplète de certification. Vous devez mettre à jour le magasin de certificats (update-ca-certificates) ou spécifier la CA manuellement avec --cacert. Il est recommandé de ne pas utiliser -k pour ignorer les erreurs de certificat.
 
 ### p2-ffmpeg-display-boot
 - Cause : DISPLAY est défini mais le serveur X refuse la connexion : le cookie XAUTHORITY de la session n'est pas lisible sous cron, ou la session graphique n'est pas encore prête (job lancé au démarrage, @reboot).
-- Explication : Le problème est causé par le fait que le serveur X refuse la connexion car le cookie de session n'est pas lisible sous cron. Pour résoudre ce problème, il faut définir le chemin du fichier de cookie correctement dans la crontab et attendre que la session graphique soit prête avant exécuter le job.
+- Explication : La cause de l'échec est que le cookie XAUTHORITY n'est pas accessible lors du lancement en cron, ou que la session graphique n'est pas prête au démarrage. Pour résoudre ce problème, vous pouvez définir XAUTHORITY=/home/<utilisateur>/.Xauthority dans votre crontab et attendre l'ouverture de la session graphique pour un job @reboot.
 
-### p2-python-ascii-encode
-- Cause : cron s'exécute avec la locale POSIX/C (ASCII) : le programme ne peut pas écrire ou lire de caractères non ASCII.
-- Explication : Le programme ne peut pas écrire ou lire des caractères non ASCII. Pour résoudre le problème, définissez LC_ALL=C.UTF-8 en tête de la crontab et vérifiez que cela fonctionne dans votre shell et dans le job.
-
-### p2-node-path-global — ⚠ mécanisme perdu
+### p2-node-path-global
 - Cause : Node ne trouve pas le module dans l'environnement du cron : node_modules absents de ce dossier (cron démarre dans HOME), ou module installé globalement (npm -g) invisible sans NODE_PATH.
-- Explication : Le cron ne peut pas trouver le module 'underscore' car il n'est pas dans le dossier node_modules du projet. Pour résoudre ce problème, vous devez faire cd dans le dossier du projet avant de lancer node et vérifier que node_modules existe après avoir exécuté npm ci.
+- Explication : Le Node ne trouve pas le module 'underscore'. Cela peut être dû à la absence de `node_modules` dans le dossier cron ou au fait que le module soit installé globalement. Pour résoudre, assurez-vous de vous déplacer dans le dossier du projet avant de lancer node (utiliser `cd /chemin/projet && node script.js`) ou définir `NODE_PATH` vers les modules globaux dans la crontab.
 
 ### p2-aws-env-cron
 - Cause : Le SDK cloud ne trouve pas d'identifiants : ~/.aws (ou équivalent) est dans le HOME d'un autre utilisateur, ou AWS_PROFILE n'est pas défini dans l'environnement du cron.
-- Explication : Le SDK cloud ne peut pas trouver vos identifiants car ils sont stockés dans le HOME d'un autre utilisateur et non dans votre propre HOME. Vous devez donner à ce job ses propres identifiants pour qu'il puisse fonctionner correctement.
+- Explication : Le SDK cloud ne trouve pas les identifiants nécessaires car ils sont dans le HOME d'un autre utilisateur ou AWS_PROFILE n'est pas défini. Vous devez donner au job ses propres identifiants, comme un rôle d'instance ou des identifiants configurés explicitement. Vérifiez cela en vous connectant sous l'utilisateur du cron et en exécutant 'aws sts get-caller-identity'.
 
 ### p2-selenium-path
 - Cause : Le navigateur lancé par le job ne démarre pas sous cron : PATH minimal où chrome et ses dépendances sont introuvables, ou pas d'affichage (mode headless non activé).
-- Explication : Le navigateur Chrome ne démarre pas car son chemin est introuvable. Pour résoudre le problème, ajoutez la ligne suivante à la fin de votre fichier crontab : PATH=/usr/local/bin:/usr/bin:/usr/sbin:/bin. Ensuite, lancez Chrome avec les options --headless, --no-sandbox et --disable-dev-shm-usage pour éviter les erreurs.
+- Explication : Le navigateur Chrome ne démarre pas sous cron pour deux raisons possibles : le PATH minimal ne contient pas les chemins nécessaires où Chrome et ses dépendances sont introuvables, ou l'affichage n'est pas activé (mode headless non activé). Pour résoudre ce problème, définissez un PATH complet (/usr/local/bin:/usr/bin:/usr/sbin) en tête de la crontab et lancez Chrome avec les options --headless.
 
-### p2-git-ssh-key-cron — ⚠ mécanisme perdu
-- Cause : Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, job lancé sous un autre utilisateur (root lit /root/.ssh, pas vos clés), ou clé absente d'authorized_keys.
-- Explication : Le serveur SSH refuse votre clé car elle n'est pas associée à l'utilisateur du cron. Vous devez spécifier la clé correcte pour le job lancé sous cet utilisateur et vérifier que la clé publique est présente dans les autorisations du compte distant.
-
-### p3-smtp-port-blocked — ⚠ mécanisme perdu
+### p3-smtp-port-blocked
 - Cause : Aucune route vers l'hôte : tunnel VPN ou lien réseau tombé, route manquante, ou trafic sortant bloqué.
-- Explication : Le problème est causé par un blocage de trafic sortant ou une route manquante. Vérifiez le VPN et la route vers le réseau, puis relancez pour résoudre le problème.
+- Explication : La connexion a échoué car il n'y a aucune route vers l'hôte, ce qui peut être dû à un tunnel VPN ou lien réseau défaillant, une route manquante, ou un trafic sortant bloqué. Vous devez vérifier le tunnel VPN et la route vers l'hôte (en utilisant `ip route get <ip>`), ainsi que le pare-feu sortant. Relancez ensuite pour voir si le problème est résolu.
 
 ### p3-venv-env-var
 - Cause : Une variable d'environnement attendue par le job n'existe pas sous cron : elle est définie dans votre shell (.bashrc, .profile, activate du virtualenv, /etc/environment), que cron ne charge pas ; même USER peut manquer.
-- Explication : Une variable d'environnement attendue par le job n'existe pas sous cron, car elle est définie dans votre shell mais non chargée. Pour résoudre ce problème, vous pouvez définir la variable en tête de la crontab ou charger explicitement la variable dans le script.
-
-### p3-crontab-percent-date
-- Cause : Dans une crontab, % est un saut de ligne : la commande est coupée au premier % non échappé (souvent dans date +%Y%m%d), d'où le guillemet ou la parenthèse jamais refermés.
-- Explication : Une commande dans votre crontab contient des % qui sont interprétés comme des sauts de ligne. Pour résoudre le problème, vous devez échapper chaque % en \\ ou déplacer la commande dans un script appelé par le cron.
+- Explication : La variable SOME_ENV_VARIABLE nécessaire au job n'existe pas sous cron car elle est définie dans votre shell et non dans un fichier que cron charge. Pour résoudre ce problème, vous pouvez définir la variable en tête de la crontab ou charger explicitement le fichier d'environnement dans le script.
 
 ### p3-node-full-path
 - Cause : cron lance la commande avec /bin/sh (dash sur Debian/Ubuntu), qui refuse la syntaxe bash ([[ ]], source, tableaux, ${…/…}).
-- Explication : La commande cron utilise /bin/sh qui ne comprend pas certaines syntaxes bash. Pour résoudre le problème, vous pouvez lancer le script avec bash explicitement (bash script.sh) ou mettre SHELL=/bin/bash en tête de la crontab pour utiliser bash. Vérifiez que le shebang du script est correct et ajoutez cette ligne en tête de la crontab : SHELL=/bin/bash
+- Explication : Le cron utilise /bin/sh (dash) qui ne supporte pas certaines syntaxes bash comme [[ ]]. Pour résoudre le problème, exécutez le script avec bash explicitement en utilisant bash script.sh ou ajoutez SHELL=/bin/bash au début de votre crontab.
 
 ### p3-java-classpath
 - Cause : La JVM ne trouve pas une classe : le classpath du job est incomplet sous cron (jars désignés en chemin relatif ou CLASSPATH défini seulement dans votre shell).
-- Explication : La JVM ne trouve pas la classe com/gargoylesoftware/htmlunit/WebClient car le classpath du job est incomplet. Pour résoudre ce problème, assurez-vous de passer le classpath complet en chemins absolus dans la commande du cron.
-
-### p3-scp-agent — ⚠ mécanisme perdu
-- Cause : Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, job lancé sous un autre utilisateur (root lit /root/.ssh, pas vos clés), ou clé absente d'authorized_keys.
-- Explication : Le serveur SSH refuse votre clé car elle n'est pas associée à l'utilisateur du cron. Vous devez spécifier la clé correcte pour l'utilisateur du cron et vérifier que la clé publique est présente dans les autorisations du compte distant.
+- Explication : La JVM ne trouve pas la classe 'com/gargoylesoftware/htmlunit/WebClient'. Le classpath du job est incomplet sous cron. Vous devez passer le classpath complet en chemins absolus dans la commande du cron et vérifier que $CLASSPATH est défini correctement.
 
 ### p3-activate-path-bashrc
 - Cause : Le script active un virtualenv par un chemin introuvable sous cron (chemin relatif, PATH réduit, ou sh qui ne connaît pas source) : le bon environnement Python n'est jamais chargé.
-- Explication : Le script tente d'activer un virtualenv, mais le chemin utilisé n'existe pas. Pour résoudre ce problème, utilisez directement le Python du virtualenv en appelant /chemin/venv/bin/python au lieu de source activate && python.
-
-### p3-git-push-root-home
-- Cause : Le serveur SSH refuse la clé : sous cron, pas d'agent SSH ni la clé de votre session, job lancé sous un autre utilisateur (root lit /root/.ssh, pas vos clés), ou clé absente d'authorized_keys.
-- Explication : Le serveur SSH refuse votre clé car elle n'est pas associée à l'utilisateur du cron. Vous devez spécifier la clé correcte pour l'utilisateur du cron et vérifier que la clé publique est présente dans les autorisations du compte distant.
-
-### p4-python3-import
-- Cause : Le module n'est pas installé pour l'interpréteur ou l'utilisateur du cron : autre interpréteur Python (virtualenv non activé, autre version), ou job lancé sous un autre utilisateur (root via sudo crontab) qui n'a pas vos paquets pip --user.
-- Explication : Le problème vient du fait que le cron utilise un autre interpréteur Python qui n'a pas les paquets pip installés. Pour résoudre cela, il faut utiliser l'interpréteur Python du virtualenv en chemin absolu et vérifier que la dépendance est installée dans ce venv.
+- Explication : Le script sous cron ne trouve pas le fichier 'activate'. Cela peut être du au chemin relatif, PATH réduit ou sh qui ne connaît pas source. Pour résoudre ce problème, appeler directement python en spécifiant son chemin absolu: /chemin/venv/bin/python script.py.
 
 ### p4-shebang-hidden-chars
 - Cause : La première ligne #! n'est pas reconnue : elle contient des caractères invisibles (BOM UTF-8 en tête de fichier ou fin de ligne Windows), le shell la prend pour une commande.
-- Explication : Le shell ne reconnaît pas la première ligne du fichier en raison de caractères invisibles. Pour résoudre le problème, réécrivez la première ligne ou nettoyez le fichier pour supprimer ces caractères et relancez le script.
+- Explication : La première ligne du script contient des caractères invisibles, comme un BOM UTF-8 ou des retours chariots Windows. Le shell l'interprète comme une commande inexistante. Vous devez soit réécrire la première ligne, soit nettoyer le fichier pour enlever ces caractères (utilisez dos2unix ou sed), puis relancer le script.
 
 ### p4-rsync-process-subst-sh
 - Cause : La commande utilise une syntaxe bash (source, <( ), [[ ]]) mais elle est exécutée par sh, qui ne la comprend pas.
-- Explication : Le script utilise des commandes bash qui ne sont pas compatibles avec le shell sh utilisé par le cron. Pour résoudre ce problème, vous pouvez lancer le script avec bash ou spécifier le shell à utiliser dans la crontab.
+- Explication : La commande utilise des fonctionnalités bash spécifiques qui ne sont pas supportées par sh. Pour résoudre le problème, exécutez le script avec bash en utilisant la commande 'bash script.sh' ou définissez SHELL=/bin/bash dans votre crontab.
 
 ### p4-git-ssh-agent — ⚠ mécanisme perdu
 - Cause : Git ne peut pas lire le dépôt distant : sous cron, la clé SSH de votre session n'est pas disponible (pas d'agent, autre HOME), ou la clé n'a pas accès à ce dépôt.
-- Explication : Le problème est que le cron n'a pas accès à votre clé SSH, ce qui empêche Git de communiquer avec le dépôt distant. Pour résoudre cela, vous devez ajouter une ligne au fichier crontab pour utiliser une clé dédiée sans passphrase et ajouter cette clé au dépôt comme clé de déploiement.
+- Explication : Git ne peut pas lire le dépôt distant car la clé SSH n'est pas disponible sous cron. La clé dédiée sans passphrase doit être utilisée et ajoutée au dépôt comme clé de déploiement. Tester l'accès avec ssh -T git@<forge> et vérifier la clé de déploiement.
 
 ### p4-npm-path
 - Cause : cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.
-- Explication : Le cron a démarré avec un chemin de recherche minimal, ce qui signifie qu'il ne peut pas trouver les outils installés dans les chemins supplémentaires (/usr/local/bin, nvm, pyenv). Pour résoudre le problème, vous pouvez appeler la commande en chemin absolu (utiliser `command -v <outil>` pour trouver le chemin exact) ou définir le PATH à l'avant de la crontab. Cela devrait permettre au cron d'accéder aux outils nécessaires.
+- Explication : Le cron ne peut pas trouver la commande npm car son chemin n'est pas dans le PATH minimal. Vous devez appeler npm en chemin absolu ou définir PATH= en tête de la crontab.
 
 ### p4-java-path
 - Cause : cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.
-- Explication : Le cron a démarré avec un chemin de recherche minimal, ce qui signifie qu'il ne peut pas trouver votre outil Java dans les répertoires standard. Vous devez appeler la commande en chemin absolu ou ajouter le chemin à la liste du PATH pour que le cron puisse l'identifier.
+- Explication : La commande java n'est pas trouvable dans le PATH minimal utilisé par cron. Vous devez appeler la commande en chemin absolu ou définir le PATH en tête de la crontab.
 
 ### p4-gsutil-path
 - Cause : cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.
-- Explication : Le cron a démarré avec un chemin de recherche minimal, ce qui signifie qu'il ne peut pas trouver les outils installés dans /usr/local/bin, nvm ou pyenv. Pour résoudre le problème, vous pouvez appeler la commande en chemin absolu (par exemple, `command -v gsutil` pour trouver son emplacement) ou définir le PATH à l'avant de la crontab.
+- Explication : La commande gsutil est introuvable car cron démarre avec un PATH minimal. Vous devez appeler la commande en chemin absolu ou définir PATH= en tête de la crontab.
 
 ### p4-date-percent
 - Cause : La commande contient un % non échappé : dans une crontab, % est un saut de ligne, la commande est coupée à cet endroit.
-- Explication : Une commande de crontab contient un % non échappé, ce qui fait coupure à cet endroit. Pour résoudre le problème, il faut échapper chaque % en \\ ou déplacer la commande dans un script.
+- Explication : La crontab contient une commande avec un % non échappé, ce qui fait que la commande est interrompue prématurément. Pour corriger cela, échappez chaque % en \\
 
 ### p4-crontab-backquote
 - Cause : crontab refuse le fichier : une ligne a une syntaxe invalide (champ horaire faux, ou backquote / % non échappé), donc aucun job de ce fichier n'est installé.
-- Explication : Une erreur dans le fichier de crontab a empêché l'installation du job. La ligne incorrecte contient une syntaxe invalide, spécifiquement un caractère `%` non échappé. Pour résoudre ce problème, remplacez les backquotes par $(…), échappez `% en \
+- Explication : Un fichier crontab contient une ligne avec une syntaxe invalide, probablement une erreur de backquote non échappée. Vous devez corriger cette ligne en remplaçant les backquotes par $(…), échapper le % en \. Réinstallez ensuite le crontab avec crontab -e.
 
 ### p4-php-relative-require
 - Cause : Le job ouvre un fichier par un chemin relatif : sous cron, le dossier courant est le HOME de l'utilisateur, pas celui du script, donc le chemin ne pointe plus au bon endroit.
-- Explication : Le problème est que le script ouvre un fichier en utilisant un chemin relatif qui pointe vers le mauvais dossier. Pour résoudre cela, il faut utiliser des chemins absolus ou changer de dossier avant d'exécuter la commande. Vous pouvez vérifier le dossier courant sous cron en ajoutant 'pwd' au début du job et remplacer les chemins relatifs par des chemins absolus pour éviter ce problème.
+- Explication : Le script tente de charger un fichier dans un répertoire qui n'est pas le bon car le dossier courant est différent sous cron. Utilisez des chemins absolus pour éviter ce problème.
 
 ### p4-pgpassword-quotes
 - Cause : PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, mot de passe dont les caractères spéciaux ($, !, guillemets) sont déformés par le shell, ou règle pg_hba.conf manquante.
-- Explication : Le mot de passe du job a changé et le shell a déformé les caractères spéciaux. Pour résoudre ce problème, veuillez vérifier si votre ~/.pgpass est présent et en mode 600 pour l'utilisateur du cron, ou utiliser la variable PGPASSFILE. Ensuite, assurez-vous que vous avez ajouté une règle dans pg_hba.conf pour autoriser les connexions de l'hôte/utilisateur/base et exécutez SELECT pg_reload_conf();
+- Explication : PostgreSQL refuse les identifiants du job pour plusieurs raisons possibles : le mot de passe a été changé, le fichier ~/.pgpass manque ou est incorrect pour l'utilisateur du cron, des caractères spéciaux dans le mot de passe sont mal interprétés par le shell, ou une règle pg_hba.conf nécessaire est absente. Pour résoudre ce problème, assurez-vous que le bon mot de passe est fourni via un fichier ~/.pgpass (avec chmod 600) pour l'utilisateur du cron, ou ajoutez la règle appropriée dans pg_hba.conf et rechargez les paramètres de configuration.
 
 ### p4-bundle-path-environment
 - Cause : cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.
-- Explication : Le cron a démarré avec un chemin de recherche minimal, ce qui signifie qu'il ne peut pas trouver l'outil 'bundle' dans les chemins de recherche par défaut. Pour résoudre le problème, vous pouvez essayer d'appeler la commande en chemin absolu ou de définir le PATH à la tête de la crontab pour inclure les chemins où l'outil est installé.
+- Explication : La commande 'bundle' n'est pas trouvable car cron démarre avec un PATH minimal. Vous devez appeler la commande en chemin absolu ou définir PATH= en tête de la crontab.
 
-### p4-cron-no-user-var — ⚠ mécanisme perdu
+### p4-cron-no-user-var
 - Cause : Une variable d'environnement attendue par le job n'existe pas sous cron : elle est définie dans votre shell (.bashrc, .profile, activate du virtualenv, /etc/environment), que cron ne charge pas ; même USER peut manquer.
-- Explication : Une variable d'environnement attendue par le job n'existe pas sous cron, car elle est définie dans votre shell mais non chargée. Pour résoudre ce problème, vous pouvez définir la variable en tête de la crontab ou charger explicitement la variable dans le script.
-
-### p5-ruby-shebang-127
-- Cause : Code 127 : la commande est introuvable dans le PATH du cron (PATH minimal /usr/bin:/bin) ou son nom est faux.
-- Explication : La commande que vous essayez d'exécuter n'est pas trouvée dans le chemin PATH du cron. Vous devez appeler la commande en chemin absolu ou modifier le chemin PATH pour qu'il inclut le répertoire où se trouve la commande.
+- Explication : La variable d'environnement USER n'est pas définie dans cron car ce dernier ne charge pas les scripts shell comme .bashrc. Pour résoudre cela, vous devez définir la variable en tête de la crontab ou charger explicitement le script environnemental dans votre tâche cron.
 
 ### p5-crontab-percent-expr
 - Cause : Le journal de cron montre la commande coupée juste avant un % : dans une crontab, % est un saut de ligne, la suite de la commande n'est jamais exécutée.
-- Explication : Une commande de cron a été coupée juste avant le symbole '%', ce qui signifie que le système a interprété % comme un saut de ligne et a arrêté l'exécution. Pour résoudre le problème, il faut échapper chaque '%' en '\
-
-### p5-cronhourly-crontab-syntax — ❌ inventé : /usr/bin.
-- Cause : Code 127 : la commande est introuvable dans le PATH du cron (PATH minimal /usr/bin:/bin) ou son nom est faux.
-- Explication : La commande curl n'a pas été trouvée dans le chemin PATH du cron. Il faut appeler la commande en chemin absolu ou modifier le chemin PATH pour qu'il inclut /usr/bin. L'erreur se reproduit également lorsque l'on utilise un environnement simulant le cron, ce qui confirme que le problème est lié au chemin PATH.
+- Explication : La commande dans le crontab est interrompue juste avant un %. Cela se produit car % représente un saut de ligne dans les expressions cron. Pour résoudre ce problème, vous pouvez échapper chaque % en utilisant \\.
 
 ### p5-python-version-import
 - Cause : Le module n'est pas installé pour l'interpréteur ou l'utilisateur du cron : autre interpréteur Python (virtualenv non activé, autre version), ou job lancé sous un autre utilisateur (root via sudo crontab) qui n'a pas vos paquets pip --user.
-- Explication : Le problème vient du fait que le cron utilise un autre interpréteur Python qui n'a pas les paquets pip installés. Pour résoudre cela, il faut utiliser l'interpréteur Python du virtualenv en chemin absolu et vérifier que la dépendance est installée dans ce venv.
+- Explication : La cause du problème peut être due au fait que le module n'est pas installé pour l'interpréteur ou l'utilisateur du cron. Il peut s'agir d'un autre interpréteur Python (virtualenv non activé, autre version) ou d'un job lancé sous un autre utilisateur (root via sudo crontab) qui n'a pas vos paquets pip --user. Pour résoudre le problème, appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).
 
-### p5-env-node-bashrc — ⚠ mécanisme perdu
+### p5-env-node-bashrc
 - Cause : L'interpréteur indiqué par le shebang (#!) n'existe pas à ce chemin, ou /usr/bin/env ne le trouve pas dans le PATH minimal du cron.
-- Explication : Le script utilise un interpréteur qui n'existe pas à ce chemin, donc il faut utiliser le chemin absolu correct de l'interpréteur dans le shebang. Pour trouver le chemin absolu, utilisez la commande `command -v python3` pour vérifier que l'interpréteur est bien installé et qu'il existe à ce chemin.
+- Explication : Le script a échoué car l'interpréteur node n'existe pas à ce chemin ou n'est pas dans le PATH minimal du cron. Vous devez mettre le chemin absolu correct de l'interpréteur dans le shebang. Utilisez command -v node pour le trouver.
 
 ### p5-unixcat-path
 - Cause : cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.
-- Explication : Le cron a démarré avec un chemin de recherche minimal, ce qui signifie qu'il ne peut pas trouver l'outil 'unixcat' dans les chemins de recherche par défaut. Pour résoudre le problème, vous pouvez essayer d'appeler la commande en chemin absolu ou de définir le chemin de recherche PATH à l'avance pour que le cron puisse trouver l'outil.
+- Explication : La commande unixcat n'est pas trouvée car cron démarre avec un PATH minimal. Vous devez appeler la commande en chemin absolu ou définir PATH= en tête de la crontab.
 
-### p5-proxy-env-cron — ⚠ mécanisme perdu
+### p5-proxy-env-cron
 - Cause : Le service distant ne répond pas dans le délai : indisponible, surchargé, pare-feu qui jette les paquets sans refuser, ou proxy défini dans votre session (http_proxy) mais absent sous cron.
-- Explication : Le service distant est indisponible ou surchargé, ce qui fait que les paquets ne sont pas traités dans le délai attendu. Vérifiez l'état du service en utilisant la commande nc -zv et réessayez avec un délai plus long après vérification de son état.
+- Explication : Le service distant ne répond pas dans le délai, il pourrait être indisponible, surchargé, affecté par un pare-feu ou un proxy incorrect. Vérifiez l'état du service et réessayez avec un délai exponentiel.
 
 ### p6-java-noclassdef-pom
 - Cause : La JVM ne trouve pas une classe : le classpath du job est incomplet sous cron (jars désignés en chemin relatif ou CLASSPATH défini seulement dans votre shell).
-- Explication : La JVM ne trouve pas la classe JsonFactory car le chemin du classpath est incomplet. Vous devez passer le chemin complet des classes dans la commande de cron, en utilisant des chemins absolus et en incluant les fichiers lib/* pour tous les jars d'un dossier.
+- Explication : La JVM ne trouve pas la classe `com/google/api/client/json/JsonFactory` car le classpath du job est incomplet sous cron. Vous devez passer le classpath complet en chemins absolus dans la commande du cron. Vérifiez que les chemins sont corrects et incluent tous les fichiers nécessaires.
 
 ### p6-rake-bundle-env
 - Cause : cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.
-- Explication : Le cron a démarré avec un chemin de recherche minimal, ce qui signifie qu'il ne peut pas trouver l'outil 'bundle' dans les chemins de recherche par défaut. Pour résoudre le problème, vous pouvez essayer d'appeler la commande en chemin absolu ou de définir le PATH à la tête de la crontab pour inclure les chemins où l'outil est installé.
+- Explication : La commande 'bundle' n'est pas trouvable car cron démarre avec un PATH minimal. Vous devez appeler la commande en chemin absolu ou définir PATH= en tête de la crontab.
 
-### p6-pgdump-crlf — ⚠ mécanisme perdu
+### p6-pgdump-crlf
 - Cause : Les options de la commande se retrouvent seules sur une ligne : la continuation « \ » est cassée (fins de ligne Windows \r, ou espace après le \), donc chaque ligne est lancée comme une commande à part.
-- Explication : Le problème est que les options de la commande sont sur une seule ligne, ce qui fait qu'elle est traitée comme une commande à part. Pour résoudre cela, il faut convertir le script pour qu'il n'y ait plus d'espace après les \
+- Explication : La cause de l'erreur est que les options de la commande se retrouvent sur plusieurs lignes, sans le caractère de continuation '\'. Il faut convertir le script pour corriger ces lignes et vérifier qu'aucun espace ne suit le '\'. Les vérifications à faire incluent la recherche des fins de ligne incorrectes avec 'cat -A', la conversion du script avec 'dos2unix' ou 'sed', puis relancer la commande.
 
 ### p6-redis-dump-umask
 - Cause : L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…), ou le service qui l'écrit le crée avec des droits restrictifs (umask du service, rotation de logs).
-- Explication : Le fichier de sauvegarde Redis a des droits trop restrictifs, ce qui empêche le service Redis d'écrire dans le dossier. Pour résoudre le problème, vous pouvez essayer de lancer le job sous l'utilisateur propriétaire du dossier ou ajuster les droits du dossier pour que le service Redis puisse écrire-y.
-
-### p6-wget-503-auth
-- Cause : Le service appelé répond 503 : maintenance ou surcharge chez le fournisseur, ou accès refusé aux clients non connectés ou non navigateurs (page réservée, pare-feu applicatif).
-- Explication : Le serveur est actuellement indisponible en raison de maintenance ou surcharge. Réessayer après quelques secondes et attendre la durée indiquée dans l'erreur (Retry-After).
+- Explication : Le job exécuté par le cron ne peut pas accéder au fichier /var/lib/redis/dump.rdb car il n'a pas les droits nécessaires. Ce fichier appartient à un autre utilisateur comme www-data ou root, et peut avoir été créé avec des droits restrictifs. Vous pouvez lancer le job sous l'utilisateur propriétaire via crontab -u <user> ou ajuster les propriétés du dossier en utilisant chown et chmod.
 
 ### p6-logrotate-create-perms
 - Cause : L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…), ou le service qui l'écrit le crée avec des droits restrictifs (umask du service, rotation de logs).
-- Explication : Le fichier log est protégé par un autre utilisateur (www-data ou root) et le service rsyslogd n'a pas les droits pour l'accéder. Pour résoudre ce problème, vous pouvez essayer de lancer le job sous l'utilisateur propriétaire du fichier (crontab -u <user>) ou ajuster les droits du dossier concerné (chown / chmod). Vérifiez d'abord qui est le propriétaire du fichier en utilisant ls -l <chemin> et comparez-le avec l'utilisateur du cron.
+- Explication : Le cron a essayé d'écrire dans le fichier 'celery.log' mais n'a pas les droits nécessaires car il appartient à un autre utilisateur (comme www-data ou root) ou est protégé par des droits restrictifs. Il faut vérifier le propriétaire du fichier avec `ls -l /home/ubuntu/remote_logs/celery.log` et ajuster les droits si nécessaire.
 
-### p6-sudo-root-module — ⚠ mécanisme perdu
+### p6-sudo-root-module
 - Cause : Le module n'est pas installé pour l'interpréteur ou l'utilisateur du cron : autre interpréteur Python (virtualenv non activé, autre version), ou job lancé sous un autre utilisateur (root via sudo crontab) qui n'a pas vos paquets pip --user.
-- Explication : Le problème vient du fait que le cron utilise un autre interpréteur Python qui n'a pas les paquets pip installés. Pour résoudre cela, il faut utiliser l'interpréteur Python du virtualenv en chemin absolu et vérifier que la dépendance est installée dans ce venv.
+- Explication : La panne est due au fait que le module n'est pas installé pour l'interpréteur ou l'utilisateur du cron. Le cron peut utiliser un autre interpréteur Python (virtualenv non activé, autre version) ou être lancé sous un autre utilisateur qui n'a pas vos paquets pip --user. Pour résoudre ce problème, appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).
 
-### p6-mysql-2002-disk-full — ⚠ mécanisme perdu
+### p6-mysql-2002-disk-full
 - Cause : Le serveur MySQL local ne tourne pas (arrêté, ou il n'a pas pu démarrer : disque plein, configuration invalide — voir son journal), ou le client cherche le socket à un autre chemin que celui du serveur.
-- Explication : Le serveur MySQL n'est pas en cours d'exécution ou ne peut pas démarrer. Vérifiez et redémarrez le service MySQL, ou utilisez TCP pour se connecter au serveur local à l'adresse 127.0.0.1 et spécifiez le bon chemin du socket.
+- Explication : Le serveur MySQL peut ne pas tourner, ou avoir un problème avec son socket. Il faut vérifier si le service est démarré et s'il n'y a pas de disque plein ou de configuration incorrecte. Si ce n'est pas le cas, le client devrait se connecter en utilisant TCP au lieu du socket actuel.
+
+
+## Rejetées par les garde-fous (cause brute affichée à la place)
+
+### dns-resolution-failure — possibilité perdue ou trop court
+- Texte du modèle : La machine ne peut pas se connecter à l'hôte 'api.partner-feeds.com'. Cela peut être du aux raisons suivantes : le résolveur DNS est indisponible, le nom d'hôte est incorrect ou l'enregistrement a été supprimé. Vous devez tester la résolution de l'hôte depuis cette machine et vérifier les paramètres du résolveur DNS.
+
+### csv-encoding-garbage — possibilité perdue ou trop court
+- Texte du modèle : Le fichier reçu n'est pas encodé en UTF-8, il pourrait être en UTF-16 ou Latin-1. Il faut le convertir en UTF-8 ou lire avec l'encodage correct. Contactez le fournisseur pour confirmer l'encodage.
+
+### p2-cron-perm-denied-owner — possibilité perdue ou trop court
+- Texte du modèle : Le job a échoué car l'utilisateur qui exécute le cron n'a pas les droits sur un fichier ou dossier. Ce problème peut provenir de deux sources: le propriétaire du fichier/dossier est différent de celui qui exécute le cron, ou bien le service qui écrit dans ce fichier/dossier utilise des droits restrictifs. Pour résoudre cela, vous pouvez soit lancer le job sous l'utilisateur propriétaire, soit ajuster les propriétaires et droits du dossier concerné. Pour vérifier la situation, examinez le propriétaire du fichier avec 'ls -l <chemin>' et comparez-le à l'utilisateur qui exécute le cron.
+
+### p2-crontab-percent — possibilité perdue ou trop court
+- Texte du modèle : La cause est que le symbole % dans la ligne de crontab est interprété comme un saut de ligne, coupant prématurément la commande. Pour résoudre cela, vous pouvez échapper chaque % en \\
+
+### p2-python-ascii-encode — possibilité perdue ou trop court
+- Texte du modèle : Le cron s'exécute avec la locale POSIX/C (ASCII), ce qui cause des erreurs lors du traitement de caractères non ASCII. Pour résoudre cela, vous devez définir LC_ALL=C.UTF-8 ou LANG=fr_FR.UTF-8 en tête de la crontab. Vous pouvez également définir PYTHONIOENCODING=utf-8 pour Python scripts.
+
+### p2-git-ssh-key-cron — possibilité perdue ou trop court
+- Texte du modèle : Le serveur SSH refuse la clé car le cron n'utilise pas l'agent SSH ni les clés de votre session. La clé dédiée doit être spécifiée avec ssh -i ou IdentityFile dans ~/.ssh/config. Assurez-vous que la clé a les droits appropriés et qu'elle est présente dans authorized_keys du compte distant.
+
+### p3-crontab-percent-date — possibilité perdue ou trop court
+- Texte du modèle : La cause est que le symbole % dans la crontab est interprété comme un saut de ligne, coupant prématurément la commande. Pour résoudre cela, échappez chaque % en \\
+
+### p3-scp-agent — possibilité perdue ou trop court
+- Texte du modèle : Le serveur SSH refuse la clé car le job est lancé sous un utilisateur différent et manque de l'autorisation nécessaire. Il faut préciser la clé dédiée pour l'utilisateur du cron et vérifier que la clé publique est bien présente dans authorized_keys sur le serveur.
+
+### p3-git-push-root-home — possibilité perdue ou trop court
+- Texte du modèle : Le serveur SSH refuse la clé car le job est lancé sous un utilisateur différent et manque de l'autorisation nécessaire. Il faut préciser la clé dédiée à utiliser dans le cron et vérifier que la clé publique est bien présente dans authorized_keys du compte distant.
+
+### p4-python3-import — possibilité perdue ou trop court
+- Texte du modèle : La panne est due au fait que le cron utilise un interpréteur Python différent ou un autre utilisateur. Pour résoudre le problème, exécutez le script en utilisant le chemin absolu du Python de votre virtualenv: /chemin/venv/bin/python script.py. Assurez-vous également que la dépendance pyautogui est installée dans ce venv.
+
+### p5-ruby-shebang-127 — possibilité perdue ou trop court
+- Texte du modèle : La commande est introuvable dans le PATH du cron ou son nom est incorrect. Vous devez appeler la commande en chemin absolu ou définir PATH= en tête de la crontab. Pour vérifier, reproduisez avec l'environnement du cron.
+
+### p5-cronhourly-crontab-syntax — possibilité perdue ou trop court
+- Texte du modèle : La commande `bin` n'est pas trouvée car elle n'est pas dans le PATH minimal (/usr/bin:/bin) du cron. La cause peut être que la commande est introuvable ou son nom est incorrect. Pour résoudre ce problème, appeler la commande en chemin absolu ou définir PATH= en tête de la crontab.
+
+### p6-wget-503-auth — possibilité perdue ou trop court
+- Texte du modèle : Le service appelé répond 503 pour plusieurs raisons possibles : maintenance du fournisseur, surcharge du système, ou accès refusé aux clients non connectés. Il faut réessayer après la fenêtre indiquée (Retry-After) avec un délai exponentiel. Vérifiez la page de statut du fournisseur et respectez le délai avant de réessayer.

@@ -19,7 +19,6 @@
  *   npx tsx eval/run.ts --set real --runs 5  # 5 runs sur tes vrais logs
  *   npx tsx eval/run.ts --set public --runs 3 --out eval/results.public.json  # pannes publiques sourcées (hors échantillon)
  *   npx tsx eval/run.ts --limit 5          # smoke test (5 premiers cas)
- *   LLM_RAW_LOGS=true npx tsx eval/run.ts --runs 5   # sans préprocessing regex
  *                                            (mesure modèle seul vs +regex)
  *
  * Résultats : tableau console + eval/results.json
@@ -133,9 +132,8 @@ async function main() {
 
   const BASELINE_MODEL = 'llama3.2:3b'   // le modèle produit (§6) ; porte le claim public
   const model   = process.env.LLM_MODEL || BASELINE_MODEL
-  const rawMode = process.env.LLM_RAW_LOGS === 'true'
   console.log(`\nEval — set:${set} · ${cases.length} cas · ${runs} run(s) · modèle:${model}` +
-    `${rawMode ? ' · RAW (sans regex)' : ''}\n`)
+    `\n`)
 
   const scores: RunScore[] = []
   const allCases: Array<Record<string, unknown>> = []
@@ -177,12 +175,11 @@ async function main() {
 
   const out = {
     date: new Date().toISOString(),
-    set, runs, raw_mode: rawMode,
+    set, runs,
     model,
     cases: cases.length,
     threshold: THRESHOLD,
     passes_threshold: pass,
-    template_mining: process.env.LLM_TEMPLATE_MINING !== 'false',
     aggregate: {
       category_exact: cat, severity_exact: sev, severity_near: near, parsable: pars,
       cause_fact: causeF, action_fact: actionF, with_unverifiable: unver,

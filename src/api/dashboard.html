@@ -2371,7 +2371,7 @@ function demoPreview(body) {
     /oom|out of memory|killed|137/.test(logs)         ? { cause:"Le processus a dépassé la mémoire disponible ou la limite du conteneur : le noyau l'a tué (OOM killer, code 137).", action:"Réduire le pic mémoire (traitement par lots) ou relever la limite mémoire du conteneur ou de la machine.", prevention:'', checks:['dmesg -T | grep -i "killed process"'], severity:'critical', category:'resources', confidence:'high', data_impact:'possible', fix_minutes:30,
       explanation:"Le processus a été tué par le noyau en raison d'une mémoire insuffisante (OOM killer). Vous pouvez réduire la consommation de mémoire en traitant les données par lots ou augmenter la limite de mémoire du conteneur ou de la machine." } :
     { cause:'Démo : vos logs ne sont pas analysés ici.', action:'Lancez CronGuard en local pour analyser vos propres logs.', prevention:'', checks:[], severity:'medium', category:'unknown', confidence:'low', data_impact:'possible', fix_minutes:0 }
-  const same = DEMO_AN.find(a => a.diag === pick)   // explications réelles de l'essai 4b (eval/EXPLAIN.trial4b.md)
+  const same = DEMO_AN.find(a => a.diag === pick)   // explications réelles de l'essai 4b (eval/archive/EXPLAIN.trial4b.md)
   return { ...pick, explanation: pick.explanation ?? same?.explanation ?? null,
     model:'exemple enregistré, vos logs ne sont pas analysés', fromCache:false, _meta:{ logs_length:(body.logs||'').length } }
 }

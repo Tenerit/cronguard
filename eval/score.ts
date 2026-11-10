@@ -3,7 +3,7 @@
  *
  *   npx tsx eval/score.ts --set all --runs 3      # jeux de RÉGLAGE (labo, public, public2) → eval/REPORT.md
  *   npx tsx eval/score.ts --set final --runs 3    # + public3, le TEST FINAL : seulement pour la note finale
- *   npx tsx eval/score.ts --set all --runs 3 --ab LLM_KNOWLEDGE=off   # A/B apparié : A = réglage actuel, B = env modifié
+ *   npx tsx eval/score.ts --set all --runs 3 --ab LLM_DEDUCTION=on   # A/B apparié : A = réglage actuel, B = env modifié
  *   npx tsx eval/score.ts --validate                                # tamponne le dernier rapport comme validé
  *
  * Deux chiffres toujours ensemble : pannes couvertes par une correction connue / non couvertes
@@ -39,7 +39,7 @@ async function main() {
   }
   const set  = argVal('--set') ?? 'all'
   const runs = Number(argVal('--runs') ?? 3)
-  const ab   = argVal('--ab')                              // ex. LLM_KNOWLEDGE=off
+  const ab   = argVal('--ab')                              // ex. LLM_DEDUCTION=on
   const { CASES } = await import('./cases')
   const { PUBLIC_CASES } = await import('./public-cases')
   const { PUBLIC2_CASES } = await import('./public-cases-2')

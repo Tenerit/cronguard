@@ -1,6 +1,6 @@
 # How CronGuard's diagnosis is measured
 
-Every number in the README comes from a script in [`eval/`](../eval) that anyone can re-run. This page explains the method, gives every result, including the experiments that did not help, and shows how to score CronGuard on your own logs.
+Every number in the README comes from a script in [`eval/`](../eval) that anyone can re-run. The latest outputs sit in `eval/REPORT.md`, `eval/report.json` and `eval/EXPLAIN.md`; every dated trial is kept in [`eval/archive/`](../eval/archive). This page explains the method, gives every result, including the experiments that did not help, and shows how to score CronGuard on your own logs.
 
 ## The score out of 10
 
@@ -20,7 +20,7 @@ Labels are written from the cause established by the source (accepted answer, ma
 ```bash
 npx tsx eval/score.ts --set all --runs 3        # tuning sets → eval/REPORT.md
 npx tsx eval/score.ts --set final --runs 3      # everything, including the held-out sets
-npx tsx eval/score.ts --set all --runs 2 --ab LLM_CONTEXT=off   # paired A/B: same session, alternating order
+npx tsx eval/score.ts --set all --runs 2 --ab LLM_DEDUCTION=on   # paired A/B: same session, alternating order
 npx tsx eval/score.ts --validate                # stamp the last report as reviewed
 ```
 
@@ -82,7 +82,7 @@ Median 15.5 s, after the alert, cached per failure type. Grid fix decided before
 
 ### Speed: known fixes first, the model only when needed (2026-11-10)
 
-When a sheet, the command check, the context probe or a curl/rsync code establishes the cause, CronGuard answers without calling the model. Paired A/B on the tuning sets: score 8.4 → 8.3 (−0.1, CI −0.2 to +0.1, not significant), median latency 12.6 s → 0 s, mean 13.0 s → 2.4 s; 44 of 54 answers no longer need the model. `LLM_KNOWLEDGE_FIRST=off` restores the old behaviour.
+When a sheet, the command check, the context probe or a curl/rsync code establishes the cause, CronGuard answers without calling the model. Paired A/B on the tuning sets: score 8.4 → 8.3 (−0.1, CI −0.2 to +0.1, not significant), median latency 12.6 s → 0 s, mean 13.0 s → 2.4 s; 44 of 54 answers no longer need the model. 
 
 ### Writing sheets from StackExchange
 

@@ -107,53 +107,25 @@ export interface AnalysisResult {
 
 export function extractLogSignals(raw: string): {
   keyLines:   string   // lignes les plus importantes
-  errorType?: string   // pattern d'erreur détecté
   hasStack:   boolean  // stack trace présente
 } {
   if (!raw.trim()) return { keyLines: '(aucun log)', hasStack: false }
 
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
 
-  // Mode "raw" (LLM_RAW_LOGS=true) : désactive l'extraction par regex (sélection des
-  // lignes à haute valeur + détection de pattern). Sert UNIQUEMENT à l'éval, pour
-  // mesurer ce que le préprocessing apporte vs le modèle seul. Le budget tokens
-  // (dédup/cap) reste actif. Ne PAS activer en prod (la qualité chute).
-  const rawMode = process.env.LLM_RAW_LOGS === 'true'
-
   // Lignes à haute valeur : erreurs, exceptions, messages clés
   const HIGH_VALUE = /error|exception|fail|fatal|critical|traceback|panic|killed|oom|denied|refused|timeout|deadlock|duplicate|constraint|violation|cannot|could not|unable|not found|permission|unauthorized|segfault|abort/i
   const NOISE      = /^(debug|trace|\s*at\s+[a-z]|info:?\s+ok|\d{4}-\d{2}-\d{2}.*\[info\])/i
 
-  const candidates = rawMode ? [] : lines.filter(l => HIGH_VALUE.test(l) && !NOISE.test(l))
+  const candidates = lines.filter(l => HIGH_VALUE.test(l) && !NOISE.test(l))
 
-  // Regroupement par template (façon Drain, défaut ON — LLM_TEMPLATE_MINING=false pour
-  // isoler sa contribution à l'éval, comme LLM_RAW_LOGS). Collapse les VARIANTES d'un
-  // même motif (« refused db1 »/« refused db2 » → 1 ligne « [×2] refused db1 ») là où le
-  // dédup exact ne collapse que les lignes identiques → moins de tokens, compteur =
-  // fréquence réelle (systémique vs isolé). On préserve un sample concret (le SYSTEM
-  // demande de citer les valeurs exactes). Fallback = dédup exact si mining désactivé.
-  let errorLines: string[]
-  if (candidates.length === 0) {
-    errorLines = []
-  } else if (process.env.LLM_TEMPLATE_MINING !== 'false') {
-    errorLines = mineTemplates(candidates).map(t => (t.count > 1 ? `[×${t.count}] ${t.sample}` : t.sample))
-  } else {
-    const seen = new Set<string>()
-    errorLines = candidates.filter(l => (seen.has(l) ? false : (seen.add(l), true)))
-  }
+  // Regroupement par template (façon Drain) : « refused db1 » / « refused db2 » → « [×2] refused db1 ».
+  const errorLines = candidates.length ? mineTemplates(candidates).map(t => (t.count > 1 ? `[×${t.count}] ${t.sample}` : t.sample)) : []
   const stackLines   = lines.filter(l => /^\s+at\s|Traceback|File ".+", line/i.test(l))
   const hasStack     = stackLines.length > 0
 
   // Si pas d'erreurs claires, prendre les dernières lignes (souvent les plus pertinentes)
-  // LLM_INPUT_FIX=on (2026-11-10, eval/error-analysis.ts) : le filtre « lignes avec error/fail » retirait
-  // la ligne qui explique le mécanisme dans 9 cas sur 12 → log entier (dédoublonné) s'il tient dans le budget.
-  const inputFix = process.env.LLM_INPUT_FIX === 'on'
-  const whole = lines.filter((l, i) => l !== lines[i - 1])
-  const relevant = inputFix && whole.join('\n').length <= Math.max(200, parseInt(process.env.LLM_LOG_BUDGET ?? '2400'))
-    ? whole
-    : errorLines.length > 0
-    ? errorLines.slice(0, 15)
-    : lines.slice(-15)
+  const relevant = errorLines.length > 0 ? errorLines.slice(0, 15) : lines.slice(-15)
 
   // Budget tokens : borne la portion logs du prompt (seule partie non bornée).
   // Coupe chaque ligne trop longue (gros JSON/stacktrace une-ligne) puis plafonne
@@ -169,21 +141,7 @@ export function extractLogSignals(raw: string): {
     total += l.length + 1
   }
 
-  // Détection de pattern (désactivée en mode raw pour isoler la contribution du modèle)
-  let errorType: string | undefined
-  const allText = rawMode ? '' : raw.toLowerCase()
-  if (/connection refused|econnrefused|could not connect|no route to host/.test(allText)) errorType = 'connexion refusée'
-  else if (/timeout|timed out|deadline exceeded/.test(allText)) errorType = 'dépassement de délai'
-  else if (/too many connections|max_connections|pool exhausted|connection limit/.test(allText)) errorType = 'connexions épuisées'
-  else if (/deadlock|lock wait timeout|waiting for.*lock/.test(allText)) errorType = 'interblocage'
-  else if (/out of memory|\boom(killed)?\b|cannot allocate|memory exhausted/.test(allText)) errorType = 'mémoire insuffisante'
-  else if (/disk full|no space left|disk quota exceeded/.test(allText)) errorType = 'disque plein'
-  else if (/permission denied|access denied|unauthorized|\b40[13]\b/.test(allText)) errorType = 'accès refusé'
-  else if (/syntax error|unexpected|parse error|invalid input/.test(allText)) errorType = 'erreur de syntaxe'
-  else if (/not found|no such file|\b404\b|does not exist/.test(allText)) errorType = 'élément introuvable'
-  else if (/certificate|ssl|tls|x509/.test(allText)) errorType = 'certificat ou TLS'
-
-  return { keyLines: capped.join('\n'), errorType, hasStack }
+  return { keyLines: capped.join('\n'), hasStack }
 }
 
 // ─── Prompts ──────────────────────────────────────────────────────────────────
@@ -250,39 +208,14 @@ Si durationTrend > 50% → prevention doit mentionner le risque de timeout crois
 
 JAMAIS de markdown, JAMAIS de texte hors du JSON.`
 
-// Connaissance générale des pannes « marche à la main, pas en cron » : un petit modèle ne la
-// mobilise pas seul (il recopie le message d'erreur). Ce n'est pas une consigne de style mais
-// du savoir métier. LLM_CRON_HINTS=on l'active (A/B : eval/score.ts --ab LLM_CRON_HINTS=on).
-const CRON_HINTS = `
-
-PIÈGES DU CRON (la plupart des pannes « marche à la main, pas en cron ») — vérifie-les AVANT de conclure :
-- PATH minimal (/usr/bin:/bin) : commande ou interpréteur installé ailleurs introuvable.
-- Autre utilisateur, autre HOME (souvent root) : ~/.pgpass, ~/.my.cnf, ~/.aws, ~/.ssh, trousseau GPG absents.
-- .bashrc non lu : variables d'environnement et identifiants exportés absents.
-- Ni terminal ni session graphique : TTY, DISPLAY, agent SSH absents.
-- /bin/sh au lieu de bash ; locale C (ASCII) ; dossier courant = HOME, chemins relatifs cassés.
-- Dans la crontab, % non échappé coupe la commande.
-- Exécutions qui se chevauchent : verrous, base verrouillée.
-Dans "cause", nomme le MÉCANISME (lequel de ces pièges, ou un autre) avant de citer le message d'erreur.`
-
-// LLM_INPUT_FIX=on : les consignes « cite la valeur EXACTE du log » et « high = cause écrite dans les logs »
-// poussaient à recopier le symptôme (69 réponses sur 150). La ligne de log est déjà affichée à côté de
-// l'analyse : la cause doit dire POURQUOI. Mêmes champs, mêmes règles par ailleurs.
-const SYSTEM_FIXED = SYSTEM
-  .replace('"cause racine en 1 phrase — cite les valeurs exactes des logs"', '"le mécanisme en 1 phrase : POURQUOI cette erreur se produit"')
-  .replace('- "cause" : 1 phrase, ≤ 20 mots, cite la valeur EXACTE du log (pas de reformulation vague).',
-    '- "cause" : 1 phrase, ≤ 25 mots : le POURQUOI (ce qui a changé ou ce qui manque), pas le message d\'erreur — il est déjà affiché à côté. Lis TOUTES les lignes : l\'explication est souvent dans une ligne sans le mot error.')
-  .replace('- high   → la cause est explicitement dans les logs (message d\'erreur clair)', '- high   → une ligne du log établit le mécanisme')
-
 export function systemPrompt(): string {
-  const base = process.env.LLM_INPUT_FIX === 'on' ? SYSTEM_FIXED : SYSTEM
-  return process.env.LLM_CRON_HINTS === 'on' ? base + CRON_HINTS : base
+  return SYSTEM
 }
 
 // ─── Builder de prompt ────────────────────────────────────────────────────────
 
 function buildPrompt(ctx: JobContext, logs: string, redacted: number): string {
-  const { keyLines, errorType, hasStack } = extractLogSignals(logs)
+  const { keyLines, hasStack } = extractLogSignals(logs)
 
   const meta: string[] = [
     `┌─ JOB: ${ctx.jobName} [${ctx.env ?? 'env?'}]`,
@@ -297,8 +230,6 @@ function buildPrompt(ctx: JobContext, logs: string, redacted: number): string {
   if (ctx.records !== undefined)
     meta.push(`│  Records      : ${ctx.records}${ctx.expectedMin !== undefined ? ` (attendu: ${ctx.expectedMin}–${ctx.expectedMax ?? '∞'})` : ''}`)
   if (ctx.lastSuccess) meta.push(`│  Dernier succès: ${ctx.lastSuccess}`)
-  // Recopié tel quel comme cause dans 29 fausses causes sur 73 (eval/error-analysis.ts) : retiré avec LLM_INPUT_FIX.
-  if (errorType && process.env.LLM_INPUT_FIX !== 'on') meta.push(`│  Pattern détecté: ${errorType}`)
   if (hasStack)        meta.push(`│  Stack trace  : présente`)
   if (redacted > 0)    meta.push(`│  Valeurs masquées: ${redacted}`)
 
@@ -462,30 +393,27 @@ export function llmEnabled(): boolean {
 // Fiche connue déclenchée par les logs → sa cause (le mécanisme), son action et sa catégorie
 // remplacent celles du modèle : mesuré le 2026-11-08, llama3.2:3b recopie le symptôme quelle
 // que soit la consigne (eval/ab-root-cause.ts). Le modèle garde prévention, sévérité, impact.
-// LLM_KNOWLEDGE=off rend la sortie brute du modèle (comparaison A/B, eval/score.ts --ab).
 // Avant la fiche, ce que CronGuard CONSTATE sur la machine (2026-11-08) : la commande du cron
 // (command-lint) puis son environnement réel (run-context, relevé par le SDK). Un fait observé
-// prime sur une fiche générale. LLM_CONTEXT=off coupe ces deux sources (A/B, eval/score.ts --ab).
+// prime sur une fiche générale.
 export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'action' | 'category' | 'checks' | 'confidence' | 'knownFix' | 'finding'>>(
   res: T, cleanLogs: string, job?: Pick<JobContext, 'command' | 'runContext' | 'exitCode'>,
 ): T {
-  if (process.env.LLM_KNOWLEDGE === 'off') return res
   const kf = knownFix(cleanLogs)
-  const observed = process.env.LLM_CONTEXT === 'off' ? null
-    : commandFinding(job?.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job?.runContext)
+  const observed = commandFinding(job?.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job?.runContext)
   if (observed) return { ...res, cause: observed.cause, action: observed.action, category: observed.category,
     checks: kf ? kf.steps.slice(0, 3) : res.checks, confidence: 'high', finding: observed.id, ...(kf ? { knownFix: kf } : {}) }
   // Sans fiche : sens officiel d'un code (curl / rsync dans les logs, sinon code de sortie 126/127/128+N).
   // Un code de sortie dit CE QUI s'est passé (tué, introuvable), pas toujours pourquoi : confiance moyenne.
   if (!kf) {
-    const tool = process.env.LLM_CODES === 'off' ? null : toolCodeFinding(cleanLogs)
-    const exit = tool || process.env.LLM_CODES === 'off' ? null : exitCodeFinding(job?.exitCode)
+    const tool = toolCodeFinding(cleanLogs)
+    const exit = tool ? null : exitCodeFinding(job?.exitCode)
     const coded = tool ?? exit
     if (coded) return { ...res, cause: coded.cause, action: coded.action, category: coded.category,
       confidence: tool ? 'high' : 'medium', finding: coded.id }
     // Sans fiche ni code, la cause vient seule du modèle. S'il ne fait que recopier la ligne d'erreur,
     // on ne le présente pas comme une cause : on le dit (mesuré : le 3B recopie le symptôme).
-    const echoed = process.env.LLM_HONEST === 'off' ? null : restatedLine(res.cause, cleanLogs)
+    const echoed = restatedLine(res.cause, cleanLogs)
     if (echoed) return { ...res, cause: `Cause non établie par l'analyse : le job s'arrête sur « ${echoed} ». Voir les lignes liées.`, confidence: 'low' }
     // Il se dit « high » sur un symptôme recopié : une confiance haute exige une fiche ou un fait.
     return res.confidence === 'high' ? { ...res, confidence: 'medium' } : res
@@ -511,10 +439,8 @@ function restatedLine(cause: string, logs: string): string | null {
 
 /** Une source déterministe établit-elle la cause ? (mêmes sources et même ordre que groundWithKnownFix) */
 export function hasCertainKnowledge(cleanLogs: string, job: Pick<JobContext, 'command' | 'runContext'>): boolean {
-  if (process.env.LLM_KNOWLEDGE === 'off') return false
-  const observed = process.env.LLM_CONTEXT === 'off' ? null
-    : commandFinding(job.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job.runContext)
-  return !!(observed || knownFix(cleanLogs) || (process.env.LLM_CODES !== 'off' && toolCodeFinding(cleanLogs)))
+  const observed = commandFinding(job.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job.runContext)
+  return !!(observed || knownFix(cleanLogs) || toolCodeFinding(cleanLogs))
 }
 
 // Analyse sans modèle : tout vient des logs (pack déclenché, sinon dernière ligne d'erreur).
@@ -555,7 +481,7 @@ export async function analyzeFailure(
   // Fiches d'abord, modèle ensuite (2026-11-10) : si une fiche, la commande, l'environnement ou un code
   // curl/rsync établit la cause, le modèle n'apporterait rien (sa cause serait remplacée) et coûterait
   // ~13 s sur CPU. Réponse immédiate. Un simple code de sortie (137…) ne suffit pas : il dit quoi, pas pourquoi.
-  if (process.env.LLM_KNOWLEDGE_FIRST !== 'off' && hasCertainKnowledge(clean, ctx)) {
+  if (hasCertainKnowledge(clean, ctx)) {
     // La règle « panne récurrente → au moins high » vaut aussi sans modèle.
     return atLeastHighIfRecurring({ ...analysisWithoutModel(ctx), model: 'knowledge' }, ctx)
   }

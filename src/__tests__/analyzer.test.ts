@@ -28,7 +28,8 @@ const baseCtx: JobContext = {
   jobName:   'backup-postgres',
   clientId:  'client-1',
   monitorId: 'monitor-1',
-  logs:      'ERROR: Connection refused at 02:00:01\nExit code: 1',
+  // Panne qu'aucune fiche ne reconnaît : sinon, fiches d'abord, le modèle n'est jamais appelé.
+  logs:      'ERROR: ledger reconciliation drift at 02:00:01\nExit code: 1',
 }
 
 function mockLLMResponse(content: string) {
@@ -53,10 +54,7 @@ beforeEach(() => {
   // Provider par défaut = OpenAI-compatible ; les tests Anthropic le surchargent
   delete process.env.LLM_PROVIDER
   delete process.env.LLM_API_KEY
-  // Ces tests vérifient le transport et le parsing de la réponse du modèle : sans fiche connue.
-  process.env.LLM_KNOWLEDGE = 'off'
 })
-afterAll(() => { delete process.env.LLM_KNOWLEDGE })
 
 describe('analyzeFailure()', () => {
 
@@ -64,7 +62,6 @@ describe('analyzeFailure()', () => {
     const PG_LOGS = 'pg_dump: server version: 16.2; pg_dump version: 14.11\npg_dump: error: aborting because of server version mismatch'
 
     it('fiches d\'abord : la fiche répond tout de suite, sans appeler le modèle', async () => {
-      delete process.env.LLM_KNOWLEDGE
       const result = await analyzeFailure({ ...baseCtx, logs: PG_LOGS })
       expect(mockedAxios.post).not.toHaveBeenCalled()
       expect(result!.model).toBe('knowledge')
@@ -73,16 +70,6 @@ describe('analyzeFailure()', () => {
       expect(result!.knownFix?.id).toBe('pg-dump-version-mismatch')
     })
 
-    it('LLM_KNOWLEDGE_FIRST=off : le modèle est appelé, la fiche remplace sa cause et il garde sa sévérité', async () => {
-      delete process.env.LLM_KNOWLEDGE
-      process.env.LLM_KNOWLEDGE_FIRST = 'off'
-      mockLLMResponse('{"cause":"server version mismatch","action":"vérifier","severity":"high","category":"code"}')
-      const result = await analyzeFailure({ ...baseCtx, logs: PG_LOGS })
-      delete process.env.LLM_KNOWLEDGE_FIRST
-      expect(result!.cause).toMatch(/plus ancien que le serveur/)
-      expect(result!.severity).toBe('high')
-      expect(result!.model).toBe('qwen3:8b')
-    })
   })
 
   describe('Happy path', () => {
@@ -247,15 +234,12 @@ describe('analyzeFailure()', () => {
       delete process.env.LLM_RUNBOOK_BUDGET
     })
 
-    it('LLM_RAW_LOGS=true disables the regex preprocessing (model-only eval mode)', async () => {
-      process.env.LLM_RAW_LOGS = 'true'
+    it("le prompt ne contient plus l'indice « Pattern détecté » (recopié comme cause : eval/error-analysis.ts)", async () => {
       mockLLMResponse('{"cause":"x","action":"y","severity":"low"}')
-      await analyzeFailure({ ...baseCtx, jobName: 'raw-mode', logs: 'ERROR: connection refused at db host\nexit 1' })
-
+      await analyzeFailure({ ...baseCtx, jobName: 'no-hint', logs: 'ledger: out of memory budget exceeded in reconciliation\nexit 1' })
       const sentPrompt = mockedAxios.post.mock.calls[0][1] as any
       const user: string = sentPrompt.messages.find((m: any) => m.role === 'user')?.content ?? ''
-      expect(user).not.toContain('Pattern détecté')   // détection regex désactivée
-      delete process.env.LLM_RAW_LOGS
+      expect(user).not.toContain('Pattern détecté')
     })
 
     it('sends response_format json_object by default (structured output)', async () => {
@@ -309,19 +293,6 @@ describe('analyzeFailure()', () => {
       expect(result?.severity).toBe('high')
     })
 
-    it('does not label an API quota or a number as a disk or an access problem', async () => {
-      expect((await sent({ jobName: 'p-quota', logs: 'ERROR Quota exceeded for quota metric requests' })).all).not.toContain('Pattern détecté: disque plein')
-      jest.clearAllMocks()
-      expect((await sent({ jobName: 'p-num', logs: 'ERROR failed after 12403 rows in room 7' })).all).not.toMatch(/Pattern détecté: (accès refusé|mémoire)/)
-    })
-
-    it('still labels a real OOM kill', async () => {
-      expect((await sent({ jobName: 'p-oom', logs: 'ERROR container exit code 137 (OOMKilled)' })).all).toContain('Pattern détecté: mémoire insuffisante')
-    })
-
-    it('still labels a real full disk', async () => {
-      expect((await sent({ jobName: 'p-disk', logs: 'ERROR write failed: No space left on device' })).all).toContain('Pattern détecté: disque plein')
-    })
   })
 
   describe('Failure without logs', () => {
