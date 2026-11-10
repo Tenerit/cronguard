@@ -10,6 +10,9 @@
 //   3. lisible : médiane ≤ 60 mots, 3 phrases au plus ;
 //   4. rapide : médiane ≤ 8 s sur CPU.
 import axios from 'axios'
+import { createHash } from 'crypto'
+import { redis } from '../../config/redis'
+import { fingerprintLogs } from '../sanitizer'
 import { llmHeaders, isAnthropic, llmEnabled } from './analyzer'
 import type { AnalysisResult } from './analyzer'
 
@@ -108,10 +111,25 @@ export function acceptExplanation(cause: string, r: { text: string; invented: st
   return text.length >= 20 && !r.invented.length && keepsAlternatives(cause, text) ? text.slice(0, 600) : null
 }
 
-/** Explication simple d'une analyse établie, ou null (pas établie, IA coupée, garde-fou). */
+/** Explication simple d'une analyse établie, ou null (pas établie, IA coupée, garde-fou).
+ *  Adopté le 2026-11-10 après l'essai 4b (qwen2.5:7b) : couverture 84 %, rien d'inventé 100 %, mécanisme gardé 97 %,
+ *  relecture humaine des 67 textes : 4 déformations de sens (6 %). Le 3B ne passe pas : il faut un modèle
+ *  d'explication déclaré (LLM_EXPLAIN_MODEL) ; sans lui, pas d'explication (installation légère). */
 export async function explainAnalysis(a: AnalysisResult, cleanLogs: string, line?: string, timeout = 60_000): Promise<string | null> {
-  if (!llmEnabled() || isAnthropic() || process.env.LLM_EXPLAIN === 'off') return null
+  if (!process.env.LLM_EXPLAIN_MODEL || !llmEnabled() || isAnthropic() || process.env.LLM_EXPLAIN === 'off') return null
   if (!established(a)) return null     // rien d'établi : on n'habille pas une incertitude
   const r = await explainRaw(a, cleanLogs, line, timeout)
   return r ? acceptExplanation(a.cause, r) : null
+}
+
+/** Une explication par TYPE de panne (cause + ligne décisive normalisée), gardée 30 jours : une panne qui revient
+ *  ne refait pas tourner le modèle. Le 7B ne travaille que sur les pannes nouvelles. */
+export async function explainCached(a: AnalysisResult, cleanLogs: string, line?: string): Promise<string | null> {
+  if (!process.env.LLM_EXPLAIN_MODEL || !established(a)) return null
+  const key = 'explain:' + createHash('sha256').update(`${process.env.LLM_EXPLAIN_MODEL}\n${a.cause}\n${fingerprintLogs(line ?? '')}`).digest('hex').slice(0, 32)
+  const hit = await redis.get(key).catch(() => null)
+  if (hit) return hit
+  const text = await explainAnalysis(a, cleanLogs, line)
+  if (text) await redis.set(key, text, 'EX', 30 * 86400).catch(() => null)
+  return text
 }

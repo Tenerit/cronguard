@@ -8,6 +8,7 @@ import { logger }        from '../config/logger'
 import { analyzeFailure, analysisWithoutModel, llmEnabled, llmHeaders, isCloudLLM, hasCertainKnowledge } from '../services/llm/analyzer'
 import { recallSimilar, recallVerifiedFix, sameErrorRecently, errorSignature } from '../services/llm/incident-memory'
 import { evidenceLines } from '../services/llm/evidence'
+import { explainCached } from '../services/llm/explain'
 import { knownFix }      from '../services/llm/known-fixes'
 import { planHasAI }     from '../config/plans'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
@@ -405,6 +406,14 @@ function createAnalysisWorker() {
         reviewUrl: analysisId ? `${APP_URL}/r/${await signReviewToken(analysisId)}` : undefined,
         client: { email: client.email, slackWebhook: client.slack_webhook, webhookUrl: client.webhook_url, teamsWebhook: client.teams_webhook, channels: client.channels },
       })
+    }
+
+    // Rôle de l'IA : explication en langage simple d'une cause ÉTABLIE, après l'alerte (ne la retarde jamais).
+    if (analysis && analysisId) {
+      const id = analysisId, a = analysis
+      explainCached(a, sanitizeLogs(ctx.logs).clean, a.evidence?.[0])
+        .then(text => text ? db.query(`UPDATE analyses SET explanation = $2 WHERE id = $1`, [id, text]) : null)
+        .catch(err => logger.warn('[Explain] échec', { err: String(err) }))
     }
 
     logger.info('[Analysis] Done', {

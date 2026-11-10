@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 vi.mock('axios', () => ({ default: { post: vi.fn() }, AxiosError: class extends Error {} }))
 import axios from 'axios'
+vi.mock('../src/config/redis', () => ({ redis: { get: vi.fn().mockResolvedValue(null), set: vi.fn().mockResolvedValue('OK') } }))
+process.env.LLM_EXPLAIN_MODEL = 'qwen2.5:7b-instruct-q4_K_M'   // l'explication n'existe qu'avec un modèle d'explication déclaré
 import { inventedIdentifiers, explainAnalysis } from '../src/services/llm/explain'
 
 const reply = (explication: string) => vi.mocked(axios.post).mockResolvedValueOnce({ data: { choices: [{ message: { content: JSON.stringify({ explication }) } }] } })
@@ -65,5 +67,27 @@ describe('découpage en phrases', () => {
     const t = 'Le fichier /var/lib/redis/dump.rdb appartient à root. Le job tourne sous app. Changez le propriétaire. Relancez.'
     expect(capSentences(t)).toBe('Le fichier /var/lib/redis/dump.rdb appartient à root. Le job tourne sous app. Changez le propriétaire.')
     expect(capSentences('Installez le module pour script.py (pip --user). Relancez.')).toBe('Installez le module pour script.py (pip --user). Relancez.')
+  })
+})
+
+import { explainCached } from '../src/services/llm/explain'
+import { redis } from '../src/config/redis'
+describe('formule légère et cache par type de panne', () => {
+  const a = { cause: 'cron démarre avec un PATH minimal : la commande est introuvable.', action: 'Appeler la commande en chemin absolu.',
+    prevention: '', checks: [], severity: 'medium', category: 'dependency', confidence: 'high', data_impact: 'none', fix_minutes: 15, fromCache: false, knownFix: {} as never } as never
+  it('sans modèle d\'explication déclaré : rien, aucun appel', async () => {
+    const before = process.env.LLM_EXPLAIN_MODEL
+    delete process.env.LLM_EXPLAIN_MODEL
+    vi.mocked(axios.post).mockClear()
+    expect(await explainCached(a, 'x')).toBeNull()
+    expect(axios.post).not.toHaveBeenCalled()
+    process.env.LLM_EXPLAIN_MODEL = before
+  })
+  it('panne déjà expliquée : servie du cache, sans appel au modèle', async () => {
+    process.env.LLM_BASE_URL = 'http://x/v1'
+    vi.mocked(redis.get).mockResolvedValueOnce('Explication déjà connue.')
+    vi.mocked(axios.post).mockClear()
+    expect(await explainCached(a, 'x')).toBe('Explication déjà connue.')
+    expect(axios.post).not.toHaveBeenCalled()
   })
 })

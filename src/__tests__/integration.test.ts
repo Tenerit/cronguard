@@ -142,6 +142,7 @@ beforeAll(async () => {
       fix_verified_at TIMESTAMPTZ,
       signature   TEXT,
       recognized_by TEXT,
+      explanation TEXT,
       created_at  TIMESTAMPTZ DEFAULT NOW()
     )
   `)

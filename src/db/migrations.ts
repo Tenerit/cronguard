@@ -358,6 +358,12 @@ async function v21(client: {query(sql: string, params?: unknown[]): Promise<{ ro
   if (changed) logger.info(`[DB] v21 : secrets masqués dans ${changed} sortie(s) de job déjà stockée(s)`)
 }
 
+// ─── V23 : rôle de l'IA — explication en langage simple d'une panne établie (explain.ts), écrite après
+// l'alerte ; vide tant que le modèle n'a pas répondu, ou si un garde-fou l'a rejetée.
+async function v23(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS explanation TEXT`)
+}
+
 // ─── V22 : boucle d'apprentissage. signature = ligne d'erreur décisive normalisée (sans le nom du job :
 // la même panne sur deux jobs a la même signature) ; recognized_by = la source déterministe qui a
 // répondu (fiche, constat, code, mémoire), NULL = panne que CronGuard ne reconnaît pas encore.
@@ -440,8 +446,9 @@ export async function runMigrations() {
     await v20(client)
     await v21(client)
     await v22(client)
+    await v23(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v22)')
+    logger.info('[DB] Migrations terminées (v1 → v23)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err
