@@ -25,6 +25,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Mesuré — raisonnement par hypothèses v2 (2026-11-10, 2e essai pré-enregistré, NON adopté, code retiré)
+- Le code présélectionne 2 à 4 mécanismes, le modèle répond oui/non à un seul à la fois, réponse retenue seulement si un seul « oui ». Pannes non couvertes : 4,0 → 3,6 (écart −0,4, IC95 −0,8 à −0,05) : **pire**. Seulement 3 réponses retenues sur 58, aucune avec la bonne cause ; latence inchangée (12,9 → 13,1 s).
+- Conclusion des deux essais : ni rédiger, ni choisir dans une liste, ni valider une hypothèse à la fois ne fait trouver le mécanisme à llama3.2:3b. Le découpage du raisonnement n'est pas le levier ; ne pas retenter sans changer de modèle ou d'information disponible.
+
 ### Mesuré — raisonnement par hypothèses v1 (2026-11-10, A/B apparié pré-enregistré, 97 cas × 2, NON adopté)
 - Le modèle cite la ligne décisive puis choisit un mécanisme parmi 16 (cause et action reprises de la liste). Pannes non couvertes : 3,9 → 4,3 (écart +0,4, IC95 −0,35 à +1,1). Critère fixé avant l'essai (≥ +1,0 et IC > 0) **non rempli** : reste désactivé (`LLM_HYPOTHESES`).
 - Cause juste sur 10 des 42 choix (24 %, contre environ 14 % en rédaction libre) ; fausses causes sûres d'elles inchangées (6 contre 6) ; latence médiane des pannes non couvertes 12,7 → 5,4 s.
