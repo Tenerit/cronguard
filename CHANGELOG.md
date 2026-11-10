@@ -25,6 +25,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Changé — plus de déduction par le modèle ; commandes de test à la place (2026-11-10, décision fondateur)
+- Analyse des erreurs (`eval/error-analysis.ts`, 150 réponses libres sur pannes non couvertes) : 8 justes, toutes quand le log écrit le mécanisme ; 0 sur 78 quand il faut le déduire. 29 des 73 fausses causes recopiaient l'indice « Pattern détecté » du prompt ; dans 9 cas sur 12 le filtre de lignes retirait la ligne qui expliquait.
+- **Par défaut, le modèle ne rédige plus de cause.** Sans fiche ni fait constaté : « Cause non établie » et des **commandes de test** — reproduire la panne dans l'environnement exact du cron (`env -i HOME=… PATH=… /bin/sh -c '<commande>'`), écarts constatés avec votre shell. `LLM_DEDUCTION=on` rétablit l'analyse libre. Code des hypothèses (v1, v2) retiré.
+- **Commandes de test du SDK** (bash et Python, à l'échec, lecture seule, 3 s max, `CG_PROBE_LOGIN=0` pour désactiver) : PATH et commandes de votre shell de connexion, NOMS des variables présentes dans votre shell et absentes sous cron (jamais les valeurs), chemins cités par l'erreur (existence, relatif, propriétaire, droits). Nouvelles causes établies : commande trouvée par votre shell mais pas par le cron, variable absente sous cron (adaptée au lanceur), chemin relatif, droits insuffisants, fichier absent.
+
 ### Mesuré — raisonnement par hypothèses v2 (2026-11-10, 2e essai pré-enregistré, NON adopté, code retiré)
 - Le code présélectionne 2 à 4 mécanismes, le modèle répond oui/non à un seul à la fois, réponse retenue seulement si un seul « oui ». Pannes non couvertes : 4,0 → 3,6 (écart −0,4, IC95 −0,8 à −0,05) : **pire**. Seulement 3 réponses retenues sur 58, aucune avec la bonne cause ; latence inchangée (12,9 → 13,1 s).
 - Conclusion des deux essais : ni rédiger, ni choisir dans une liste, ni valider une hypothèse à la fois ne fait trouver le mécanisme à llama3.2:3b. Le découpage du raisonnement n'est pas le levier ; ne pas retenter sans changer de modèle ou d'information disponible.

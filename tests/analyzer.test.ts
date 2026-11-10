@@ -1,3 +1,5 @@
+// Ces tests couvrent l'analyse libre par le modèle, désormais derrière LLM_DEDUCTION=on (défaut : pas de déduction).
+process.env.LLM_DEDUCTION = 'on'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ─── Mock Redis avant l'import du module ──────────────────────────────────────
@@ -179,5 +181,21 @@ describe('analyzeFailure', () => {
     await analyzeFailure(baseCtx)
     const cfg = mockAxios.mock.calls[0]?.[2] as any
     expect(cfg?.headers?.Authorization).toBeUndefined()
+  })
+})
+
+describe('par défaut : pas de déduction par le modèle', () => {
+  it("panne sans fiche ni fait : aucun appel au modèle, « cause non établie » + commandes de test", async () => {
+    vi.clearAllMocks()
+    process.env.LLM_BASE_URL ??= 'http://localhost:11434/v1'
+    delete process.env.LLM_DEDUCTION
+    try {
+      const r = await analyzeFailure({ ...baseCtx, logs: 'ledger: FATAL reconciliation drift\nexit status 1', command: '/opt/ledger/run.sh' })
+      expect(mockAxios).not.toHaveBeenCalled()
+      expect(r?.cause).toMatch(/^Cause non établie/)
+      expect(r?.confidence).toBe('low')
+      expect(r?.checks[0]).toContain("env -i")
+      expect(r?.checks[0]).toContain('/opt/ledger/run.sh')
+    } finally { process.env.LLM_DEDUCTION = 'on' }
   })
 })

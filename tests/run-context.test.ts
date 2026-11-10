@@ -100,3 +100,55 @@ describe.skipIf(!hasBash)('sonde du SDK bash (cg_run)', { timeout: 30_000 }, () 
     expect(pings.at(-1)!.context).toBeUndefined()
   })
 })
+
+import { inferRunner, diagnosticChecks } from '../src/services/llm/run-context'
+
+describe('lanceur du job', () => {
+  it.each([
+    ['Last State: Terminated  Reason: OOMKilled', 'kubernetes'],
+    ['Warning  BackoffLimitExceeded  job/report-1', 'kubernetes'],
+    ['Nov 10 02:00:01 host systemd[1]: backup.service: Main process exited, code=exited, status=1/FAILURE', 'systemd'],
+    ['Nov 10 02:00:01 host CRON[1234]: (root) CMD (/opt/backup.sh)', 'crontab'],
+    ['error: something failed', undefined],
+  ])('déduit des logs : %s', (logs, runner) => { expect(inferRunner(logs)).toBe(runner) })
+  it('le lanceur relevé par le SDK prime sur les logs', () => {
+    expect(inferRunner('CRON[1]: (root) CMD (x)', 'container-cron')).toBe('container-cron')
+  })
+})
+
+describe('commandes de test du SDK → faits constatés, aucune déduction', () => {
+  const base = { user: 'backup', home: '/var/backups', path: '/usr/bin:/bin', cwd: '/var/backups' }
+  it('commande trouvée par votre shell de connexion, pas par le cron', () => {
+    const f = contextFinding('/usr/bin/env: node: No such file or directory\nnode: not found', { ...base, loginFound: { node: '/home/me/.nvm/versions/node/v20/bin/node' } })
+    expect(f?.id).toBe('ctx-login-path')
+    expect(f?.cause).toContain('/home/me/.nvm/versions/node/v20/bin')
+  })
+  it("variable de votre shell absente sous cron et citée par l'erreur, adaptée au lanceur", () => {
+    const logs = "KeyError: 'DATABASE_URL'"
+    expect(contextFinding(logs, { ...base, loginOnlyVars: ['DATABASE_URL', 'EDITOR'] })?.id).toBe('ctx-env-missing')
+    expect(contextFinding(logs, { ...base, runner: 'systemd', loginOnlyVars: ['DATABASE_URL'] })?.action).toContain('Environment=')
+    expect(contextFinding(logs, { ...base, loginOnlyVars: ['EDITOR'] })).toBeNull()   // variable non citée : pas de conclusion
+  })
+  it('chemin relatif absent du dossier courant du cron', () => {
+    const f = contextFinding("python: can't open file 'etl.py': [Errno 2] No such file or directory",
+      { ...base, paths: [{ path: 'etl.py', relative: true, exists: false }] })
+    expect(f?.id).toBe('ctx-relative-path')
+    expect(f?.cause).toContain('/var/backups')
+  })
+  it("droits constatés : l'utilisateur du job ne peut pas écrire", () => {
+    const f = contextFinding('tar: /srv/archive/x.tar: Cannot open: Permission denied',
+      { ...base, paths: [{ path: '/srv/archive', relative: false, exists: true, owner: 'root', mode: '755', readable: true, writable: false }] })
+    expect(f?.id).toBe('ctx-permission')
+    expect(f?.cause).toMatch(/root.*755.*backup.*écrire/)
+  })
+  it('chemin absolu absent : le fait, sans deviner pourquoi', () => {
+    expect(contextFinding('cat: /mnt/nas/export.csv: No such file or directory',
+      { ...base, paths: [{ path: '/mnt/nas/export.csv', relative: false, exists: false }] })?.id).toBe('ctx-path-absent')
+  })
+  it("commandes de test : reproduire dans l'environnement exact du cron + écarts constatés", () => {
+    const c = diagnosticChecks("php /srv/app/artisan report:send --to='ops'", { ...base, loginOnlyVars: ['APP_ENV'], loginPath: '/usr/local/bin:/usr/bin:/bin' })
+    expect(c[0]).toBe(String.raw`Reproduire avec l'environnement du cron : env -i HOME=/var/backups LOGNAME=backup PATH=/usr/bin:/bin SHELL=/bin/sh /bin/sh -c 'php /srv/app/artisan report:send --to='\''ops'\'''`)
+    expect(c.join('\n')).toContain('APP_ENV')
+    expect(c.join('\n')).toContain('/usr/local/bin')
+  })
+})

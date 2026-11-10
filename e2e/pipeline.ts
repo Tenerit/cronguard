@@ -60,7 +60,7 @@ function start(name: string, file: string, llmPort: number) {
     env: {
       ...process.env,
       DATABASE_URL: dbUrl.toString(), REDIS_URL: redisUrl.toString(), PORT: String(API_PORT),
-      LLM_BASE_URL: `http://127.0.0.1:${llmPort}/v1`, LLM_API_KEY: '', LLM_PROVIDER: '',
+      LLM_BASE_URL: `http://127.0.0.1:${llmPort}/v1`, LLM_API_KEY: '', LLM_PROVIDER: '', LLM_DEDUCTION: 'on',   // ce test couvre le chemin modèle + cache (désactivé par défaut)
       SMTP_HOST: '127.0.0.1', SMTP_PORT: '1', STRIPE_SECRET_KEY: '', APP_URL: `http://localhost:${API_PORT}`,
     },
   }))

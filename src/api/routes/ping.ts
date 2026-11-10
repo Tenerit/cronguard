@@ -35,6 +35,16 @@ const Schema = z.object({
     display:  z.boolean().optional(),
     sshAgent: z.boolean().optional(),
     runner:   z.enum(RUNNERS).optional(),
+    // Commandes de test du SDK (sdk/*/cg-probes) : shell de connexion et chemins cités par l'erreur.
+    loginPath:     z.string().max(1024).optional(),
+    loginOnlyVars: z.array(z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/).max(64)).max(40).optional(),
+    loginFound:    z.record(z.string().max(64), z.string().max(256))
+                     .refine(o => Object.keys(o).length <= 10, 'loginFound: 10 entrées max').optional(),
+    paths:         z.array(z.object({
+      path: z.string().max(256), relative: z.boolean(), exists: z.boolean(),
+      owner: z.string().max(64).optional(), mode: z.string().max(4).optional(),
+      readable: z.boolean().optional(), writable: z.boolean().optional(),
+    })).max(5).optional(),
     found:    z.record(z.string().max(64), z.string().max(256))
                 .refine(o => Object.keys(o).length <= 10, 'found: 10 entrées max').optional(),
   }).optional(),

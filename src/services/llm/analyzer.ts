@@ -6,10 +6,9 @@ import { isOpen, onSuccess, onFailure } from './circuit-breaker'
 import { mineTemplates } from './drain'
 import { knownFix }      from './known-fixes'
 import { commandFinding } from './command-lint'
-import { contextFinding, inferRunner } from './run-context'
+import { contextFinding, diagnosticChecks } from './run-context'
 import { toolCodeFinding, exitCodeFinding } from './exit-codes'
 import { evidenceLines } from './evidence'
-import { chooseHypothesis } from './hypotheses'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -527,9 +526,10 @@ export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
   const line = evidenceLines(clean, kf?.title ?? '')[0]
   const base: AnalysisResult = {
     cause:       kf ? kf.cause : line ? `Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « ${line} ».` : 'Cause non établie : aucune ligne d\'erreur reconnue dans les logs.',
-    action:      kf ? kf.action : 'Lire les lignes de log liées et la sortie complète du job.',
-    prevention:  kf ? kf.steps[kf.steps.length - 1] : 'Activer l\'analyse IA locale pour une cause détaillée (LLM_BASE_URL).',
-    checks:      kf ? kf.steps.slice(1, 3) : [],
+    action:      kf ? kf.action : "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+    prevention:  kf ? kf.steps[kf.steps.length - 1] : "Une fois la cause trouvée, l'enregistrer (✏️) : elle sera reconnue la prochaine fois, sur tous vos jobs.",
+    // Sans fiche : les commandes de test (reproduire dans l'environnement du cron, écarts constatés).
+    checks:      kf ? kf.steps.slice(1, 3) : diagnosticChecks(ctx.command && sanitizeLogs(ctx.command).clean, ctx.runContext),
     severity:    (ctx.failCount7d ?? 0) >= 3 ? 'high' : 'medium',
     category:    kf?.category ?? 'unknown',
     confidence:  kf ? 'medium' : 'low',
@@ -559,6 +559,11 @@ export async function analyzeFailure(
     // La règle « panne récurrente → au moins high » vaut aussi sans modèle.
     return atLeastHighIfRecurring({ ...analysisWithoutModel(ctx), model: 'knowledge' }, ctx)
   }
+  // Déduction du modèle retirée (2026-11-10, décision fondateur) : mesuré sur 150 réponses, llama3.2:3b
+  // ne trouve jamais un mécanisme qui n'est pas écrit dans le log (0/78) et en invente un faux une fois sur deux.
+  // Sans fiche ni fait constaté : « cause non établie » + commandes de test (diagnosticChecks), sans modèle.
+  // LLM_DEDUCTION=on rétablit l'analyse libre par le modèle (comparaison, ou choix explicite de l'opérateur).
+  if (process.env.LLM_DEDUCTION !== 'on') return atLeastHighIfRecurring(analysisWithoutModel(ctx), ctx)
   const hash = hashError(ctx.jobName, clean)
 
   const cached = await fromCache(hash)
@@ -575,28 +580,6 @@ export async function analyzeFailure(
   if (!opts?.skipRateLimit && await isRateLimited(ctx.clientId)) {
     logger.warn('[LLM] Rate limited', { clientId: ctx.clientId })
     return null
-  }
-
-  // Raisonnement par hypothèses (hypotheses.ts) : le modèle cite la ligne et CHOISIT un mécanisme ;
-  // cause et action viennent de la liste. Pas de choix appuyé sur une ligne réelle → analyse libre.
-  // v2 (présélection + oui/non par mécanisme) mesurée puis retirée le 2026-11-10 : voir CHANGELOG.
-  if (process.env.LLM_HYPOTHESES === 'on') {
-    const { keyLines } = extractLogSignals(clean)
-    const cmd = ctx.command && sanitizeLogs(ctx.command).clean
-    const hypTimeout = timeoutMs ?? parseInt(process.env.LLM_TIMEOUT_MS ?? '60000')
-    const runner = inferRunner(clean, ctx.runContext?.runner)
-    const choice = await chooseHypothesis(keyLines, cmd, hypTimeout, runner)
-    if (choice) {
-      const h = choice.hypothesis
-      const result: AnalysisResult = atLeastHighIfRecurring({
-        ...analysisWithoutModel(ctx),
-        cause: h.cause, action: h.action, category: h.category, checks: h.checks, confidence: 'medium',
-        prevention: h.checks[h.checks.length - 1] ?? '', finding: `hyp-${h.id}`,
-        model: `${process.env.LLM_MODEL ?? 'llama3.2:3b'}+hyp`,
-      }, ctx)
-      await Promise.all([toCache(hash, result), onSuccess()])
-      return result
-    }
   }
 
   // 512 suffit pour un modèle instruct (JSON ~110-200 tokens). Pour un modèle de

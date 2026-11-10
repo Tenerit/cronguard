@@ -185,6 +185,81 @@ elif os.environ.get('XPC_SERVICE_NAME', '0') not in ('', '0'):
     runner = 'launchd'
 if runner:
     ctx['runner'] = runner
+# >>> cg-probes (copie identique dans sdk/python/cronguard.py, vérifiée par tests/sdk-probes.test.ts)
+# Commandes de test, à l'échec seulement, en lecture seule (3 s max) : CronGuard ne devine pas, il constate.
+#  1. Votre shell de connexion (là où le job « marche à la main ») : son PATH, où il trouve les commandes
+#     introuvables sous cron, et les NOMS des variables qu'il a et que le cron n'a pas (jamais les valeurs).
+#  2. Les chemins cités par l'erreur : existent-ils, relatifs ou non, propriétaire, droits de l'utilisateur du job.
+# CG_PROBE_LOGIN=0 désactive la sonde 1 (shell de connexion lent ou bavard).
+import subprocess
+def _cg_login(names):
+    if os.environ.get('CG_PROBE_LOGIN') == '0':
+        return {}
+    try:
+        import pwd
+        sh = pwd.getpwuid(os.getuid()).pw_shell or '/bin/sh'
+    except Exception:
+        sh = '/bin/sh'
+    script = 'printf "__CG_PATH=%s\\n" "$PATH"; '
+    for n in names:
+        if re.match(r'^[\w.+-]+$', n):
+            script += 'printf "__CG_W_%s=%s\\n" "' + n + '" "$(command -v -- \'' + n + '\' 2>/dev/null)"; '
+    script += 'env'
+    try:
+        r = subprocess.run([sh, '-lic', script], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                           stderr=subprocess.DEVNULL, timeout=3, cwd=os.path.expanduser('~'))
+    except Exception:
+        return {}
+    res, seen, where = {}, set(), {}
+    for line in r.stdout.decode('utf-8', 'replace').splitlines():
+        if line.startswith('__CG_PATH='):
+            res['loginPath'] = line[10:][:1024]
+        elif line.startswith('__CG_W_'):
+            k, _, v = line[7:].partition('=')
+            if v.startswith('/'):
+                where[k] = v[:256]
+        else:
+            m = re.match(r'([A-Za-z_][A-Za-z0-9_]*)=', line)
+            if m:
+                seen.add(m.group(1))
+    noise = ('_', 'SHLVL', 'PWD', 'OLDPWD', 'PS1', 'PS2', 'PS4', 'TERM', 'COLUMNS', 'LINES', 'MAIL', 'PROMPT_COMMAND')
+    only = sorted(n for n in seen - set(os.environ)
+                  if n not in noise and not n.startswith(('BASH_', 'HIST', 'LESS', 'LS_', '__CG')))
+    if only:
+        res['loginOnlyVars'] = only[:40]
+    if where:
+        res['loginFound'] = where
+    return res
+def _cg_paths(text):
+    cands = []
+    for line in text.splitlines():
+        if not re.search(r"No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system", line, re.I):
+            continue
+        for m in re.finditer(r"'([^'\s]{1,200})'|\"([^\"\s]{1,200})\"|((?:~|\.{1,2})?/[^\s:'\"]{1,200})", line):
+            p = next(g for g in m.groups() if g)
+            if ('/' in p or '.' in p) and p not in cands:
+                cands.append(p)
+    res = []
+    for p in cands[:5]:
+        q = os.path.expanduser(p)
+        d = {'path': p[:256], 'relative': not os.path.isabs(q), 'exists': os.path.exists(q)}
+        if d['exists']:
+            s = os.stat(q)
+            try:
+                import pwd
+                d['owner'] = pwd.getpwuid(s.st_uid).pw_name
+            except Exception:
+                d['owner'] = str(s.st_uid)
+            d['mode'] = oct(s.st_mode & 0o777)[2:]
+            d['readable'] = os.access(q, os.R_OK)
+            d['writable'] = os.access(q, os.W_OK)
+        res.append(d)
+    return res
+# <<< cg-probes
+ctx.update(_cg_login(names))
+_p = _cg_paths(out)
+if _p:
+    ctx['paths'] = _p
 cmd = sys.argv[2][:1000]
 sys.stdout.write((',"command":' + json.dumps(cmd) if cmd else '') + ',"context":' + json.dumps(ctx))
 PY

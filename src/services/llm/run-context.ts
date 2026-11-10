@@ -15,7 +15,14 @@ export interface RunContext {
   sshAgent?:  boolean                 // SSH_AUTH_SOCK défini
   found?:     Record<string, string>  // commande introuvable dans le PATH → chemin où elle existe sur la machine
   runner?:    Runner                  // qui a lancé le job (relevé par le SDK) : la cause d'une panne en dépend
+  // Commandes de test du SDK (2026-11-10) : le shell de connexion = là où le job « marche à la main ».
+  loginPath?:     string
+  loginOnlyVars?: string[]               // NOMS des variables présentes dans le shell de connexion, absentes sous cron
+  loginFound?:    Record<string, string> // commande introuvable sous cron → où le shell de connexion la trouve
+  paths?:         PathFact[]             // chemins cités par l'erreur, constatés sur la machine
 }
+
+export interface PathFact { path: string; relative: boolean; exists: boolean; owner?: string; mode?: string; readable?: boolean; writable?: boolean }
 
 /** Lanceur du job. container-cron = démon cron DANS un conteneur ; container = conteneur lancé par un ordonnanceur externe. */
 export const RUNNERS = ['crontab', 'container-cron', 'container', 'systemd', 'kubernetes', 'launchd'] as const
@@ -43,6 +50,42 @@ export function contextFinding(logs: string, c?: RunContext): Finding | null {
   // 1. Commande introuvable… mais présente ailleurs sur la machine : le fait, pas une hypothèse.
   const nf = NOT_FOUND.exec(logs)
   const cmd = nf?.[1] ?? nf?.[2]
+  if (cmd && c.loginFound?.[cmd]) {   // vu par la commande de test : votre shell de connexion la trouve
+    const dir = c.loginFound[cmd].replace(/\/[^/]+$/, '')
+    return { id: 'ctx-login-path', category: 'dependency',
+      cause: `Votre shell de connexion trouve « ${cmd} » dans ${dir}, le cron non : son PATH (${c.path ?? 'minimal'}) ne contient pas ce dossier.`,
+      action: `Appeler ${c.loginFound[cmd]} en chemin absolu, ou ajouter PATH=${dir}:${c.path ?? '/usr/bin:/bin'} en tête de la crontab.` }
+  }
+
+  // 1b. Variable présente dans votre shell de connexion, absente sous cron, et citée par l'erreur.
+  const missingVar = c.loginOnlyVars?.find(v => v.length >= 3 && new RegExp(`\\b${v}\\b`).test(logs))
+  if (missingVar) {
+    const where = c.runner === 'container-cron' ? "le démon cron du conteneur ne transmet pas l'environnement du conteneur"
+      : c.runner === 'systemd' ? "l'unité systemd ne lit pas votre shell de connexion"
+      : 'cron ne lit pas .bashrc / .profile'
+    return { id: 'ctx-env-missing', category: 'dependency',
+      cause: `La variable ${missingVar} existe dans votre shell de connexion mais pas dans l'environnement du job : ${where}.`,
+      action: c.runner === 'systemd' ? `Déclarer ${missingVar} dans l'unité (Environment= ou EnvironmentFile=).`
+        : c.runner === 'container-cron' ? `Écrire l'environnement du conteneur au démarrage (printenv > /etc/environment) et le lire dans le job.`
+        : `Définir ${missingVar} dans un fichier lu explicitement par le script (droits 600 si c'est un secret), ou en tête de la crontab.` }
+  }
+
+  // 1c. Chemin relatif cherché depuis le dossier courant du cron, où il n'existe pas (constaté).
+  const rel = /No such file|can't open|cannot open|cannot access|cannot stat/i.test(logs) && c.paths?.find(p => p.relative && !p.exists)
+  if (rel) {
+    return { id: 'ctx-relative-path', category: 'code',
+      cause: `Le chemin relatif « ${rel.path} » est cherché depuis ${c.cwd ?? 'le dossier courant du cron'} (dossier courant du job), où il n'existe pas.`,
+      action: 'Utiliser un chemin absolu, ou faire cd vers le dossier du script en début de job.' }
+  }
+
+  // 1d. Droits constatés : le fichier existe, l'utilisateur du job ne peut pas le lire ou y écrire.
+  const perm = /Permission denied|EACCES/i.test(logs) && c.paths?.find(p => p.exists && (p.readable === false || p.writable === false))
+  if (perm) {
+    return { id: 'ctx-permission', category: 'dependency',
+      cause: `« ${perm.path} » appartient à ${perm.owner ?? '?'} (droits ${perm.mode ?? '?'}) : le job tourne sous ${c.user || '?'}, qui ne peut pas ${perm.readable === false ? 'le lire' : 'y écrire'}.`,
+      action: `Donner ce droit à ${c.user || "l'utilisateur du job"} sur ${perm.path}, ou lancer le job sous ${perm.owner ?? 'le propriétaire'}.` }
+  }
+
   if (cmd && c.found?.[cmd]) {
     const dir = c.found[cmd].replace(/\/[^/]+$/, '')
     return { id: 'ctx-path-missing', category: 'dependency',
@@ -84,5 +127,27 @@ export function contextFinding(logs: string, c?: RunContext): Finding | null {
       cause: `Le cron exécute la commande avec ${c.shell}, qui refuse la syntaxe bash ([[ ]], source, <( ), tableaux).`,
       action: 'Mettre SHELL=/bin/bash en tête de la crontab, ou lancer le script avec bash et un shebang #!/bin/bash.' }
   }
+
+  // 7. Chemin absolu cité par l'erreur et absent de la machine (constaté) : le fait, sans deviner pourquoi.
+  const gone = /No such file/i.test(logs) && c.paths?.find(p => !p.relative && !p.exists)
+  if (gone) {
+    return { id: 'ctx-path-absent', category: 'dependency',
+      cause: `« ${gone.path} » n'existe pas sur la machine au moment de l'échec (vérifié par CronGuard).`,
+      action: `Vérifier ce qui doit créer ou monter « ${gone.path} » (étape précédente, montage, nom calculé à partir de la date).` }
+  }
   return null
+}
+
+/** Commandes de test à lancer soi-même quand rien n'établit la cause : reproduire la panne dans
+ *  l'environnement exact du cron, et les différences constatées avec votre shell. Aucune déduction. */
+export function diagnosticChecks(command: string | undefined, c?: RunContext): string[] {
+  const out: string[] = []
+  if (command) {
+    const q = command.replace(/'/g, `'\\''`)
+    out.push(`Reproduire avec l'environnement du cron : env -i HOME=${c?.home || '$HOME'} LOGNAME=${c?.user || '$USER'} PATH=${c?.path || '/usr/bin:/bin'} SHELL=/bin/sh /bin/sh -c '${q}'`)
+  }
+  if (c?.loginOnlyVars?.length) out.push(`Variables présentes dans votre shell mais absentes sous cron : ${c.loginOnlyVars.slice(0, 12).join(', ')}`)
+  if (c?.loginPath && c.path && c.loginPath !== c.path) out.push(`PATH de votre shell : ${c.loginPath.slice(0, 200)} — PATH du cron : ${c.path.slice(0, 200)}`)
+  if (!command) out.push("Relancer le job à la main sous l'utilisateur du cron : sudo -u <utilisateur> env -i /bin/sh -c '<commande>'")
+  return out
 }

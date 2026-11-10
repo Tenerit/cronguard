@@ -1,3 +1,5 @@
+// Ces tests couvrent l'analyse libre par le modèle, désormais derrière LLM_DEDUCTION=on (défaut : pas de déduction).
+process.env.LLM_DEDUCTION = 'on'
 import { analyzeFailure } from '../services/llm/analyzer'
 import type { JobContext } from '../services/llm/analyzer'
 import axios from 'axios'
