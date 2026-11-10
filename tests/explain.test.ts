@@ -59,3 +59,11 @@ describe('essai 4 : toutes les possibilités gardées', () => {
     expect(acceptExplanation('PATH minimal sans /usr/local/bin.', { text: 'Cron ne cherche pas dans /usr/local/bin. Appelez la commande en chemin absolu.', invented: [] })).not.toBeNull()
   })
 })
+
+describe('découpage en phrases', () => {
+  it('ne coupe pas sur le point d\'un nom de fichier, ne perd pas le début', () => {
+    const t = 'Le fichier /var/lib/redis/dump.rdb appartient à root. Le job tourne sous app. Changez le propriétaire. Relancez.'
+    expect(capSentences(t)).toBe('Le fichier /var/lib/redis/dump.rdb appartient à root. Le job tourne sous app. Changez le propriétaire.')
+    expect(capSentences('Installez le module pour script.py (pip --user). Relancez.')).toBe('Installez le module pour script.py (pip --user). Relancez.')
+  })
+})

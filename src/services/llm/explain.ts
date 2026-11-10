@@ -87,8 +87,9 @@ export function explainable(a: Pick<AnalysisResult, 'cause' | 'finding' | 'known
 
 /** 3 phrases au plus. */
 export function capSentences(text: string, max = 3): string {
-  const parts = text.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) ?? [text]
-  return parts.slice(0, max).join('').trim()
+  // Fin de phrase = ponctuation + espace + majuscule : le point de « dump.rdb » ou « script.py » n'en est pas une
+  // (l'ancien découpage sautait le début du texte et laissait « rdb. Ce fichier… » : 7 textes sur 64 à l'essai 4).
+  return text.trim().split(/(?<=[.!?])\s+(?=[A-ZÀ-ÝÉÈ«"'`(])/).slice(0, max).join(' ').trim()
 }
 
 // Essai 4 (2026-11-10) : l'essai 3 tient la qualité (96 % fidèle, 96 % mécanisme gardé) mais ne couvre que 35 % des
