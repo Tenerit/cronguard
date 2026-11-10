@@ -9,6 +9,7 @@ import { commandFinding } from './command-lint'
 import { contextFinding } from './run-context'
 import { toolCodeFinding, exitCodeFinding } from './exit-codes'
 import { evidenceLines } from './evidence'
+import { chooseHypothesis } from './hypotheses'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -557,6 +558,25 @@ export async function analyzeFailure(
   if (!opts?.skipRateLimit && await isRateLimited(ctx.clientId)) {
     logger.warn('[LLM] Rate limited', { clientId: ctx.clientId })
     return null
+  }
+
+  // Raisonnement par hypothèses (hypotheses.ts) : le modèle cite la ligne et CHOISIT un mécanisme ;
+  // cause et action viennent de la liste. Pas de choix appuyé sur une ligne réelle → analyse libre.
+  if (process.env.LLM_HYPOTHESES === 'on') {
+    const { keyLines } = extractLogSignals(clean)
+    const choice = await chooseHypothesis(keyLines, ctx.command && sanitizeLogs(ctx.command).clean,
+      timeoutMs ?? parseInt(process.env.LLM_TIMEOUT_MS ?? '60000'))
+    if (choice) {
+      const h = choice.hypothesis
+      const result: AnalysisResult = atLeastHighIfRecurring({
+        ...analysisWithoutModel(ctx),
+        cause: h.cause, action: h.action, category: h.category, checks: h.checks, confidence: 'medium',
+        prevention: h.checks[h.checks.length - 1] ?? '', finding: `hyp-${h.id}`,
+        model: `${process.env.LLM_MODEL ?? 'llama3.2:3b'}+hyp`,
+      }, ctx)
+      await Promise.all([toCache(hash, result), onSuccess()])
+      return result
+    }
   }
 
   // 512 suffit pour un modèle instruct (JSON ~110-200 tokens). Pour un modèle de

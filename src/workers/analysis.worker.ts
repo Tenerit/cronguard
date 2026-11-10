@@ -376,7 +376,7 @@ function createAnalysisWorker() {
          analysis.verifiedFix ? analysis.action : null, analysis.verifiedFix ?? null,
          errorSignature(sanitizeLogs(ctx.logs).clean),
          // Source déterministe qui a répondu ; NULL = panne non reconnue (rapport hebdo, fiches candidates).
-         analysis.verifiedFix ? 'memory' : analysis.finding ?? analysis.knownFix?.id ?? null,
+         analysis.verifiedFix ? 'memory' : (analysis.finding?.startsWith('hyp-') ? null : analysis.finding) ?? analysis.knownFix?.id ?? null,   // une hypothèse choisie reste « non reconnue »
         ]
       )
       analysisId = ins.rows[0]?.id
