@@ -25,6 +25,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Mesuré — public6, test hors échantillon (2026-11-10, 15 cas, 2 runs, A/B `LLM_DEDUCTION=on`)
+- Note avec la grille fixée d'avance : **3,9 sans déduction (défaut) contre 4,2 avec le modèle** (écart 0,4, IC95 −0,1 à +0,8, non significatif). Biais vu APRÈS le run : la grille compte comme « inventés » les chemins de la commande de reproduction (`/bin/sh`, `/usr/bin`, la commande du job), absents du log : −1 sur 7 cas. Sans ce biais : environ 4,4 contre 4,2.
+- **Causes fausses affirmées : 12 contre 20 sur 30** : retirer la déduction supprime les causes inventées par le modèle, sans perte de cause juste (20 % de mécanismes justes dans les deux bras).
+- **Les fiches tiennent mal hors échantillon** : pannes couvertes 5,0 sur public6 contre 9,2 sur les jeux de réglage. Fiches qui répondent à côté : identifiants PostgreSQL sur un script aux fins de ligne Windows, droits génériques au lieu d'umask/logrotate, « service indisponible » sur une page qui exige une connexion, interpréteur Python sur un job lancé par root, serveur MySQL arrêté sur un disque plein absent du log. Prochain chantier : la précision des fiches.
+
 ### Mesuré — labo de pannes cron réelles (2026-11-10, `npx tsx eval/cron-lab.ts`)
 - Vrai `crond` (Alpine), utilisateur avec son `~/.profile`, SDK bash, 8 pannes dont la cause est connue d'avance, analysées par le serveur sans modèle. **8/8 avec les commandes de test, 3/8 sans** : PATH du shell de connexion, variable absente sous cron, chemin relatif, droits du dossier, fichier absent, syntaxe bash lancée par sh, service injoignable ; la vraie erreur applicative reste « cause non établie », sans cause inventée.
 - Limite : scénarios écrits par nous, en connaissant les règles. C'est une preuve de fonctionnement sur de vrais cron, pas une mesure de couverture sur des pannes de clients.

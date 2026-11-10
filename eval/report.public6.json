@@ -1,0 +1,1562 @@
+{
+  "date": "2026-11-10T16:06:18.262Z",
+  "set": "public6",
+  "runs": 2,
+  "model": "llama3.2:3b",
+  "summary": {
+    "A": {
+      "note": "3.9",
+      "ci95": [
+        "3.9",
+        "3.9"
+      ],
+      "runs": [
+        "3.9",
+        "3.9"
+      ],
+      "covered": {
+        "note": "5.0",
+        "n": 8
+      },
+      "uncovered": {
+        "note": "2.6",
+        "n": 7
+      },
+      "lab": "—",
+      "public": "—",
+      "public2": "—",
+      "public3": "—",
+      "public4": "—",
+      "public5": "—",
+      "public6": "3.9",
+      "criteria": {
+        "cause_mecanisme": "20 %",
+        "action": "33 %",
+        "categorie": "40 %",
+        "rien_invente": "53 %",
+        "preuve": "80 %"
+      },
+      "latence_mediane_s": "0.0",
+      "parsable": "100 %"
+    },
+    "B": {
+      "note": "4.2",
+      "ci95": [
+        "4.0",
+        "4.4"
+      ],
+      "runs": [
+        "4.1",
+        "4.3"
+      ],
+      "covered": {
+        "note": "5.0",
+        "n": 8
+      },
+      "uncovered": {
+        "note": "3.4",
+        "n": 7
+      },
+      "lab": "—",
+      "public": "—",
+      "public2": "—",
+      "public3": "—",
+      "public4": "—",
+      "public5": "—",
+      "public6": "4.2",
+      "criteria": {
+        "cause_mecanisme": "20 %",
+        "action": "30 %",
+        "categorie": "57 %",
+        "rien_invente": "97 %",
+        "preuve": "93 %"
+      },
+      "latence_mediane_s": "0.0",
+      "parsable": "100 %"
+    },
+    "diff_B_moins_A": {
+      "note": "0.4",
+      "ci95": [
+        "-0.1",
+        "0.8"
+      ],
+      "variant": "LLM_DEDUCTION=on"
+    }
+  },
+  "rows": [
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-sysctl-path",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ dependency",
+          "inventé : /usr/bin, /bin/sh, /usr/sbin",
+          "preuve : ligne décisive non liée",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie : aucune ligne d'erreur reconnue dans les logs.",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 7
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-sysctl-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency"
+        ]
+      },
+      "cause": "commande 'sysctl' non disponible",
+      "action": "ajouter 'sysctl' à la liste des commandes autorisées",
+      "model": "llama3.2:3b",
+      "ms": 24681
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-rvm-gem-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « /Users/sam/deggy/onlineGW.rb:3:in `require': no such file to load -- nokogiri (LoadError) ». Voir les lignes liées.",
+      "action": "ajouter nokogiri à Gemfile et faire bundle install",
+      "model": "llama3.2:3b",
+      "ms": 13812
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-rvm-gem-path",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie unknown ≠ dependency",
+          "inventé : /bin/sh, bash_env, bash_profile",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « /Users/sam/deggy/onlineGW.rb:3:in `require': no such file to load -- nokogiri (LoadError) ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-java-noclassdef-pom",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "La JVM ne trouve pas une classe : le classpath du job est incomplet sous cron (jars désignés en chemin relatif ou CLASSPATH défini seulement dans votre shell).",
+      "action": "Passer le classpath complet en chemins absolus (java -cp /chemin/app.jar:/chemin/lib/* …) dans la commande du cron.",
+      "model": "knowledge",
+      "ms": 2
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-java-noclassdef-pom",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "La JVM ne trouve pas une classe : le classpath du job est incomplet sous cron (jars désignés en chemin relatif ou CLASSPATH défini seulement dans votre shell).",
+      "action": "Passer le classpath complet en chemins absolus (java -cp /chemin/app.jar:/chemin/lib/* …) dans la commande du cron.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-rake-bundle-env",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-rake-bundle-env",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-pgdump-crlf",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ code",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-pgdump-crlf",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ code",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-redis-dump-umask",
+      "covered": true,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-redis-dump-umask",
+      "covered": true,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-wget-503-auth",
+      "covered": true,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le service appelé est temporairement indisponible (maintenance ou surcharge) : la panne est chez le fournisseur.",
+      "action": "Réessayer après la fenêtre indiquée (Retry-After, page de statut du fournisseur) avec un délai exponentiel.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-wget-503-auth",
+      "covered": true,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le service appelé est temporairement indisponible (maintenance ou surcharge) : la panne est chez le fournisseur.",
+      "action": "Réessayer après la fenêtre indiquée (Retry-After, page de statut du fournisseur) avec un délai exponentiel.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-logrotate-create-perms",
+      "covered": true,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-logrotate-create-perms",
+      "covered": true,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 2
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-php-unlink-cwd",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ code",
+          "inventé : /bin/sh",
+          "preuve : ligne décisive non liée",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie : aucune ligne d'erreur reconnue dans les logs.",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-php-unlink-cwd",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "élément introuvable lors de l'appel à unlink",
+      "action": "Vérifier que le fichier test.zip existe et est accessible par le processus cron",
+      "model": "llama3.2:3b",
+      "ms": 14878
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-meteor-fiber",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 4,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet",
+          "catégorie resources ≠ code"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « Error: Can't wait without a fiber ». Voir les lignes liées.",
+      "action": "Réinitialiser le job et essayer à nouveau",
+      "model": "llama3.2:3b",
+      "ms": 11882
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-meteor-fiber",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 4,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet",
+          "catégorie unknown ≠ code",
+          "inventé : /bin/sh"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « Error: Can't wait without a fiber ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-date-unquoted-format",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ code",
+          "inventé : /bin/sh",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « awk -vDate=`date +%b %d %H:%M:%S %Y` -vDate2=`date --date=\"2 minutes ago\" +%b %d %H:%M:%S %Y` '$5 > Date && $5 < Date2' /var/log/dummy.log  | grep \"Fatal\" ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-date-unquoted-format",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Exit code 1, avec message Fatal",
+      "action": "Vérifier le journal de log pour obtenir plus d'informations sur l'erreur",
+      "model": "llama3.2:3b",
+      "ms": 14412
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-sphinx-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « Sphinx cannot be found on your system. You may need to configure the following ». Voir les lignes liées.",
+      "action": "Configurer Sphinx sur le système",
+      "model": "llama3.2:3b",
+      "ms": 11288
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-sphinx-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ dependency",
+          "inventé : /usr/bin, /bin/sh, /var/www/app/current",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « Sphinx cannot be found on your system. You may need to configure the following ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-sudo-root-module",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-sudo-root-module",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-selenium-firefox-version",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "Profile Dir non valide",
+      "action": "Vérifier la configuration du profile et le chemin d'accès à /tmp/tmpaQkqJv",
+      "model": "llama3.2:3b",
+      "ms": 13259
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-selenium-firefox-version",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ dependency",
+          "inventé : /usr/bin, /bin/sh, --allow-downgrades",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « selenium.common.exceptions.WebDriverException: Message: Can't load the profile. Profile Dir: /tmp/tmpaQkqJv If you specified a log_file in the FirefoxBinary constructor, check it for details. ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-mysql-2002-disk-full",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ resources"
+        ]
+      },
+      "cause": "Le serveur MySQL local est arrêté, ou le client cherche le socket à un autre chemin que celui du serveur.",
+      "action": "Vérifier et démarrer le service MySQL, ou passer par TCP (-h 127.0.0.1) / le bon --socket.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-mysql-2002-disk-full",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ resources"
+        ]
+      },
+      "cause": "Le serveur MySQL local est arrêté, ou le client cherche le socket à un autre chemin que celui du serveur.",
+      "action": "Vérifier et démarrer le service MySQL, ou passer par TCP (-h 127.0.0.1) / le bon --socket.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-sysctl-path",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "inventé : /etc/rc.local"
+        ]
+      },
+      "cause": "commande 'sysctl' non disponible",
+      "action": "ajouter 'sysctl -w kernel.sysctl.net.ipv4.ipccachev2=1' à /etc/rc.local pour activer le cache IP",
+      "model": "llama3.2:3b",
+      "ms": 14594
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-sysctl-path",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ dependency",
+          "inventé : /usr/bin, /bin/sh, /usr/sbin",
+          "preuve : ligne décisive non liée",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie : aucune ligne d'erreur reconnue dans les logs.",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-rvm-gem-path",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie unknown ≠ dependency",
+          "inventé : /bin/sh, bash_env, bash_profile",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « /Users/sam/deggy/onlineGW.rb:3:in `require': no such file to load -- nokogiri (LoadError) ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-rvm-gem-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « /Users/sam/deggy/onlineGW.rb:3:in `require': no such file to load -- nokogiri (LoadError) ». Voir les lignes liées.",
+      "action": "ajouter nokogiri à Gemfile et faire bundle install",
+      "model": "llama3.2:3b",
+      "ms": 14265
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-java-noclassdef-pom",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "La JVM ne trouve pas une classe : le classpath du job est incomplet sous cron (jars désignés en chemin relatif ou CLASSPATH défini seulement dans votre shell).",
+      "action": "Passer le classpath complet en chemins absolus (java -cp /chemin/app.jar:/chemin/lib/* …) dans la commande du cron.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-java-noclassdef-pom",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "La JVM ne trouve pas une classe : le classpath du job est incomplet sous cron (jars désignés en chemin relatif ou CLASSPATH défini seulement dans votre shell).",
+      "action": "Passer le classpath complet en chemins absolus (java -cp /chemin/app.jar:/chemin/lib/* …) dans la commande du cron.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-rake-bundle-env",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-rake-bundle-env",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-pgdump-crlf",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ code",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-pgdump-crlf",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ code",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "PostgreSQL refuse les identifiants du job : mot de passe changé, ~/.pgpass absent pour l'utilisateur du cron, ou règle pg_hba.conf manquante.",
+      "action": "Fournir le bon mot de passe via le ~/.pgpass (chmod 600) de l'utilisateur du cron, ou ajouter la règle pg_hba.conf.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-redis-dump-umask",
+      "covered": true,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-redis-dump-umask",
+      "covered": true,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-wget-503-auth",
+      "covered": true,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le service appelé est temporairement indisponible (maintenance ou surcharge) : la panne est chez le fournisseur.",
+      "action": "Réessayer après la fenêtre indiquée (Retry-After, page de statut du fournisseur) avec un délai exponentiel.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-wget-503-auth",
+      "covered": true,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Le service appelé est temporairement indisponible (maintenance ou surcharge) : la panne est chez le fournisseur.",
+      "action": "Réessayer après la fenêtre indiquée (Retry-After, page de statut du fournisseur) avec un délai exponentiel.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-logrotate-create-perms",
+      "covered": true,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-logrotate-create-perms",
+      "covered": true,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…) que celui du cron.",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-php-unlink-cwd",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "élément introuvable lors de l'appel à unlink",
+      "action": "Supprimer le référentiel test.zip et redémarrer le service",
+      "model": "llama3.2:3b",
+      "ms": 13216
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-php-unlink-cwd",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 0,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ code",
+          "inventé : /bin/sh",
+          "preuve : ligne décisive non liée",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie : aucune ligne d'erreur reconnue dans les logs.",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-meteor-fiber",
+      "covered": false,
+      "g": {
+        "total": 5,
+        "mech": 4,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "action hors sujet",
+          "catégorie unknown ≠ code",
+          "inventé : /bin/sh"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « Error: Can't wait without a fiber ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-meteor-fiber",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « Error: Can't wait without a fiber ». Voir les lignes liées.",
+      "action": "Vérifier si le job utilise un pool de fibers et ajuster la configuration si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 13518
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-date-unquoted-format",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Exit code 1, avec message Fatal",
+      "action": "Vérifier le journal de log pour obtenir plus d'informations sur l'erreur",
+      "model": "llama3.2:3b",
+      "ms": 14581
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-date-unquoted-format",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ code",
+          "inventé : /bin/sh",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « awk -vDate=`date +%b %d %H:%M:%S %Y` -vDate2=`date --date=\"2 minutes ago\" +%b %d %H:%M:%S %Y` '$5 > Date && $5 < Date2' /var/log/dummy.log  | grep \"Fatal\" ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-sphinx-path",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ dependency",
+          "inventé : /usr/bin, /bin/sh, /var/www/app/current",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « Sphinx cannot be found on your system. You may need to configure the following ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-sphinx-path",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « Sphinx cannot be found on your system. You may need to configure the following ». Voir les lignes liées.",
+      "action": "Configurer Sphinx sur le système",
+      "model": "llama3.2:3b",
+      "ms": 11193
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-sudo-root-module",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-sudo-root-module",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-selenium-firefox-version",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ dependency",
+          "inventé : /usr/bin, /bin/sh, --allow-downgrades",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « selenium.common.exceptions.WebDriverException: Message: Can't load the profile. Profile Dir: /tmp/tmpaQkqJv If you specified a log_file in the FirefoxBinary constructor, check it for details. ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 1
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-selenium-firefox-version",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency"
+        ]
+      },
+      "cause": "Profile Dir non valide",
+      "action": "Vérifier la configuration de Selenium et ajuster le chemin du profil",
+      "model": "llama3.2:3b",
+      "ms": 11221
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public6",
+      "name": "p6-mysql-2002-disk-full",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ resources"
+        ]
+      },
+      "cause": "Le serveur MySQL local est arrêté, ou le client cherche le socket à un autre chemin que celui du serveur.",
+      "action": "Vérifier et démarrer le service MySQL, ou passer par TCP (-h 127.0.0.1) / le bon --socket.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public6",
+      "name": "p6-mysql-2002-disk-full",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ resources"
+        ]
+      },
+      "cause": "Le serveur MySQL local est arrêté, ou le client cherche le socket à un autre chemin que celui du serveur.",
+      "action": "Vérifier et démarrer le service MySQL, ou passer par TCP (-h 127.0.0.1) / le bon --socket.",
+      "model": "knowledge",
+      "ms": 0
+    }
+  ]
+}
