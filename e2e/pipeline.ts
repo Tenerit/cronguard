@@ -140,8 +140,10 @@ async function main() {
     throw new Error(`aucune analyse après 60 s pour : ${(output ?? '(sans log)').slice(0, 50)}`)
   }
 
-  const disk = (d: string, s: string) => `pg_dump: FATAL: backup aborted after ${d}: no space left on device, needed ${s}\nexit status 1`
-  const OOM  = 'Out of memory: Killed process (python)\nworker exited with signal 9'
+  // Pannes INCONNUES des fiches : ces contrôles testent le chemin modèle + cache (une fiche répondrait sans modèle).
+  const disk = (d: string, s: string) => `ledger-sync: FATAL reconciliation drift after ${d}, delta ${s}\nexit status 1`
+  const OOM  = 'invoice-exporter: unexpected checksum on batch\nworker exited with signal 9'
+  const KNOWN = 'Out of memory: Killed process (python)\nworker exited with signal 9'
 
   const a = await fail(disk('3630s', '512MB'))
   check('1re panne : appel LLM, sans cache', a.llm === 1 && a.from_cache === false, JSON.stringify(a))
@@ -165,8 +167,14 @@ async function main() {
   const e = await fail(undefined)
   check('Échec sans log : aucun appel LLM, cause non inventée', e.llm === 0 && e.category === 'unknown' && e.confidence === 'low', JSON.stringify(e))
 
+  // ─── Fiches d'abord : une panne connue répond sans appeler le modèle ─────────
+  const f1 = await fail(KNOWN)
+  check("Fiches d'abord : panne connue sans appel au modèle", f1.llm === 0 && f1.model_used === 'knowledge' && /mémoire/.test(String(f1.cause)), JSON.stringify(f1))
+  const f2 = await fail(KNOWN)
+  check("Fiches d'abord : la récurrence relève quand même la sévérité", f2.llm === 0 && f2.severity === 'high', f2.severity)
+
   const total = Number((await db.query(`SELECT COUNT(*) FROM analyses WHERE monitor_id=$1`, [mon.id])).rows[0].count)
-  check('Une seule analyse par panne', total === 5, `${total} lignes`)
+  check('Une seule analyse par panne', total === 7, `${total} lignes`)
 
   // ─── Lignes de log liées : toujours recopiées des logs du ping ───────────────
   const listed = await (await fetch(`http://localhost:${API_PORT}/dashboard/analyses?limit=50`, { headers: { 'X-API-Key': client.api_key } })).json() as Array<{ evidence: string[]; ping_output: string | null }>

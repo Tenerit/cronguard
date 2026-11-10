@@ -31,11 +31,11 @@ A classic monitor would have said `backup-db is DOWN`.
 
 | Source of the diagnosis | What it does |
 |---|---|
-| **Known-fix library** (97 sheets) | Standard messages of cron jobs and their tools (PostgreSQL, MySQL, rsync, SSH, GPG, certificates, cloud credentials, Docker, memory, disk…) mapped to the mechanism and the fix. Each sheet is tested against the failures it must not match. |
+| **Known-fix library** (106 sheets) | Standard messages of cron jobs and their tools (PostgreSQL, MySQL, rsync, SSH, GPG, certificates, cloud credentials, Docker, memory, disk…) mapped to the mechanism and the fix. Each sheet is tested against the failures it must not match. |
 | **Command check** | Reads the cron command itself: unescaped `%`, a password after `-p `, bash syntax run by `sh`, unquoted `rsync -e`, relative paths, `sudo`. Also warns at **import time**, before anything fails. |
 | **Execution-context probe** | On failure the SDK reports the cron's real user, HOME, PATH, shell, locale, DISPLAY / SSH-agent presence, and where a "command not found" actually lives on the machine. Names and paths only, no secret values. |
 | **Official codes** | Shell exit status (126, 127, 128+N signals: 137 OOM/SIGKILL, 143 SIGTERM…), `curl: (N)` and `rsync (code N)` from their man pages. |
-| **Local AI model** | `llama3.2:3b` through Ollama, on CPU. Used when none of the above applies, with its confidence capped; when it only restates the error line, the alert says the cause is not established. |
+| **Local AI model** | `llama3.2:3b` through Ollama, on CPU. Called only when none of the above applies (the others answer instantly: 44 of 54 tuning cases, median 12.6 s → 0 s), with its confidence capped; when it only restates the error line, the alert says the cause is not established. |
 | **Team memory** | Fixes confirmed from the alert are reused for the same failure, per job. It compounds with use and stays on your box. |
 
 ---

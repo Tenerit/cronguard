@@ -17,6 +17,12 @@ describe('codes officiels', () => {
     expect(f?.cause).toMatch(cause)
   })
 
+  it('code de sortie lu dans le journal de cron ou de run-parts', () => {
+    expect(toolCodeFinding('CRON[872]: (CRON) error (grandchild #874 failed with exit status 127)')?.id).toBe('cron-exit-127')
+    expect(toolCodeFinding('run-parts: /etc/cron.hourly/curl exited with return code 126')?.id).toBe('cron-exit-126')
+    expect(toolCodeFinding('CRON[872]: (CRON) error (grandchild #874 failed with exit status 1)')).toBeNull()   // vague : rien
+  })
+
   it('code inconnu ou absent : rien', () => {
     expect(toolCodeFinding('curl: (99) weird')).toBeNull()
     expect(toolCodeFinding('error: something failed')).toBeNull()

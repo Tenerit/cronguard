@@ -31,11 +31,11 @@ Un outil classique aurait écrit `backup-db is DOWN`.
 
 | Source du diagnostic | Ce qu'elle fait |
 |---|---|
-| **Bibliothèque de pannes connues** (97 fiches) | Messages standard des jobs et de leurs outils (PostgreSQL, MySQL, rsync, SSH, GPG, certificats, identifiants cloud, Docker, mémoire, disque…) reliés au mécanisme et à la correction. Chaque fiche est testée contre les pannes voisines qu'elle ne doit pas reconnaître. |
+| **Bibliothèque de pannes connues** (106 fiches) | Messages standard des jobs et de leurs outils (PostgreSQL, MySQL, rsync, SSH, GPG, certificats, identifiants cloud, Docker, mémoire, disque…) reliés au mécanisme et à la correction. Chaque fiche est testée contre les pannes voisines qu'elle ne doit pas reconnaître. |
 | **Vérification de la commande** | Lit la commande du cron : `%` non échappé, mot de passe après `-p `, syntaxe bash lancée par `sh`, `rsync -e` sans guillemets, chemins relatifs, `sudo`. Prévient aussi **à l'import**, avant toute panne. |
 | **Sonde d'environnement** | À l'échec, le SDK remonte l'utilisateur réel du cron, son HOME, son PATH, son shell, sa locale, la présence de DISPLAY et de l'agent SSH, et l'endroit où une commande « introuvable » existe réellement sur la machine. Des noms et des chemins, aucune valeur secrète. |
 | **Codes officiels** | Code de sortie du shell (126, 127, 128+N : 137 OOM/SIGKILL, 143 SIGTERM…), `curl: (N)` et `rsync (code N)` d'après leurs pages de manuel. |
-| **Modèle d'IA local** | `llama3.2:3b` via Ollama, sur CPU. Utilisé quand rien de ce qui précède ne s'applique, avec une confiance plafonnée ; s'il ne fait que recopier la ligne d'erreur, l'alerte indique que la cause n'est pas établie. |
+| **Modèle d'IA local** | `llama3.2:3b` via Ollama, sur CPU. Appelé seulement quand rien de ce qui précède ne s'applique (les autres sources répondent tout de suite : 44 cas de réglage sur 54, médiane 12,6 s → 0 s), avec une confiance plafonnée ; s'il ne fait que recopier la ligne d'erreur, l'alerte indique que la cause n'est pas établie. |
 | **Mémoire de l'équipe** | Les corrections confirmées depuis l'alerte sont resservies pour la même panne. Elle s'enrichit à l'usage et reste chez vous. |
 
 ---

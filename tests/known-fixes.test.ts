@@ -133,6 +133,17 @@ const SAMPLES: Array<[string, string | null]> = [
   ['fatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights', 'git-remote-unreadable'],
   ['/home/deploy/cron/job.sh: 5: /home/deploy/cron/job.sh: gsutil: not found', 'command-not-found'],
   ['tee: /var/www/out.log: permission denied', 'permission-denied'],
+  // Corpus de réglage StackExchange (2026-11-10)
+  ['Jan  2 03:00:01 h CRON[874]: (root) CMD (expr `date +)', 'cron-cmd-truncated'],
+  ['Jan  2 03:00:01 h cron[912]: Error: bad username; while reading /etc/crontab', 'crontab-bad-username'],
+  ['/bin/sh: 1: ${BACKUP_HOME}/run.sh: No such file or directory', 'crontab-var-not-expanded'],
+  ['/var/www/cron/update.php: line 1: ?php: No such file or directory', 'php-no-shebang'],
+  ['Failed to restart nginx.service: Interactive authentication required.', 'systemd-interactive-auth'],
+  ['crond[2211]: (backup) PAM ERROR (Authentication token is no longer valid; new one required)', 'pam-account-expired'],
+  ['sudo: no tty present and no askpass program specified', 'sudo-no-tty'],
+  ['find: Invalid range end', 'locale-regex-range'],
+  ['java.lang.IllegalArgumentException: Cron expression must consist of 6 fields (found 5 in "0 2 * * *")', 'spring-cron-fields'],
+  ['Error: cannot connect to X server :0', 'no-display'],
   // Voisins à ne pas confondre
   ["KeyError: 'total_amount'", null],                                   // clé de données, pas une variable d'environnement
   ["python3: can't open file '/opt/jobs/report.py': [Errno 2] No such file or directory", null],   // chemin absolu

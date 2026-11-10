@@ -492,6 +492,14 @@ function restatedLine(cause: string, logs: string): string | null {
   return null
 }
 
+/** Une source déterministe établit-elle la cause ? (mêmes sources et même ordre que groundWithKnownFix) */
+function hasCertainKnowledge(cleanLogs: string, job: Pick<JobContext, 'command' | 'runContext'>): boolean {
+  if (process.env.LLM_KNOWLEDGE === 'off') return false
+  const observed = process.env.LLM_CONTEXT === 'off' ? null
+    : commandFinding(job.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job.runContext)
+  return !!(observed || knownFix(cleanLogs) || (process.env.LLM_CODES !== 'off' && toolCodeFinding(cleanLogs)))
+}
+
 // Analyse sans modèle : tout vient des logs (pack déclenché, sinon dernière ligne d'erreur).
 // Sert quand l'IA est désactivée, et en repli quand le LLM est en panne ou saturé.
 export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
@@ -515,7 +523,7 @@ export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
   }
   // Un fait constaté (commande, environnement) vaut aussi sans modèle ; sinon la confiance reste « medium ».
   const grounded = groundWithKnownFix(base, clean, ctx)
-  return grounded.finding ? grounded : base
+  return grounded.finding || grounded.knownFix ? grounded : base
 }
 
 export async function analyzeFailure(
@@ -526,6 +534,13 @@ export async function analyzeFailure(
   const { clean, redactedCount } = sanitizeLogs(ctx.logs)
   if (!clean.trim() && !recordsOutOfRange(ctx)) return analysisWithoutEvidence(ctx)
   if (!llmEnabled()) return analysisWithoutModel(ctx)
+  // Fiches d'abord, modèle ensuite (2026-11-10) : si une fiche, la commande, l'environnement ou un code
+  // curl/rsync établit la cause, le modèle n'apporterait rien (sa cause serait remplacée) et coûterait
+  // ~13 s sur CPU. Réponse immédiate. Un simple code de sortie (137…) ne suffit pas : il dit quoi, pas pourquoi.
+  if (process.env.LLM_KNOWLEDGE_FIRST !== 'off' && hasCertainKnowledge(clean, ctx)) {
+    // La règle « panne récurrente → au moins high » vaut aussi sans modèle.
+    return atLeastHighIfRecurring({ ...analysisWithoutModel(ctx), model: 'knowledge' }, ctx)
+  }
   const hash = hashError(ctx.jobName, clean)
 
   const cached = await fromCache(hash)

@@ -25,7 +25,7 @@ describe('IA optionnelle', () => {
     expect(a.category).toBe('resources')
     expect(a.action).toMatch(/rétention/)
     expect(a.model).toBe('none')
-    expect(a.confidence).toBe('medium')
+    expect(a.confidence).toBe('high')   // fiche univoque : même calibration qu'avec le modèle
   })
 
   it('panne inconnue : cite la dernière ligne d erreur, confiance basse, catégorie inconnue', () => {

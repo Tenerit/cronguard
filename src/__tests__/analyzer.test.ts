@@ -59,16 +59,27 @@ afterAll(() => { delete process.env.LLM_KNOWLEDGE })
 describe('analyzeFailure()', () => {
 
   describe('Fiche connue', () => {
-    it('remplace le symptôme du modèle par le mécanisme de la fiche, garde sa sévérité', async () => {
+    const PG_LOGS = 'pg_dump: server version: 16.2; pg_dump version: 14.11\npg_dump: error: aborting because of server version mismatch'
+
+    it('fiches d\'abord : la fiche répond tout de suite, sans appeler le modèle', async () => {
       delete process.env.LLM_KNOWLEDGE
-      mockLLMResponse('{"cause":"server version mismatch","action":"vérifier","severity":"high","category":"code"}')
-      const result = await analyzeFailure({ ...baseCtx,
-        logs: 'pg_dump: server version: 16.2; pg_dump version: 14.11\npg_dump: error: aborting because of server version mismatch' })
+      const result = await analyzeFailure({ ...baseCtx, logs: PG_LOGS })
+      expect(mockedAxios.post).not.toHaveBeenCalled()
+      expect(result!.model).toBe('knowledge')
       expect(result!.cause).toMatch(/plus ancien que le serveur/)
-      expect(result!.action).toMatch(/version du serveur/)
       expect(result!.category).toBe('database')
-      expect(result!.severity).toBe('high')
       expect(result!.knownFix?.id).toBe('pg-dump-version-mismatch')
+    })
+
+    it('LLM_KNOWLEDGE_FIRST=off : le modèle est appelé, la fiche remplace sa cause et il garde sa sévérité', async () => {
+      delete process.env.LLM_KNOWLEDGE
+      process.env.LLM_KNOWLEDGE_FIRST = 'off'
+      mockLLMResponse('{"cause":"server version mismatch","action":"vérifier","severity":"high","category":"code"}')
+      const result = await analyzeFailure({ ...baseCtx, logs: PG_LOGS })
+      delete process.env.LLM_KNOWLEDGE_FIRST
+      expect(result!.cause).toMatch(/plus ancien que le serveur/)
+      expect(result!.severity).toBe('high')
+      expect(result!.model).toBe('qwen3:8b')
     })
   })
 

@@ -52,6 +52,14 @@ Every public set follows a rule fixed before seeing any result: for a list of pr
 
 The held-out figures are the honest ones; 7.8 is optimistic because those cases were read while tuning. The gap between 7.8 and 4.7 is mostly coverage: the library recognised 76% of the cases it was tuned on, but 33% of new ones. One public5 case scored 9 with "cause not established" because the quoted error line itself contained the mechanism word (`interactive prompting is disabled`): the rubric gives that point, a reader may not. The execution-context probe cannot be measured on public posts, which never include the cron's environment: it needs real SDK logs.
 
+### Speed: known fixes first, the model only when needed (2026-11-10)
+
+When a sheet, the command check, the context probe or a curl/rsync code establishes the cause, CronGuard answers without calling the model. Paired A/B on the tuning sets: score 8.4 → 8.3 (−0.1, CI −0.2 to +0.1, not significant), median latency 12.6 s → 0 s, mean 13.0 s → 2.4 s; 44 of 54 answers no longer need the model. `LLM_KNOWLEDGE_FIRST=off` restores the old behaviour.
+
+### Writing sheets from StackExchange
+
+`node eval/collect-corpus.mjs` gathers the most-voted `cron` questions with an accepted answer (160 on 2026-11-10; test-set URLs excluded) and `npx tsx eval/mine-corpus.ts` groups the failures the library does not recognise by error signature. The real-world tail is long: 112 uncovered failures fell into 101 different signatures. Sheets are written for the recurring families only; corpus coverage is a tuning figure, never a measurement. StackExchange excerpts in `eval/*-raw.json` are CC BY-SA 4.0, attributed by their URL.
+
 ### What did not help, measured
 
 - Asking the model for "the why, not the message" in the prompt: mechanism 0% → 0% (`eval/ab-root-cause.ts`).

@@ -53,6 +53,10 @@ export function toolCodeFinding(logs: string): Finding | null {
   const r = /rsync (?:error|warning):[^\n]*\(code (\d+)\)/.exec(logs)
   const rn = r ? Number(r[1]) : NaN
   if (RSYNC[rn]) return { id: `rsync-${rn}`, category: rn === 11 || rn === 14 ? 'resources' : rn === 1 || rn === 3 ? 'code' : 'network', cause: RSYNC[rn][0], action: RSYNC[rn][1] }
+  // Code de sortie rapporté par cron lui-même (syslog) ou par run-parts (cron.daily…) : même sens que 126/127/128+N.
+  const c2 = /grandchild #\d+ failed with exit status (\d+)|exited with return code (\d+)/.exec(logs)
+  const viaCron = c2 ? exitCodeFinding(Number(c2[1] ?? c2[2])) : null
+  if (viaCron) return { ...viaCron, id: `cron-${viaCron.id}` }
   return null
 }
 
