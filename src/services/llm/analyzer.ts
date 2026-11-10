@@ -10,6 +10,7 @@ import { contextFinding, inferRunner } from './run-context'
 import { toolCodeFinding, exitCodeFinding } from './exit-codes'
 import { evidenceLines } from './evidence'
 import { chooseHypothesis } from './hypotheses'
+import { checkHypotheses } from './hypothesis-check'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -562,10 +563,15 @@ export async function analyzeFailure(
 
   // Raisonnement par hypothèses (hypotheses.ts) : le modèle cite la ligne et CHOISIT un mécanisme ;
   // cause et action viennent de la liste. Pas de choix appuyé sur une ligne réelle → analyse libre.
-  if (process.env.LLM_HYPOTHESES === 'on') {
+  // on = v1 (choix dans la liste, non adopté) ; v2 = présélection par le code + oui/non par mécanisme.
+  if (process.env.LLM_HYPOTHESES === 'on' || process.env.LLM_HYPOTHESES === 'v2') {
     const { keyLines } = extractLogSignals(clean)
-    const choice = await chooseHypothesis(keyLines, ctx.command && sanitizeLogs(ctx.command).clean,
-      timeoutMs ?? parseInt(process.env.LLM_TIMEOUT_MS ?? '60000'), inferRunner(clean, ctx.runContext?.runner))
+    const cmd = ctx.command && sanitizeLogs(ctx.command).clean
+    const hypTimeout = timeoutMs ?? parseInt(process.env.LLM_TIMEOUT_MS ?? '60000')
+    const runner = inferRunner(clean, ctx.runContext?.runner)
+    const choice = process.env.LLM_HYPOTHESES === 'v2'
+      ? await checkHypotheses(keyLines, clean, cmd, hypTimeout, runner)
+      : await chooseHypothesis(keyLines, cmd, hypTimeout, runner)
     if (choice) {
       const h = choice.hypothesis
       const result: AnalysisResult = atLeastHighIfRecurring({
