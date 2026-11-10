@@ -106,7 +106,7 @@ export interface AnalysisResult {
 // Extrait les signaux importants AVANT d'envoyer au LLM.
 // Un LLM 7B lit mieux 20 lignes structurées que 200 lignes brutes.
 
-function extractLogSignals(raw: string): {
+export function extractLogSignals(raw: string): {
   keyLines:   string   // lignes les plus importantes
   errorType?: string   // pattern d'erreur détecté
   hasStack:   boolean  // stack trace présente
@@ -146,7 +146,13 @@ function extractLogSignals(raw: string): {
   const hasStack     = stackLines.length > 0
 
   // Si pas d'erreurs claires, prendre les dernières lignes (souvent les plus pertinentes)
-  const relevant = errorLines.length > 0
+  // LLM_INPUT_FIX=on (2026-11-10, eval/error-analysis.ts) : le filtre « lignes avec error/fail » retirait
+  // la ligne qui explique le mécanisme dans 9 cas sur 12 → log entier (dédoublonné) s'il tient dans le budget.
+  const inputFix = process.env.LLM_INPUT_FIX === 'on'
+  const whole = lines.filter((l, i) => l !== lines[i - 1])
+  const relevant = inputFix && whole.join('\n').length <= Math.max(200, parseInt(process.env.LLM_LOG_BUDGET ?? '2400'))
+    ? whole
+    : errorLines.length > 0
     ? errorLines.slice(0, 15)
     : lines.slice(-15)
 
@@ -260,8 +266,18 @@ PIÈGES DU CRON (la plupart des pannes « marche à la main, pas en cron ») —
 - Exécutions qui se chevauchent : verrous, base verrouillée.
 Dans "cause", nomme le MÉCANISME (lequel de ces pièges, ou un autre) avant de citer le message d'erreur.`
 
-function systemPrompt(): string {
-  return process.env.LLM_CRON_HINTS === 'on' ? SYSTEM + CRON_HINTS : SYSTEM
+// LLM_INPUT_FIX=on : les consignes « cite la valeur EXACTE du log » et « high = cause écrite dans les logs »
+// poussaient à recopier le symptôme (69 réponses sur 150). La ligne de log est déjà affichée à côté de
+// l'analyse : la cause doit dire POURQUOI. Mêmes champs, mêmes règles par ailleurs.
+const SYSTEM_FIXED = SYSTEM
+  .replace('"cause racine en 1 phrase — cite les valeurs exactes des logs"', '"le mécanisme en 1 phrase : POURQUOI cette erreur se produit"')
+  .replace('- "cause" : 1 phrase, ≤ 20 mots, cite la valeur EXACTE du log (pas de reformulation vague).',
+    '- "cause" : 1 phrase, ≤ 25 mots : le POURQUOI (ce qui a changé ou ce qui manque), pas le message d\'erreur — il est déjà affiché à côté. Lis TOUTES les lignes : l\'explication est souvent dans une ligne sans le mot error.')
+  .replace('- high   → la cause est explicitement dans les logs (message d\'erreur clair)', '- high   → une ligne du log établit le mécanisme')
+
+export function systemPrompt(): string {
+  const base = process.env.LLM_INPUT_FIX === 'on' ? SYSTEM_FIXED : SYSTEM
+  return process.env.LLM_CRON_HINTS === 'on' ? base + CRON_HINTS : base
 }
 
 // ─── Builder de prompt ────────────────────────────────────────────────────────
@@ -282,7 +298,8 @@ function buildPrompt(ctx: JobContext, logs: string, redacted: number): string {
   if (ctx.records !== undefined)
     meta.push(`│  Records      : ${ctx.records}${ctx.expectedMin !== undefined ? ` (attendu: ${ctx.expectedMin}–${ctx.expectedMax ?? '∞'})` : ''}`)
   if (ctx.lastSuccess) meta.push(`│  Dernier succès: ${ctx.lastSuccess}`)
-  if (errorType)       meta.push(`│  Pattern détecté: ${errorType}`)
+  // Recopié tel quel comme cause dans 29 fausses causes sur 73 (eval/error-analysis.ts) : retiré avec LLM_INPUT_FIX.
+  if (errorType && process.env.LLM_INPUT_FIX !== 'on') meta.push(`│  Pattern détecté: ${errorType}`)
   if (hasStack)        meta.push(`│  Stack trace  : présente`)
   if (redacted > 0)    meta.push(`│  Valeurs masquées: ${redacted}`)
 
