@@ -46,7 +46,7 @@ Un outil classique aurait écrit `backup-db is DOWN`.
 | **Codes officiels** | Code de sortie du shell (126, 127, 128+N), `curl: (N)`, `rsync (code N)` d'après leurs pages de manuel. |
 | **Abstention honnête** | Pas de fait, pas de supposition : « cause non établie » et la commande qui reproduit la panne dans l'environnement exact du cron (`env -i HOME=… PATH=… /bin/sh -c '<votre commande>'`). |
 | **IA locale vérifiée** | Explique en langage simple une cause établie, après l'alerte, une fois par type de panne. Garde-fous dans le code (voir plus bas). Facultative. |
-| **Mémoire de l'équipe** | Les corrections confirmées depuis l'alerte sont resservies pour la même panne, sur tous les jobs de l'équipe. Les pannes que personne ne reconnaît encore sont listées dans le rapport hebdomadaire : ce sont les prochaines fiches. |
+| **Mémoire de l'équipe** | Les corrections confirmées depuis l'alerte sont resservies pour la même panne. Une panne que CronGuard ne reconnaissait pas, une fois corrigée par l'équipe, devient une **fiche d'équipe** en un clic (Paramètres › Apprentissage, admins) : pré-remplie depuis la ligne d'erreur et la vraie correction, vérifiée contre les logs d'origine, puis reconnue sur tous les jobs de l'équipe sans modèle. Les pannes non reconnues sont aussi listées dans le rapport hebdomadaire. |
 
 ---
 

@@ -1468,6 +1468,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <button class="stab" data-stab-btn="alerts" data-click="setSettingsTab" data-args='["alerts"]' data-i18n="set.tab.alerts">Alertes</button>
           <button class="stab" data-stab-btn="team" data-click="setSettingsTab" data-args='["team"]' data-i18n="set.tab.team">Équipe</button>
           <button class="stab" data-stab-btn="status" data-click="setSettingsTab" data-args='["status"]' data-i18n="set.tab.status">Statut</button>
+          <button class="stab" data-stab-btn="learning" data-click="setSettingsTab" data-args='["learning"]' data-i18n="set.tab.learning">Apprentissage</button>
           <button class="stab" data-stab-btn="audit" data-click="setSettingsTab" data-args='["audit"]' data-i18n="set.tab.audit">Audit</button>
         </div>
         <div class="settings-section" data-stab="account">
@@ -1657,6 +1658,38 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <div style="font-size:11px;font-family:var(--mono);color:var(--text3)">
             <span data-i18n="set.format">Format</span> : <span style="color:var(--green)" id="set-status-url">—</span>
           </div>
+        </div>
+
+        <div class="settings-section" data-stab="learning">
+          <div class="settings-title" data-i18n="learn.title">apprentissage</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6" data-i18n="learn.desc">
+            Les pannes que CronGuard ne reconnaît pas encore. Quand l'équipe en a corrigé une (✏️), faites-en une fiche d'équipe : elle sera reconnue sur tous vos jobs, sans modèle.
+          </div>
+          <div class="settings-label" style="margin:6px 0" data-i18n="learn.candidates">À transformer en fiche (corrigées par l'équipe)</div>
+          <div id="learn-candidates"><div style="font-size:12px;color:var(--text3)">…</div></div>
+          <div id="learn-form" style="display:none;margin:12px 0;padding:12px;border:1px solid var(--border);border-radius:var(--radius)">
+            <label class="field-label" data-i18n="learn.f.match">Déclencheur (texte exact présent dans les logs)</label>
+            <input class="field-input" id="lf-match" maxlength="200" style="font-family:var(--mono);font-size:11px">
+            <label class="field-label" data-i18n="learn.f.title">Titre</label>
+            <input class="field-input" id="lf-title" maxlength="120">
+            <label class="field-label" data-i18n="learn.f.cause">Cause</label>
+            <textarea class="field-input" id="lf-cause" rows="2" maxlength="400" style="resize:vertical"></textarea>
+            <label class="field-label" data-i18n="learn.f.action">Correction</label>
+            <textarea class="field-input" id="lf-action" rows="2" maxlength="600" style="resize:vertical"></textarea>
+            <label class="field-label" data-i18n="learn.f.category">Catégorie</label>
+            <select class="field-select" id="lf-category">
+              <option>unknown</option><option>database</option><option>network</option><option>timeout</option>
+              <option>resources</option><option>dependency</option><option>code</option><option>data</option>
+            </select>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn btn-primary" data-click="saveTeamFix" data-i18n="learn.save">Créer la fiche</button>
+              <button class="btn btn-ghost" data-click="closeTeamFixForm" data-i18n="learn.cancel">Annuler</button>
+            </div>
+          </div>
+          <div class="settings-label" style="margin:16px 0 6px" data-i18n="learn.fixes">Fiches d'équipe actives</div>
+          <div id="learn-fixes"><div style="font-size:12px;color:var(--text3)">…</div></div>
+          <div class="settings-label" style="margin:16px 0 6px" data-i18n="learn.unrecognized">Non reconnues, 7 derniers jours</div>
+          <div id="learn-unrecognized"><div style="font-size:12px;color:var(--text3)">…</div></div>
         </div>
 
         <div class="settings-section" data-stab="audit">
@@ -1987,7 +2020,7 @@ const I18N = {
     'set.invitedBy':'invité par','set.pending':'En attente','set.expires':'expire','set.cancel':'annuler','set.inviteMember':'+ inviter un membre',
     'set.trial':'passer à l\'offre pro','set.trialDesc':'Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, analyses IA avancées.','set.startTrial':'Démarrer l\'essai 14 jours →',
     'set.statusPage':'page de statut publique','set.statusPageDesc':'Partagez le statut de vos services. URL accessible sans authentification.','set.format':'Format',
-    'set.tab.account':'Compte','set.tab.notifications':'Notifications','set.tab.alerts':'Alertes','set.tab.team':'Équipe','set.tab.status':'Statut','set.tab.audit':'Audit',
+    "set.tab.learning":"Apprentissage","learn.title":"apprentissage","learn.desc":"Les pannes que CronGuard ne reconnaît pas encore. Quand l'équipe en a corrigé une (✏️), faites-en une fiche d'équipe : elle sera reconnue sur tous vos jobs, sans modèle.","learn.candidates":"À transformer en fiche (corrigées par l'équipe)","learn.fixes":"Fiches d'équipe actives","learn.unrecognized":"Non reconnues, 7 derniers jours","learn.make":"Créer la fiche","learn.f.match":"Déclencheur (texte exact présent dans les logs)","learn.f.title":"Titre","learn.f.cause":"Cause","learn.f.action":"Correction","learn.f.category":"Catégorie","learn.save":"Créer la fiche","learn.cancel":"Annuler","learn.trigger":"déclencheur","learn.disable":"Désactiver","learn.waitFix":"en attente de correction (✏️)","learn.noCandidates":"Aucune panne corrigée à transformer. Corrigez une panne depuis l'alerte (✏️) pour qu'elle apparaisse ici.","learn.noFixes":"Aucune fiche d'équipe pour l'instant.","learn.noUnrecognized":"Toutes les pannes récentes sont reconnues.","learn.error":"Chargement impossible.","learn.saved":"Fiche d'équipe créée : active sur tous vos jobs.","learn.matchMissing":"Le déclencheur n'apparaît pas dans les logs de la panne : il ne la reconnaîtrait pas.","learn.invalid":"Champs incomplets (déclencheur ≥ 6 caractères, cause ≥ 10).","learn.confirmDisable":"Désactiver cette fiche d'équipe ?","learn.disabled":"Fiche désactivée.",'set.tab.account':'Compte','set.tab.notifications':'Notifications','set.tab.alerts':'Alertes','set.tab.team':'Équipe','set.tab.status':'Statut','set.tab.audit':'Audit',
     'set.audit':'journal d\'audit','set.auditDesc':'Qui a fait quoi, quand, et depuis quelle IP. Acteur = email SSO ou clé API. Conservé 90 jours.','audit.empty':'Aucune action enregistrée.','audit.denied':'Réservé aux admins.',
     'set.rotate':'rotation','confirm.rotate':'Régénérer la clé API du compte ? L\'ancienne sera invalidée immédiatement — mettez à jour vos scripts/CI.','confirm.rotateMember':'Régénérer la clé de ce membre ? Son ancienne clé cessera de fonctionner.','toast.keyRotated':'Nouvelle clé API active. Mettez à jour vos intégrations.','toast.keyRotatedCopied':'Nouvelle clé du membre copiée — transmettez-la.',
     'mod.new.title':'nouveau service','mod.new.sub':'Vous recevrez une ping_key à ajouter à la fin de votre script.',
@@ -2108,7 +2141,7 @@ const I18N = {
     'set.invitedBy':'invited by','set.pending':'Pending','set.expires':'expires','set.cancel':'cancel','set.inviteMember':'+ invite a member',
     'set.trial':'upgrade to pro','set.trialDesc':'Try the Pro features for 14 days: unlimited services, Slack alerts, advanced AI analyses.','set.startTrial':'Start 14-day trial →',
     'set.statusPage':'public status page','set.statusPageDesc':'Share your services status. URL accessible without authentication.','set.format':'Format',
-    'set.tab.account':'Account','set.tab.notifications':'Notifications','set.tab.alerts':'Alerts','set.tab.team':'Team','set.tab.status':'Status','set.tab.audit':'Audit',
+    "set.tab.learning":"Learning","learn.title":"learning","learn.desc":"Failures CronGuard does not recognise yet. When your team has fixed one (✏️), turn it into a team sheet: it will be recognised on all your jobs, without a model.","learn.candidates":"To turn into a sheet (fixed by the team)","learn.fixes":"Active team sheets","learn.unrecognized":"Not recognised, last 7 days","learn.make":"Create sheet","learn.f.match":"Trigger (exact text found in the logs)","learn.f.title":"Title","learn.f.cause":"Cause","learn.f.action":"Fix","learn.f.category":"Category","learn.save":"Create sheet","learn.cancel":"Cancel","learn.trigger":"trigger","learn.disable":"Disable","learn.waitFix":"waiting for a fix (✏️)","learn.noCandidates":"No fixed failure to turn into a sheet. Fix a failure from the alert (✏️) to see it here.","learn.noFixes":"No team sheet yet.","learn.noUnrecognized":"Every recent failure is recognised.","learn.error":"Could not load.","learn.saved":"Team sheet created: active on all your jobs.","learn.matchMissing":"The trigger does not appear in the failure logs: it would not recognise it.","learn.invalid":"Incomplete fields (trigger >= 6 characters, cause >= 10).","learn.confirmDisable":"Disable this team sheet?","learn.disabled":"Sheet disabled.",'set.tab.account':'Account','set.tab.notifications':'Notifications','set.tab.alerts':'Alerts','set.tab.team':'Team','set.tab.status':'Status','set.tab.audit':'Audit',
     'set.audit':'audit log','set.auditDesc':'Who did what, when, and from which IP. Actor = SSO email or API key. Kept for 90 days.','audit.empty':'No action recorded yet.','audit.denied':'Admins only.',
     'set.rotate':'rotate','confirm.rotate':'Regenerate the account API key? The old one is invalidated immediately — update your scripts/CI.','confirm.rotateMember':'Regenerate this member\'s key? Their old key stops working.','toast.keyRotated':'New API key active. Update your integrations.','toast.keyRotatedCopied':'Member\'s new key copied — share it with them.',
     'mod.new.title':'new service','mod.new.sub':'You will receive a ping_key to add at the end of your script.',
@@ -2316,6 +2349,18 @@ function demoLogs() {
   }))
   return rows.sort((a,b) => new Date(b.pinged_at) - new Date(a.pinged_at)).slice(0,40)
 }
+// Démo de la boucle d'apprentissage (fixtures) : une panne corrigée par l'équipe, une fiche d'équipe déjà active.
+const DEMO_LEARN = {
+  candidates:   [{ signature:'exporter: error quota table locked by maintenance window <n>', occurrences:3, jobs:['export-reports','etl-warehouse'],
+                   lastSeen:dISO(60*5), cause:"Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « exporter: ERROR quota table locked by maintenance window 7 ».",
+                   verifiedFix:'Attendre la fin de la maintenance (02h30) puis relancer, ou décaler le cron à 03h.', analysisId:'demo-a9' }],
+  unrecognized: [{ signature:'exporter: error quota table locked by maintenance window <n>', occurrences:3, jobs:['export-reports','etl-warehouse'], verifiedFix:'x' },
+                 { signature:'ledger: fatal reconciliation drift after <dur>, delta <size>', occurrences:2, jobs:['sync-invoices'], verifiedFix:null }],
+}
+const DEMO_TEAM_FIXES = [{ id:'demo-f1', match:'stale advisory lock', title:'Verrou consultatif orphelin', created_by:'ops@acme.example', created_at:dISO(60*24*6),
+  cause:"Panne déjà rencontrée et corrigée par votre équipe : « reconcile: ERROR stale advisory lock held by dead session ».",
+  action:'pg_terminate_backend sur la session morte puis relance du job.', category:'database' }]
+
 function demoPreview(body) {
   const logs = (body.logs||'').toLowerCase()
   const pick =
@@ -2350,6 +2395,9 @@ async function demoApi(path, opts={}) {
   if (path.startsWith('/maintenance-windows')) return DEMO_MAINT
   if (path.startsWith('/team/members'))        return DEMO_TEAM
   if (path.startsWith('/team/invitations'))    return []
+  if (path.startsWith('/clients/learning'))    return DEMO_LEARN
+  if (path.startsWith('/clients/fixes/draft/')) return { match:'quota table locked by maintenance window', title:'quota table locked by maintenance window', cause:'Panne déjà rencontrée et corrigée par votre équipe : « quota table locked by maintenance window ».', action:'Attendre la fin de la maintenance (02h30) puis relancer, ou décaler le cron à 03h.', category:'database' }
+  if (path.startsWith('/clients/fixes'))       return DEMO_TEAM_FIXES
   if (path === '/monitors')                    return DEMO_MON
   const histM = path.match(/^\/monitors\/(\w+)\/history/)
   if (histM) { const m = DEMO_MON.find(x => x.id === histM[1]); return (m?.recent_pings||[]).map(p => ({ ...p, output:null, exit_code:p.status==='failed'?1:0 })) }
@@ -3349,6 +3397,77 @@ function setSettingsTab(tab) {
     s.classList.toggle('stab-off', s.getAttribute('data-stab') !== tab))
   const c = document.querySelector('.content'); if (c) c.scrollTop = 0
   if (tab === 'audit') loadAudit()
+  if (tab === 'learning') loadLearning()
+}
+
+// ─── Apprentissage : pannes non reconnues → fiches d'équipe (fin de la boucle) ──
+let learnDraftFor = null   // analyse corrigée dont on fait la fiche
+async function loadLearning() {
+  const cand = document.getElementById('learn-candidates'), fixes = document.getElementById('learn-fixes'),
+        unrec = document.getElementById('learn-unrecognized')
+  if (!cand) return
+  const empty = key => `<div style="font-size:12px;color:var(--text3)">${t(key)}</div>`
+  try {
+    const [learn, team] = await Promise.all([api('/clients/learning'), api('/clients/fixes')])
+    cand.innerHTML = learn.candidates.length ? learn.candidates.map(c => `
+      <div class="settings-row" style="align-items:flex-start">
+        <div style="min-width:0">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--amber);word-break:break-word">${esc(c.signature.slice(0,140))}</div>
+          <div style="font-size:11px;color:var(--green);margin-top:3px">✓ ${esc(c.verifiedFix||'')}</div>
+          <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px">${c.occurrences}× · ${esc((c.jobs||[]).slice(0,3).join(', '))}</div>
+        </div>
+        ${c.analysisId ? `<button class="btn btn-primary" style="flex-shrink:0" data-click="openTeamFixDraft" data-args="${esc(JSON.stringify([c.analysisId]))}">${t('learn.make')}</button>` : ''}
+      </div>`).join('') : empty('learn.noCandidates')
+    fixes.innerHTML = team.length ? team.map(f => `
+      <div class="settings-row" style="align-items:flex-start">
+        <div style="min-width:0">
+          <div class="settings-label">${esc(f.title)}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">${t('learn.trigger')} « ${esc(f.match)} » · ${esc(f.created_by||'—')} · ${fmtDateTime(f.created_at)}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">${esc(f.action)}</div>
+        </div>
+        <button class="btn btn-ghost" style="flex-shrink:0" data-click="disableTeamFix" data-args="${esc(JSON.stringify([f.id]))}">${t('learn.disable')}</button>
+      </div>`).join('') : empty('learn.noFixes')
+    unrec.innerHTML = learn.unrecognized.length ? learn.unrecognized.map(u => `
+      <div class="settings-row"><div style="min-width:0">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text2);word-break:break-word">${esc(u.signature.slice(0,140))}</div>
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:2px">${u.occurrences}× · ${esc((u.jobs||[]).slice(0,3).join(', '))}${u.verifiedFix ? '' : ' · ' + t('learn.waitFix')}</div>
+      </div></div>`).join('') : empty('learn.noUnrecognized')
+  } catch (e) {
+    const denied = /^403/.test(e.message)
+    cand.innerHTML = empty(denied ? 'audit.denied' : 'learn.error'); fixes.innerHTML = ''; unrec.innerHTML = ''
+  }
+}
+async function openTeamFixDraft(analysisId) {
+  try {
+    const d = await api('/clients/fixes/draft/' + encodeURIComponent(analysisId))
+    learnDraftFor = analysisId
+    document.getElementById('lf-match').value = d.match || ''
+    document.getElementById('lf-title').value = d.title || ''
+    document.getElementById('lf-cause').value = d.cause || ''
+    document.getElementById('lf-action').value = d.action || ''
+    document.getElementById('lf-category').value = d.category || 'unknown'
+    document.getElementById('learn-form').style.display = 'block'
+    document.getElementById('lf-match').focus()
+  } catch { toast(t('learn.error'), 'error') }
+}
+function closeTeamFixForm() { learnDraftFor = null; document.getElementById('learn-form').style.display = 'none' }
+async function saveTeamFix() {
+  if (!learnDraftFor) return
+  const body = { analysisId: learnDraftFor,
+    match: document.getElementById('lf-match').value, title: document.getElementById('lf-title').value,
+    cause: document.getElementById('lf-cause').value, action: document.getElementById('lf-action').value,
+    category: document.getElementById('lf-category').value }
+  try {
+    await api('/clients/fixes', { method: 'POST', body: JSON.stringify(body) })
+    closeTeamFixForm(); toast(t('learn.saved'), 'success'); loadLearning()
+  } catch (e) {
+    toast(/match_not_in_logs/.test(e.message) ? t('learn.matchMissing') : /^400/.test(e.message) ? t('learn.invalid') : t('learn.error'), 'error')
+  }
+}
+async function disableTeamFix(id) {
+  if (!confirm(t('learn.confirmDisable'))) return
+  try { await api('/clients/fixes/' + encodeURIComponent(id), { method: 'DELETE' }); toast(t('learn.disabled'), 'info'); loadLearning() }
+  catch { toast(t('learn.error'), 'error') }
 }
 
 // ─── Journal d'audit (Enterprise) ─────────────────────────────────────────────

@@ -295,6 +295,33 @@ async function main() {
   check('Rapport : un autre client ne voit rien', (await get('/clients/learning', other.api_key)).status === 200
     && !(await (await get('/clients/learning', other.api_key)).json() as { candidates: unknown[] }).candidates.length)
 
+  // ─── Fin de la boucle : la correction de l'équipe devient une fiche d'équipe active ─────────
+  const LOCKED = 'exporter: ERROR quota table locked by maintenance window 7\nexit status 1'
+  const LOCK_FIX = 'attendre la fin de la maintenance (02h30) puis relancer, ou décaler le cron à 03h'
+  const l1 = await fail(LOCKED)
+  await post(`/monitors/analyses/${l1.id}/fix`, client.api_key, { fix: LOCK_FIX })
+  const cand = (await (await get('/clients/learning', client.api_key)).json() as { candidates: Array<{ signature: string; analysisId: string }> })
+    .candidates.find(c => c.signature === l1.signature)
+  check("Fiche candidate : l'analyse corrigée est donnée pour le brouillon", cand?.analysisId === l1.id, JSON.stringify(cand))
+  const draft = await (await get(`/clients/fixes/draft/${l1.id}`, client.api_key)).json() as { match: string; title: string; cause: string; action: string }
+  check('Brouillon : la ligne de la panne et la correction réelle', draft.match === 'exporter: ERROR quota table locked by maintenance window 7' && draft.action === LOCK_FIX, JSON.stringify(draft))
+  const badFix = await post('/clients/fixes', client.api_key, { ...draft, analysisId: l1.id, match: 'texte absent des logs' })
+  check('Fiche refusée si son déclencheur ne reconnaît pas la panne', badFix.status === 400, String(badFix.status))
+  const foreignFix = await post('/clients/fixes', other.api_key, { ...draft, analysisId: l1.id })
+  check("Un autre client ne peut pas créer de fiche sur cette panne", foreignFix.status === 404, String(foreignFix.status))
+  const created = await post('/clients/fixes', client.api_key, { ...draft, analysisId: l1.id, match: 'quota table locked by maintenance' })
+  const fixRow = await created.json() as { id: string }
+  check("Fiche d'équipe créée", created.status === 201 && !!fixRow.id, String(created.status))
+  const { rows: [mon3] } = await db.query(`INSERT INTO monitors (client_id, name, grace_period) VALUES ($1,'quota-sync',300) RETURNING id, ping_key`, [client.id])
+  const l2 = await fail('importer: ERROR quota table locked by maintenance window 9\nexit status 1', {}, mon3)
+  check("Autre job, même panne : servie par la fiche d'équipe, sans modèle, reconnue", l2.llm === 0 && l2.model_used === 'team-fix'
+    && l2.action === LOCK_FIX && l2.recognized_by === `team-${fixRow.id}` && l2.confidence === 'high', JSON.stringify(l2))
+  const after = await (await get('/clients/learning', client.api_key)).json() as { candidates: Array<{ signature: string }> }
+  check('Panne devenue fiche : plus dans les candidates', !after.candidates.some(c => c.signature === l1.signature), JSON.stringify(after.candidates))
+  const off = await fetch(`http://localhost:${API_PORT}/clients/fixes/${fixRow.id}`, { method: 'DELETE', headers: { 'X-API-Key': client.api_key } })
+  const l3 = await fail('importer: ERROR quota table locked by maintenance window 9\nexit status 1', {}, mon3)
+  check('Fiche désactivée : plus servie', off.status === 200 && l3.model_used !== 'team-fix', JSON.stringify({ status: off.status, model: l3.model_used }))
+
 }
 
 async function finish(fatal?: Error) {

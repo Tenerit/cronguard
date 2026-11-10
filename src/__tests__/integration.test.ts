@@ -148,6 +148,22 @@ beforeAll(async () => {
   `)
 
   await pgPool.query(`
+    CREATE TABLE team_fixes (
+      id              TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+      client_id       TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      match           TEXT NOT NULL,
+      title           TEXT NOT NULL,
+      cause           TEXT NOT NULL,
+      action          TEXT NOT NULL,
+      category        TEXT NOT NULL DEFAULT 'unknown',
+      source_analysis TEXT REFERENCES analyses(id) ON DELETE SET NULL,
+      created_by      TEXT,
+      active          BOOLEAN NOT NULL DEFAULT true,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+
+  await pgPool.query(`
     CREATE TABLE alert_states (
       id           TEXT PRIMARY KEY,
       monitor_id   TEXT REFERENCES monitors(id) ON DELETE CASCADE,

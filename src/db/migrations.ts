@@ -358,6 +358,26 @@ async function v21(client: {query(sql: string, params?: unknown[]): Promise<{ ro
   if (changed) logger.info(`[DB] v21 : secrets masqués dans ${changed} sortie(s) de job déjà stockée(s)`)
 }
 
+// ─── V24 : fiches d'équipe (fin de la boucle d'apprentissage) : une correction de l'équipe, validée par un admin,
+// devient une fiche active sur tous les jobs du client. Déclencheur littéral, jamais une regex utilisateur.
+async function v24(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS team_fixes (
+      id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      client_id       UUID NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+      match           TEXT NOT NULL,
+      title           TEXT NOT NULL,
+      cause           TEXT NOT NULL,
+      action          TEXT NOT NULL,
+      category        TEXT NOT NULL DEFAULT 'unknown',
+      source_analysis UUID REFERENCES analyses(id) ON DELETE SET NULL,
+      created_by      TEXT,
+      active          BOOLEAN NOT NULL DEFAULT true,
+      created_at      TIMESTAMPTZ DEFAULT NOW()
+    )`)
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_team_fixes_client ON team_fixes(client_id) WHERE active`)
+}
+
 // ─── V23 : rôle de l'IA — explication en langage simple d'une panne établie (explain.ts), écrite après
 // l'alerte ; vide tant que le modèle n'a pas répondu, ou si un garde-fou l'a rejetée.
 async function v23(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
@@ -447,8 +467,9 @@ export async function runMigrations() {
     await v21(client)
     await v22(client)
     await v23(client)
+    await v24(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v23)')
+    logger.info('[DB] Migrations terminées (v1 → v24)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

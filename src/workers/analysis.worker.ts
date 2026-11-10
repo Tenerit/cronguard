@@ -9,6 +9,7 @@ import { analyzeFailure, analysisWithoutModel, llmEnabled, llmHeaders, isCloudLL
 import { recallSimilar, recallVerifiedFix, sameErrorRecently, errorSignature } from '../services/llm/incident-memory'
 import { evidenceLines } from '../services/llm/evidence'
 import { explainCached } from '../services/llm/explain'
+import { teamFixAnalysis } from '../services/team-fixes'
 import { knownFix }      from '../services/llm/known-fixes'
 import { planHasAI }     from '../config/plans'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
@@ -324,8 +325,11 @@ function createAnalysisWorker() {
     // L'analyse IA est réservée au plan Pro sur l'offre hébergée (planHasAI gère le
     // self-hosted où tout le monde y a droit). Free → on alerte quand même, sans IA.
     const analysis = planHasAI(client.plan)
-      ? await recallVerifiedFix(ctx.monitorId, ctx.jobName, ctx.logs, ctx.correlatedFailures,
-          // Correction d'un autre job : seulement si aucune fiche ni constat ne répond déjà.
+      // Ordre : correction validée sur CE job → fiche d'équipe (validée par un admin pour cette infra) →
+      // correction d'un autre job (si aucune fiche ni constat ne répond) → analyse (faits, fiches, codes).
+      ? await recallVerifiedFix(ctx.monitorId, ctx.jobName, ctx.logs, ctx.correlatedFailures)
+        ?? await teamFixAnalysis(ctx.clientId, ctx.logs, { failCount7d: ctx.failCount7d, correlatedFailures: ctx.correlatedFailures })
+        ?? await recallVerifiedFix(ctx.monitorId, ctx.jobName, ctx.logs, ctx.correlatedFailures,
           { shared: !hasCertainKnowledge(sanitizeLogs(ctx.logs).clean, ctx) }) ?? await analyzeFailure({
           jobName:     ctx.jobName, clientId: ctx.clientId, monitorId: ctx.monitorId,
           env:         ctx.env,
@@ -350,7 +354,8 @@ function createAnalysisWorker() {
     if (analysis) {
       const clean = sanitizeLogs(ctx.logs).clean
       analysis.evidence = evidenceLines(clean, analysis.cause)
-      analysis.knownFix = analysis.verifiedFix ? null : knownFix(clean)   // la correction vérifiée chez vous prime
+      // La correction vérifiée ou la fiche d'équipe (validées chez vous) priment : pas de fiche générique à côté.
+      analysis.knownFix = analysis.verifiedFix || analysis.finding?.startsWith('team-') ? null : knownFix(clean)
     }
     if (analysis) {
       const ins = await db.query(

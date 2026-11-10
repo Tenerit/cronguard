@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — fin de la boucle d'apprentissage : fiches d'équipe (2026-11-11)
+- Une panne non reconnue, corrigée par l'équipe (✏️), devient une **fiche d'équipe** active sur tous les jobs du client : Paramètres › Apprentissage (admins), brouillon pré-rempli depuis la ligne d'erreur (sans horodatage ni PID) et la correction réelle, rien d'inventé.
+- Déclencheur **littéral** (jamais une regex fournie par l'utilisateur : pas de ReDoS), refusé s'il n'apparaît pas dans les logs de la panne d'origine ; création et désactivation tracées dans l'audit ; cause et action passées au masquage des secrets. Migration v24 (`team_fixes`).
+- Ordre d'analyse : correction validée sur ce job → **fiche d'équipe** → correction d'un autre job → faits, fiches, codes. Une panne servie par une fiche d'équipe est « reconnue » et sort des candidates. Nouvelle fiche visible par le worker à la panne suivante (version dans Redis), pas après un délai de cache.
+- Testé de bout en bout sur un vrai PostgreSQL : brouillon, refus d'un déclencheur absent des logs, refus pour un autre client, panne d'un autre job servie par la fiche sans modèle, sortie des candidates, désactivation.
+
 ## [1.6.0] — 2026-11-11 — Diagnostic constaté, IA d'explication vérifiée
 
 ### Changé — installation légère par défaut (2026-11-11)

@@ -8,6 +8,8 @@ import { audit }        from '../middleware/audit'
 import { getRedis }        from '../../config/redis'
 import { getAnalysisQueue } from '../../queue'
 import { unrecognizedFailures } from '../../services/learning'
+import { teamFixes, draftTeamFix, forgetTeamFixes } from '../../services/team-fixes'
+import { sanitizeLogs } from '../../services/sanitizer'
 
 export const clientsRouter = Router()
 
@@ -33,6 +35,65 @@ clientsRouter.get('/learning', requireRole('admin'), asyncHandler(async (req, re
     unrecognizedFailures(res.locals.clientId, 90, 50),
   ])
   res.json({ unrecognized, candidates: recent.filter(f => f.verifiedFix) })
+}))
+
+// ─── Fiches d'équipe (admin+) — fin de la boucle d'apprentissage ───────────────
+// Une panne non reconnue, corrigée par l'équipe (✏️), devient une fiche active sur tous les jobs du client.
+const CATEGORIES = ['database', 'network', 'timeout', 'resources', 'dependency', 'code', 'data', 'unknown'] as const
+
+async function ownedAnalysis(analysisId: string, clientId: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(analysisId)) return null
+  const { rows: [a] } = await db.query(`
+    SELECT a.id, a.verified_fix, a.category, p.output
+      FROM analyses a JOIN monitors m ON m.id = a.monitor_id LEFT JOIN pings p ON p.id = a.ping_id
+     WHERE a.id = $1 AND m.client_id = $2`, [analysisId, clientId])
+  return a ?? null
+}
+
+clientsRouter.get('/fixes', requireRole('admin'), asyncHandler(async (_req, res) => {
+  res.json(await teamFixes(res.locals.clientId))
+}))
+
+// Brouillon pré-rempli depuis la panne et la correction réelle de l'équipe : rien d'inventé.
+clientsRouter.get('/fixes/draft/:analysisId', requireRole('admin'), asyncHandler(async (req, res) => {
+  const a = await ownedAnalysis(req.params.analysisId, res.locals.clientId)
+  if (!a || !a.output || !a.verified_fix) return res.status(404).json({ error: 'not_found' })
+  res.json(draftTeamFix(a.output, a.verified_fix, CATEGORIES.includes(a.category) ? a.category : 'unknown'))
+}))
+
+clientsRouter.post('/fixes', requireRole('admin'), asyncHandler(async (req, res) => {
+  const parsed = z.object({
+    analysisId: z.string().max(64),
+    match:      z.string().trim().min(6).max(200),
+    title:      z.string().trim().min(3).max(120),
+    cause:      z.string().trim().min(10).max(400),
+    action:     z.string().trim().min(5).max(600),
+    category:   z.enum(CATEGORIES).default('unknown'),
+  }).safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+  const d = parsed.data
+  const a = await ownedAnalysis(d.analysisId, res.locals.clientId)
+  if (!a || !a.output) return res.status(404).json({ error: 'not_found' })
+  // Le déclencheur doit reconnaître la panne d'origine : sinon la fiche ne servirait jamais.
+  if (!sanitizeLogs(a.output).clean.toLowerCase().includes(d.match.toLowerCase()))
+    return res.status(400).json({ error: 'match_not_in_logs' })
+  const { rows: [fix] } = await db.query(`
+    INSERT INTO team_fixes (client_id, match, title, cause, action, category, source_analysis, created_by)
+    VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, match, title, cause, action, category, created_by, created_at, source_analysis`,
+    [res.locals.clientId, d.match, d.title, sanitizeLogs(d.cause).clean, sanitizeLogs(d.action).clean, d.category, a.id, res.locals.email ?? res.locals.authVia ?? null])
+  await forgetTeamFixes(res.locals.clientId)
+  await audit(res, 'team_fix.created', 'team_fix', fix.id, { match: d.match.slice(0, 80) })
+  res.status(201).json(fix)
+}))
+
+// Désactivation (réversible en base), pas de suppression : l'historique des analyses garde sa source.
+clientsRouter.delete('/fixes/:id', requireRole('admin'), asyncHandler(async (req, res) => {
+  const { rowCount } = await db.query(`UPDATE team_fixes SET active = false WHERE id = $1 AND client_id = $2 AND active`,
+    [req.params.id, res.locals.clientId])
+  if (!rowCount) return res.status(404).json({ error: 'not_found' })
+  await forgetTeamFixes(res.locals.clientId)
+  await audit(res, 'team_fix.disabled', 'team_fix', req.params.id)
+  res.json({ ok: true })
 }))
 
 // ─── GET /clients/audit — journal d'audit complet du client (admin+) ──────────

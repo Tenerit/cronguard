@@ -46,7 +46,7 @@ A classic monitor would have said `backup-db is DOWN`.
 | **Official codes** | Shell exit status (126, 127, 128+N signals), `curl: (N)`, `rsync (code N)` from their man pages. |
 | **Honest abstention** | No fact, no guess: "cause not established" plus the command that reproduces the failure under cron's exact environment (`env -i HOME=… PATH=… /bin/sh -c '<your command>'`). |
 | **Verified local AI** | Explains an established cause in plain words, after the alert, cached per failure type. Guard-railed in code (see below). Optional. |
-| **Team memory** | Fixes confirmed from the alert are reused for the same failure, on every job of the team. Failures nobody recognises yet are listed in the weekly report: the next sheets to write. |
+| **Team memory** | Fixes confirmed from the alert are reused for the same failure. A failure CronGuard did not recognise, once fixed by the team, becomes a **team sheet** in one click (Settings › Learning, admins): prefilled from the failure line and the real fix, checked against the original logs, then recognised on every job of the team without a model. Failures nobody recognises yet are also listed in the weekly report. |
 
 ---
 
