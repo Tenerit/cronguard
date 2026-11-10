@@ -202,7 +202,11 @@ export function grade(caseName: string, expectedCategory: string, logs: string, 
   // modèle : seul le texte généré est contrôlé.
   const kf = res.knownFix
   const fromFix = new Set(kf ? [kf.cause, kf.action, ...kf.steps] : [])
-  const generated = [res.cause, res.action, ...res.checks].filter(x => !fromFix.has(x)).join(' ')
+  // Idem pour les commandes de test construites par le code (diagnosticChecks : reproduction dans l'environnement
+  // du cron, écarts constatés) : elles reprennent la commande du job et des faits relevés, pas une invention.
+  // Corrigé le 2026-11-10 avant public7 (biais vu sur public6 : −1 sur 7 cas sur 15).
+  const builtByCode = /^(Reproduire avec l'environnement du cron|Variables présentes dans votre shell|PATH de votre shell|Relancer le job à la main sous l'utilisateur du cron)/
+  const generated = [res.cause, res.action, ...res.checks].filter(x => !fromFix.has(x) && !builtByCode.test(x)).join(' ')
   const invented = unverifiableIdentifiers(generated, logs)
   const noInvent = invented.length ? 0 : 1
   if (invented.length) why.push(`inventé : ${invented.slice(0, 3).join(', ')}`)

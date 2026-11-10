@@ -65,3 +65,14 @@ describe('grille de notation', () => {
     expect(honest.total).toBeGreaterThan(bluff.total)
   })
 })
+
+describe('grille : commandes construites par le code', () => {
+  it("la commande de reproduction n'est pas comptée comme inventée", async () => {
+    const { analysisWithoutModel } = await import('../src/services/llm/analyzer')
+    const { grade } = await import('../eval/rubric')
+    const c = ALL.find(x => x.name === 'p6-php-unlink-cwd')!
+    const res = analysisWithoutModel({ logs: c.logs, exitCode: c.exitCode, command: '/usr/bin/php /srv/app/cron.php' })
+    expect(res.checks[0]).toMatch(/^Reproduire avec l'environnement du cron/)
+    expect(grade(c.name, c.category, c.logs, res).noInvent).toBe(1)
+  })
+})
