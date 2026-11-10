@@ -1,10 +1,15 @@
 # CronGuard
 
-**Surveillance de cron jobs auto-hébergée, qui diagnostique les pannes sur votre propre machine.**
+**Surveillance de cron jobs auto-hébergée, qui trouve pourquoi un job a échoué — sur votre propre machine — et l'explique avec une IA locale vérifiée avant de parler.**
 
-Un job échoue à 2h40. Les autres outils vous disent *qu'il* a cassé. CronGuard vous dit *pourquoi*, quand il peut le savoir, à partir de trois sources qui ne quittent jamais vos serveurs : une bibliothèque de pannes de cron connues, ce qu'il constate sur la machine (la commande du cron, l'environnement réel du job, les codes de sortie), et un modèle d'IA local pour le reste. Quand il ne peut pas établir la cause, il le dit au lieu de deviner.
+Un job échoue à 2h40. Les autres outils vous disent *qu'il* a cassé. CronGuard vous dit *pourquoi* :
 
-**Pour qui :** équipes ops / SRE / data dont les jobs critiques (sauvegardes, ETL, synchronisation de facturation) tournent sur une infrastructure dont les logs ne doivent pas partir vers un SaaS tiers : secteur régulé, réseau isolé, ou simplement privé. Rien ne quitte votre infrastructure, IA comprise.
+1. **Il constate.** À l'échec, le SDK lance sur la machine du job des commandes de test en lecture seule : ce que votre shell de connexion trouve et que cron ne trouve pas (commandes, *noms* des variables d'environnement), à qui appartiennent les fichiers cités par l'erreur, qui a lancé le job (crontab, conteneur, systemd, Kubernetes, launchd).
+2. **Il diagnostique sur des faits.** Ces constats, la commande du cron, une bibliothèque d'environ 110 pannes de cron connues et les codes de sortie officiels établissent la cause. Rien n'est deviné : quand rien ne l'établit, CronGuard l'écrit (« cause non établie ») et donne la commande qui reproduit la panne dans l'environnement exact du cron.
+3. **Une IA locale l'explique en langage simple.** Le modèle ne choisit jamais la cause : il reformule celle qui est établie pour la personne d'astreinte. Le code rejette toute phrase qui cite un chemin, une commande ou une option absents des faits, ou qui perd une des possibilités listées.
+4. **Il apprend de votre équipe.** Corrigez une panne depuis l'alerte (✏️) : CronGuard ressert votre correction la fois suivante, sur tous les jobs de l'équipe.
+
+**Pour qui :** équipes ops / SRE / data dont les jobs critiques (sauvegardes, ETL, synchronisation de facturation) tournent là où les logs ne doivent pas partir vers un SaaS tiers : secteur régulé, réseau isolé, ou simplement privé. Rien ne quitte votre infrastructure, IA comprise.
 
 🇬🇧 [English version](README.md)
 
@@ -15,13 +20,17 @@ Un job échoue à 2h40. Les autres outils vous disent *qu'il* a cassé. CronGuar
 La sauvegarde de nuit échoue. CronGuard publie dans Teams (ou Slack, Discord, ntfy…) :
 
 > 🟠 **backup-db en échec (production)**
-> **Cause :** le binaire pg_dump utilisé par le cron est plus ancien que le serveur PostgreSQL (version majeure inférieure).
-> **Piste à vérifier :** appeler un pg_dump de la version du serveur en chemin absolu, ou installer postgresql-client à jour.
-> `pg_dump: error: aborting because of server version mismatch`
+> **Cause (constatée) :** votre shell de connexion trouve `pg_dump` dans `/usr/lib/postgresql/16/bin`, le cron non : son PATH est `/usr/bin:/bin`.
+> **Action :** appeler `/usr/lib/postgresql/16/bin/pg_dump` en chemin absolu, ou ajouter ce dossier à `PATH=` en tête de la crontab.
+> `pg_dump: command not found`
 > **[✅ Analyse juste]** **[✏️ Corriger]** **[Page de statut]**
 
 - C'est juste ? Un appui sur **✅**, sans se connecter.
-- C'est en partie faux ? **✏️ Corriger**, et vous écrivez ce qui a vraiment réglé la panne. La prochaine fois, CronGuard ressert *votre* correction, sans appeler le modèle.
+- C'est en partie faux ? **✏️ Corriger**, et vous écrivez ce qui a vraiment réglé la panne. La prochaine fois — sur ce job ou un autre — CronGuard ressert *votre* correction.
+
+Quelques secondes après l'alerte, le tableau de bord ajoute une explication en langage simple par l'IA locale, vérifiée par le code. Un vrai texte de notre jeu de test (`qwen2.5:7b`) :
+
+> *En clair :* La commande 'rake' ne peut pas être trouvée car cron démarre avec un PATH minimal qui ne contient pas /usr/local/bin. Vous devez appeler la commande en chemin absolu ou définir PATH= en tête de la crontab.
 
 Un outil classique aurait écrit `backup-db is DOWN`.
 
@@ -29,14 +38,15 @@ Un outil classique aurait écrit `backup-db is DOWN`.
 
 ## Ce qui change
 
-| Source du diagnostic | Ce qu'elle fait |
+| Couche | Ce qu'elle fait |
 |---|---|
-| **Bibliothèque de pannes connues** (106 fiches) | Messages standard des jobs et de leurs outils (PostgreSQL, MySQL, rsync, SSH, GPG, certificats, identifiants cloud, Docker, mémoire, disque…) reliés au mécanisme et à la correction. Chaque fiche est testée contre les pannes voisines qu'elle ne doit pas reconnaître. |
+| **Commandes de test sur la machine** | À l'échec, le SDK (bash, Python) relève l'utilisateur réel du job, son HOME, son PATH, son shell et son lanceur, les compare à votre shell de connexion (où il trouve les commandes introuvables sous cron, les *noms* des variables absentes — jamais leurs valeurs) et inspecte les fichiers cités par l'erreur (existence, chemin relatif, propriétaire, droits). Lecture seule, 3 s maximum, `CG_PROBE_LOGIN=0` pour ne pas ouvrir le shell de connexion. |
 | **Vérification de la commande** | Lit la commande du cron : `%` non échappé, mot de passe après `-p `, syntaxe bash lancée par `sh`, `rsync -e` sans guillemets, chemins relatifs, `sudo`. Prévient aussi **à l'import**, avant toute panne. |
-| **Sonde d'environnement** | À l'échec, le SDK remonte l'utilisateur réel du cron, son HOME, son PATH, son shell, sa locale, la présence de DISPLAY et de l'agent SSH, et l'endroit où une commande « introuvable » existe réellement sur la machine. Des noms et des chemins, aucune valeur secrète. |
-| **Codes officiels** | Code de sortie du shell (126, 127, 128+N : 137 OOM/SIGKILL, 143 SIGTERM…), `curl: (N)` et `rsync (code N)` d'après leurs pages de manuel. |
-| **Modèle d'IA local** | `llama3.2:3b` via Ollama, sur CPU. Appelé seulement quand rien de ce qui précède ne s'applique (les autres sources répondent tout de suite : 44 cas de réglage sur 54, médiane 12,6 s → 0 s), avec une confiance plafonnée ; s'il ne fait que recopier la ligne d'erreur, l'alerte indique que la cause n'est pas établie. |
-| **Mémoire de l'équipe** | Les corrections confirmées depuis l'alerte sont resservies pour la même panne. Elle s'enrichit à l'usage et reste chez vous. |
+| **Bibliothèque de pannes connues** (~110 fiches) | Messages standard des jobs et de leurs outils (PostgreSQL, MySQL, rsync, SSH, GPG, certificats, identifiants cloud, Docker, mémoire, disque…) reliés au mécanisme et à la correction. Une fiche dont le message correspond à plusieurs causes les liste toutes au lieu d'en choisir une. Chaque fiche est testée contre les pannes voisines qu'elle ne doit pas reconnaître. |
+| **Codes officiels** | Code de sortie du shell (126, 127, 128+N), `curl: (N)`, `rsync (code N)` d'après leurs pages de manuel. |
+| **Abstention honnête** | Pas de fait, pas de supposition : « cause non établie » et la commande qui reproduit la panne dans l'environnement exact du cron (`env -i HOME=… PATH=… /bin/sh -c '<votre commande>'`). |
+| **IA locale vérifiée** | Explique en langage simple une cause établie, après l'alerte, une fois par type de panne. Garde-fous dans le code (voir plus bas). Facultative. |
+| **Mémoire de l'équipe** | Les corrections confirmées depuis l'alerte sont resservies pour la même panne, sur tous les jobs de l'équipe. Les pannes que personne ne reconnaît encore sont listées dans le rapport hebdomadaire : ce sont les prochaines fiches. |
 
 ---
 
@@ -53,9 +63,9 @@ docker run -d --restart unless-stopped -p 3000:3000 -v cronguard-data:/data --na
 curl -X POST http://localhost:3000/auth/register -H "Content-Type: application/json" -d '{"email":"vous@exemple.fr"}'   # affiche votre clé API, une seule fois
 ```
 
-Ouvrez **http://localhost:3000/dashboard**. Sans modèle, les pannes ont quand même les fiches connues, les vérifications de commande et d'environnement et les lignes de log liées ; pour l'IA locale : `-e LLM_BASE_URL=http://<hôte-ollama>:11434/v1`. Les données sont dans le volume `cronguard-data`, avec une sauvegarde PostgreSQL au démarrage puis toutes les 24 h dans `/data/backups`, gardée 7 jours. Copiez ce dossier hors de la machine.
+Ouvrez **http://localhost:3000/dashboard**. Sans modèle, les pannes ont tout sauf l'explication en langage simple ; pour l'ajouter : `-e LLM_BASE_URL=http://<hôte-ollama>:11434/v1 -e LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`. Les données sont dans le volume `cronguard-data`, avec une sauvegarde PostgreSQL au démarrage puis toutes les 24 h dans `/data/backups`, gardée 7 jours. Copiez ce dossier hors de la machine.
 
-**Démo avec données d'exemple et modèle :**
+**Démo avec données d'exemple et IA d'explication** (télécharge `qwen2.5:7b`, ~4,7 Go au premier lancement) :
 
 ```bash
 docker compose -f docker-compose.demo.yml up     # puis connexion avec la clé cg_demo_dockerdemo123456
@@ -92,22 +102,42 @@ Escalade vers un second contact si l'alerte n'est pas acquittée, fenêtres de m
 
 ## Quelle qualité de diagnostic ?
 
-Mesurée automatiquement sur de vraies pannes. Chaque réponse est notée sur 10 par du code ([eval/rubric.ts](eval/rubric.ts)) : mécanisme (4), action juste et sûre (3), catégorie (1), rien d'inventé (1), ligne décisive (1), ±1 pour l'honnêteté.
+Mesurée, pas affirmée. Les critères sont écrits avant chaque test ; les échecs sont publiés comme les réussites ([CHANGELOG](CHANGELOG.md), [docs/EVALUATION.md](docs/EVALUATION.md)).
 
-| Jeu | Note /10 |
+| Test | Résultat |
 |---|---|
-| Pannes couvertes par la bibliothèque | **9,2** |
-| Pannes non couvertes (le modèle local seul) | **3,7** |
-| Les 85 cas utilisés pour le réglage | **7,8**, optimiste puisque ces cas ont été lus |
-| **Test hors échantillon (public5) : 12 pannes StackExchange collectées après tous les changements** | **4,7** (runs 4,4 à 4,8) ; le modèle local seul : 1,9 |
+| **Vraies pannes cron dans un conteneur** (vrai `crond`, un utilisateur avec son `~/.profile`, SDK bash, 8 pannes de cause connue) | **8/8 causes établies avec les commandes de test, 3/8 sans** ; le vrai bug applicatif reste « non établi », rien d'inventé. Scénarios écrits par nous : preuve que ça marche sur un vrai cron, pas un taux de couverture. |
+| **Pannes StackExchange hors échantillon** (public6, 15 cas collectés avant les changements) | Causes fausses affirmées : **12 sur 30 sans déduction par le modèle, contre 20 sur 30 avec**, pour autant de causes justes. Note 3,9/10 contre 4,2 (écart non significatif). Ces cas n'ont que des logs, sans commandes de test. |
+| Pannes couvertes par la bibliothèque | 9,2/10 sur les cas de réglage, **5,0 hors échantillon** : la bibliothèque se généralise imparfaitement, d'où l'apprentissage par votre équipe. |
 
-C'est le chiffre hors échantillon qui compte. Sur ce jeu, CronGuard a reconnu 4 pannes sur 12 grâce à une fiche (8,0 sur celles-ci) et obtient 3,0 sur les autres. Méthode complète, toutes les expériences (y compris celles qui n'ont rien apporté) et comment noter vos propres logs : [docs/EVALUATION.md](docs/EVALUATION.md).
+**Le chiffre qui compte n'existe pas encore :** combien de *vos* pannes CronGuard explique. Essayez-le sur vos jobs ; le rapport hebdomadaire montre ce qu'il n'a pas reconnu.
 
 ---
 
-## Modèle d'IA local
+## IA locale — vérifiée, facultative
 
-Par défaut **`llama3.2:3b` via Ollama**, rapide sur CPU. **Le modèle est facultatif** : sans `LLM_BASE_URL` (ou avec `LLM_ENABLED=false`), tout fonctionne sauf la rédaction libre du modèle. Tout serveur local compatible OpenAI convient (vLLM, serveur llama.cpp, LM Studio). La mémoire d'incidents (`MEMORY_ENABLED`) et le cache par empreinte d'erreur évitent de rappeler le modèle pour une panne déjà vue.
+Nous avons mesuré ce qu'un modèle local fait bien. Pour **trouver** une cause inconnue, un modèle 3B se trompait environ une fois sur deux et ne trouvait jamais un mécanisme que le log n'écrit pas (0 sur 78). Le modèle ne choisit donc **plus jamais la cause**. Pour **expliquer** une cause établie en langage simple, un modèle 7B s'en sort bien :
+
+| `qwen2.5:7b-instruct`, 80 causes établies (attentes fixées avant le test) | Résultat |
+|---|---|
+| Explications produites (acceptées par les garde-fous) | **84 %** |
+| Rien d'inventé (aucun chemin, option ou fichier absent des faits) | **100 %** |
+| Mécanisme gardé | **97 %** |
+| Relecture humaine de chaque texte accepté : sens déformé | 4 sur 67 (6 %) |
+| Temps médian, après l'alerte | 15,5 s |
+
+`llama3.2:3b` échoue au même test (76 % de mécanismes gardés) : l'explication demande le 7B.
+
+**Les garde-fous sont dans le code, pas dans le prompt :** l'explication est écartée (la cause vérifiée s'affiche seule) si elle cite un identifiant absent des faits, perd une des possibilités listées par la cause, ou dépasse trois phrases. La cause vérifiée reste toujours affichée au-dessus, étiquetée.
+
+**Un coût contenu :**
+- **Installation légère par défaut** — sans modèle ; tout ce qui précède sauf l'explication en langage simple.
+- **Installation avec IA :** `ollama pull qwen2.5:7b-instruct-q4_K_M` (~4,7 Go, ~5 Go de RAM, CPU suffisant) et `LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`.
+- **Jamais sur le chemin de l'alerte :** l'explication est écrite après l'envoi de l'alerte.
+- **Une fois par type de panne :** gardée 30 jours par cause et ligne d'erreur normalisée ; une panne qui revient ne relance jamais le modèle.
+- **Un seul serveur IA pour toute l'entreprise :** pointez `LLM_BASE_URL` vers une machine Ollama partagée (avec ou sans GPU) du réseau interne ; toutes les installations CronGuard l'utilisent, rien ne sort.
+
+`LLM_DEDUCTION=on` rétablit l'ancien diagnostic rédigé par le modèle (pour comparaison, déconseillé). Tout serveur local compatible OpenAI convient (vLLM, llama.cpp, LM Studio).
 
 ---
 

@@ -1,10 +1,15 @@
 # CronGuard
 
-**Self-hosted cron monitoring that diagnoses failures on your own machine.**
+**Self-hosted cron monitoring that finds out why a job failed — on your own machine — and explains it with a local AI that is checked before it speaks.**
 
-A job fails at 2:40 a.m. Other monitors tell you *that* it broke. CronGuard tells you *why*, when it can know, from three sources that never leave your servers: a library of known cron failures, what it observes on the host (the cron command, the job's real environment, exit codes), and a local AI model for the rest. When it cannot establish a cause, it says so instead of guessing.
+A job fails at 2:40 a.m. Other monitors tell you *that* it broke. CronGuard tells you *why*:
 
-**Who it's for:** ops / SRE / data teams whose critical jobs (backups, ETL, billing sync) run on infrastructure where logs must not go to a third-party SaaS: regulated, air-gapped, or simply private. Nothing leaves your infra, the AI included.
+1. **It observes.** On failure the SDK runs read-only test commands on the job's host: what your login shell finds that cron does not (commands, the *names* of environment variables), who owns the files the error mentions, who launched the job (crontab, container, systemd, Kubernetes, launchd).
+2. **It diagnoses from facts.** Those observations, the cron command itself, a library of ~110 known cron failures and official exit codes establish the cause. Nothing is guessed: when nothing establishes it, CronGuard says *"cause not established"* and gives the command that reproduces the failure in cron's exact environment.
+3. **A local AI explains it in plain words.** The model never picks the cause; it rewrites the established one for whoever is on call. Code rejects any sentence that cites a path, command or option absent from the facts, or that drops one of the listed possibilities.
+4. **It learns from your team.** Fix a failure from the alert (✏️) and CronGuard serves your fix the next time — on every job of your team.
+
+**Who it's for:** ops / SRE / data teams whose critical jobs (backups, ETL, billing sync) run where logs must not go to a third-party SaaS: regulated, air-gapped, or simply private. Nothing leaves your infra, the AI included.
 
 🇫🇷 [Version française](README.fr.md)
 
@@ -15,13 +20,17 @@ A job fails at 2:40 a.m. Other monitors tell you *that* it broke. CronGuard tell
 Your nightly backup fails. CronGuard posts to Teams (or Slack, Discord, ntfy…). Alert texts are in French today; translated here:
 
 > 🟠 **backup-db failed (production)**
-> **Cause:** the `pg_dump` binary used by the cron is older than the PostgreSQL server (lower major version).
-> **To check:** call a `pg_dump` of the server's version by absolute path, or install an up-to-date `postgresql-client`.
-> `pg_dump: error: aborting because of server version mismatch`
+> **Cause (observed):** your login shell finds `pg_dump` in `/usr/lib/postgresql/16/bin`; cron does not — its PATH is `/usr/bin:/bin`.
+> **Action:** call `/usr/lib/postgresql/16/bin/pg_dump` by absolute path, or add that folder to `PATH=` at the top of the crontab.
+> `pg_dump: command not found`
 > **[✅ Analysis right]** **[✏️ Correct]** **[Status page]**
 
 - Right? One tap on **✅**, no login.
-- Partly wrong? **✏️ Correct**, type what really fixed it. Next time the same failure happens, CronGuard serves *your* fix, without calling the model.
+- Partly wrong? **✏️ Correct**, type what really fixed it. Next time the same failure happens — on this job or another — CronGuard serves *your* fix.
+
+A few seconds after the alert, the dashboard adds a plain-words explanation by the local AI, checked by code. A real one from our test set (`qwen2.5:7b`, translated):
+
+> *In plain words:* the `rake` command cannot be found because cron starts with a minimal PATH that does not contain /usr/local/bin. Call the command by its absolute path or set PATH= at the top of the crontab.
 
 A classic monitor would have said `backup-db is DOWN`.
 
@@ -29,14 +38,15 @@ A classic monitor would have said `backup-db is DOWN`.
 
 ## Why it's different
 
-| Source of the diagnosis | What it does |
+| Layer | What it does |
 |---|---|
-| **Known-fix library** (106 sheets) | Standard messages of cron jobs and their tools (PostgreSQL, MySQL, rsync, SSH, GPG, certificates, cloud credentials, Docker, memory, disk…) mapped to the mechanism and the fix. Each sheet is tested against the failures it must not match. |
+| **Test commands on the host** | On failure the SDK (bash, Python) checks the job's real user, HOME, PATH, shell and launcher, compares with your login shell (where it finds the commands cron cannot, the *names* of variables cron lacks — never their values), and inspects the files the error cites (exists, relative, owner, permissions). Read-only, 3 s cap, `CG_PROBE_LOGIN=0` to skip the login shell. |
 | **Command check** | Reads the cron command itself: unescaped `%`, a password after `-p `, bash syntax run by `sh`, unquoted `rsync -e`, relative paths, `sudo`. Also warns at **import time**, before anything fails. |
-| **Execution-context probe** | On failure the SDK reports the cron's real user, HOME, PATH, shell, locale, DISPLAY / SSH-agent presence, and where a "command not found" actually lives on the machine. Names and paths only, no secret values. |
-| **Official codes** | Shell exit status (126, 127, 128+N signals: 137 OOM/SIGKILL, 143 SIGTERM…), `curl: (N)` and `rsync (code N)` from their man pages. |
-| **Local AI model** | `llama3.2:3b` through Ollama, on CPU. Called only when none of the above applies (the others answer instantly: 44 of 54 tuning cases, median 12.6 s → 0 s), with its confidence capped; when it only restates the error line, the alert says the cause is not established. |
-| **Team memory** | Fixes confirmed from the alert are reused for the same failure, per job. It compounds with use and stays on your box. |
+| **Known-fix library** (~110 sheets) | Standard messages of cron jobs and their tools (PostgreSQL, MySQL, rsync, SSH, GPG, certificates, cloud credentials, Docker, memory, disk…) mapped to the mechanism and the fix. A sheet whose trigger fits several causes lists them all instead of picking one. Each sheet is tested against the failures it must not match. |
+| **Official codes** | Shell exit status (126, 127, 128+N signals), `curl: (N)`, `rsync (code N)` from their man pages. |
+| **Honest abstention** | No fact, no guess: "cause not established" plus the command that reproduces the failure under cron's exact environment (`env -i HOME=… PATH=… /bin/sh -c '<your command>'`). |
+| **Verified local AI** | Explains an established cause in plain words, after the alert, cached per failure type. Guard-railed in code (see below). Optional. |
+| **Team memory** | Fixes confirmed from the alert are reused for the same failure, on every job of the team. Failures nobody recognises yet are listed in the weekly report: the next sheets to write. |
 
 ---
 
@@ -53,7 +63,7 @@ docker run -d --restart unless-stopped -p 3000:3000 -v cronguard-data:/data --na
 curl -X POST http://localhost:3000/auth/register -H "Content-Type: application/json" -d '{"email":"you@example.com"}'   # prints your API key, once
 ```
 
-Open **http://localhost:3000/dashboard**. Without a model, failures still get the known fixes, the command and context checks and the related log lines; add local AI with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1`. Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host.
+Open **http://localhost:3000/dashboard**. Without a model, failures get everything but the plain-words explanation; add it with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1 -e LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`. Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host.
 
 **Demo with sample data and the AI model:**
 
@@ -61,7 +71,7 @@ Open **http://localhost:3000/dashboard**. Without a model, failures still get th
 docker compose -f docker-compose.demo.yml up     # then log in with API key cg_demo_dockerdemo123456
 ```
 
-Boots PostgreSQL, Redis and Ollama, seeds 9 monitors with realistic failures and pulls the model (~2 GB on first boot).
+Boots PostgreSQL, Redis and Ollama, seeds 9 monitors with realistic failures and pulls the explanation model (`qwen2.5:7b`, ~4.7 GB on first boot; causes show immediately, plain-words explanations once the pull is done).
 
 **Air-gapped server:** on a connected machine, `scripts/offline-bundle.sh [folder] [--with-model]` writes the image (~80 MB), `install.sh` and `SHA256SUMS`; `--with-model` adds the Ollama image and the model (several GB). Copy the folder, then `sha256sum -c SHA256SUMS && ./install.sh`. No network needed.
 
@@ -144,27 +154,42 @@ Escalation to a second contact when an alert is not acknowledged, maintenance wi
 
 ## How good is the diagnosis?
 
-Measured automatically on real failures, not asserted. Each answer is graded out of 10 by code ([eval/rubric.ts](eval/rubric.ts)): the mechanism named (4), a correct and safe action (3), the category (1), nothing invented (1), the decisive log line linked (1), ±1 for honesty.
+Measured, not asserted. Criteria are written down before each test; failures are published like successes ([CHANGELOG](CHANGELOG.md), [docs/EVALUATION.md](docs/EVALUATION.md)).
 
-| Set | Score /10 |
+| Test | Result |
 |---|---|
-| Failures the known-fix library covers | **9.2** |
-| Failures it does not cover (the local model alone) | **3.7** |
-| All 85 cases used while tuning (lab + 4 public sets) | **7.8**, optimistic since these cases were read |
-| **Held-out test (public5): 12 StackExchange cron failures collected after every change** | **4.7** (runs 4.4–4.8); the local model alone: 1.9 |
+| **Real cron failures in a container** (real `crond`, a user with their own `~/.profile`, bash SDK, 8 failures with a known cause) | **8/8 causes established with the test commands, 3/8 without**; the genuine application bug left as "not established", nothing invented. Scenarios written by us: proof it works on real cron, not a coverage figure. |
+| **Held-out StackExchange failures** (public6, 15 cases collected before the changes) | Wrong causes stated as fact: **12/30 without model deduction vs 20/30 with it**, for the same number of right causes. Score 3.9/10 vs 4.2 (not significant). These cases have logs only — no host probes. |
+| Failures the known-fix library covers | 9.2/10 on the cases we tuned on, **5.0 on held-out ones**: the library generalises imperfectly, which is why it learns from your team. |
 
-The held-out number is the one to judge us on. On it, CronGuard recognised 4 of 12 failures with a known fix (8.0 on those) and scored 3.0 on the rest. Real cron failures are often one-off mistakes that no library describes, and a 3B model mostly restates them; that is why the probe, the command check and your team's fixes matter more than the model. Full method, every experiment (including the ones that did not help) and how to score your own logs: [docs/EVALUATION.md](docs/EVALUATION.md).
+**The number to judge us on is not out yet:** how many of *your* failures CronGuard explains. Run it on your jobs; the weekly report shows what it did not recognise.
 
 ---
 
-## Local AI model
+## Local AI — verified, optional
 
-Default: **`llama3.2:3b` through Ollama**, non-reasoning, fast on CPU. **The model is optional**: leave `LLM_BASE_URL` unset (or `LLM_ENABLED=false`) and everything except the model's free-text fallback still works; the same fallback applies when the model is down.
+We measured what a local model is good at. Asked to **find** an unknown cause, a 3B model was wrong about half the time and never found a mechanism the log did not state (0/78). So the model **never picks the cause** anymore. Asked to **explain** an established cause in plain words, a 7B model does it well:
 
-- **Any local OpenAI-compatible server** works the same way (`LLM_BASE_URL`, `LLM_MODEL`): vLLM, llama.cpp server, LM Studio. Pointing it at a remote provider would send logs off your infrastructure; CronGuard is not designed for that.
-- **Incident memory** (on by default, `MEMORY_ENABLED`): incidents you confirm are embedded locally (`nomic-embed-text`) and the most similar ones guide the next analysis. A recurring error with the same fingerprint (timestamps, PIDs, UUIDs, IPs stripped) is served from cache without calling the model.
-- **Bounded prompts:** repeated error lines collapse into templates, long lines are capped and the log slice is bounded (`LLM_LOG_BUDGET`), so every analysis costs a predictable amount.
-- **Runbook notes** per monitor (known gotchas, who to wake) are given to the model as context.
+| `qwen2.5:7b-instruct`, 80 established causes (expectations fixed before the run) | Result |
+|---|---|
+| Explanations produced (accepted by the guards) | **84 %** |
+| Nothing invented (no path, option or file absent from the facts) | **100 %** |
+| Mechanism kept | **97 %** |
+| Human read of every accepted text: meaning distorted | 4 of 67 (6 %) |
+| Median time, after the alert | 15.5 s |
+
+`llama3.2:3b` failed the same test (76 % mechanism kept): the explainer needs the 7B.
+
+**The guards are code, not prompt:** an explanation is dropped (the verified cause is shown alone) if it cites an identifier absent from the facts, drops one of the possibilities the cause lists, or runs past three sentences. The verified cause always stays above it, labelled.
+
+**Cost, kept small:**
+- **Light install by default** — no model; everything above except the plain-words explanation.
+- **AI install:** `ollama pull qwen2.5:7b-instruct-q4_K_M` (~4.7 GB, ~5 GB RAM, CPU is fine) and `LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`.
+- **Never on the alert path:** the explanation is written after the alert is sent.
+- **Once per failure type:** cached 30 days by cause and normalised error line, so a recurring failure never runs the model again.
+- **One AI server for the whole company:** point `LLM_BASE_URL` at a shared Ollama box (GPU or not) on your network; every CronGuard install uses it, nothing leaves your infra.
+
+`LLM_DEDUCTION=on` restores the old free-text diagnosis by the model (for comparison; not recommended). Any local OpenAI-compatible server works (vLLM, llama.cpp, LM Studio). Incident memory (`MEMORY_ENABLED`, local `nomic-embed-text`) and per-monitor runbook notes are unchanged.
 
 ---
 
@@ -173,7 +198,7 @@ Default: **`llama3.2:3b` through Ollama**, non-reasoning, fast on CPU. **The mod
 | | **CronGuard** | Healthchecks.io | Cronitor |
 |---|---|---|---|
 | Missed / late / hung jobs (cron-aware) | ✅ | ✅ | ✅ |
-| **Cause and fix from your logs** | ✅ library + host checks + local AI | ❌ | ❌ |
+| **Cause and fix from your logs and host** | ✅ host test commands + library, explained by verified local AI | ❌ | ❌ |
 | **Validate or correct a diagnosis from the alert; reused next time** | ✅ | ❌ | ❌ |
 | **Checks the cron command and the job's real environment** | ✅ | ❌ | ❌ |
 | Output validation (records min/max) | ✅ | ❌ | ✅ |
@@ -213,8 +238,8 @@ cron job ──(SDK: logs, exit code, command, context)──▶ API (Express) �
                                                                            │
    ┌──────────────────────────────── workers ──────────────────────────────┤
    ├─ ping processor    stores the run, validates output, recovery notice  │
-   ├─ analysis          command check → context probe → known fixes →      │
-   │                    official codes → local model (Ollama) → alerts     │
+   ├─ analysis          host facts → command check → known fixes → codes → │
+   │                    alerts → verified local AI explanation (cached)    │
    ├─ timeout checker   missed / late / hung / slow jobs, escalation       │
    ├─ retention         purges old pings and analyses                      │
    └─ self-monitor      API, workers and queue health                      │

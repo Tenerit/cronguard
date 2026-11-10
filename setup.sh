@@ -68,6 +68,12 @@ else
   docker compose exec -T ollama ollama pull "$LLM_MODEL" && ok "Modèle LLM téléchargé"
 fi
 
+# Modèle d'explication (IA locale vérifiée), seulement si LLM_EXPLAIN_MODEL est défini (~4,7 Go).
+EXPLAIN_MODEL=$(grep "^LLM_EXPLAIN_MODEL" .env 2>/dev/null | cut -d= -f2 | tr -d '"')
+if [ -n "$EXPLAIN_MODEL" ]; then
+  docker compose exec -T ollama ollama pull "$EXPLAIN_MODEL" && ok "Modèle d'explication prêt ($EXPLAIN_MODEL)"     || warn "$EXPLAIN_MODEL non téléchargé — pas d'explication en langage simple"
+fi
+
 # Modèle d'embeddings — moat « mémoire d'incidents » (MEMORY_ENABLED on par défaut, ~274 MB).
 if ! grep -qi "^MEMORY_ENABLED=false" .env 2>/dev/null; then
   docker compose exec -T ollama ollama pull nomic-embed-text >/dev/null 2>&1 \
