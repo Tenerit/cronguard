@@ -25,6 +25,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Mesuré — rôle de l'IA n°1 « expliquer en langage simple » (2026-11-10, attentes fixées d'avance, NON adopté)
+- 80 cas où la cause est établie. Rien d'inventé : **98 %** (≥ 95 % ✅) · mécanisme gardé : **76 %** (≥ 90 % ❌) · 41 mots en médiane, mais jusqu'à 4 phrases (≤ 3 ❌) · 7,1 s (≤ 8 s ✅).
+- Le modèle déforme en simplifiant : « plus d'inodes alors qu'il reste de l'espace » devient « système de fichiers plein » ; quand la cause liste des alternatives (« … ou proxy absent sous cron »), il en garde une et jette les autres — il recommence à deviner. Pas branché ; exemples dans `eval/EXPLAIN.md`.
+
 ### Amélioré — précision des fiches (2026-11-10, réglé sur les jeux déjà lus ; vérification prévue sur public7)
 - Ratés (fiche qui répond à côté) : **15 → 5** sur lab + public à public6. Cause juste quand une fiche répond : public2 86 → 100 %, public3 75 → 88 %, public4 92 → 100 %, public5 71 → 86 %, public6 25 → 88 %.
 - **Signaux décisifs qui masquaient une fiche générique** (3 fiches en tête de liste) : continuation de ligne cassée (≥ 2 lignes `--option: command not found`, fins de ligne Windows) au lieu d'« identifiants refusés » ; mot de passe MySQL jamais transmis (`Enter password:` + `using password: NO`) ; serveur X qui refuse la connexion (`No protocol specified`) au lieu de « pas d'affichage ». Une seule ligne d'option orpheline ne suffit pas (variable vide, vérifié sur le corpus).
