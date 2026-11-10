@@ -99,9 +99,9 @@ Mesurée automatiquement sur de vraies pannes. Chaque réponse est notée sur 10
 | Pannes couvertes par la bibliothèque | **9,2** |
 | Pannes non couvertes (le modèle local seul) | **3,7** |
 | Les 85 cas utilisés pour le réglage | **7,8**, optimiste puisque ces cas ont été lus |
-| Dernier test hors échantillon avant les dernières corrections (17 pannes StackExchange) | **5,0** |
+| **Test hors échantillon (public5) : 12 pannes StackExchange collectées après tous les changements** | **4,7** (runs 4,4 à 4,8) ; le modèle local seul : 1,9 |
 
-C'est le chiffre hors échantillon qui compte, et le prochain est mesuré sur des pannes collectées après le dernier changement. Méthode complète, toutes les expériences (y compris celles qui n'ont rien apporté) et comment noter vos propres logs : [docs/EVALUATION.md](docs/EVALUATION.md).
+C'est le chiffre hors échantillon qui compte. Sur ce jeu, CronGuard a reconnu 4 pannes sur 12 grâce à une fiche (8,0 sur celles-ci) et obtient 3,0 sur les autres. Méthode complète, toutes les expériences (y compris celles qui n'ont rien apporté) et comment noter vos propres logs : [docs/EVALUATION.md](docs/EVALUATION.md).
 
 ---
 

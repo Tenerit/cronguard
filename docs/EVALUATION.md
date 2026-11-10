@@ -35,6 +35,7 @@ Comparisons are only made **paired, in the same session**: between sessions the 
 | public2 | 17 | StackExchange, collected after the known-fix library was frozen | read, tuning |
 | public3 | 14 | StackExchange, collected later | read, tuning |
 | public4 | 17 | StackExchange, with the cron command when the post gives it, collected before the command and context levers | read, tuning |
+| public5 | 12 | StackExchange, collected 2026-11-10 after every change | held-out test |
 
 Every public set follows a rule fixed before seeing any result: for a list of pre-written queries, take the **first** StackExchange result that has an error log and an accepted answer; drop a case only when the answer establishes no cause, with the reason written in the file ([`eval/public-cases-*.ts`](../eval)). Once a set's outputs have been read to understand failures, it becomes a tuning set and a new one is collected for the next honest measurement.
 
@@ -47,8 +48,9 @@ Every public set follows a rule fixed before seeing any result: for a list of pr
 | public3 held-out, 89 sheets | 3.5 (raw model 2.0) |
 | public4 held-out, with command check and context probe | 5.0 (4.6 without) |
 | After fixing the measured point losses, 97 sheets, all 85 cases (read) | 7.8: covered 9.2, not covered 3.7 |
+| **public5 held-out (2026-11-10), 12 failures collected after every change** | **4.7** (CI 4.4–5.0): covered 4/12 at 8.0, not covered 3.0; raw model 1.9, difference +2.8 (CI +1.7 to +4.0) |
 
-The held-out figures are the honest ones; 7.8 is optimistic because those cases were read while tuning. The execution-context probe cannot be measured on public posts, which never include the cron's environment: it needs real SDK logs.
+The held-out figures are the honest ones; 7.8 is optimistic because those cases were read while tuning. The gap between 7.8 and 4.7 is mostly coverage: the library recognised 76% of the cases it was tuned on, but 33% of new ones. One public5 case scored 9 with "cause not established" because the quoted error line itself contained the mechanism word (`interactive prompting is disabled`): the rubric gives that point, a reader may not. The execution-context probe cannot be measured on public posts, which never include the cron's environment: it needs real SDK logs.
 
 ### What did not help, measured
 

@@ -1,0 +1,1873 @@
+{
+  "date": "2026-11-10T12:03:55.707Z",
+  "set": "public5",
+  "runs": 3,
+  "model": "llama3.2:3b",
+  "summary": {
+    "A": {
+      "note": "4.7",
+      "ci95": [
+        "4.4",
+        "5.0"
+      ],
+      "runs": [
+        "4.8",
+        "4.4",
+        "4.8"
+      ],
+      "covered": {
+        "note": "8.0",
+        "n": 4
+      },
+      "uncovered": {
+        "note": "3.0",
+        "n": 8
+      },
+      "lab": "—",
+      "public": "—",
+      "public2": "—",
+      "public3": "—",
+      "public4": "—",
+      "public5": "4.7",
+      "criteria": {
+        "cause_mecanisme": "31 %",
+        "action": "33 %",
+        "categorie": "47 %",
+        "rien_invente": "83 %",
+        "preuve": "92 %"
+      },
+      "latence_mediane_s": "13.1",
+      "parsable": "100 %"
+    },
+    "B": {
+      "note": "1.9",
+      "ci95": [
+        "1.5",
+        "2.2"
+      ],
+      "runs": [
+        "2.0",
+        "1.5",
+        "2.1"
+      ],
+      "covered": {
+        "note": "1.8",
+        "n": 4
+      },
+      "uncovered": {
+        "note": "1.9",
+        "n": 8
+      },
+      "lab": "—",
+      "public": "—",
+      "public2": "—",
+      "public3": "—",
+      "public4": "—",
+      "public5": "1.9",
+      "criteria": {
+        "cause_mecanisme": "6 %",
+        "action": "11 %",
+        "categorie": "33 %",
+        "rien_invente": "86 %",
+        "preuve": "92 %"
+      },
+      "latence_mediane_s": "13.0",
+      "parsable": "100 %"
+    },
+    "diff_B_moins_A": {
+      "note": "-2.8",
+      "ci95": [
+        "-4.0",
+        "-1.7"
+      ],
+      "variant": "LLM_KNOWLEDGE=off"
+    }
+  },
+  "rows": [
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-ruby-shebang-127",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "inventé : --help"
+        ]
+      },
+      "cause": "exit code 127, erreur de syntaxe",
+      "action": "Réexécuter le job avec la commande `--help` pour obtenir des informations sur l'erreur",
+      "model": "llama3.2:3b",
+      "ms": 16537
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-ruby-shebang-127",
+      "covered": false,
+      "g": {
+        "total": 0,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "inventé : --help",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "exit code 127, erreur de syntaxe",
+      "action": "Réexécuter le job avec la commande `--help` pour obtenir des informations sur l'erreur",
+      "model": "llama3.2:3b",
+      "ms": 15439
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-crontab-percent-expr",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "erreur de syntaxe dans le script CRON",
+      "action": "Vérifier et corriger le script CRON manuellement",
+      "model": "llama3.2:3b",
+      "ms": 11810
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-crontab-percent-expr",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "erreur de grand-child du cron",
+      "action": "réinitialiser le chronomètre et redémarer le service",
+      "model": "llama3.2:3b",
+      "ms": 11610
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-cronhourly-crontab-syntax",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "inventé : /usr/bin"
+        ]
+      },
+      "cause": "commande 'bin' introuvable",
+      "action": "ajouter le chemin /usr/bin au PATH du système",
+      "model": "llama3.2:3b",
+      "ms": 12743
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-cronhourly-crontab-syntax",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "inventé : /usr/bin",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "commande 'bin' introuvable",
+      "action": "ajouter le chemin du répertoire /usr/bin au PATH de l'utilisateur courant",
+      "model": "llama3.2:3b",
+      "ms": 15092
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-svn-sshpass-noninteractive",
+      "covered": false,
+      "g": {
+        "total": 9,
+        "mech": 4,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "catégorie network ≠ dependency"
+        ]
+      },
+      "cause": "Authentication failed and interactive prompting is disabled",
+      "action": "Réessayer la commande svn avec le flag --force-interactive",
+      "model": "llama3.2:3b",
+      "ms": 13290
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-svn-sshpass-noninteractive",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « svn: E215004: Authentication failed and interactive prompting is disabled; see the --force-interactive option ». Voir les lignes liées.",
+      "action": "Réessayer la commande svn avec le flag --force-interactive",
+      "model": "llama3.2:3b",
+      "ms": 13163
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-perl-env-login-shell",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "mémoire insuffisante",
+      "action": "Augmenter la mémoire allouée au job",
+      "model": "llama3.2:3b",
+      "ms": 12422
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-perl-env-login-shell",
+      "covered": false,
+      "g": {
+        "total": 0,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "mémoire insuffisante",
+      "action": "Réduire la quantité de données à synchroniser avec rsync",
+      "model": "llama3.2:3b",
+      "ms": 14421
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-python-version-import",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "No module named stem.descriptor",
+      "action": "Mettre à jour la dépendance Python pour inclure stem",
+      "model": "llama3.2:3b",
+      "ms": 11736
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-python-version-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 11485
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-php-set-time-limit",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ code",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « [01-Mar-2012 00:32:57 UTC] PHP Fatal error: Maximum execution time of 60 seconds exceeded in /path/file.php on line 2079 ». Voir les lignes liées.",
+      "action": "Augmenter la durée de exécution du job à 120 secondes",
+      "model": "llama3.2:3b",
+      "ms": 15119
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-php-set-time-limit",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ code",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Maximum execution time of 60 seconds exceeded",
+      "action": "Augmenter la durée de planification du job pour éviter le dépassement de la limite d'exécution",
+      "model": "llama3.2:3b",
+      "ms": 15443
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-env-node-bashrc",
+      "covered": true,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie code ≠ dependency",
+          "inventé : node.js",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "élément introuvable",
+      "action": "Vérifier que le chemin d'accès au script Node.js est correct et existentiel.",
+      "model": "llama3.2:3b",
+      "ms": 12996
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-env-node-bashrc",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "L'interpréteur indiqué par le shebang (#!) n'existe pas à ce chemin, ou /usr/bin/env ne le trouve pas dans le PATH minimal du cron.",
+      "action": "Mettre le chemin absolu correct de l'interpréteur dans le shebang (command -v python3 pour le trouver).",
+      "model": "llama3.2:3b",
+      "ms": 11943
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-unixcat-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12996
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-unixcat-path",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "commande 'unixcat' introuvable",
+      "action": "installer le paquet 'unixcat' via apt-get ou update-apt-list",
+      "model": "llama3.2:3b",
+      "ms": 13801
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-macos-tcc-trash",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency"
+        ]
+      },
+      "cause": "PermissionError: Operation not permitted",
+      "action": "Changer le chemin de fichiers temporaire pour éviter les erreurs de permission",
+      "model": "llama3.2:3b",
+      "ms": 11763
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-macos-tcc-trash",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « PermissionError: [Errno 1] Operation not permitted: '/Users/me/.Trash' ». Voir les lignes liées.",
+      "action": "Changer la propriété de /Users/me/.Trash pour permettre l'accès au processus",
+      "model": "llama3.2:3b",
+      "ms": 12909
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-proxy-env-cron",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ network"
+        ]
+      },
+      "cause": "Le service distant ne répond pas dans le délai : indisponible, surchargé, ou pare-feu qui jette les paquets sans refuser.",
+      "action": "Vérifier l'état du service distant (page de statut, nc -zv) puis réessayer avec un délai exponentiel.",
+      "model": "llama3.2:3b",
+      "ms": 13305
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-proxy-env-cron",
+      "covered": true,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "délai de connexion supérieur à la limite autorisée",
+      "action": "augmenter le délai de connexion pour éviter le timeout",
+      "model": "llama3.2:3b",
+      "ms": 12017
+    },
+    {
+      "run": 0,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-wget-ssl-status5",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ network",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "grandchild #20349 failed with status 5",
+      "action": "Vérifier le statut du grand-enfant et exécuter manuellement la commande pour résoudre le problème",
+      "model": "llama3.2:3b",
+      "ms": 14773
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-wget-ssl-status5",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ network",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « grandchild #20349 failed with status 5 ». Voir les lignes liées.",
+      "action": "Vérifier le statut du grand-enfant et exécuter manuellement la commande pour résoudre le problème",
+      "model": "llama3.2:3b",
+      "ms": 12827
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-ruby-shebang-127",
+      "covered": false,
+      "g": {
+        "total": 0,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "inventé : --help",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "exit code 127, erreur de syntaxe",
+      "action": "Réexécuter le job avec la commande `--help` pour obtenir des informations sur l'erreur",
+      "model": "llama3.2:3b",
+      "ms": 13950
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-ruby-shebang-127",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "inventé : --help"
+        ]
+      },
+      "cause": "exit code 127, erreur de syntaxe",
+      "action": "Réexécuter le job avec la commande `--help` pour obtenir des informations sur l'erreur",
+      "model": "llama3.2:3b",
+      "ms": 13539
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-crontab-percent-expr",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "erreur de la ligne de commande CRON",
+      "action": "réinitialiser le chronomètre et réessayer la ligne de commande",
+      "model": "llama3.2:3b",
+      "ms": 13262
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-crontab-percent-expr",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "exit code != 0 sans erreur infra",
+      "action": "Vérifier le log de la ligne CRON et ajuster la configuration si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 12317
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-cronhourly-crontab-syntax",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ code",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "commande 'bin' introuvable",
+      "action": "ajouter l'environnement 'PATH' au fichier /etc/cron.hourly/curl",
+      "model": "llama3.2:3b",
+      "ms": 13445
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-cronhourly-crontab-syntax",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ code",
+          "inventé : /etc/crontab"
+        ]
+      },
+      "cause": "commande 'bin' introuvable",
+      "action": "ajouter le chemin du répertoire /bin à la variable PATH",
+      "model": "llama3.2:3b",
+      "ms": 14074
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-svn-sshpass-noninteractive",
+      "covered": false,
+      "g": {
+        "total": 6,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause"
+        ]
+      },
+      "cause": "Authentication failed with unsupported authentication type",
+      "action": "Re-execute the job with --force-interactive option to force interactive authentication",
+      "model": "llama3.2:3b",
+      "ms": 12046
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-svn-sshpass-noninteractive",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Authentication failed with unsupported authentication type",
+      "action": "Vérifier la configuration de l'authentification SVN et essayer avec un autre type d'authentification",
+      "model": "llama3.2:3b",
+      "ms": 15301
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-perl-env-login-shell",
+      "covered": false,
+      "g": {
+        "total": 0,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "mémoire insuffisante",
+      "action": "Augmenter la mémoire allouée au job",
+      "model": "llama3.2:3b",
+      "ms": 13993
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-perl-env-login-shell",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": " mémoire insuffisante",
+      "action": "Réduire la quantité de données à transférer avec rsync et augmenter le temps d'attente",
+      "model": "llama3.2:3b",
+      "ms": 14368
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-python-version-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 13115
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-python-version-import",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "No module named stem.descriptor",
+      "action": "Mettre à jour la dépendance Python pour inclure stem",
+      "model": "llama3.2:3b",
+      "ms": 12517
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-php-set-time-limit",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Maximum execution time of 60 seconds exceeded",
+      "action": "Augmenter la durée de planification du job pour éviter ce problème",
+      "model": "llama3.2:3b",
+      "ms": 12320
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-php-set-time-limit",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ code",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « [01-Mar-2012 00:32:57 UTC] PHP Fatal error: Maximum execution time of 60 seconds exceeded in /path/file.php on line 2079 ». Voir les lignes liées.",
+      "action": "Augmenter la durée de lancement du job ou réduire le temps d'exécution",
+      "model": "llama3.2:3b",
+      "ms": 14084
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-env-node-bashrc",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "L'interpréteur indiqué par le shebang (#!) n'existe pas à ce chemin, ou /usr/bin/env ne le trouve pas dans le PATH minimal du cron.",
+      "action": "Mettre le chemin absolu correct de l'interpréteur dans le shebang (command -v python3 pour le trouver).",
+      "model": "llama3.2:3b",
+      "ms": 12129
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-env-node-bashrc",
+      "covered": true,
+      "g": {
+        "total": 4,
+        "mech": 0,
+        "act": 3,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "élément introuvable",
+      "action": "Vérifier la présence de l'outil /usr/bin/env: node et ajouter son chemin d'accès à l'environnement",
+      "model": "llama3.2:3b",
+      "ms": 13002
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-unixcat-path",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "commande 'unixcat' introuvable",
+      "action": "ajouter l'outil 'unixcat' via apt-get ou un autre gestionnaire de paquets",
+      "model": "llama3.2:3b",
+      "ms": 13429
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-unixcat-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12743
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-macos-tcc-trash",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « PermissionError: [Errno 1] Operation not permitted: '/Users/me/.Trash' ». Voir les lignes liées.",
+      "action": "Changer le chemin de fichiers temporaire pour éviter les erreurs de permission",
+      "model": "llama3.2:3b",
+      "ms": 12733
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-macos-tcc-trash",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Operation not permitted",
+      "action": "Changer le chemin de sortie du job pour éviter la permission d'écriture",
+      "model": "llama3.2:3b",
+      "ms": 11810
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-proxy-env-cron",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "délai de connexion supérieur à la limite autorisée",
+      "action": "augmenter le délai de connexion pour éviter le timeout",
+      "model": "llama3.2:3b",
+      "ms": 12880
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-proxy-env-cron",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ network"
+        ]
+      },
+      "cause": "Le service distant ne répond pas dans le délai : indisponible, surchargé, ou pare-feu qui jette les paquets sans refuser.",
+      "action": "Vérifier l'état du service distant (page de statut, nc -zv) puis réessayer avec un délai exponentiel.",
+      "model": "llama3.2:3b",
+      "ms": 13437
+    },
+    {
+      "run": 1,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-wget-ssl-status5",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ network",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « grandchild #20349 failed with status 5 ». Voir les lignes liées.",
+      "action": "Vérifier le statut du grand-enfant et exécuter un restart du service si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 13405
+    },
+    {
+      "run": 1,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-wget-ssl-status5",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ network",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "grandchild #20349 failed with status 5",
+      "action": "Vérifier le statut du grand-enfant et redémarrer le service si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 13004
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-ruby-shebang-127",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "inventé : --help"
+        ]
+      },
+      "cause": "exit code 127, erreur de syntaxe",
+      "action": "Réexécuter le job avec la commande `--help` pour obtenir des informations sur l'erreur",
+      "model": "llama3.2:3b",
+      "ms": 13382
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-ruby-shebang-127",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "exit code 127, erreur de shell",
+      "action": "redémarrer le service cron",
+      "model": "llama3.2:3b",
+      "ms": 10647
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-crontab-percent-expr",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "erreur de syntaxe dans le fichier crontab",
+      "action": "réinitialiser le fichier crontab et le réessayer",
+      "model": "llama3.2:3b",
+      "ms": 11896
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-crontab-percent-expr",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "erreur de la ligne de commande CRON",
+      "action": "supprimer ou modifier la ligne de commande CRON pour éviter les erreurs futures",
+      "model": "llama3.2:3b",
+      "ms": 13483
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-cronhourly-crontab-syntax",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "inventé : /usr/bin"
+        ]
+      },
+      "cause": "commande 'bin' introuvable",
+      "action": "ajouter le chemin du répertoire /usr/bin au PATH",
+      "model": "llama3.2:3b",
+      "ms": 13003
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-cronhourly-crontab-syntax",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "inventé : /usr/bin",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "commande 'bin' introuvable",
+      "action": "ajouter le chemin du répertoire /usr/bin au PATH de l'utilisateur courant",
+      "model": "llama3.2:3b",
+      "ms": 15138
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-svn-sshpass-noninteractive",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Authentication failed and interactive prompting is disabled",
+      "action": "Réexécuter le script avec --force-interactive pour obtenir une authentification non interactiva",
+      "model": "llama3.2:3b",
+      "ms": 16330
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-svn-sshpass-noninteractive",
+      "covered": false,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « svn: E215004: Authentication failed and interactive prompting is disabled; see the --force-interactive option ». Voir les lignes liées.",
+      "action": "Réessayer la commande svn avec l'option --force-interactive",
+      "model": "llama3.2:3b",
+      "ms": 17416
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-perl-env-login-shell",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "OOM (mémoire insuffisante) après import errors",
+      "action": "Réduire la quantité de données à transférer et essayer à nouveau",
+      "model": "llama3.2:3b",
+      "ms": 14967
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-perl-env-login-shell",
+      "covered": false,
+      "g": {
+        "total": 0,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "preuve : ligne décisive non liée",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": " mémoire insuffisante",
+      "action": "Augmenter la RAM ou réduire le nombre de tâches en cours",
+      "model": "llama3.2:3b",
+      "ms": 14963
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-python-version-import",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "No module named stem.descriptor",
+      "action": "Mettre à jour la dépendance Python pour inclure stem",
+      "model": "llama3.2:3b",
+      "ms": 12010
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-python-version-import",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron lance un autre interpréteur Python que le vôtre (virtualenv non activé, autre version) : le module n'y est pas installé.",
+      "action": "Appeler le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "llama3.2:3b",
+      "ms": 11877
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-php-set-time-limit",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ code",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « [01-Mar-2012 00:32:57 UTC] PHP Fatal error: Maximum execution time of 60 seconds exceeded in /path/file.php on line 2079 ». Voir les lignes liées.",
+      "action": "Augmenter la durée de planification du job pour éviter le dépassement de la limite d'exécution",
+      "model": "llama3.2:3b",
+      "ms": 13822
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-php-set-time-limit",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Maximum execution time of 60 seconds exceeded",
+      "action": "Augmenter la durée de lancement du job à 120 secondes",
+      "model": "llama3.2:3b",
+      "ms": 13759
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-env-node-bashrc",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "élément introuvable",
+      "action": "Vérifier si le chemin /usr/bin/env est correct et existentiel",
+      "model": "llama3.2:3b",
+      "ms": 11879
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-env-node-bashrc",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "L'interpréteur indiqué par le shebang (#!) n'existe pas à ce chemin, ou /usr/bin/env ne le trouve pas dans le PATH minimal du cron.",
+      "action": "Mettre le chemin absolu correct de l'interpréteur dans le shebang (command -v python3 pour le trouver).",
+      "model": "llama3.2:3b",
+      "ms": 12354
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-unixcat-path",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "llama3.2:3b",
+      "ms": 12808
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-unixcat-path",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ dependency",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "commande 'unixcat' introuvable",
+      "action": "ajouter l'outil 'unixcat' via apt-get ou un autre gestionnaire de paquets",
+      "model": "llama3.2:3b",
+      "ms": 13752
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-macos-tcc-trash",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency"
+        ]
+      },
+      "cause": "Operation not permitted",
+      "action": "Changer le chemin de fichiers temporaire pour éviter les erreurs de permission",
+      "model": "llama3.2:3b",
+      "ms": 12500
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-macos-tcc-trash",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ dependency",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « PermissionError: [Errno 1] Operation not permitted: '/Users/me/.Trash' ». Voir les lignes liées.",
+      "action": "Changer le chemin de fichiers temporaire pour éviter les erreurs de permission",
+      "model": "llama3.2:3b",
+      "ms": 11824
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-proxy-env-cron",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie timeout ≠ network"
+        ]
+      },
+      "cause": "Le service distant ne répond pas dans le délai : indisponible, surchargé, ou pare-feu qui jette les paquets sans refuser.",
+      "action": "Vérifier l'état du service distant (page de statut, nc -zv) puis réessayer avec un délai exponentiel.",
+      "model": "llama3.2:3b",
+      "ms": 11905
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-proxy-env-cron",
+      "covered": true,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet"
+        ]
+      },
+      "cause": "Connection timed out",
+      "action": "Réessayer la connexion avec un timeout plus long (30 secondes)",
+      "model": "llama3.2:3b",
+      "ms": 11292
+    },
+    {
+      "run": 2,
+      "arm": "B",
+      "set": "public5",
+      "name": "p5-wget-ssl-status5",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie resources ≠ network",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "grandchild #20349 failed with status 5",
+      "action": "Vérifier l'état du service et redémarrer si nécessaire",
+      "model": "llama3.2:3b",
+      "ms": 12597
+    },
+    {
+      "run": 2,
+      "arm": "A",
+      "set": "public5",
+      "name": "p5-wget-ssl-status5",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie code ≠ network",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie par l'analyse : le job s'arrête sur « grandchild #20349 failed with status 5 ». Voir les lignes liées.",
+      "action": "Vérifier le statut du grand-enfant et exécuter manuellement la commande pour résoudre le problème",
+      "model": "llama3.2:3b",
+      "ms": 14000
+    }
+  ]
+}

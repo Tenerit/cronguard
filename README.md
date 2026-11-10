@@ -151,9 +151,9 @@ Measured automatically on real failures, not asserted. Each answer is graded out
 | Failures the known-fix library covers | **9.2** |
 | Failures it does not cover (the local model alone) | **3.7** |
 | All 85 cases used while tuning (lab + 4 public sets) | **7.8**, optimistic since these cases were read |
-| Last held-out test before the latest fixes (17 StackExchange cron failures) | **5.0** |
+| **Held-out test (public5): 12 StackExchange cron failures collected after every change** | **4.7** (runs 4.4–4.8); the local model alone: 1.9 |
 
-The held-out number is the one to judge us on, and the next one is measured on failures collected after the last change. Real cron failures are often one-off mistakes that no library describes, and a 3B model mostly restates them; that is why the probe, the command check and your team's fixes matter more than the model. Full method, every experiment (including the ones that did not help) and how to score your own logs: [docs/EVALUATION.md](docs/EVALUATION.md).
+The held-out number is the one to judge us on. On it, CronGuard recognised 4 of 12 failures with a known fix (8.0 on those) and scored 3.0 on the rest. Real cron failures are often one-off mistakes that no library describes, and a 3B model mostly restates them; that is why the probe, the command check and your team's fixes matter more than the model. Full method, every experiment (including the ones that did not help) and how to score your own logs: [docs/EVALUATION.md](docs/EVALUATION.md).
 
 ---
 
