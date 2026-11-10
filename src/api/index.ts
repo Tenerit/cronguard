@@ -236,7 +236,7 @@ app.get('/health', async (_, res) => {
     res.json({
       ok:    true,
       ts:    new Date(),
-      model: llmEnabled() ? (process.env.LLM_MODEL ?? 'llama3.2:3b') : 'none',
+      model: !llmEnabled() ? 'none' : process.env.LLM_DEDUCTION === 'on' ? (process.env.LLM_MODEL ?? 'llama3.2:3b') : (process.env.LLM_EXPLAIN_MODEL || 'none'),
     })
   }
   catch { res.status(503).json({ ok: false }) }

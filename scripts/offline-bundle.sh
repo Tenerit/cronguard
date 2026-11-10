@@ -5,13 +5,13 @@
 #   scripts/offline-bundle.sh [dossier] [--with-model]
 #
 # Contenu : image tout-en-un (docker save), install.sh, SHA256SUMS, et avec --with-model
-# l'image Ollama + le modèle LLM_MODEL (≈ 2 Go de téléchargement, IA locale).
+# l'image Ollama + le modèle d'explication LLM_EXPLAIN_MODEL (≈ 4,7 Go de téléchargement, IA locale).
 # Sur le serveur isolé : cd <dossier> && sha256sum -c SHA256SUMS && ./install.sh
 set -euo pipefail
 
 OUT="cronguard-offline"; WITH_MODEL=0
 for a in "$@"; do case "$a" in --with-model) WITH_MODEL=1 ;; *) OUT="$a" ;; esac; done
-MODEL="${LLM_MODEL:-llama3.2:3b}"
+MODEL="${LLM_EXPLAIN_MODEL:-qwen2.5:7b-instruct-q4_K_M}"   # le 3B ne passe pas l'éval d'explication
 OLLAMA_IMAGE="${OLLAMA_IMAGE:-ollama/ollama:0.5.7}"
 TAG="cronguard:$(git rev-parse --short HEAD 2>/dev/null || echo local)"
 cd "$(dirname "$0")/.."

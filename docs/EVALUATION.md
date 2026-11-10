@@ -35,7 +35,10 @@ Comparisons are only made **paired, in the same session**: between sessions the 
 | public2 | 17 | StackExchange, collected after the known-fix library was frozen | read, tuning |
 | public3 | 14 | StackExchange, collected later | read, tuning |
 | public4 | 17 | StackExchange, with the cron command when the post gives it, collected before the command and context levers | read, tuning |
-| public5 | 12 | StackExchange, collected 2026-11-10 after every change | held-out test |
+| public5 | 12 | StackExchange, collected 2026-11-10 after every change | read, tuning |
+| public6 | 15 | StackExchange, frozen raw before removing model deduction; labels written before any run | read, tuning |
+| public7 | — | 40 queries fixed before the sheet-precision work ([`eval/collect-public7.mjs`](../eval/collect-public7.mjs)); collection pending (StackExchange quota) | next held-out test |
+| cron lab | 8 | real failures under a real `crond` in a container, bash SDK ([`eval/cron-lab.ts`](../eval/cron-lab.ts)) | functional proof, written by us |
 
 Every public set follows a rule fixed before seeing any result: for a list of pre-written queries, take the **first** StackExchange result that has an error log and an accepted answer; drop a case only when the answer establishes no cause, with the reason written in the file ([`eval/public-cases-*.ts`](../eval)). Once a set's outputs have been read to understand failures, it becomes a tuning set and a new one is collected for the next honest measurement.
 
@@ -51,6 +54,31 @@ Every public set follows a rule fixed before seeing any result: for a list of pr
 | **public5 held-out (2026-11-10), 12 failures collected after every change** | **4.7** (CI 4.4–5.0): covered 4/12 at 8.0, not covered 3.0; raw model 1.9, difference +2.8 (CI +1.7 to +4.0) |
 
 The held-out figures are the honest ones; 7.8 is optimistic because those cases were read while tuning. The gap between 7.8 and 4.7 is mostly coverage: the library recognised 76% of the cases it was tuned on, but 33% of new ones. One public5 case scored 9 with "cause not established" because the quoted error line itself contained the mechanism word (`interactive prompting is disabled`): the rubric gives that point, a reader may not. The execution-context probe cannot be measured on public posts, which never include the cron's environment: it needs real SDK logs.
+
+## 2026-11-10: facts instead of deduction
+
+**Why the model failed** ([`eval/error-analysis.ts`](../eval/error-analysis.ts), 150 free-text answers on uncovered failures): 8 right, all where the log itself states the mechanism; **0 of 78** where it has to be deduced. Three causes were on our side: the error-line filter removed the explaining line in 9 of 12 cases, 29 of 73 wrong causes copied our own "pattern detected" hint, and the prompt asked to "cite the exact log value" as the cause. Two pre-registered attempts to make the 3B reason by choosing among mechanisms failed (+0.4 then −0.4 on uncovered failures).
+
+**Decision:** the model no longer writes causes (`LLM_DEDUCTION=on` restores it). Without a sheet or an observed fact, the answer is "cause not established" plus test commands.
+
+| Measure | Result |
+|---|---|
+| Cron lab, with vs without the SDK test commands | **8/8 vs 3/8** (the real application bug stays "not established") |
+| public6 held-out, without vs with model deduction | score 3.9 vs 4.2 (diff 0.4, CI −0.1 to +0.8, n.s.); **wrong causes stated as fact 12 vs 20 of 30** |
+| Covered failures, tuning vs held-out | 9.2 vs **5.0** on public6: the sheets generalise imperfectly |
+| Sheet precision (misfires on read sets) | 15 → 5 after placing decisive signals first and listing alternatives in generic sheets (tuning figure; public7 will judge) |
+
+**AI role: explain an established cause in plain words** ([`eval/explain.ts`](../eval/explain.ts); expectations fixed before each trial):
+
+| Trial | Model and rule | Coverage | Nothing invented | Mechanism kept | Verdict |
+|---|---|---|---|---|---|
+| 1 | `llama3.2:3b` | — | 98 % | 76 % | fails |
+| 2 | `qwen2.5:7b` | — | 99 % | 87 % | fails |
+| 3 | 7B, single-mechanism causes only | 35 % | 96 % | 96 % | coverage fails |
+| 4 | 7B, all possibilities kept (code guard) | 80 % | 100 % | 93 % | met; review found a splitter bug |
+| **4b** | same, splitter fixed | **84 %** | **100 %** | **97 %** | **adopted**; human read: 4 of 67 texts distort the meaning (6 %) |
+
+Median 15.5 s, after the alert, cached per failure type. Grid fix decided before public7: commands built by code (the cron-environment reproduction) are not counted as invented identifiers.
 
 ### Speed: known fixes first, the model only when needed (2026-11-10)
 

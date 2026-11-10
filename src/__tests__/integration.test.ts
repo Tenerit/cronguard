@@ -710,3 +710,36 @@ describe('sameErrorBefore — même empreinte sur ce monitor, 7 jours', () => {
     expect(await sameErrorRecently(monitor.id, 'etl', '   ')).toBe(false)
   })
 })
+
+describe('Playground diagnostic — POST /monitors/analyze/preview', () => {
+  let client: any
+  const before = { url: process.env.LLM_BASE_URL, explain: process.env.LLM_EXPLAIN_MODEL, deduction: process.env.LLM_DEDUCTION }
+  beforeEach(async () => {
+    await pgPool.query('DELETE FROM monitors'); await pgPool.query('DELETE FROM clients')
+    client = await createTestClient()
+  })
+  afterAll(() => {
+    if (before.url === undefined) delete process.env.LLM_BASE_URL; else process.env.LLM_BASE_URL = before.url
+    if (before.explain === undefined) delete process.env.LLM_EXPLAIN_MODEL; else process.env.LLM_EXPLAIN_MODEL = before.explain
+    if (before.deduction === undefined) delete process.env.LLM_DEDUCTION; else process.env.LLM_DEDUCTION = before.deduction
+  })
+
+  it('sans IA : cause établie depuis les faits, sans modèle', async () => {
+    delete process.env.LLM_BASE_URL
+    const res = await request(app).post('/monitors/analyze/preview').set('X-API-Key', client.api_key)
+      .send({ logs: "ERROR: deadlock detected\nProcess 12345 waits for ShareLock on transaction 88472" })
+    expect(res.status).toBe(200)
+    expect(res.body.cause).toMatch(/deadlock/)
+    expect(res.body._meta.ai).toBe(false)
+  })
+
+  it("avec un serveur IA mais sans modèle d'explication : plus d'erreur 503 « modèle absent »", async () => {
+    process.env.LLM_BASE_URL = 'http://127.0.0.1:9/v1'   // rien n'écoute : aucun appel ne doit être nécessaire
+    delete process.env.LLM_EXPLAIN_MODEL; delete process.env.LLM_DEDUCTION
+    const res = await request(app).post('/monitors/analyze/preview').set('X-API-Key', client.api_key)
+      .send({ logs: 'ledger: FATAL reconciliation drift\nexit status 1' })
+    expect(res.status).toBe(200)
+    expect(res.body.cause).toMatch(/^Cause non établie/)
+    expect(res.body.explanation).toBeNull()
+  })
+})

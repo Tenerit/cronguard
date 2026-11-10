@@ -7,6 +7,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-11-11 — Diagnostic constaté, IA d'explication vérifiée
+
+### Changé — installation légère par défaut (2026-11-11)
+- `docker-compose.yml` : Ollama passe dans le profil `ai` ; `LLM_BASE_URL` des services est vide par défaut (`CRONGUARD_AI_URL` pour l'IA). `setup.sh` ne démarre Ollama et ne télécharge de modèle (explication + embeddings) que si `LLM_EXPLAIN_MODEL` est défini ; le 3B n'est plus téléchargé. Bundle hors ligne : modèle d'explication par défaut.
+- **Playground diagnostic** (ex-« Playground IA ») : même chemin qu'une vraie panne (faits d'abord, explication si activée). Il exigeait le modèle 3B et renvoyait 503 s'il manquait. Pastilles à jour (les anciens chiffres « 72 % catégorie, ~15 s » ne correspondaient plus à rien) ; démo OOM sans l'ancienne sortie « mémoire insuffisante ».
+- `/health` annonce le modèle d'explication (ou `none`), plus l'ancien `LLM_MODEL`.
+
 ### Sécurité
 - **Secrets masqués dès l'entrée** : la sortie des jobs et leur commande sont nettoyées par la route `/ping` avant la file Redis, la base, la file des échecs et les alertes (auparavant, la sortie brute était stockée en base). Nouveaux motifs : mot de passe collé à `-p` (mysql, mysqldump), guillemets compris, et `sshpass -p`. Migration v21 : masquage, une seule fois, des sorties déjà stockées.
 - Page de statut publique : `GET /status/<id non UUID>` arrêtait le processus API (rejet non géré) — n'importe quel visiteur pouvait le faire tomber en boucle. Renvoie 404.

@@ -302,104 +302,31 @@ monitorsRouter.post('/analyze/preview', asyncHandler(async (req, res) => {
     return res.status(400).json({ error: parsed.error.flatten() })
 
   const { logs, job_name, env, exit_code, duration_ms, avg_duration, schedule } = parsed.data
-  const { llmEnabled, analysisWithoutModel } = await import('../../services/llm/analyzer')
+  // Playground diagnostic (2026-11-10) : le même chemin qu'une vraie panne — faits établis tout de suite (fiches,
+  // codes, commande ; pas de déduction par le modèle par défaut), puis l'explication de l'IA locale si
+  // LLM_EXPLAIN_MODEL est défini. Plus de contrôle préalable du modèle 3B : il ne sert plus par défaut.
+  const { analyzeFailure, analysisWithoutModel, llmEnabled } = await import('../../services/llm/analyzer')
+  const { explainAnalysis } = await import('../../services/llm/explain')
+  const clean = sanitizeLogs(logs).clean
+  const ctx = { jobName: job_name, clientId: res.locals.clientId, monitorId: 'preview', env, schedule,
+    duration: duration_ms, avgDuration: avg_duration, exitCode: exit_code, logs }
   if (!llmEnabled()) {
-    const clean = sanitizeLogs(logs).clean
-    const analysis = analysisWithoutModel({ logs, exitCode: exit_code })
-    return res.json({
-      ...analysis,
-      evidence:  evidenceLines(clean, analysis.cause),
-      known_fix: knownFix(clean),
-      _meta: { job_name, env, model: 'none', logs_length: logs.length, ai: false },
-    })
+    const analysis = analysisWithoutModel(ctx)
+    return res.json({ ...analysis, evidence: evidenceLines(clean, analysis.cause), known_fix: knownFix(clean),
+      _meta: { job_name, env, model: 'none', logs_length: logs.length, ai: false } })
   }
-  const baseUrl = process.env.LLM_BASE_URL?.replace('/v1', '') ?? 'http://localhost:11434'
-  const model   = process.env.LLM_MODEL ?? 'llama3.2:3b'
 
-  // Verrou par client : le playground appelle le LLM hors queue (skipRateLimit).
-  // Sans garde, N requêtes simultanées = N appels Ollama → saturation. Une analyse
-  // à la fois par client. TTL 120s = filet si le finally ne s'exécute pas.
+  // Une analyse à la fois par client : l'explication (et LLM_DEDUCTION=on) appelle le modèle hors file d'attente.
   const { redis } = await import('../../config/redis')
   const lockKey = `preview:lock:${res.locals.clientId}`
   if (!(await redis.set(lockKey, '1', 'EX', 120, 'NX')))
     return res.status(429).json({ error: 'Une analyse est déjà en cours. Patientez quelques secondes.' })
-
-  // Provider cloud (LLM_API_KEY défini) → pas de check Ollama local, on tente direct
-  const isCloud = !!process.env.LLM_API_KEY
-
   try {
-    // ── 1-2. Sanity Ollama local : répond + modèle téléchargé (skip si cloud) ──
-    if (!isCloud) try {
-      const ping = await fetch(`${baseUrl}/api/tags`, {
-        signal: AbortSignal.timeout(3000),
-      })
-      if (!ping.ok) throw new Error(`HTTP ${ping.status}`)
-
-      const tags = await ping.json() as { models?: Array<{ name: string }> }
-      const available = (tags.models ?? []).map((m: { name: string }) => m.name)
-      const modelShort = model.split(':')[0]
-      const isAvailable = available.some((n: string) =>
-        n === model || n.startsWith(modelShort + ':')
-      )
-
-      if (!isAvailable) {
-        return res.status(503).json({
-          error:     `Modèle "${model}" absent`,
-          available: available.slice(0, 5),
-          fix:       `docker compose exec ollama ollama pull ${model}`,
-          hint:      available.length
-            ? `Modèles présents : ${available.slice(0, 3).join(', ')}`
-            : 'Aucun modèle installé — relancez npm run llm:pull',
-        })
-      }
-    } catch (pingErr: unknown) {
-      const msg = (pingErr as Error).message ?? String(pingErr)
-      return res.status(503).json({
-        error:   'Ollama inaccessible',
-        detail:  msg,
-        url:     `${baseUrl}/api/tags`,
-        actions: [
-          'docker compose ps                          # Ollama doit être "Up"',
-          'docker compose restart ollama              # Si le container est arrêté',
-          `docker compose exec ollama ollama list     # Vérifier les modèles`,
-        ],
-      })
-    }
-
-    // ── 3. Reset circuit breaker (le playground doit toujours tenter) ────────
-    await Promise.all([
-      redis.del('llm:circuit_breaker'),
-      redis.set('llm:circuit_fails', '0'),
-    ])
-
-    // ── 4. Appel LLM ─────────────────────────────────────────────────────────
-    const PLAYGROUND_TIMEOUT = 600_000  // 10min : marge pour un éventuel cold start
-    const { analyzeFailure } = await import('../../services/llm/analyzer')
-    const analysis = await analyzeFailure({
-      jobName:     job_name,
-      clientId:    res.locals.clientId,
-      monitorId:   'preview',
-      env, schedule,
-      duration:    duration_ms,
-      avgDuration: avg_duration,
-      exitCode:    exit_code,
-      logs,
-    }, PLAYGROUND_TIMEOUT, { skipRateLimit: true })
-
-    if (!analysis)
-      return res.status(503).json({
-        error:   'Le modèle n\'a pas répondu à temps',
-        model,
-        timeout: `${PLAYGROUND_TIMEOUT / 1000}s`,
-        hint:    `Vérifiez que le modèle répond : \`ollama run ${model}\` dans un terminal, puis réessayez.`,
-      })
-
-    res.json({
-      ...analysis,
-      evidence: evidenceLines(sanitizeLogs(logs).clean, analysis.cause),
-      known_fix: knownFix(sanitizeLogs(logs).clean),
-      _meta: { job_name, env, model, logs_length: logs.length },
-    })
+    const analysis = await analyzeFailure(ctx, 120_000, { skipRateLimit: true }) ?? analysisWithoutModel(ctx)
+    const evidence = evidenceLines(clean, analysis.cause)
+    const explanation = await explainAnalysis(analysis, clean, evidence[0], 120_000).catch(() => null)
+    res.json({ ...analysis, explanation, evidence, known_fix: knownFix(clean),
+      _meta: { job_name, env, model: analysis.model, explainModel: process.env.LLM_EXPLAIN_MODEL || null, logs_length: logs.length } })
   } finally {
     await redis.del(lockKey)
   }

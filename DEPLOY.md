@@ -49,6 +49,7 @@ fly secrets set \
   DATABASE_URL="postgres://user:pass@host/cronguard" \
   REDIS_URL="redis://default:pass@host:6379" \
   LLM_BASE_URL="http://ton-gpu-server:8000/v1" \
+  LLM_EXPLAIN_MODEL="qwen2.5:7b-instruct-q4_K_M" \
   STRIPE_SECRET_KEY="sk_live_..." \
   STRIPE_WEBHOOK_SECRET="whsec_..." \
   STRIPE_PRO_PRICE_ID="price_..." \
@@ -139,6 +140,7 @@ docker run --gpus all \
 
 # Dans .env du VPS API :
 # LLM_BASE_URL=http://IP_GPU_SERVEUR:8000/v1
+# LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M   # explication en langage simple (sinon : installation légère, sans IA)
 # Sécurise avec un firewall : seul le VPS API peut accéder au port 8000
 ```
 

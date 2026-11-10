@@ -1361,7 +1361,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
         <span class="icon">✦</span> <span data-i18n="nav.analyses">analyses ia</span>
       </div>
       <div class="s-item" id="nav-playground" data-click="setView" data-args='["playground"]'>
-        <span class="icon">⚡</span> <span data-i18n="nav.playground">playground ia</span>
+        <span class="icon">⚡</span> <span data-i18n="nav.playground">playground</span>
       </div>
       <div class="s-section" data-i18n="nav.account">compte</div>
       <div class="s-item" id="nav-settings" data-click="setView" data-args='["settings"]'>
@@ -1826,7 +1826,7 @@ GET  /health                      # Santé de l'API
             <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">R</code> <span data-i18n="docs.scRefresh">Rafraîchir</span></div><div class="docs-card-desc" data-i18n="docs.scRefreshD">Recharge toutes les données</div></div>
             <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">/</code> <span data-i18n="docs.scSearch">Rechercher</span></div><div class="docs-card-desc" data-i18n="docs.scSearchD">Focus sur le champ de recherche</div></div>
             <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">Esc</code> <span data-i18n="docs.scClose">Fermer</span></div><div class="docs-card-desc" data-i18n="docs.scCloseD">Ferme le panneau ou la modale</div></div>
-            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">1–7</code> <span data-i18n="docs.scNav">Navigation</span></div><div class="docs-card-desc" data-i18n="docs.scNavD">Dashboard · Services · Journal · Analyses · Paramètres · Docs · Playground IA</div></div>
+            <div class="docs-card"><div class="docs-card-title"><code style="background:var(--bg);padding:1px 5px;border-radius:3px">1–7</code> <span data-i18n="docs.scNav">Navigation</span></div><div class="docs-card-desc" data-i18n="docs.scNavD">Dashboard · Services · Journal · Analyses · Paramètres · Docs · Playground</div></div>
           </div>
         </div>
       </div>
@@ -1902,13 +1902,12 @@ GET  /health                      # Santé de l'API
         <div class="pg-view-header">
           <div class="pg-view-icon">⚡</div>
           <div>
-            <div class="pg-view-title" data-i18n="pg.title">Playground IA</div>
-            <div class="pg-view-sub" data-i18n="pg.sub">Testez l'analyse LLM en temps réel sur n'importe quels logs de cron job.</div>
+            <div class="pg-view-title" data-i18n="pg.title">Playground diagnostic</div>
+            <div class="pg-view-sub" data-i18n="pg.sub">Collez des logs de cron job : CronGuard établit la cause à partir des faits, puis l'IA locale l'explique si elle est activée.</div>
             <div class="pg-benchmark">
-              <span class="pg-bench-pill">100% parsable</span>
-              <span class="pg-bench-pill">72% catégorie exacte</span>
-              <span class="pg-bench-pill">~15s / analyse</span>
-              <span class="pg-bench-pill" id="pg-model-pill" style="background:rgba(96,165,250,.1);color:var(--blue);border-color:rgba(96,165,250,.2)">llama3.2:3b</span>
+              <span class="pg-bench-pill" data-i18n="pg.pill.facts">cause : faits et fiches, sans deviner</span>
+              <span class="pg-bench-pill" data-i18n="pg.pill.ai">IA d'explication : 0 identifiant inventé, 97 % mécanisme gardé</span>
+              <span class="pg-bench-pill" id="pg-model-pill" style="background:rgba(96,165,250,.1);color:var(--blue);border-color:rgba(96,165,250,.2)">sans modèle</span>
             </div>
           </div>
         </div>
@@ -1961,10 +1960,10 @@ GET  /health                      # Santé de l'API
 const I18N = {
   fr: {
     'nav.monitoring':'monitoring','nav.dashboard':'tableau de bord','nav.services':'services',
-    'nav.logs':'journal','nav.analyses':'analyses ia','nav.playground':'playground ia',
+    'nav.logs':'journal','nav.analyses':'analyses ia','nav.playground':'playground',
     'nav.account':'compte','nav.settings':'paramètres','nav.docs':'documentation','nav.logout':'déconnexion',
     'title.dashboard':'tableau de bord','title.services':'services','title.logs':'journal',
-    'title.analyses':'analyses ia','title.settings':'paramètres','title.docs':'documentation','title.playground':'playground ia',
+    'title.analyses':'analyses ia','title.settings':'paramètres','title.docs':'documentation','title.playground':'playground',
     'top.search':'filtrer les services...','top.newMonitor':'+ monitor',
     'stat.ok':'ok','stat.failed':'en échec','stat.late':'en retard','stat.uptime':'uptime 24h','stat.ai':'analyses ia',
     'stat.sub.activeAlerts':'alertes actives','stat.sub.graceExceeded':'grâce dépassée',
@@ -2011,7 +2010,7 @@ const I18N = {
     'empty.mon.s1t':'1. Créer','empty.mon.s1d':'Obtenez une ping_key unique','empty.mon.s2t':'2. Intégrer','empty.mon.s2d':'curl -X POST /ping/KEY','empty.mon.s3t':'3. Recevoir','empty.mon.s3d':'Alerte + analyse IA auto',
     'empty.an.intro':'L\'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :','empty.an.cta':'Tester l\'analyse IA maintenant →',
     'empty.alerts':'aucune alerte active','empty.noResult':'aucun résultat pour','empty.activity':'aucune activité',
-    'pg.title':'Playground IA','pg.sub':'Testez l\'analyse LLM en temps réel sur n\'importe quels logs de cron job.',
+    'pg.title':'Playground diagnostic','pg.sub':'Collez des logs de cron job : CronGuard établit la cause à partir des faits, puis l\'IA locale l\'explique si elle est activée.',
     'pg.scenarios':'Scénarios prédéfinis :','pg.jobName':'Nom du job','pg.env':'Environnement','pg.exitCode':'Code de sortie',
     'pg.logsLabel':'Logs d\'erreur','pg.logsPh':'Collez ici les logs d\'erreur de votre cron job...','pg.analyze':'Analyser maintenant','pg.clear':'Effacer','pg.testCta':'Tester le LLM en direct →',
     'env.production':'production','env.staging':'staging','env.development':'development',
@@ -2045,7 +2044,7 @@ const I18N = {
     'dr.pingKeyCopied':'ping_key copiée !','dr.copy':'copier',
     'del.title':'Supprimer','del.warn':'Cette action est irréversible. Tapez le nom pour confirmer :','del.cancel':'annuler','del.confirm':'supprimer',
     'pg.step.tokenize':'Tokenisation des logs','pg.step.send':'Envoi au modèle','pg.step.cause':'Identification de la cause racine...','pg.step.reco':'Génération des recommandations...','pg.step.final':'Finalisation...',
-    'an.explain':'En clair (IA locale, vérifiée par CronGuard) :','pg.res.checks':'Vérifications immédiates','pg.res.fromCache':'depuis le cache','pg.res.analyzed':'caractères analysés','pg.res.errTitle':'Erreur LLM','pg.res.models':'Modèles disponibles :',
+    'an.explain':'En clair (IA locale, vérifiée par CronGuard) :','pg.pill.facts':'cause : faits et fiches, sans deviner','pg.pill.ai':"IA d'explication : 0 identifiant inventé, 97 % mécanisme gardé",'pg.res.checks':'Vérifications immédiates','pg.res.fromCache':'depuis le cache','pg.res.analyzed':'caractères analysés','pg.res.errTitle':'Erreur LLM','pg.res.models':'Modèles disponibles :',
     'log.hide':'masquer logs','log.show':'logs','fb.question':'Cette analyse était-elle utile ?',
     'err.nameReq':'nom requis','err.emailReq':'Email requis','err.cronReq':'Expression cron requise',
     'pg.res.timeout':'Timeout actuel :','pg.res.model':'Modèle :',
@@ -2064,7 +2063,7 @@ const I18N = {
     'docs.aAI':'Analyse IA','docs.aAID':'Le LLM analyse les logs localement. Vos données ne quittent jamais votre serveur. Cause racine + action corrective en moins de 30s.',
     'docs.apiRef':'référence API','docs.shortcuts':'raccourcis clavier',
     'docs.scRefresh':'Rafraîchir','docs.scRefreshD':'Recharge toutes les données','docs.scSearch':'Rechercher','docs.scSearchD':'Focus sur le champ de recherche',
-    'docs.scClose':'Fermer','docs.scCloseD':'Ferme le panneau ou la modale','docs.scNav':'Navigation','docs.scNavD':'Dashboard · Services · Journal · Analyses · Paramètres · Docs · Playground IA',
+    'docs.scClose':'Fermer','docs.scCloseD':'Ferme le panneau ou la modale','docs.scNav':'Navigation','docs.scNavD':'Dashboard · Services · Journal · Analyses · Paramètres · Docs · Playground',
     'q.categories':'Catégories','q.confidence':'Confiance','q.resolution':'Résolution','q.avgMinutes':'minutes en moyenne','q.dataImpact':'Impact données',
     'antb.allSev':'toutes sévérités','antb.allCat':'toutes catégories','antb.search':'rechercher cause / service...','antb.details':'détails','antb.hide':'masquer',
     'conf.high':'Haute','conf.medium':'Moyenne','conf.low':'Faible','conf.highSub':'Cause explicite dans les logs','conf.mediumSub':'Inférée depuis le contexte','conf.lowSub':'Hypothèse basée sur le pattern',
@@ -2077,12 +2076,12 @@ const I18N = {
     'tour.create.t':'Créer un monitor','tour.create.b':'Vous obtenez une ping_key unique à coller en fin de script. Le cron ping CronGuard ; pas de ping = alerte.',
     'tour.overview.t':'Vue d\'ensemble','tour.overview.b':'Statuts agrégés, uptime, et le bandeau Impact (MTTR / downtime sur 30j) — la valeur prouvée, pas juste des alertes.',
     'tour.ai.t':'Analyses IA','tour.ai.b':'À chaque panne, un LLM local analyse les logs : cause racine, action corrective et vérifications. Vos données ne quittent jamais le serveur.',
-    'tour.playground.t':'Playground IA','tour.playground.b':'Collez n\'importe quels logs et voyez l\'analyse en direct. Essai-avant-achat, sans rien installer.',
+    'tour.playground.t':'Playground diagnostic','tour.playground.b':'Collez n\'importe quels logs et voyez l\'analyse en direct. Essai-avant-achat, sans rien installer.',
     'lang.label':'Langue',
   },
   en: {
     'nav.monitoring':'monitoring','nav.dashboard':'dashboard','nav.services':'services',
-    'nav.logs':'activity','nav.analyses':'ai analyses','nav.playground':'ai playground',
+    'nav.logs':'activity','nav.analyses':'ai analyses','nav.playground':'playground',
     'nav.account':'account','nav.settings':'settings','nav.docs':'documentation','nav.logout':'sign out',
     'title.dashboard':'dashboard','title.services':'services','title.logs':'activity',
     'title.analyses':'ai analyses','title.settings':'settings','title.docs':'documentation','title.playground':'ai playground',
@@ -2132,7 +2131,7 @@ const I18N = {
     'empty.mon.s1t':'1. Create','empty.mon.s1d':'Get a unique ping_key','empty.mon.s2t':'2. Integrate','empty.mon.s2d':'curl -X POST /ping/KEY','empty.mon.s3t':'3. Receive','empty.mon.s3d':'Alert + auto AI analysis',
     'empty.an.intro':'The AI automatically analyzes every cron job failure. Here is an example of what you will receive:','empty.an.cta':'Test the AI analysis now →',
     'empty.alerts':'no active alerts','empty.noResult':'no result for','empty.activity':'no activity',
-    'pg.title':'AI Playground','pg.sub':'Test the LLM analysis in real time on any cron job logs.',
+    'pg.title':'Diagnostic playground','pg.sub':'Paste cron job logs: CronGuard establishes the cause from facts, then the local AI explains it when enabled.',
     'pg.scenarios':'Preset scenarios:','pg.jobName':'Job name','pg.env':'Environment','pg.exitCode':'Exit code',
     'pg.logsLabel':'Error logs','pg.logsPh':'Paste your cron job error logs here...','pg.analyze':'Analyze now','pg.clear':'Clear','pg.testCta':'Test the LLM live →',
     'env.production':'production','env.staging':'staging','env.development':'development',
@@ -2166,7 +2165,7 @@ const I18N = {
     'dr.pingKeyCopied':'ping_key copied!','dr.copy':'copy',
     'del.title':'Delete','del.warn':'This action is irreversible. Type the name to confirm:','del.cancel':'cancel','del.confirm':'delete',
     'pg.step.tokenize':'Tokenizing logs','pg.step.send':'Sending to model','pg.step.cause':'Identifying root cause...','pg.step.reco':'Generating recommendations...','pg.step.final':'Finalizing...',
-    'an.explain':'In plain words (local AI, checked by CronGuard):','pg.res.checks':'Immediate checks','pg.res.fromCache':'from cache','pg.res.analyzed':'characters analyzed','pg.res.errTitle':'LLM error','pg.res.models':'Available models:',
+    'an.explain':'In plain words (local AI, checked by CronGuard):','pg.pill.facts':'cause: facts and sheets, no guessing','pg.pill.ai':'explanation AI: 0 invented identifiers, 97% mechanism kept','pg.res.checks':'Immediate checks','pg.res.fromCache':'from cache','pg.res.analyzed':'characters analyzed','pg.res.errTitle':'LLM error','pg.res.models':'Available models:',
     'log.hide':'hide logs','log.show':'logs','fb.question':'Was this analysis helpful?',
     'err.nameReq':'name required','err.emailReq':'Email required','err.cronReq':'Cron expression required',
     'pg.res.timeout':'Current timeout:','pg.res.model':'Model:',
@@ -2198,7 +2197,7 @@ const I18N = {
     'tour.create.t':'Create a monitor','tour.create.b':'You get a unique ping_key to drop at the end of your script. The cron pings CronGuard; no ping = alert.',
     'tour.overview.t':'Overview','tour.overview.b':'Aggregated statuses, uptime, and the Impact strip (MTTR / downtime over 30d) — proven value, not just alerts.',
     'tour.ai.t':'AI analyses','tour.ai.b':'On every failure a local LLM analyzes the logs: root cause, corrective action and checks. Your data never leaves the server.',
-    'tour.playground.t':'AI Playground','tour.playground.b':'Paste any logs and watch the analysis live. Try-before-buy, with nothing to install.',
+    'tour.playground.t':'Diagnostic playground','tour.playground.b':'Paste any logs and watch the analysis live. Try-before-buy, with nothing to install.',
     'lang.label':'Language',
   },
 }
@@ -2323,9 +2322,12 @@ function demoPreview(body) {
     /econnrefused|refused|unreachable|dns/.test(logs) ? DEMO_AN[0].diag :
     /deadlock|lock|postgres|sql/.test(logs)           ? DEMO_AN[1].diag :
     /429|rate.?limit|stripe|api/.test(logs)           ? DEMO_AN[2].diag :
-    /oom|out of memory|killed|137/.test(logs)         ? { cause:"mémoire insuffisante", action:"Augmenter la mémoire allouée au processus ou redéployer avec plus de RAM", prevention:"Vérifier et ajuster les paramètres de mémoire pour éviter les OOM dans le futur", checks:["Vérifier l'état des ressources système","Vérifier la configuration de mémoire du processus"], severity:'critical', category:'resources', confidence:'high', data_impact:'confirmed', fix_minutes:15, tokensIn:1120, tokensOut:138 } :
-    { cause:'Démo sans modèle : vos logs ne sont pas analysés ici.', action:'Lancez CronGuard en local pour analyser vos propres logs.', prevention:'', checks:[], severity:'medium', category:'unknown', confidence:'low', data_impact:'possible', fix_minutes:0, tokensIn:0, tokensOut:0 }
-  return { ...pick,
+    // Fiche oom-killed (moteur actuel) ; explication = sortie réelle de l'essai 4b, cas oom-killer-137.
+    /oom|out of memory|killed|137/.test(logs)         ? { cause:"Le processus a dépassé la mémoire disponible ou la limite du conteneur : le noyau l'a tué (OOM killer, code 137).", action:"Réduire le pic mémoire (traitement par lots) ou relever la limite mémoire du conteneur ou de la machine.", prevention:'', checks:['dmesg -T | grep -i "killed process"'], severity:'critical', category:'resources', confidence:'high', data_impact:'possible', fix_minutes:30,
+      explanation:"Le processus a été tué par le noyau en raison d'une mémoire insuffisante (OOM killer). Vous pouvez réduire la consommation de mémoire en traitant les données par lots ou augmenter la limite de mémoire du conteneur ou de la machine." } :
+    { cause:'Démo : vos logs ne sont pas analysés ici.', action:'Lancez CronGuard en local pour analyser vos propres logs.', prevention:'', checks:[], severity:'medium', category:'unknown', confidence:'low', data_impact:'possible', fix_minutes:0 }
+  const same = DEMO_AN.find(a => a.diag === pick)   // explications réelles de l'essai 4b (eval/EXPLAIN.trial4b.md)
+  return { ...pick, explanation: pick.explanation ?? same?.explanation ?? null,
     model:'exemple enregistré, vos logs ne sont pas analysés', fromCache:false, _meta:{ logs_length:(body.logs||'').length } }
 }
 
@@ -2360,7 +2362,7 @@ async function demoApi(path, opts={}) {
 
 function startDemo() {
   API_KEY = 'cg_demo_readonly'; BASE_URL = 'https://cron.your-server.io'   // affichage curl/docs ; api() court-circuite vers demoApi
-  window._activeModel = 'llama3.2:3b (démo)'
+  window._activeModel = 'qwen2.5:7b (démo)'
   document.body.classList.add('is-demo')
   boot()
 }
@@ -2888,7 +2890,7 @@ function renderAnalyses() {
   const el = document.getElementById('analyses-list')
   renderAnSummary(analysesData)                       // bandeau sur le jeu complet
   if (metricsVisible) renderQualityMetrics(analysesData)
-  const activeModel = window._activeModel || analysesData.find(a => a.model_used !== 'none')?.model_used || 'llama3.2:3b'
+  const activeModel = window._activeModel || analysesData.find(a => a.model_used !== 'none')?.model_used || 'knowledge'
 
   const q = anSearch.toLowerCase()
   let list = analysesData.filter(a => {
@@ -4175,16 +4177,17 @@ function renderPreviewResult(r) {
       <span class="an-confidence conf-${esc(conf)}">${esc(conf)}</span>
       <span class="data-impact impact-${esc(r.data_impact||'none')}">${impactLabel[r.data_impact]||'?'}</span>
       ${r.fix_minutes ? `<span class="fix-time">~<span>${r.fix_minutes}</span>min</span>` : ''}
-      <span style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:auto">${esc(r.model||'llama3.2:3b')}</span>
+      <span style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:auto">${esc(r.model||'knowledge')}${r._meta?.explainModel ? ' · ' + esc(r._meta.explainModel) : ''}</span>
     </div>
     <div class="pr-cause">🔍 ${esc(r.cause||'—')}</div>
+    ${r.explanation ? `<div class="an-explain"><span class="an-checks-label">${t('an.explain')}</span> ${esc(r.explanation)}</div>` : ''}
     ${evidenceHtml(r.evidence)}
     ${knownFixHtml(r.known_fix, false)}
     ${r.action    ? `<div class="pr-action">→ ${t('an.lead')} ${esc(r.action)}</div>` : ''}
     ${r.prevention? `<div class="pr-prevention">🛡 ${esc(r.prevention)}</div>` : ''}
     ${checksHtml ? `<div class="pr-checks"><div style="font-size:9px;color:var(--text3);font-family:var(--sans);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${t('pg.res.checks')}</div>${checksHtml}</div>` : ''}
     <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:9px;font-family:var(--mono);color:var(--text3)">
-      ${r._meta ? `${r._meta.logs_length} ${t('pg.res.analyzed')} · ${r.tokensIn||0} tokens in · ${r.tokensOut||0} tokens out` : ''}
+      ${r._meta ? `${r._meta.logs_length} ${t('pg.res.analyzed')}${r.tokensIn ? ` · ${r.tokensIn} tokens in · ${r.tokensOut||0} tokens out` : ''}` : ''}
       ${r.fromCache ? ` · <span style="color:var(--amber)">⚡ ${t('pg.res.fromCache')}</span>` : ''}
     </div>`
   document.getElementById('pg-result').classList.add('show')

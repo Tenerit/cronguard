@@ -10,7 +10,9 @@ services:
     environment:
       DATABASE_URL: postgres://cronguard:${POSTGRES_PASSWORD}@postgres:5432/cronguard
       REDIS_URL:    redis://redis:6379
-      LLM_BASE_URL: http://ollama:11434/v1
+      # Vide par défaut = installation légère, aucun appel de modèle. IA locale : CRONGUARD_AI_URL=http://ollama:11434/v1
+      # (profil « ai ») ou l'URL d'un serveur Ollama partagé du réseau interne.
+      LLM_BASE_URL: ${CRONGUARD_AI_URL:-}
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
@@ -29,7 +31,9 @@ services:
     environment:
       DATABASE_URL: postgres://cronguard:${POSTGRES_PASSWORD}@postgres:5432/cronguard
       REDIS_URL:    redis://redis:6379
-      LLM_BASE_URL: http://ollama:11434/v1
+      # Vide par défaut = installation légère, aucun appel de modèle. IA locale : CRONGUARD_AI_URL=http://ollama:11434/v1
+      # (profil « ai ») ou l'URL d'un serveur Ollama partagé du réseau interne.
+      LLM_BASE_URL: ${CRONGUARD_AI_URL:-}
     depends_on:
       postgres: { condition: service_healthy }
       redis:    { condition: service_healthy }
@@ -123,8 +127,10 @@ services:
       interval: 5s
       retries:  10
 
+  # IA locale d'explication, facultative : docker compose --profile ai up -d (voir README, « Local AI »).
   ollama:
     image: ollama/ollama:latest
+    profiles: ["ai"]
     ports:
       - "11434:11434"
     volumes:

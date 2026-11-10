@@ -50,7 +50,13 @@ npm run build --silent && ok "TypeScript compilé"
 # ── Docker ────────────────────────────────────────────────────────────────────
 step "4/5 — Services Docker"
 
-docker compose up -d postgres redis ollama
+docker compose up -d postgres redis
+# IA locale d'explication (facultative) : seulement si LLM_EXPLAIN_MODEL est défini dans .env.
+EXPLAIN_MODEL=$(grep "^LLM_EXPLAIN_MODEL" .env 2>/dev/null | cut -d= -f2 | tr -d '"')
+if [ -n "$EXPLAIN_MODEL" ]; then
+  docker compose --profile ai up -d ollama
+  grep -q "^CRONGUARD_AI_URL=" .env || echo "CRONGUARD_AI_URL=http://ollama:11434/v1" >> .env
+fi
 echo -e "${B}→${NC} Attente de PostgreSQL..."
 for i in $(seq 1 20); do
   docker compose exec -T postgres pg_isready -U cronguard &>/dev/null && break
@@ -60,25 +66,15 @@ docker compose exec -T postgres pg_isready -U cronguard &>/dev/null && ok "Postg
 
 node dist/db/migrations.js 2>/dev/null && ok "Migrations OK" || warn "Migrations déjà à jour"
 
-LLM_MODEL=$(grep "^LLM_MODEL" .env 2>/dev/null | cut -d= -f2 | tr -d '"' || echo "llama3.2:3b")
-if docker compose exec -T ollama ollama list 2>/dev/null | grep -q "${LLM_MODEL%%:*}"; then
-  ok "Modèle LLM déjà présent"
-else
-  echo -e "${B}→${NC} Téléchargement du modèle LLM (peut prendre quelques minutes)..."
-  docker compose exec -T ollama ollama pull "$LLM_MODEL" && ok "Modèle LLM téléchargé"
-fi
-
-# Modèle d'explication (IA locale vérifiée), seulement si LLM_EXPLAIN_MODEL est défini (~4,7 Go).
-EXPLAIN_MODEL=$(grep "^LLM_EXPLAIN_MODEL" .env 2>/dev/null | cut -d= -f2 | tr -d '"')
 if [ -n "$EXPLAIN_MODEL" ]; then
+  echo -e "${B}→${NC} Téléchargement du modèle d'explication $EXPLAIN_MODEL (~4,7 Go)..."
   docker compose exec -T ollama ollama pull "$EXPLAIN_MODEL" && ok "Modèle d'explication prêt ($EXPLAIN_MODEL)"     || warn "$EXPLAIN_MODEL non téléchargé — pas d'explication en langage simple"
-fi
-
-# Modèle d'embeddings — moat « mémoire d'incidents » (MEMORY_ENABLED on par défaut, ~274 MB).
-if ! grep -qi "^MEMORY_ENABLED=false" .env 2>/dev/null; then
-  docker compose exec -T ollama ollama pull nomic-embed-text >/dev/null 2>&1 \
-    && ok "Modèle d'embeddings (mémoire) prêt" \
-    || warn "nomic-embed-text non téléchargé — la mémoire d'incidents restera inactive (MEMORY_ENABLED=false pour la couper)"
+  # Mémoire d'incidents (MEMORY_ENABLED) : embeddings locaux, ~274 Mo.
+  if ! grep -qi "^MEMORY_ENABLED=false" .env 2>/dev/null; then
+    docker compose exec -T ollama ollama pull nomic-embed-text >/dev/null 2>&1 && ok "Modèle d'embeddings (mémoire) prêt"       || warn "nomic-embed-text non téléchargé — la mémoire d'incidents restera inactive"
+  fi
+else
+  ok "Installation légère (sans modèle). IA d'explication : LLM_EXPLAIN_MODEL dans .env puis ./setup.sh"
 fi
 
 # ── Seed ──────────────────────────────────────────────────────────────────────
