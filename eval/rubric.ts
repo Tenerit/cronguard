@@ -136,6 +136,23 @@ export const LABELS: Record<string, Label> = {
   'p5-proxy-env-cron':             { mech: /proxy|http_proxy|variable d'environnement|environnement/i, act: /proxy|http_proxy|https_proxy|export|environnement/i, key: /timed out/ },
   'p5-wget-ssl-status5':           { mech: /\bssl\b|\btls\b|certificat|https|redirection/i, act: /https|certificat|redirection|\bssl\b/i, key: /status 5/ },
 
+  // ── Public6 (TEST, gelé brut le 2026-11-10 avant le retrait de la déduction ; étiquettes écrites avant tout run) ──
+  'p6-sysctl-path':              { mech: /\bpath\b|\/sbin/i, act: /\/sbin|path=|chemin absolu|absolute/i, key: /sysctl/ },
+  'p6-rvm-gem-path':             { mech: /\brvm\b|\bpath\b|environnement|environment|gem_(home|path)|bash_profile|\.profile/i, act: /\brvm\b|\bpath\b|gem_|source|environ|profile/i, key: /nokogiri/ },
+  'p6-java-noclassdef-pom':      { mech: /dépendance|dependency|\bpom\b|classpath|bibliothèque|library|\bjar\b|empaquet|packag/i, act: /\bpom\b|dépendance|dependency|maven|archetype|classpath|\bjar\b/i, key: /NoClassDefFoundError/ },
+  'p6-rake-bundle-env':          { mech: /\bpath\b|environnement|environment|\brvm\b|rbenv|bashrc|profile/i, act: /\bpath\b|source|\brvm\b|rbenv|bashrc|profile|chemin absolu|environ/i, key: /bundle: command not found|rake: command not found/ },
+  'p6-pgdump-crlf':              { mech: /crlf|\\r|retours? (à la ligne |)chariot|carriage|dos2unix|fins? de ligne|windows|\bdos\b/i, act: /dos2unix|crlf|\\r|fins? de ligne|line ending/i, key: /--file: command not found|--table: command not found/ },
+  'p6-redis-dump-umask':         { mech: /umask|droits? (de création|du fichier|du dump)|propriétaire|owner|créé avec|created with/i, act: /umask|chmod|chown|droits|permission/i, key: /dump\.rdb: Permission denied/ },
+  'p6-wget-503-auth':            { mech: /authentif|connect(é|e) dans|session|login|public|accès restreint|authenticat|identifi/i, act: /authentif|public|identifiants|credentials|session|cookie|accès/i, key: /503/ },
+  'p6-logrotate-create-perms':   { mech: /logrotate|rotation|\bcreate\b|recréé|propriétaire|owner/i, act: /create\s+0?6\d\d|\bcreate\b|chown|propriétaire|owner|logrotate/i, key: /open error: Permission denied/ },
+  'p6-php-unlink-cwd':           { mech: /dossier courant|répertoire courant|current dir|working dir|\bcwd\b|relatif|relative|chemin absolu|depuis le dossier/i, act: /chemin absolu|absolute|__DIR__|chdir|\bcd\b|dirname/i, key: /unlink\(test\.zip\)/ },
+  'p6-meteor-fiber':             { mech: /fiber|bindEnvironment|environnement meteor|meteor environment|hors du contexte|outside/i, act: /bindEnvironment|fiber/i, key: /without a fiber/ },
+  'p6-date-unquoted-format':     { mech: /guillemets|quot|non (cité|protégé)|espaces?|argument|séparé|split/i, act: /guillemets|quot|"\+%b/i, key: /date \+%b/ },
+  'p6-sphinx-path':              { mech: /\bpath\b|\/usr\/local\/bin|profile|environnement|environment/i, act: /\bpath\b|\/usr\/local\/bin|chemin absolu|bin_path/i, key: /Sphinx cannot be found/ },
+  'p6-sudo-root-module':         { mech: /\broot\b|autre utilisateur|\bsudo\b|utilisateur|\buser\b/i, act: /crontab -e|sans sudo|utilisateur|\broot\b|pip/i, key: /No module named bs4/ },
+  'p6-selenium-firefox-version': { mech: /version|mise à jour|update|incompatib|upgrade/i, act: /version|hold|apt-mark|mettre à jour|upgrade|downgrade|épingl|pin/i, key: /Can't load the profile/ },
+  'p6-mysql-2002-disk-full':     { mech: /disque|\bdisk\b|espace|space|error (number )?28|errno 28/i, act: /\bdf\b|espace|space|disque|\bdisk\b|libérer|free/i, key: /ERROR 2002|Can't connect to local MySQL server/ },
+
   // ── Public4 (TEST, collecté avant les leviers contexte d'exécution / vérification de commande) ──
   'p4-python-version-cron':     { mech: /version|python ?2|interpréteur|ancien python|autre python/i, act: /python ?2\.7|python3|shebang|chemin|version/i, key: /SyntaxError/ },
   'p4-laravel-mail-template':   { mech: /template|\bvue\b|\bview\b|welcome/i, act: /emails\.welcome|template|\bvue\b|\bview\b/i, key: /Undefined variable: errors/ },

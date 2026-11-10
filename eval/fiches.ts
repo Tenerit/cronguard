@@ -20,9 +20,10 @@ import { PUBLIC2_CASES } from './public-cases-2'
 import { PUBLIC3_CASES } from './public-cases-3'
 import { PUBLIC4_CASES } from './public-cases-4'
 import { PUBLIC5_CASES } from './public-cases-5'
+import { PUBLIC6_CASES } from './public-cases-6'
 
 process.env.LLM_ENABLED = 'false'
-const SETS: Record<string, EvalCase[]> = { lab: CASES, public: PUBLIC_CASES, public2: PUBLIC2_CASES, public3: PUBLIC3_CASES, public4: PUBLIC4_CASES, public5: PUBLIC5_CASES }
+const SETS: Record<string, EvalCase[]> = { lab: CASES, public: PUBLIC_CASES, public2: PUBLIC2_CASES, public3: PUBLIC3_CASES, public4: PUBLIC4_CASES, public5: PUBLIC5_CASES, public6: PUBLIC6_CASES }
 const pct = (a: number, b: number) => b ? `${Math.round(100 * a / b)} %` : '—'
 
 const misfires: string[] = []

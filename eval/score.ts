@@ -46,14 +46,17 @@ async function main() {
   const { PUBLIC3_CASES } = await import('./public-cases-3')
   const { PUBLIC4_CASES } = await import('./public-cases-4')
   const { PUBLIC5_CASES } = await import('./public-cases-5')
+  const { PUBLIC6_CASES } = await import('./public-cases-6')
   const cases: Array<[string, EvalCase]> = [
-    ...(set === 'public' || set === 'public2' || set === 'public3' || set === 'public4' || set === 'public5' ? [] : CASES.map(c => ['lab', c] as [string, EvalCase])),
-    ...(set === 'lab' || set === 'public2' || set === 'public3' || set === 'public4' || set === 'public5' ? [] : PUBLIC_CASES.map(c => ['public', c] as [string, EvalCase])),
+    ...(set === 'public' || set === 'public2' || set === 'public3' || set === 'public4' || set === 'public5' || set === 'public6' ? [] : CASES.map(c => ['lab', c] as [string, EvalCase])),
+    ...(set === 'lab' || set === 'public2' || set === 'public3' || set === 'public4' || set === 'public5' || set === 'public6' ? [] : PUBLIC_CASES.map(c => ['public', c] as [string, EvalCase])),
     ...(set === 'all' || set === 'final' || set === 'public2' ? PUBLIC2_CASES.map(c => ['public2', c] as [string, EvalCase]) : []),
     // public3 = test final : seulement avec --set final (ou public3), jamais dans les expériences de réglage.
     ...(set === 'final' || set === 'public3' ? PUBLIC3_CASES.map(c => ['public3', c] as [string, EvalCase]) : []),
     ...(set === 'final' || set === 'public4' ? PUBLIC4_CASES.map(c => ['public4', c] as [string, EvalCase]) : []),
     ...(set === 'final' || set === 'public5' ? PUBLIC5_CASES.map(c => ['public5', c] as [string, EvalCase]) : []),
+    // public6 = test hors échantillon du 2026-11-10 : seulement avec --set public6.
+    ...(set === 'public6' ? PUBLIC6_CASES.map(c => ['public6', c] as [string, EvalCase]) : []),
   ]
   const { analyzeFailure, analysisWithoutModel } = await import('../src/services/llm/analyzer')
   const { knownFix } = await import('../src/services/llm/known-fixes')
@@ -92,7 +95,7 @@ async function main() {
       note: f1(mean(r.map(x => x.g.total))), ci95: ci95(all).map(f1), runs: all.map(f1),
       covered:   { note: f1(mean(r.filter(x => x.covered).map(x => x.g.total))),  n: new Set(r.filter(x => x.covered).map(x => x.name)).size },
       uncovered: { note: f1(mean(r.filter(x => !x.covered).map(x => x.g.total))), n: new Set(r.filter(x => !x.covered).map(x => x.name)).size },
-      lab: bySet('lab'), public: bySet('public'), public2: bySet('public2'), public3: bySet('public3'), public4: bySet('public4'), public5: bySet('public5'),
+      lab: bySet('lab'), public: bySet('public'), public2: bySet('public2'), public3: bySet('public3'), public4: bySet('public4'), public5: bySet('public5'), public6: bySet('public6'),
       criteria: {
         cause_mecanisme: pct(mean(r.map(x => x.g.mech / 4))), action: pct(mean(r.map(x => x.g.act / 3))),
         categorie: pct(mean(r.map(x => x.g.cat))), rien_invente: pct(mean(r.map(x => x.g.noInvent))), preuve: pct(mean(r.map(x => x.g.evidence))),
