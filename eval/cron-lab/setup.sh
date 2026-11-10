@@ -1,0 +1,58 @@
+#!/bin/sh
+# Labo de pannes cron RÉELLES (2026-11-10) : vrai crond, vrai utilisateur avec son ~/.profile, SDK bash.
+# Lancé dans un conteneur alpine jetable par eval/cron-lab.ts. Chaque job échoue pour une raison connue
+# d'avance ; les pings du SDK sont capturés dans /lab/out/<clé>.json puis analysés côté hôte.
+set -e
+apk add --no-cache -q bash python3 curl >/dev/null
+
+adduser -D -s /bin/bash app
+mkdir -p /srv/tools/bin /srv/archive /home/app/jobs/data /lab/out
+# Outil installé hors du PATH de cron, ajouté au PATH par le .profile de l'utilisateur (comme nvm, pyenv…).
+printf '#!/bin/sh\necho ok\n' > /srv/tools/bin/report-tool && chmod +x /srv/tools/bin/report-tool
+cat > /home/app/.profile <<'EOF'
+export PATH="/srv/tools/bin:$PATH"
+export API_TOKEN=lab-token-not-a-secret
+export WAREHOUSE_DSN=postgres://lab
+EOF
+echo 'x' > /home/app/jobs/data/input.csv                  # existe… relativement au dossier du job, pas au HOME
+chown -R app /home/app && chmod 755 /srv/archive           # /srv/archive appartient à root : app ne peut pas y écrire
+cp /lab/sdk.sh /home/app/cronguard.sh && chown app /home/app/cronguard.sh
+
+# Les jobs : (clé, commande). Chacun passe par cg_run, comme chez un client.
+cat > /home/app/jobs/env-missing.py <<'EOF'
+import os
+print('exporting with token', os.environ['API_TOKEN'])
+EOF
+cat > /home/app/jobs/app-bug.py <<'EOF'
+rows = [{'amount': '12.5'}, {'amount': 'n/a'}]
+print(sum(float(r['amount']) for r in rows))
+EOF
+cat > /home/app/jobs/relative.sh <<'EOF'
+cat data/input.csv
+EOF
+cat > /home/app/jobs/bash-only.sh <<'EOF'
+files=(a b); echo "${files[0]}"   # tableau : syntaxe bash refusée par sh
+EOF
+
+S='export CRONGUARD_URL=http://127.0.0.1:9999; . /home/app/cronguard.sh;'   # busybox crond ignore les lignes VAR=valeur
+cat > /tmp/crontab <<EOF
+* * * * * bash -c '$S cg_run path-login report-tool --daily'
+* * * * * bash -c '$S cg_run env-missing python3 /home/app/jobs/env-missing.py'
+* * * * * bash -c '$S cg_run relative-path sh /home/app/jobs/relative.sh'
+* * * * * bash -c '$S cg_run permission tar czf /srv/archive/daily.tgz /home/app/jobs'
+* * * * * bash -c '$S cg_run sh-not-bash sh /home/app/jobs/bash-only.sh'
+* * * * * bash -c '$S cg_run absent-file cp /mnt/nas/export.csv /home/app/'
+* * * * * bash -c '$S cg_run app-bug python3 /home/app/jobs/app-bug.py'
+* * * * * bash -c '$S cg_run remote-down curl -sSf --max-time 3 http://127.0.0.1:9/health'
+EOF
+crontab -u app /tmp/crontab
+
+# Faux serveur CronGuard : enregistre chaque ping d'échec.
+node -e "
+require('http').createServer((q, r) => { let b = ''; q.on('data', d => b += d).on('end', () => {
+  const k = q.url.split('/').pop(); try { if (JSON.parse(b).status === 'fail') require('fs').writeFileSync('/lab/out/' + k + '.json', b) } catch {}
+  r.end('{}') }) }).listen(9999, '127.0.0.1')" &
+crond -b -l 8
+# Un passage de cron suffit (minute suivante) ; marge pour les jobs lents.
+for i in $(seq 1 100); do [ "$(ls /lab/out | wc -l)" -ge 8 ] && break; sleep 2; done
+ls /lab/out

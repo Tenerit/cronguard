@@ -23,11 +23,19 @@ _CG_PING_KEY=""
 _CG_START_TIME=""
 _CG_OUTPUT_FILE=""
 
+# ms depuis epoch. busybox (Alpine) ignore %N et renvoie des secondes : complétées en ms.
+_cg_now_ms() {
+  local t
+  t=$(date +%s%3N 2>/dev/null); t="${t//[!0-9]/}"
+  [[ ${#t} -le 10 ]] && t=$(( $(date +%s) * 1000 ))
+  echo "$t"
+}
+
 # ── cg_start : démarre le chrono, capture stdout/stderr ──────────────────────
 cg_start() {
   _CG_PING_KEY="$1"
-  _CG_START_TIME=$(date +%s%3N)           # ms depuis epoch
-  _CG_OUTPUT_FILE=$(mktemp /tmp/cg_XXXXX)
+  _CG_START_TIME=$(_cg_now_ms)
+  _CG_OUTPUT_FILE=$(mktemp /tmp/cg_XXXXXX)   # 6 X : minimum de busybox (Alpine), sinon aucun fichier et la sortie est perdue
 }
 
 # ── cg_end : envoie le ping avec le statut du dernier exit code ───────────────
@@ -36,7 +44,7 @@ cg_end() {
   local records="${1:-}"
   local exit_code="${2:-$?}"           # Capture $? avant qu'il soit écrasé
   local end_time
-  end_time=$(date +%s%3N)
+  end_time=$(_cg_now_ms)
   local duration_ms=$(( end_time - _CG_START_TIME ))
 
   local output='""' context=""          # '""' : sans fichier de sortie, le JSON reste valide
@@ -239,8 +247,14 @@ def _cg_paths(text):
             p = next(g for g in m.groups() if g)
             if ('/' in p or '.' in p) and p not in cands:
                 cands.append(p)
+    todo = []
+    for p in cands:
+        todo.append(p)
+        par = os.path.dirname(os.path.expanduser(p))
+        if not os.path.exists(os.path.expanduser(p)) and par and os.path.isdir(par) and par not in todo:
+            todo.append(par)   # fichier à créer : c'est le dossier parent qui porte les droits
     res = []
-    for p in cands[:5]:
+    for p in todo[:5]:
         q = os.path.expanduser(p)
         d = {'path': p[:256], 'relative': not os.path.isabs(q), 'exists': os.path.exists(q)}
         if d['exists']:

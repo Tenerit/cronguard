@@ -120,8 +120,14 @@ def _cg_paths(text):
             p = next(g for g in m.groups() if g)
             if ('/' in p or '.' in p) and p not in cands:
                 cands.append(p)
+    todo = []
+    for p in cands:
+        todo.append(p)
+        par = os.path.dirname(os.path.expanduser(p))
+        if not os.path.exists(os.path.expanduser(p)) and par and os.path.isdir(par) and par not in todo:
+            todo.append(par)   # fichier à créer : c'est le dossier parent qui porte les droits
     res = []
-    for p in cands[:5]:
+    for p in todo[:5]:
         q = os.path.expanduser(p)
         d = {'path': p[:256], 'relative': not os.path.isabs(q), 'exists': os.path.exists(q)}
         if d['exists']:

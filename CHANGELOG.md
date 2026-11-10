@@ -25,6 +25,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Mesuré — labo de pannes cron réelles (2026-11-10, `npx tsx eval/cron-lab.ts`)
+- Vrai `crond` (Alpine), utilisateur avec son `~/.profile`, SDK bash, 8 pannes dont la cause est connue d'avance, analysées par le serveur sans modèle. **8/8 avec les commandes de test, 3/8 sans** : PATH du shell de connexion, variable absente sous cron, chemin relatif, droits du dossier, fichier absent, syntaxe bash lancée par sh, service injoignable ; la vraie erreur applicative reste « cause non établie », sans cause inventée.
+- Limite : scénarios écrits par nous, en connaissant les règles. C'est une preuve de fonctionnement sur de vrais cron, pas une mesure de couverture sur des pannes de clients.
+
+### Corrigé — SDK bash sous Alpine / busybox
+- `mktemp /tmp/cg_XXXXX` échouait (busybox exige 6 X) : **la sortie du job n'était jamais envoyée**. `date +%s%3N` renvoyait des secondes : durée fausse. Trouvés par le labo.
+
 ### Changé — plus de déduction par le modèle ; commandes de test à la place (2026-11-10, décision fondateur)
 - Analyse des erreurs (`eval/error-analysis.ts`, 150 réponses libres sur pannes non couvertes) : 8 justes, toutes quand le log écrit le mécanisme ; 0 sur 78 quand il faut le déduire. 29 des 73 fausses causes recopiaient l'indice « Pattern détecté » du prompt ; dans 9 cas sur 12 le filtre de lignes retirait la ligne qui expliquait.
 - **Par défaut, le modèle ne rédige plus de cause.** Sans fiche ni fait constaté : « Cause non établie » et des **commandes de test** — reproduire la panne dans l'environnement exact du cron (`env -i HOME=… PATH=… /bin/sh -c '<commande>'`), écarts constatés avec votre shell. `LLM_DEDUCTION=on` rétablit l'analyse libre. Code des hypothèses (v1, v2) retiré.
