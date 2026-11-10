@@ -9,7 +9,7 @@ import 'dotenv/config'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
 import { analysisWithoutModel } from '../src/services/llm/analyzer'
-import { explainRaw } from '../src/services/llm/explain'
+import { explainRaw, explainable, capSentences } from '../src/services/llm/explain'
 import { evidenceLines } from '../src/services/llm/evidence'
 import { sanitizeLogs } from '../src/services/sanitizer'
 import { LABELS } from './rubric'
@@ -27,15 +27,19 @@ const words = (s: string) => s.split(/\s+/).filter(Boolean).length
 const sentences = (s: string) => s.split(/[.!?](\s|$)/).filter(x => x && x.trim().length > 3).length
 
 ;(async () => {
+  let established = 0
   const rows: Array<{ name: string; cause: string; text: string; invented: string[]; keep: boolean | null; words: number; sentences: number; ms: number }> = []
   for (const c of ALL) {
     const a = analysisWithoutModel({ logs: c.logs, exitCode: c.exitCode, command: c.command })
     if (!a.finding && !a.knownFix) continue
+    established++
+    if (process.env.EXPLAIN_TRIAL === '3' && !explainable(a)) continue   // essai 3 : causes certaines seulement
     const clean = sanitizeLogs(c.logs).clean
     const t0 = Date.now()
     const r = await explainRaw(a, clean, evidenceLines(clean, a.cause)[0], 120_000)
     const ms = Date.now() - t0
     if (!r) { rows.push({ name: c.name, cause: a.cause, text: '(aucune réponse)', invented: [], keep: null, words: 0, sentences: 0, ms }); continue }
+    if (process.env.EXPLAIN_TRIAL === '3') r.text = capSentences(r.text)
     const label = LABELS[c.name]?.mech
     const keep = label && label.test(a.cause) ? label.test(r.text) : null   // seulement quand la cause est juste
     rows.push({ name: c.name, cause: a.cause, text: r.text, invented: r.invented, keep, words: words(r.text), sentences: sentences(r.text), ms })
@@ -47,6 +51,7 @@ const sentences = (s: string) => s.split(/[.!?](\s|$)/).filter(x => x && x.trim(
   const keepRate = kept.filter(r => r.keep).length / Math.max(1, kept.length)
   const res = {
     cas: rows.length,
+    couverture: `${Math.round(100 * rows.length / Math.max(1, established))} % des ${established} causes établies (essai 3 : attente ≥ 50 %)`,
     fidelite: `${Math.round(100 * faithful)} % (attente ≥ 95 %)`,
     mecanisme_garde: `${Math.round(100 * keepRate)} % sur ${kept.length} (attente ≥ 90 %)`,
     mots_mediane: `${median(answered.map(r => r.words))} (attente ≤ 60)`,

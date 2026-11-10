@@ -28,3 +28,16 @@ describe("rôle IA n°1 : expliquer sans inventer", () => {
     expect(await explainAnalysis(a, 'node: not found')).toBeNull()
   })
 })
+
+import { explainable, capSentences } from '../src/services/llm/explain'
+describe('essai 3 : causes certaines seulement, 3 phrases', () => {
+  it("une cause à alternatives n'est pas confiée au modèle", () => {
+    expect(explainable({ cause: 'Service indisponible, ou proxy absent sous cron.', knownFix: {} as never })).toBe(false)
+    expect(explainable({ cause: "Le système de fichiers n'a plus d'inodes.", knownFix: {} as never })).toBe(true)
+    expect(explainable({ cause: 'Cause non établie.' })).toBe(false)
+  })
+  it('coupe à 3 phrases', () => {
+    expect(capSentences('Un. Deux ! Trois ? Quatre.')).toBe('Un. Deux ! Trois ?')
+    expect(capSentences('Une seule phrase sans point')).toBe('Une seule phrase sans point')
+  })
+})

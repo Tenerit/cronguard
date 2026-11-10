@@ -38,7 +38,7 @@ export async function explainRaw(a: Pick<AnalysisResult, 'cause' | 'action' | 'c
   const user = explainPrompt(a, line)
   try {
     const { data } = await axios.post(`${process.env.LLM_BASE_URL}/chat/completions`, {
-      model: process.env.LLM_MODEL ?? 'llama3.2:3b', max_tokens: 220, temperature: 0,
+      model: process.env.LLM_EXPLAIN_MODEL || process.env.LLM_MODEL || 'llama3.2:3b', max_tokens: 220, temperature: 0,
       response_format: { type: 'json_object' },
       messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: user }],
     }, { timeout, headers: llmHeaders() })
@@ -49,10 +49,28 @@ export async function explainRaw(a: Pick<AnalysisResult, 'cause' | 'action' | 'c
   } catch { return null }
 }
 
-/** Explication simple d'une analyse établie (fiche ou fait constaté), ou null (pas établie, IA coupée, garde-fou). */
-export async function explainAnalysis(a: AnalysisResult, cleanLogs: string, line?: string, timeout = 30_000): Promise<string | null> {
+// Essai 3 (2026-11-10) : essais 1 (3B) et 2 (qwen2.5:7b) gardaient une seule des alternatives quand la cause
+// en liste plusieurs (« … ou proxy absent sous cron ») : le modèle recommençait à deviner. Règles en code :
+//   · l'IA n'explique que les causes CERTAINES (un seul mécanisme) ; une cause à alternatives reste affichée telle quelle ;
+//   · 3 phrases au plus (coupé par le code) ; modèle réglable à part (LLM_EXPLAIN_MODEL, essai : qwen2.5:7b).
+// Attentes fixées AVANT l'essai 3 : fidélité ≥ 95 %, mécanisme gardé ≥ 90 %, ≤ 3 phrases, médiane ≤ 20 s
+// (l'explication arrive après l'alerte), et au moins 50 % des causes établies expliquées (sinon rôle marginal).
+
+/** Cause expliquable : établie (fiche, fait, correction vérifiée) ET à un seul mécanisme. */
+export function explainable(a: Pick<AnalysisResult, 'cause' | 'finding' | 'knownFix' | 'verifiedFix'>): boolean {
+  return !!(a.finding || a.knownFix || a.verifiedFix) && !/\bou\b/i.test(a.cause)
+}
+
+/** 3 phrases au plus. */
+export function capSentences(text: string, max = 3): string {
+  const parts = text.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) ?? [text]
+  return parts.slice(0, max).join('').trim()
+}
+
+/** Explication simple d'une analyse établie et certaine, ou null (incertaine, IA coupée, garde-fou). */
+export async function explainAnalysis(a: AnalysisResult, cleanLogs: string, line?: string, timeout = 60_000): Promise<string | null> {
   if (!llmEnabled() || isAnthropic() || process.env.LLM_EXPLAIN === 'off') return null
-  if (!a.finding && !a.knownFix && !a.verifiedFix) return null     // rien d'établi : on n'habille pas une incertitude
+  if (!explainable(a)) return null     // rien d'établi, ou plusieurs causes possibles : on n'en laisse pas choisir une
   const r = await explainRaw(a, cleanLogs, line, timeout)
-  return r && r.text.length >= 20 && !r.invented.length ? r.text.slice(0, 600) : null
+  return r && r.text.length >= 20 && !r.invented.length ? capSentences(r.text).slice(0, 600) : null
 }
