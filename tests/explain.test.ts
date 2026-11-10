@@ -41,3 +41,21 @@ describe('essai 3 : causes certaines seulement, 3 phrases', () => {
     expect(capSentences('Une seule phrase sans point')).toBe('Une seule phrase sans point')
   })
 })
+
+import { alternatives, keepsAlternatives, acceptExplanation } from '../src/services/llm/explain'
+describe('essai 4 : toutes les possibilités gardées', () => {
+  const cause = 'Le service distant ne répond pas : indisponible, surchargé, ou proxy défini dans votre session (http_proxy) mais absent sous cron.'
+  it('découpe les possibilités, sans les exemples entre parenthèses', () => {
+    expect(alternatives(cause)).toHaveLength(3)
+    expect(alternatives("L'utilisateur n'a pas les droits : il appartient à un autre utilisateur (www-data, root), ou umask restrictif.")).toHaveLength(2)
+    expect(alternatives("Plus d'inodes : trop de petits fichiers.")).toEqual([])
+  })
+  it('rejette un texte qui en perd une, accepte celui qui les garde toutes', () => {
+    expect(keepsAlternatives(cause, 'Le service est indisponible ou surchargé.')).toBe(false)
+    expect(keepsAlternatives(cause, 'Le service est indisponible, surchargé, ou votre proxy manque sous cron.')).toBe(true)
+    expect(acceptExplanation(cause, { text: 'Le service est indisponible ou surchargé. Vérifiez-le.', invented: [] })).toBeNull()
+  })
+  it('garde-fou : la ponctuation finale ne fait pas un faux identifiant', () => {
+    expect(acceptExplanation('PATH minimal sans /usr/local/bin.', { text: 'Cron ne cherche pas dans /usr/local/bin. Appelez la commande en chemin absolu.', invented: [] })).not.toBeNull()
+  })
+})

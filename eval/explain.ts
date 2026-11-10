@@ -9,7 +9,7 @@ import 'dotenv/config'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
 import { analysisWithoutModel } from '../src/services/llm/analyzer'
-import { explainRaw, explainable, capSentences } from '../src/services/llm/explain'
+import { explainRaw, explainable, capSentences, acceptExplanation } from '../src/services/llm/explain'
 import { evidenceLines } from '../src/services/llm/evidence'
 import { sanitizeLogs } from '../src/services/sanitizer'
 import { LABELS } from './rubric'
@@ -28,6 +28,7 @@ const sentences = (s: string) => s.split(/[.!?](\s|$)/).filter(x => x && x.trim(
 
 ;(async () => {
   let established = 0
+  const rejected: Array<{ name: string; raw: string; invented: string[] }> = []
   const rows: Array<{ name: string; cause: string; text: string; invented: string[]; keep: boolean | null; words: number; sentences: number; ms: number }> = []
   for (const c of ALL) {
     const a = analysisWithoutModel({ logs: c.logs, exitCode: c.exitCode, command: c.command })
@@ -40,17 +41,24 @@ const sentences = (s: string) => s.split(/[.!?](\s|$)/).filter(x => x && x.trim(
     const ms = Date.now() - t0
     if (!r) { rows.push({ name: c.name, cause: a.cause, text: '(aucune réponse)', invented: [], keep: null, words: 0, sentences: 0, ms }); continue }
     if (process.env.EXPLAIN_TRIAL === '3') r.text = capSentences(r.text)
+    // Essai 4 : seules les explications acceptées par les garde-fous comptent (les autres = cause brute affichée).
+    if (process.env.EXPLAIN_TRIAL === '4') { const ok = acceptExplanation(a.cause, r); if (!ok) { rejected.push({ name: c.name, raw: r.text, invented: r.invented }); continue } r.text = ok }
     const label = LABELS[c.name]?.mech
     const keep = label && label.test(a.cause) ? label.test(r.text) : null   // seulement quand la cause est juste
     rows.push({ name: c.name, cause: a.cause, text: r.text, invented: r.invented, keep, words: words(r.text), sentences: sentences(r.text), ms })
     process.stdout.write('.')
   }
   const answered = rows.filter(r => r.text !== '(aucune réponse)')
-  const faithful = answered.filter(r => !r.invented.length && r.text.length >= 20).length / Math.max(1, rows.length)
+  // Essai 4 : fidélité brute = sorties du modèle (acceptées + rejetées) sans identifiant inventé.
+  const rawAll = [...answered.map(r => r.invented), ...rejected.map(r => r.invented)]
+  const faithful = process.env.EXPLAIN_TRIAL === '4'
+    ? rawAll.filter(i => !i.length).length / Math.max(1, rawAll.length)
+    : answered.filter(r => !r.invented.length && r.text.length >= 20).length / Math.max(1, rows.length)
   const kept = rows.filter(r => r.keep !== null)
   const keepRate = kept.filter(r => r.keep).length / Math.max(1, kept.length)
   const res = {
     cas: rows.length,
+    rejetes_par_garde_fou: rejected.length,
     couverture: `${Math.round(100 * rows.length / Math.max(1, established))} % des ${established} causes établies (essai 3 : attente ≥ 50 %)`,
     fidelite: `${Math.round(100 * faithful)} % (attente ≥ 95 %)`,
     mecanisme_garde: `${Math.round(100 * keepRate)} % sur ${kept.length} (attente ≥ 90 %)`,
@@ -61,5 +69,7 @@ const sentences = (s: string) => s.split(/[.!?](\s|$)/).filter(x => x && x.trim(
   console.log('\n', res)
   writeFileSync(join(__dirname, 'EXPLAIN.md'), `# Rôle IA n°1 — expliquer une panne établie (${new Date().toISOString().slice(0, 10)})\n\n` +
     Object.entries(res).map(([k, v]) => `- **${k}** : ${v}`).join('\n') + '\n\n## Exemples (à relire)\n\n' +
-    rows.slice(0, 80).map(r => `### ${r.name}${r.invented.length ? ` — ❌ inventé : ${r.invented.join(', ')}` : ''}${r.keep === false ? ' — ⚠ mécanisme perdu' : ''}\n- Cause : ${r.cause}\n- Explication : ${r.text}\n`).join('\n'))
+    rows.slice(0, 80).map(r => `### ${r.name}${r.invented.length ? ` — ❌ inventé : ${r.invented.join(', ')}` : ''}${r.keep === false ? ' — ⚠ mécanisme perdu' : ''}\n- Cause : ${r.cause}\n- Explication : ${r.text}\n`).join('\n') +
+    (rejected.length ? '\n\n## Rejetées par les garde-fous (cause brute affichée à la place)\n\n' +
+      rejected.map(r => `### ${r.name}${r.invented.length ? ` — inventé : ${r.invented.join(', ')}` : ' — possibilité perdue ou trop court'}\n- Texte du modèle : ${r.raw}\n`).join('\n') : ''))
 })()

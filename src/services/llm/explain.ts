@@ -18,7 +18,27 @@ const IDENTIFIER = /\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b|--[a-z][a-z-]+|(?:\/[\w.-]
 /** Identifiants (chemins, options, fichiers, noms_avec_soulignés) de `text` absents des faits. */
 export function inventedIdentifiers(text: string, facts: string): string[] {
   const known = facts.toLowerCase()
-  return [...new Set((text.match(IDENTIFIER) ?? []).map(id => id.toLowerCase()))].filter(id => !known.includes(id))
+  // Ponctuation finale retirée (« /usr/local/bin. » en fin de phrase n'est pas un autre chemin) : faux positif de l'essai 3.
+  return [...new Set((text.match(IDENTIFIER) ?? []).map(id => id.toLowerCase().replace(/[.,;:]+$/, '')))].filter(id => !known.includes(id))
+}
+
+const STOP = new Set(['dans', 'pour', 'avec', 'sous', 'cron', 'votre', 'vous', 'sont', 'mais', 'plus', 'cette', 'celui', 'celle',
+  'autre', 'autres', 'leur', 'leurs', 'job', 'jobs', 'fichier', 'fichiers', 'service', 'utilisateur', 'commande', 'absent', 'absente', 'absents'])
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+/** Possibilités listées par une cause « X : a, b, ou c » (vide si la cause n'en liste pas). */
+export function alternatives(cause: string): string[] {
+  if (!/\bou\b/i.test(cause)) return []
+  const head = cause.includes(' : ') ? cause.slice(cause.indexOf(' : ') + 3) : cause
+  const body = head.replace(/\([^)]*\)/g, ' ')   // les parenthèses donnent des exemples, pas des possibilités
+  return body.split(/[,;]|\bou\b/i).map(p => p.trim()).filter(p => keyWords(p).length > 0)
+}
+const keyWords = (part: string) => norm(part).split(/[^a-z0-9_]+/).filter(w => w.length >= 4 && !STOP.has(w))
+
+/** Essai 4 : chaque possibilité de la cause doit rester dans l'explication (au moins un de ses mots-clés, préfixe de 5 lettres). */
+export function keepsAlternatives(cause: string, text: string): boolean {
+  const t = norm(text)
+  return alternatives(cause).every(p => keyWords(p).some(w => t.includes(w.slice(0, 5))))
 }
 
 const SYSTEM = `Tu expliques une panne DÉJÀ diagnostiquée à un opérateur qui n'est pas spécialiste.
@@ -36,11 +56,15 @@ export function explainPrompt(a: Pick<AnalysisResult, 'cause' | 'action' | 'chec
 /** Réponse brute du modèle + identifiants inventés (sert aussi à l'éval, qui mesure le garde-fou). */
 export async function explainRaw(a: Pick<AnalysisResult, 'cause' | 'action' | 'checks'>, cleanLogs: string, line?: string, timeout = 30_000): Promise<{ text: string; invented: string[] } | null> {
   const user = explainPrompt(a, line)
+  // Cause à plusieurs possibilités : consigne explicite de toutes les garder (vérifié ensuite par keepsAlternatives).
+  const system = alternatives(a.cause).length
+    ? SYSTEM + "\nLa cause liste plusieurs possibilités : cite-les TOUTES, sans en choisir une ni en écarter aucune."
+    : SYSTEM
   try {
     const { data } = await axios.post(`${process.env.LLM_BASE_URL}/chat/completions`, {
-      model: process.env.LLM_EXPLAIN_MODEL || process.env.LLM_MODEL || 'llama3.2:3b', max_tokens: 220, temperature: 0,
+      model: process.env.LLM_EXPLAIN_MODEL || process.env.LLM_MODEL || 'llama3.2:3b', max_tokens: 260, temperature: 0,
       response_format: { type: 'json_object' },
-      messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: user }],
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
     }, { timeout, headers: llmHeaders() })
     const raw: string = data.choices?.[0]?.message?.content ?? ''
     const json = raw.match(/\{[\s\S]*\}/)
@@ -67,10 +91,26 @@ export function capSentences(text: string, max = 3): string {
   return parts.slice(0, max).join('').trim()
 }
 
-/** Explication simple d'une analyse établie et certaine, ou null (incertaine, IA coupée, garde-fou). */
+// Essai 4 (2026-11-10) : l'essai 3 tient la qualité (96 % fidèle, 96 % mécanisme gardé) mais ne couvre que 35 % des
+// causes établies (les autres listent plusieurs possibilités). Les causes à possibilités sont maintenant expliquées,
+// avec la consigne de toutes les citer, et le garde-fou keepsAlternatives rejette tout texte qui en perd une.
+// Attentes fixées AVANT l'essai 4 (qwen2.5:7b) : couverture ≥ 50 % des causes établies (explication acceptée par les
+// deux garde-fous), et sur les explications acceptées : mécanisme gardé ≥ 90 %, ≤ 3 phrases ; fidélité brute ≥ 95 %
+// (sorties du modèle sans identifiant inventé) ; médiane ≤ 20 s.
+
+/** Cause établie (fiche, fait constaté, correction vérifiée). */
+export const established = (a: Pick<AnalysisResult, 'finding' | 'knownFix' | 'verifiedFix'>) => !!(a.finding || a.knownFix || a.verifiedFix)
+
+/** Garde-fous sur un texte du modèle : assez long, rien d'inventé, aucune possibilité perdue. 3 phrases au plus. */
+export function acceptExplanation(cause: string, r: { text: string; invented: string[] }): string | null {
+  const text = capSentences(r.text)
+  return text.length >= 20 && !r.invented.length && keepsAlternatives(cause, text) ? text.slice(0, 600) : null
+}
+
+/** Explication simple d'une analyse établie, ou null (pas établie, IA coupée, garde-fou). */
 export async function explainAnalysis(a: AnalysisResult, cleanLogs: string, line?: string, timeout = 60_000): Promise<string | null> {
   if (!llmEnabled() || isAnthropic() || process.env.LLM_EXPLAIN === 'off') return null
-  if (!explainable(a)) return null     // rien d'établi, ou plusieurs causes possibles : on n'en laisse pas choisir une
+  if (!established(a)) return null     // rien d'établi : on n'habille pas une incertitude
   const r = await explainRaw(a, cleanLogs, line, timeout)
-  return r && r.text.length >= 20 && !r.invented.length ? capSentences(r.text).slice(0, 600) : null
+  return r ? acceptExplanation(a.cause, r) : null
 }
