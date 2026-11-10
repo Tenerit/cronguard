@@ -13,6 +13,9 @@ jest.mock('nodemailer', () => ({
   createTransport: jest.fn().mockReturnValue({ sendMail: mockSendMail }),
 }))
 
+const mockUnrecognized = jest.fn().mockResolvedValue([])
+jest.mock('../services/learning', () => ({ unrecognizedFailures: (...a: unknown[]) => mockUnrecognized(...a) }))
+
 jest.mock('../config/logger', () => ({
   logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }
 }))
@@ -208,5 +211,26 @@ describe('rapport : valeur mesurée et échappement', () => {
     expect(html).not.toContain('<a href="https://evil.example">')
     expect(html).toContain('&lt;a href=')
     expect(html).not.toContain('<img src=x>')
+  })
+})
+
+describe('rapport : pannes non reconnues', () => {
+  it("liste les signatures non reconnues, la correction de l'équipe, et échappe", async () => {
+    mockUnrecognized.mockResolvedValueOnce([
+      { signature: 'error: <script>x</script> lock held', occurrences: 3, jobs: ['etl', 'sync'], lastSeen: new Date().toISOString(),
+        cause: null, verifiedFix: 'supprimer le verrou périmé' },
+    ])
+    mockQuery
+      .mockResolvedValueOnce({ rows: mockProClients(1) })
+      .mockResolvedValueOnce({ rows: mockMonitors('cli-pro-0') })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: mockStats() })
+      .mockResolvedValueOnce({ rows: [{ failures: '3', from_memory: '0', fixes: '0' }] })
+    await sendWeeklyReports()
+    const html = mockSendMail.mock.calls.at(-1)![0].html as string
+    expect(html).toContain('NE RECONNAÎT PAS ENCORE')
+    expect(html).toContain('3× · etl, sync')
+    expect(html).toContain('supprimer le verrou périmé')
+    expect(html).not.toContain('<script>x</script>')
   })
 })

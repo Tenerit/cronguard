@@ -358,6 +358,15 @@ async function v21(client: {query(sql: string, params?: unknown[]): Promise<{ ro
   if (changed) logger.info(`[DB] v21 : secrets masqués dans ${changed} sortie(s) de job déjà stockée(s)`)
 }
 
+// ─── V22 : boucle d'apprentissage. signature = ligne d'erreur décisive normalisée (sans le nom du job :
+// la même panne sur deux jobs a la même signature) ; recognized_by = la source déterministe qui a
+// répondu (fiche, constat, code, mémoire), NULL = panne que CronGuard ne reconnaît pas encore.
+async function v22(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS signature TEXT`)
+  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS recognized_by TEXT`)
+  await client.query(`CREATE INDEX IF NOT EXISTS idx_analyses_signature ON analyses(signature, created_at DESC)`)
+}
+
 // ─── V20 : autres plateformes de notification (Discord, Google Chat, Mattermost, ntfy, PagerDuty) dans
 // une seule colonne JSON : en ajouter une ne demandera plus de migration.
 async function v20(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
@@ -430,8 +439,9 @@ export async function runMigrations() {
     await v19(client)
     await v20(client)
     await v21(client)
+    await v22(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v21)')
+    logger.info('[DB] Migrations terminées (v1 → v22)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

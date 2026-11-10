@@ -11,6 +11,7 @@ import { db }     from '../db'
 import { logger } from '../config/logger'
 import nodemailer  from 'nodemailer'
 import { escapeHtml } from './escape'
+import { unrecognizedFailures, UnrecognizedFailure } from './learning'
 
 interface ClientReport {
   id:          string
@@ -23,6 +24,7 @@ interface ClientReport {
   topJobs:      JobStat[]
   weeklyUptime: number
   value:        { failures: number; fromMemory: number; fixesRecorded: number }
+  unrecognized: UnrecognizedFailure[]
 }
 
 interface IncidentSummary {
@@ -132,6 +134,7 @@ async function buildReport(clientId: string, email: string): Promise<ClientRepor
     topJobs,
     weeklyUptime,
     value,
+    unrecognized: await unrecognizedFailures(clientId, 7, 5),
   }
 }
 
@@ -218,6 +221,15 @@ function buildEmailHtml(report: ClientReport, appUrl: string): string {
       ? `<br><strong>${report.value.fixesRecorded}</strong> correction(s) enregistrée(s) par l'équipe : elles seront proposées si la panne revient.`
       : `<br>Aucune correction enregistrée : après une panne, « Ce qui a réglé la panne » la fait resservir la prochaine fois.`}
   </div>
+
+  <!-- Pannes non reconnues -->
+  ${report.unrecognized.length ? `<div style="background:#0d1117;border:1px solid #1a2230;border-radius:8px;margin-bottom:16px;padding:12px 16px;font-size:12px;color:#c9d1d9">
+    <div style="font-size:11px;font-family:monospace;color:#8b949e;margin-bottom:6px">? PANNES QUE CRONGUARD NE RECONNAÎT PAS ENCORE</div>
+    ${report.unrecognized.map(u => `<div style="margin:6px 0"><code style="color:#d4a017">${escapeHtml(u.signature.slice(0, 120))}</code>
+      <span style="color:#8b949e"> · ${u.occurrences}× · ${escapeHtml(u.jobs.slice(0, 3).join(', '))}</span>
+      ${u.verifiedFix ? `<br><span style="color:#2dba8c">Corrigée par l'équipe : ${escapeHtml(u.verifiedFix.slice(0, 160))}</span>` : ''}</div>`).join('')}
+    <div style="color:#8b949e;margin-top:6px">Après correction, « Ce qui a réglé la panne » la fera reconnaître sur tous vos jobs.</div>
+  </div>` : ''}
 
   <!-- Incidents -->
   <div style="background:#0d1117;border:1px solid #1a2230;border-radius:8px;margin-bottom:16px;overflow:hidden">

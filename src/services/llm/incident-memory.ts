@@ -2,6 +2,7 @@ import { db }     from '../../db'
 import { logger } from '../../config/logger'
 import { sanitizeLogs, fingerprintLogs, hashError } from '../sanitizer'
 import { embed, cosine, memoryEnabled } from './embeddings'
+import { evidenceLines } from './evidence'
 import type { AnalysisResult, FewShotExample, ErrorCategory } from './analyzer'
 
 // ─── Mémoire d'incidents (RAG few-shot par similarité) ────────────────────────
@@ -74,23 +75,43 @@ export async function sameErrorRecently(monitorId: string, jobName: string, logs
   return rows.length > 0
 }
 
+/** Signature d'une panne : sa ligne d'erreur décisive, normalisée (horodatages, PID, tailles…), SANS le
+ *  nom du job. Deux jobs qui tombent sur la même erreur ont la même signature. */
+export function errorSignature(cleanLogs: string): string | null {
+  const line = evidenceLines(cleanLogs, '', 1)[0]
+  return line ? fingerprintLogs(line).trim().slice(0, 200) || null : null
+}
+
+const SELECT_FIX = `SELECT a.cause, a.verified_fix, a.fix_verified_at, a.severity, a.category, a.prevention, a.data_impact, a.fix_minutes, a.checks`
+
 // Même panne sur ce monitor avec une correction confirmée : on la ressert telle quelle, sans appeler
 // le modèle, qui pourrait la déformer. Sans log, rien ne prouve que c'est la même panne.
+// Sinon (shared) : même signature sur UN AUTRE job du même client, corrigée par l'équipe. Ressortie en
+// confiance moyenne et nommée : la même ligne d'erreur peut avoir une autre cause sur un autre job.
+// L'appelant ne la demande que si aucune source déterministe (fiche, constat) ne répond déjà.
 export async function recallVerifiedFix(
-  monitorId: string, jobName: string, logs: string, correlatedMonitors?: string[],
+  monitorId: string, jobName: string, logs: string, correlatedMonitors?: string[], opts: { shared?: boolean } = {},
 ): Promise<AnalysisResult | null> {
   if (!logs.trim()) return null
-  const { rows: [r] } = await db.query(`
-    SELECT cause, verified_fix, fix_verified_at, severity, category, prevention, data_impact, fix_minutes, checks
-    FROM analyses
-    WHERE monitor_id=$1 AND error_hash=$2 AND verified_fix IS NOT NULL
-    ORDER BY fix_verified_at DESC LIMIT 1
-  `, [monitorId, hashError(jobName, sanitizeLogs(logs).clean)])
+  const clean = sanitizeLogs(logs).clean
+  const { rows: [own] } = await db.query(`${SELECT_FIX}
+    FROM analyses a
+    WHERE a.monitor_id=$1 AND a.error_hash=$2 AND a.verified_fix IS NOT NULL
+    ORDER BY a.fix_verified_at DESC LIMIT 1
+  `, [monitorId, hashError(jobName, clean)])
+  const sig = !own && opts.shared ? errorSignature(clean) : null
+  const r = own ?? (sig ? (await db.query(`${SELECT_FIX}, m.name AS from_job
+    FROM analyses a JOIN monitors m ON m.id = a.monitor_id
+    WHERE a.signature=$2 AND a.verified_fix IS NOT NULL AND a.monitor_id <> $1
+      AND m.client_id = (SELECT client_id FROM monitors WHERE id=$1)
+    ORDER BY a.fix_verified_at DESC LIMIT 1
+  `, [monitorId, sig])).rows[0] : undefined)
   if (!r) return null
   return {
-    cause: r.cause, action: r.verified_fix, prevention: r.prevention ?? '',
+    cause: r.cause, action: r.from_job ? `Correction vérifiée sur ${r.from_job} : ${r.verified_fix}` : r.verified_fix,
+    prevention: r.prevention ?? '',
     checks: typeof r.checks === 'string' ? JSON.parse(r.checks) : (r.checks ?? []),
-    severity: r.severity, category: r.category, confidence: 'high', data_impact: r.data_impact, fix_minutes: r.fix_minutes,
+    severity: r.severity, category: r.category, confidence: r.from_job ? 'medium' : 'high', data_impact: r.data_impact, fix_minutes: r.fix_minutes,
     fromCache: false, model: 'memory', correlatedMonitors,
     verifiedFix: new Date(r.fix_verified_at).toISOString(),
   }

@@ -1,20 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { CronExpressionParser } from 'cron-parser'
 
-// ─── Détection de retard cron-aware (miroir de isLate dans timeout.checker) ───
-interface LateRow { schedule?: string; grace_period?: number; last_ping_at?: Date | null; created_at?: Date }
-function isLate(m: LateRow, now: number): boolean {
-  const graceMs  = (m.grace_period ?? 300) * 1000
-  const lastPing = m.last_ping_at ? m.last_ping_at.getTime() : null
-  const base     = lastPing ?? (m.created_at ? m.created_at.getTime() : now)
-  if (m.schedule) {
-    try {
-      const due = CronExpressionParser.parse(m.schedule, { currentDate: new Date(base) }).next().toDate().getTime()
-      return now > due + graceMs
-    } catch { /* fallback */ }
-  }
-  return base < now - graceMs
-}
+// ─── Détection de retard cron-aware : la vraie fonction (plus de copie miroir) ───
+import { isLate, graceMs } from '../src/workers/late'
 
 // ─── Logique pure du checker (sans DB) ───────────────────────────────────────
 // Teste les fonctions de construction de logs et de détection d'anomalie
@@ -217,5 +204,33 @@ describe('Hung job detection', () => {
   it('falls back to 1h without baseline', () => {
     expect(isHung(30*min, 0)).toBe(false)
     expect(isHung(70*min, 0)).toBe(true)
+  })
+})
+
+describe('Grâce apprise (p95 des durées)', () => {
+  const now = Date.parse('2026-06-07T12:00:00Z')
+  const min = 60_000
+  // Job de 20 min, lancé à 11:00 (cron horaire), grâce 5 min : son ping arrive à 11:20.
+  const longJob = { schedule: '0 * * * *', grace_period: 300, last_ping_at: new Date(now - 80 * min) }
+
+  it('sans historique : en retard à +10 min (fausse alerte d\'un job long)', () => {
+    expect(isLate(longJob, now - 50 * min)).toBe(true)   // 11:10, le job tourne encore
+  })
+  it('avec p95 = 20 min sur 10 mesures : pas en retard pendant son exécution normale', () => {
+    expect(isLate({ ...longJob, p95_ms: 20 * min, dur_n: 10 }, now - 50 * min)).toBe(false)
+  })
+  it('vraiment absent : signalé après 1,2 × p95', () => {
+    expect(isLate({ ...longJob, p95_ms: 20 * min, dur_n: 10 }, now - 35 * min)).toBe(true)   // 11:25 > 11:00 + 24 min
+  })
+  it('jamais en dessous de la grâce réglée, ni avant 5 mesures, ni avec LEARNED_GRACE=off', () => {
+    expect(graceMs({ grace_period: 600, p95_ms: 1000, dur_n: 30 })).toBe(600_000)
+    expect(graceMs({ grace_period: 300, p95_ms: 20 * min, dur_n: 4 })).toBe(300_000)
+    process.env.LEARNED_GRACE = 'off'
+    expect(graceMs({ grace_period: 300, p95_ms: 20 * min, dur_n: 10 })).toBe(300_000)
+    delete process.env.LEARNED_GRACE
+  })
+  it('p95 en texte (numeric pg) et plafonné à 24 h', () => {
+    expect(graceMs({ grace_period: 300, p95_ms: String(20 * min), dur_n: '10' })).toBe(24 * min)
+    expect(graceMs({ grace_period: 300, p95_ms: 48 * 3600_000, dur_n: 10 })).toBe(24 * 3600_000)
   })
 })

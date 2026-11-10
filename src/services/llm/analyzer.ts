@@ -493,7 +493,7 @@ function restatedLine(cause: string, logs: string): string | null {
 }
 
 /** Une source déterministe établit-elle la cause ? (mêmes sources et même ordre que groundWithKnownFix) */
-function hasCertainKnowledge(cleanLogs: string, job: Pick<JobContext, 'command' | 'runContext'>): boolean {
+export function hasCertainKnowledge(cleanLogs: string, job: Pick<JobContext, 'command' | 'runContext'>): boolean {
   if (process.env.LLM_KNOWLEDGE === 'off') return false
   const observed = process.env.LLM_CONTEXT === 'off' ? null
     : commandFinding(job.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job.runContext)
@@ -508,7 +508,7 @@ export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
   const kf = knownFix(clean)
   const line = evidenceLines(clean, kf?.title ?? '')[0]
   const base: AnalysisResult = {
-    cause:       kf ? kf.cause : line ? `Échec du job, dernière erreur : ${line}` : 'Échec du job : aucune ligne d\'erreur reconnue dans les logs.',
+    cause:       kf ? kf.cause : line ? `Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « ${line} ».` : 'Cause non établie : aucune ligne d\'erreur reconnue dans les logs.',
     action:      kf ? kf.action : 'Lire les lignes de log liées et la sortie complète du job.',
     prevention:  kf ? kf.steps[kf.steps.length - 1] : 'Activer l\'analyse IA locale pour une cause détaillée (LLM_BASE_URL).',
     checks:      kf ? kf.steps.slice(1, 3) : [],

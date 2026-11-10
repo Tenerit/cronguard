@@ -119,7 +119,8 @@ async function main() {
   redis.on('error', () => {})
   const cache = redis
 
-  async function fail(output?: string, extra: Record<string, unknown> = {}) {
+  async function fail(output?: string, extra: Record<string, unknown> = {}, m: { id: string; ping_key: string } = mon) {
+    const mon = m
     const count = async () => Number((await db.query(`SELECT COUNT(*) FROM analyses WHERE monitor_id=$1`, [mon.id])).rows[0].count)
     const before = await count(), firstPrompt = prompts.length
     const r = await fetch(`http://localhost:${API_PORT}/ping/${mon.ping_key}`, {
@@ -131,7 +132,7 @@ async function main() {
       if (await count() > before) {
         await sleep(500)
         const { rows: [row] } = await db.query(
-          `SELECT id, from_cache, severity, category, confidence, model_used, cause, action, verified_fix FROM analyses WHERE monitor_id=$1 ORDER BY created_at DESC LIMIT 1`, [mon.id])
+          `SELECT id, from_cache, severity, category, confidence, model_used, cause, action, verified_fix, signature, recognized_by FROM analyses WHERE monitor_id=$1 ORDER BY created_at DESC LIMIT 1`, [mon.id])
         const sent = prompts.slice(firstPrompt)
         return { ...row, llm: sent.length, recurring: sent.some(p => p.includes('Même erreur déjà vue')) }
       }
@@ -270,6 +271,29 @@ async function main() {
   check('👎 accepté', nope.status === 200, String(nope.status))
   const afterNo = await fail(OOM)
   check('Après 👎 : correction plus resservie', afterNo.model_used !== 'memory' && !afterNo.verified_fix, JSON.stringify(afterNo))
+
+  // ─── Boucle d'apprentissage : mémoire partagée entre jobs, pannes non reconnues ─────
+  const SHARED = 'reconcile: ERROR stale advisory lock 4471 held by dead session\nexit status 1'
+  const SHARED_FIX = 'pg_terminate_backend sur la session morte puis relance'
+  const s1 = await fail(SHARED)
+  check('Panne inconnue : signature stockée, non reconnue', !!s1.signature && s1.recognized_by === null, JSON.stringify(s1))
+  const learn1 = await (await get('/clients/learning', client.api_key)).json() as { unrecognized: Array<{ signature: string }>; candidates: unknown[] }
+  check('Rapport : la panne inconnue est listée', learn1.unrecognized.some(u => u.signature === s1.signature), JSON.stringify(learn1))
+  await post(`/monitors/analyses/${s1.id}/fix`, client.api_key, { fix: SHARED_FIX })
+  const learn2 = await (await get('/clients/learning', client.api_key)).json() as { candidates: Array<{ signature: string; verifiedFix: string }> }
+  check('Correction sur panne inconnue → fiche candidate', learn2.candidates.some(c => c.signature === s1.signature && c.verifiedFix === SHARED_FIX), JSON.stringify(learn2))
+
+  const { rows: [mon2] } = await db.query(`INSERT INTO monitors (client_id, name, grace_period) VALUES ($1,'billing-sync',300) RETURNING id, ping_key`, [client.id])
+  const s2 = await fail(SHARED, {}, mon2)
+  check("Autre job, même panne : correction de l'équipe resservie sans LLM", s2.llm === 0 && s2.model_used === 'memory' && s2.confidence === 'medium'
+    && s2.action === `Correction vérifiée sur nightly-etl : ${SHARED_FIX}`, JSON.stringify(s2))
+  const k2 = await fail(KNOWN, {}, mon2)
+  check('Fiche reconnue : source enregistrée', !!k2.recognized_by && k2.recognized_by !== 'memory', JSON.stringify(k2))
+  const { rows: [monOther] } = await db.query(`INSERT INTO monitors (client_id, name, grace_period) VALUES ($1,'other-sync',300) RETURNING id, ping_key`, [other.id])
+  const s3 = await fail(SHARED, {}, monOther)
+  check('Autre client, même panne : correction jamais partagée', s3.model_used !== 'memory', JSON.stringify(s3))
+  check('Rapport : un autre client ne voit rien', (await get('/clients/learning', other.api_key)).status === 200
+    && !(await (await get('/clients/learning', other.api_key)).json() as { candidates: unknown[] }).candidates.length)
 
 }
 

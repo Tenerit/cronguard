@@ -106,6 +106,10 @@ services:
     image: ollama/ollama:latest
     volumes:
       - ollama_models:/root/.ollama
+    # Modèle gardé en mémoire (défaut Ollama : 5 min) : un cron qui tombe la nuit ne paie pas
+    # le rechargement (~2 Go de RAM gardés). -1 = jamais déchargé, 0 = décharger tout de suite.
+    environment:
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-24h}
 
 volumes:
   postgres_demo:

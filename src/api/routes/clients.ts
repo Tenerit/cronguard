@@ -7,6 +7,7 @@ import { requireRole }  from '../middleware/ownership'
 import { audit }        from '../middleware/audit'
 import { getRedis }        from '../../config/redis'
 import { getAnalysisQueue } from '../../queue'
+import { unrecognizedFailures } from '../../services/learning'
 
 export const clientsRouter = Router()
 
@@ -21,6 +22,17 @@ clientsRouter.post('/rotate-key', requireRole('owner'), asyncHandler(async (_req
   if (!c) return res.status(404).json({ error: 'not_found' })
   await audit(res, 'client.key_rotated', 'client', res.locals.clientId)
   res.json({ api_key: key })
+}))
+
+// ─── GET /clients/learning — pannes non reconnues + fiches candidates (admin+) ──────
+// Non reconnues : 7 derniers jours (par défaut). Candidates : déjà corrigées par l'équipe sur 90 jours.
+clientsRouter.get('/learning', requireRole('admin'), asyncHandler(async (req, res) => {
+  const days = Math.min(Math.max(parseInt(req.query.days as string) || 7, 1), 90)
+  const [unrecognized, recent] = await Promise.all([
+    unrecognizedFailures(res.locals.clientId, days),
+    unrecognizedFailures(res.locals.clientId, 90, 50),
+  ])
+  res.json({ unrecognized, candidates: recent.filter(f => f.verifiedFix) })
 }))
 
 // ─── GET /clients/audit — journal d'audit complet du client (admin+) ──────────

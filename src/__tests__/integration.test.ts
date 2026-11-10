@@ -140,6 +140,8 @@ beforeAll(async () => {
       tokens_out  INT DEFAULT 0,
       verified_fix TEXT,
       fix_verified_at TIMESTAMPTZ,
+      signature   TEXT,
+      recognized_by TEXT,
       created_at  TIMESTAMPTZ DEFAULT NOW()
     )
   `)

@@ -25,6 +25,20 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   écrasait la ligne (monitors : grace_period/env ; maintenance : label + réactivation silencieuse de la
   fenêtre de maintenance). Les handlers n'écrivent plus que les champs réellement envoyés.
 
+### Mesuré — le modèle sert-il encore ? (2026-11-10, A/B apparié, 97 cas × 2 runs, `--ab LLM_ENABLED=false`)
+- Note 7,6 avec modèle contre 7,4 sans (écart −0,2, IC95 −0,4 à −0,1). Pannes couvertes par une fiche : 9,2 dans les deux bras (le modèle n'est plus appelé). Pannes non couvertes : 4,1 contre 3,4 (écart −0,7, IC95 −1,2 à −0,2).
+- Le gain du modèle tient à la catégorie (85 % contre 71 %) et à l'action (73 % contre 68 %), pas à la cause (67 % contre 66 %). Le modèle est conservé ; sans lui, CronGuard reste à 7,4.
+- Le modèle n'est appelé que sur 50 analyses sur 194 ; latence moyenne 3,6 s. public5 a déjà été lu : sa note (6,0) n'est plus une mesure hors échantillon.
+- `OLLAMA_KEEP_ALIVE` : chargement du modèle 4,5 s à froid contre 0,2 s à chaud (mesuré sur llama3.2:3b, CPU).
+
+### Ajouté — boucle d'apprentissage et réactivité (2026-11-10)
+- **Pannes non reconnues** : chaque analyse enregistre sa signature (ligne d'erreur décisive normalisée, sans le nom du job) et la source qui a répondu (fiche, constat, code, mémoire ; vide = non reconnue). Migration v22. Le rapport hebdomadaire liste les 5 pannes non reconnues les plus fréquentes.
+- **Fiches candidates** : `GET /clients/learning` (admin) — pannes non reconnues et celles que l'équipe a déjà corrigées (✏️), avec la correction réelle, à relire avant d'en faire une fiche.
+- **Mémoire partagée entre jobs** : une correction vérifiée sur un job est proposée sur un autre job du même client qui tombe sur la même signature, en confiance moyenne et en nommant le job d'origine (« Correction vérifiée sur … »). Jamais entre clients ; jamais à la place d'une fiche ou d'un constat.
+- **Grâce apprise** : grâce effective = max(grâce réglée, 1,2 × p95 des 30 dernières durées réussies), dès 5 mesures, plafonnée à 24 h. Supprime la fausse alerte « en retard » des jobs plus longs que leur grâce ; contrepartie : un job vraiment absent est signalé plus tard d'autant. `LEARNED_GRACE=off`.
+- **`OLLAMA_KEEP_ALIVE`** (docker-compose, défaut 24h) : le modèle reste chargé entre deux pannes.
+- **`npm run eval:fiches`** : couverture, cause juste et « ratés » (une fiche qui répond à côté) sur tous les jeux, sans modèle, en ~4 s.
+
 ### Mesuré — leviers commande et contexte d'exécution (2026-11-08)
 - public4 (17 pannes StackExchange collectées AVANT les leviers, commande recopiée quand le message la donne) : **5,0/10 avec les leviers, 4,6 sans** (+0,4, IC −0,4 à +1,2, non significatif). La vérification de commande règle les 2 cas où elle s'applique (2 → 8, 2 → 9). La sonde d'environnement n'est pas mesurable sur des messages publics, qui ne la contiennent pas : il faut de vrais logs SDK.
 

@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { validateEnv }  from '../config/env'
 validateEnv()
-import { CronExpressionParser } from 'cron-parser'
+import { isLate } from './late'
 import { db }           from '../db'
 import { logger }       from '../config/logger'
 import { analysisQueue } from '../queue'
@@ -53,8 +53,15 @@ async function checkLate(windows: Map<string, MaintenanceWindow[]>): Promise<num
     SELECT m.id, m.client_id, m.name, m.schedule, m.env,
            m.expected_min, m.expected_max, m.last_ping_at, m.grace_period, m.created_at,
            (SELECT pinged_at FROM pings WHERE monitor_id=m.id AND status='success' ORDER BY pinged_at DESC LIMIT 1) AS last_success,
-           (SELECT AVG(duration_ms) FROM pings WHERE monitor_id=m.id AND status='success' AND pinged_at > NOW()-INTERVAL '7 days') AS avg_dur
+           (SELECT AVG(duration_ms) FROM pings WHERE monitor_id=m.id AND status='success' AND pinged_at > NOW()-INTERVAL '7 days') AS avg_dur,
+           d.p95_ms, d.dur_n
     FROM monitors m
+    -- Grâce apprise (late.ts) : p95 des 30 dernières durées réussies.
+    LEFT JOIN LATERAL (
+      SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY r.duration_ms) AS p95_ms, COUNT(*) AS dur_n
+      FROM (SELECT duration_ms FROM pings WHERE monitor_id=m.id AND status='success' AND duration_ms IS NOT NULL
+            ORDER BY pinged_at DESC LIMIT 30) r
+    ) d ON true
     WHERE m.active=true
       AND m.last_status NOT IN ('late','failed')
       AND m.last_start_at IS NULL          -- job en cours d'exécution → géré par checkHung
@@ -74,30 +81,7 @@ async function checkLate(windows: Map<string, MaintenanceWindow[]>): Promise<num
   return count
 }
 
-// ─── Décision de retard ─────────────────────────────────────────────────────
-// Avec schedule cron : on calcule la PROCHAINE exécution attendue après le
-// dernier ping (ou la création) ; en retard si elle est dépassée de plus que
-// la grace. Ce modèle (cf. Healthchecks) gère correctement les jobs fréquents.
-// Sans schedule : grace simple depuis le dernier ping.
-
-export function isLate(m: MonitorRow, now: number = Date.now()): boolean {
-  const graceMs  = (m.grace_period ?? 300) * 1000
-  const lastPing = m.last_ping_at ? new Date(m.last_ping_at).getTime() : null
-  const base     = lastPing ?? (m.created_at ? new Date(m.created_at).getTime() : now)
-
-  if (m.schedule) {
-    try {
-      const due = CronExpressionParser
-        .parse(m.schedule, { currentDate: new Date(base) })
-        .next().toDate().getTime()
-      return now > due + graceMs
-    } catch {
-      // schedule invalide → fallback grace
-    }
-  }
-
-  return base < now - graceMs
-}
+export { isLate } from './late'
 
 async function checkSlow(windows: Map<string, MaintenanceWindow[]>): Promise<number> {
   const { rows } = await db.query(`
@@ -284,5 +268,6 @@ interface MonitorRow {
   last_success?: string; avg_dur?: number; duration_ms?: number
   monitor_id?: string; ping_id?: string; output?: string
   grace_period?: number; created_at?: string; last_start_at?: string
+  p95_ms?: number | string | null; dur_n?: number | string | null
 }
 
