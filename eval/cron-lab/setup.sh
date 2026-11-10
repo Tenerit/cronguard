@@ -3,7 +3,7 @@
 # Lancé dans un conteneur alpine jetable par eval/cron-lab.ts. Chaque job échoue pour une raison connue
 # d'avance ; les pings du SDK sont capturés dans /lab/out/<clé>.json puis analysés côté hôte.
 set -e
-apk add --no-cache -q bash python3 curl >/dev/null
+apk add --no-cache -q bash python3 py3-requests curl >/dev/null
 
 adduser -D -s /bin/bash app
 mkdir -p /srv/tools/bin /srv/archive /home/app/jobs/data /lab/out
@@ -17,6 +17,16 @@ EOF
 echo 'x' > /home/app/jobs/data/input.csv                  # existe… relativement au dossier du job, pas au HOME
 chown -R app /home/app && chmod 755 /srv/archive           # /srv/archive appartient à root : app ne peut pas y écrire
 cp /lab/sdk.sh /home/app/cronguard.sh && chown app /home/app/cronguard.sh
+cp /lab/sdk.py /home/app/cronguard.py && chown app /home/app/cronguard.py
+
+# SDK Python (2026-11-11) : mêmes pannes, mais le job est un script Python décoré par @monitor.
+for spec in 'py-env-missing:print(len(os.environ["WAREHOUSE_DSN"]))' \
+            'py-relative-path:print(open("data/input.csv").read())' \
+            'py-permission:open("/srv/archive/py-export.tgz", "w").write("x")'; do
+  key="${spec%%:*}"; body="${spec#*:}"
+  printf 'import os, sys\nsys.path.insert(0, "/home/app")\nfrom cronguard import monitor\n\n@monitor("%s")\ndef job():\n    %s\n\njob()\n' "$key" "$body" > "/home/app/jobs/$key.py"
+done
+chown -R app /home/app/jobs
 
 # Les jobs : (clé, commande). Chacun passe par cg_run, comme chez un client.
 cat > /home/app/jobs/env-missing.py <<'EOF'
@@ -44,6 +54,9 @@ cat > /tmp/crontab <<EOF
 * * * * * bash -c '$S cg_run absent-file cp /mnt/nas/export.csv /home/app/'
 * * * * * bash -c '$S cg_run app-bug python3 /home/app/jobs/app-bug.py'
 * * * * * bash -c '$S cg_run remote-down curl -sSf --max-time 3 http://127.0.0.1:9/health'
+* * * * * bash -c 'export CRONGUARD_URL=http://127.0.0.1:9999; python3 /home/app/jobs/py-env-missing.py'
+* * * * * bash -c 'export CRONGUARD_URL=http://127.0.0.1:9999; python3 /home/app/jobs/py-relative-path.py'
+* * * * * bash -c 'export CRONGUARD_URL=http://127.0.0.1:9999; python3 /home/app/jobs/py-permission.py'
 EOF
 crontab -u app /tmp/crontab
 
@@ -54,5 +67,5 @@ require('http').createServer((q, r) => { let b = ''; q.on('data', d => b += d).o
   r.end('{}') }) }).listen(9999, '127.0.0.1')" &
 crond -b -l 8
 # Un passage de cron suffit (minute suivante) ; marge pour les jobs lents.
-for i in $(seq 1 100); do [ "$(ls /lab/out | wc -l)" -ge 8 ] && break; sleep 2; done
+for i in $(seq 1 100); do [ "$(ls /lab/out | wc -l)" -ge 11 ] && break; sleep 2; done
 ls /lab/out

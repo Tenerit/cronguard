@@ -37,10 +37,13 @@ export function isLate(m: LateRow, now: number = Date.now()): boolean {
 
   if (m.schedule) {
     try {
-      const due = CronExpressionParser
-        .parse(m.schedule, { currentDate: new Date(base) })
-        .next().toDate().getTime()
-      return now > due + grace
+      const it  = CronExpressionParser.parse(m.schedule, { currentDate: new Date(base) })
+      const due = it.next().toDate().getTime()
+      // Grâce apprise plafonnée à l'intervalle du cron (mesuré, eval/grace-sim.ts) : au-delà, une exécution manquée
+      // ne serait signalée qu'après l'heure de la suivante. La grâce réglée à la main n'est jamais réduite.
+      const period = it.next().toDate().getTime() - due
+      const set    = (m.grace_period ?? 300) * 1000
+      return now > due + (grace > set ? Math.max(set, Math.min(grace, period)) : grace)
     } catch {
       // schedule invalide → fallback grace
     }

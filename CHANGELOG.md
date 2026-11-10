@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — ce qui ne l'était pas (2026-11-11, attentes fixées avant chaque mesure)
+- **Grâce apprise** (`eval/grace-sim.ts`, simulation avec les vraies `isLate`/`graceMs`, jobs horaires, grâce réglée 5 min) : fausses alertes « en retard » **−98 % à −100 %** sur les jobs plus longs que leur grâce (154 → 3, 200 → 0, 158 → 0), aucun changement sur les jobs courts ; retard de détection d'une vraie absence ≤ 1,2 × p95. Attentes remplies. **Défaut trouvé et corrigé** : la grâce apprise pouvait dépasser l'intervalle du cron (61,6 min pour un job horaire très variable) ; elle est maintenant plafonnée à l'intervalle (la grâce réglée à la main n'est jamais réduite).
+- **Partage des corrections entre jobs** (`eval/shared-fix-risk.ts`) : signatures communes à des pannes différentes, 5,4 % des 112 cas étiquetés et 8,1 % du corpus — **attente ≤ 5 % non remplie** en brut. Relecture des cas étiquetés : 1 paire sur 3 a la même cause (`bundle: command not found`, partage utile), 2 non (`SyntaxError: invalid syntax`, `timeout during connect` de certbot) : faux partage réel 4/112 (3,6 %). Gardé en confiance moyenne avec le job d'origine nommé ; pas mis en avant. Le bénéfice ne se mesure qu'avec de vraies équipes.
+- **SDK Python sous un vrai cron** (labo, décorateur `@monitor`) : variable absente, chemin relatif, droits du dossier — **3/3**. Labo complet : **11/11 avec les commandes de test, 3/11 sans**.
+
 ### Retiré — réglages d'expériences terminées, rangement de `eval/` (2026-11-11)
 - Plus d'interrupteurs d'A/B pour des leviers adoptés ou abandonnés : `LLM_KNOWLEDGE`, `LLM_CONTEXT`, `LLM_CODES`, `LLM_HONEST`, `LLM_KNOWLEDGE_FIRST` (adoptés, toujours actifs), `LLM_INPUT_FIX`, `LLM_CRON_HINTS` (essais clos), `LLM_RAW_LOGS`, `LLM_TEMPLATE_MINING` (modes d'éval). Leurs résultats restent dans le CHANGELOG et `eval/archive/`.
 - Indice « Pattern détecté » retiré du prompt de l'ancienne analyse libre (`LLM_DEDUCTION=on`) : il était recopié comme cause dans 29 fausses causes sur 73 (`eval/error-analysis.ts`).

@@ -38,7 +38,7 @@ Comparisons are only made **paired, in the same session**: between sessions the 
 | public5 | 12 | StackExchange, collected 2026-11-10 after every change | read, tuning |
 | public6 | 15 | StackExchange, frozen raw before removing model deduction; labels written before any run | read, tuning |
 | public7 | — | 40 queries fixed before the sheet-precision work ([`eval/collect-public7.mjs`](../eval/collect-public7.mjs)); collection pending (StackExchange quota) | next held-out test |
-| cron lab | 8 | real failures under a real `crond` in a container, bash SDK ([`eval/cron-lab.ts`](../eval/cron-lab.ts)) | functional proof, written by us |
+| cron lab | 11 | real failures under a real `crond` in a container, bash and Python SDKs ([`eval/cron-lab.ts`](../eval/cron-lab.ts)) | functional proof, written by us: 11/11 with the test commands, 3/11 without |
 
 Every public set follows a rule fixed before seeing any result: for a list of pre-written queries, take the **first** StackExchange result that has an error log and an accepted answer; drop a case only when the answer establishes no cause, with the reason written in the file ([`eval/public-cases-*.ts`](../eval)). Once a set's outputs have been read to understand failures, it becomes a tuning set and a new one is collected for the next honest measurement.
 
@@ -98,6 +98,11 @@ When a sheet, the command check, the context probe or a curl/rsync code establis
 ### Earlier metrics
 
 On the lab set (5 runs): 100% valid structured output, exact category 72% ± 4 (a constant answer scores 15%), invented identifiers 1.5%, about 14 s per analysis on our test machine. Severity is not reliable (57% exact against 46% for always answering `high`): it is informational and never decides whether an alert is sent.
+
+## 2026-11-11: learned grace and shared fixes
+
+- **Learned grace** ([`eval/grace-sim.ts`](../eval/grace-sim.ts), simulation with the real `isLate`/`graceMs`, hourly jobs, 5 min grace): false "late" alerts −98 % to −100 % on jobs longer than their grace, none changed on short jobs; added detection delay for a truly missing run ≤ 1.2 × p95, and since this run capped at the cron interval.
+- **Fixes shared across jobs** ([`eval/shared-fix-risk.ts`](../eval/shared-fix-risk.ts)): different failures sharing a signature, 5.4 % of the 112 labelled cases (4/112 after reading them, i.e. genuinely different causes) and 8.1 % of the corpus (upper bound). Above the 5 % expectation in raw terms: the shared fix stays at medium confidence and names its source job.
 
 ## Score it on your own logs
 

@@ -234,3 +234,17 @@ describe('Grâce apprise (p95 des durées)', () => {
     expect(graceMs({ grace_period: 300, p95_ms: 48 * 3600_000, dur_n: 10 })).toBe(24 * 3600_000)
   })
 })
+
+describe('Grâce apprise plafonnée à l\'intervalle du cron', () => {
+  it('job horaire très variable (p95 51 min) : une absence est signalée avant l\'heure de l\'exécution suivante', () => {
+    const now = Date.parse('2026-06-07T12:00:00Z'), min = 60_000
+    const m = { schedule: '0 * * * *', grace_period: 300, p95_ms: 51 * min, dur_n: 30, last_ping_at: new Date(now - 125 * min) }
+    // Dernier ping 09:55 → exécution due à 10:00 ; sans plafond (61 min de grâce) rien avant 11:01, avec plafond dès 11:00.
+    expect(isLate(m, now - 59 * min)).toBe(true)      // 11:01
+    expect(isLate(m, now - 61 * min)).toBe(false)     // 10:59
+  })
+  it('la grâce réglée à la main reste intacte, même plus longue que l\'intervalle', () => {
+    const now = Date.parse('2026-06-07T12:00:00Z'), min = 60_000
+    expect(isLate({ schedule: '*/10 * * * *', grace_period: 1800, last_ping_at: new Date(now - 30 * min) }, now)).toBe(false)
+  })
+})
