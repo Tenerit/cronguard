@@ -103,8 +103,12 @@ export function pathProbe(text: string): Array<Record<string, unknown>> {
     const q = expand(v), d: Record<string, unknown> = { path: v.slice(0, 256), relative: !p.isAbsolute(q), exists: fs.existsSync(q) }
     if (d.exists) {
       const s = fs.statSync(q)
+      // Nom du propriétaire lu dans /etc/passwd (pas de sous-processus : `id` écrivait sur la sortie d'erreur du job).
       d.owner = String(s.uid)
-      try { d.owner = require('child_process').execFileSync('id', ['-nu', String(s.uid)], { encoding: 'utf8', timeout: 1000 }).trim() } catch { /* id absent */ }
+      try {
+        const row = fs.readFileSync('/etc/passwd', 'utf8').split('\n').find((l: string) => l.split(':')[2] === String(s.uid))
+        if (row) d.owner = row.split(':')[0]
+      } catch { /* pas de /etc/passwd (Windows) */ }
       d.mode = (s.mode & 0o777).toString(8)
       try { fs.accessSync(q, fs.constants.R_OK); d.readable = true } catch { d.readable = false }
       try { fs.accessSync(q, fs.constants.W_OK); d.writable = true } catch { d.writable = false }
