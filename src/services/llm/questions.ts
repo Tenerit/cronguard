@@ -7,6 +7,9 @@
 //   ≥ 1 question acceptée dans ≥ 70 % des cas · questions brutes sans identifiant inventé ≥ 95 % ·
 //   une question acceptée qui pointe la vraie cause ou la bonne vérification (regex de la grille) dans ≥ 30 % des cas ·
 //   relecture humaine de 20 cas : cause affirmée en douce ≤ 10 %, utile ≥ 70 % · médiane ≤ 20 s (hors alerte, en différé).
+// RÉSULTAT (2026-11-11, eval/archive/QUESTIONS.md) : 97 % avec question, 99 % sans invention, 8,3 s, MAIS pointe la
+// cause 19 % (≥ 30 %) et utiles ~5/20 (≥ 70 %) : questions génériques (« quel est le chemin du fichier ? »). ÉCHEC →
+// NON BRANCHÉ (seule l'éval l'appelle). Défaut connu : les en-têtes des faits (« Commande ») servent d'ancre.
 import axios from 'axios'
 import { llmHeaders, isAnthropic, llmEnabled } from './analyzer'
 import { inventedIdentifiers } from './explain'

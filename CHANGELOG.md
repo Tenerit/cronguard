@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — l'IA pose des questions pour guider l'enquête : échec, non branché (2026-11-11, attentes fixées avant)
+- Quand la cause n'est pas établie, le 7B pose 2-3 questions ; le code n'accepte que celles qui finissent par « ? », citent un élément réel des faits, n'inventent rien et n'affirment pas de cause (`eval/questions.ts`, 37 pannes sans cause établie).
+- Remplies : au moins une question acceptée **97 %**, sorties sans identifiant inventé **99 %**, **8,3 s**. **Non remplies : une question pointe la vraie cause ou la bonne vérification dans 19 % des cas (attente ≥ 30 %) ; relecture humaine, ~5 utiles sur 20 (attente ≥ 70 %).** Les questions sont génériques (« Quel est le chemin du fichier où se trouve cette erreur ? »). Défaut du garde-fou trouvé : les en-têtes des faits (« Commande ») servaient d'ancre, ce qui gonfle le 97 %.
+- **Non branché.** Détail : `eval/archive/QUESTIONS.md`.
+
 ### Mesuré — « déjà vu ? » : retrouver une réparation passée par ressemblance : échec, non affiché (2026-11-11, attentes fixées avant)
 - Embeddings locaux (`nomic-embed-text`, ~274 Mo). Mémoire simulée : 160 pannes StackExchange, la réponse acceptée jouant la correction de l'équipe ; 124 pannes étiquetées en requêtes (`eval/recall.ts`).
 - Au seuil d'affichage fixé avant (cos ≥ 0,80) : couverture **10 %** (attente ≥ 10 %), précision **46 %** contre 21 % au hasard (2,2 × : attente ≥ 2 × remplie) mais **attente ≥ 60 % non remplie** : 7 corrections sur 13 montrées ne s'appliquent pas. Relecture : 2 ou 3 de ces 7 sont peut-être des sévérités de la grille (installer cronie, `DISPLAY`) ; même en les comptant justes, on reste à la limite. Seuils 0,6 / 0,7 / 0,9 : 35 / 47 / 67 % pour 90 / 41 / 2 % de couverture.
