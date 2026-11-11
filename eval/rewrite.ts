@@ -33,7 +33,7 @@ const median = (v: number[]) => [...v].sort((a, b) => a - b)[Math.floor(v.length
     latence_mediane_s: (median(rows.map(r => r.ms)) / 1000).toFixed(1),
   }
   console.log('\n', res)
-  writeFileSync(join(__dirname, 'REWRITE.md'), `# Rôle IA — réécrire le compte rendu de correction (${new Date().toISOString().slice(0, 10)})\n\n` +
+  writeFileSync(join(__dirname, 'archive', 'REWRITE.md'), `# Rôle IA — réécrire le compte rendu de correction (${new Date().toISOString().slice(0, 10)})\n\n` +
     Object.entries(res).map(([k, v]) => `- **${k}** : ${v}`).join('\n') + '\n\n## Réécritures acceptées (relecture humaine des 20 premières)\n\n' +
     accepted.map((r, i) => `### ${i + 1}. ${r.url}\n- Origine : ${r.fix}\n- Réécrit : ${r.ok}\n`).join('\n') +
     '\n## Rejetées\n\n' + rows.filter(r => !r.ok).map(r => `- ${r.url} — ${r.invented.length ? 'inventé : ' + r.invented.join(', ') : r.lost.length ? 'perdu : ' + r.lost.join(', ') : 'vide ou trop court'}`).join('\n') + '\n')

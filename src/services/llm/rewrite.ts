@@ -7,6 +7,9 @@
 // Attentes fixées AVANT la mesure (eval/rewrite.ts, réponses acceptées du corpus StackExchange comme comptes rendus) :
 //   réécritures acceptées par les garde-fous ≥ 70 % · sorties brutes sans identifiant inventé ≥ 95 % ·
 //   plus courtes que l'original, médiane ≤ 60 mots · relecture humaine de 20 réécritures : sens déformé ≤ 10 %.
+// RÉSULTAT (2026-11-11, eval/archive/REWRITE.trial1.md) : acceptées 70 %, brutes sans invention 98 %, 30 mots contre 46,
+// mais sens déformé 4/20 (20 %) : négation inversée, barres obliques perdues dans un exemple. ÉCHEC → NON BRANCHÉ
+// (seule l'éval l'appelle). Les garde-fous vérifient les identifiants, pas le sens.
 import axios from 'axios'
 import { llmHeaders, isAnthropic, llmEnabled } from './analyzer'
 import { inventedIdentifiers, capSentences } from './explain'

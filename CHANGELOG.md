@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — l'IA réécrit le compte rendu de correction de l'équipe : échec, non branché (2026-11-11, attentes fixées avant)
+- Idée : reformuler la correction écrite par l'équipe (✏️) pour la rendre lisible par tous, sans rien ajouter. 60 réponses acceptées du corpus StackExchange servent de comptes rendus (`eval/rewrite.ts`).
+- Critères automatiques remplis : réécritures acceptées par les garde-fous **70 %** (attente ≥ 70 %), sorties sans identifiant inventé **98 %** (≥ 95 %), **30 mots** en médiane contre 46 à l'origine, 13 s.
+- **Relecture humaine : sens déformé dans 4 réécritures sur 20 (20 %), pour une attente ≤ 10 %.** Exemples : un « suid obligatoire » devenu « suid pas nécessaire », un exemple `date +\%m\%d\%y` qui perd ses barres obliques et montre exactement l'erreur à éviter, une solution de contournement devenue étape obligatoire. Les garde-fous du code vérifient les identifiants, pas le sens : une négation inversée leur échappe.
+- **Non branché.** La correction de l'équipe reste affichée telle qu'elle a été écrite. Détail : `eval/archive/REWRITE.trial1.md`.
+
 ### Mesuré — public7, test hors échantillon (2026-11-11, 12 cas, attentes fixées avant)
 - **Fiches** : ratés **5 sur 7 couvertes (71 %)** pour une attente ≤ 20 %, note des pannes couvertes **5,0** pour une attente ≥ 7 : **attentes non remplies**. Le travail de précision du 10/11 (ratés 15 → 5 sur les jeux lus) **ne se généralise pas** : les fiches génériques répondent encore sur un symptôme en aval (« verrou » pour un job Quartz déjà enregistré, « service arrêté » pour un postfix mal configuré, « PATH de cron » pour `crontab` absent de l'image Docker).
 - **Note globale** (comportement par défaut, sans modèle) : **3,5/10**, puis **3,8** après correction de l'extraction de ligne ci-dessous (preuve 58 → 83 %).
