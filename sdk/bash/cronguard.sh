@@ -54,12 +54,26 @@ cg_end() {
       "import sys,json; print(json.dumps(sys.stdin.read()))" 2>/dev/null || echo '""')
   fi
   # La sonde lit la sortie complète : avant la suppression du fichier.
-  if [[ "$exit_code" -ne 0 ]]; then context="$(_cg_context_fields)"; fi   # if, pas && : sûr sous set -e
+  # Résolution constatée : à l'échec, on garde les seules lignes que lisent les sondes (commande introuvable,
+  # chemin refusé ou absent) ; à la réussite suivante, les MÊMES sondes sont relancées sur ces lignes, pour
+  # comparer avant/après. Fichier 600 dans le dossier d'état de l'utilisateur, supprimé à la réussite.
+  local marker
+  marker="${CG_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/cronguard}/${_CG_PING_KEY//[^A-Za-z0-9_-]/_}.fail"
+  if [[ "$exit_code" -ne 0 ]]; then
+    context="$(_cg_context_fields)"   # if, pas && : sûr sous set -e
+    ( umask 077; mkdir -p "${marker%/*}" && tail -c 20000 "$_CG_OUTPUT_FILE" \
+      | grep -E 'not found|No such file|Permission denied|cannot open|can.t open|cannot access|cannot stat|Read-only file system' \
+      | tail -n 20 > "$marker" ) 2>/dev/null || true
+  elif [[ -f "$marker" ]]; then
+    cp "$marker" "$_CG_OUTPUT_FILE" 2>/dev/null || true
+    context="$(_cg_context_fields)"
+    rm -f "$marker"
+  fi
   rm -f "$_CG_OUTPUT_FILE"
 
   if [[ "$exit_code" -eq 0 ]]; then
     _cg_ping "$_CG_PING_KEY" \
-      "{\"status\":\"success\",\"exit_code\":0,\"duration_ms\":$duration_ms$([ -n "$records" ] && echo ",\"records\":$records")}"
+      "{\"status\":\"success\",\"exit_code\":0,\"duration_ms\":$duration_ms$([ -n "$records" ] && echo ",\"records\":$records")$context}"
   else
     _cg_ping "$_CG_PING_KEY" \
       "{\"status\":\"fail\",\"exit_code\":$exit_code,\"duration_ms\":$duration_ms,\"output\":$output$context}"

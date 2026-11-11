@@ -169,6 +169,41 @@ def _run_context(output: str = '') -> dict:
     return ctx
 
 
+# Résolution constatée : à l'échec, on garde les seules lignes que lisent les sondes ; à la réussite suivante,
+# les MÊMES sondes sont relancées sur ces lignes pour comparer avant/après (même règle que le SDK bash).
+_PROBE_LINE = re.compile(r"not found|No such file|Permission denied|cannot open|can.t open|cannot access|cannot stat|Read-only file system")
+
+
+def _marker(ping_key: str) -> str:
+    base = os.environ.get('CG_STATE_DIR') or os.path.join(
+        os.environ.get('XDG_STATE_HOME') or os.path.join(os.path.expanduser('~'), '.local', 'state'), 'cronguard')
+    return os.path.join(base, re.sub(r'[^A-Za-z0-9_-]', '_', ping_key) + '.fail')
+
+
+def _remember_failure(ping_key: str, output: str) -> None:
+    try:
+        path = _marker(ping_key)
+        os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+        lines = [l for l in output[-20000:].splitlines() if _PROBE_LINE.search(l)][-20:]
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, 'w') as f:
+            f.write(chr(10).join(lines))
+    except Exception:
+        pass
+
+
+def _resolution_context(ping_key: str) -> Optional[dict]:
+    """Contexte relevé à la première réussite après un échec, sinon None."""
+    path = _marker(ping_key)
+    try:
+        with open(path, errors='replace') as f:
+            lines = f.read()
+        os.remove(path)
+    except Exception:
+        return None
+    return _run_context(lines)
+
+
 class CronGuard:
     def __init__(self, ping_key: str, base_url: str = CRONGUARD_URL):
         self.ping_key  = ping_key
@@ -179,7 +214,8 @@ class CronGuard:
     # ── API directe ───────────────────────────────────────────────────────────
 
     def success(self, records: Optional[int] = None, duration_ms: Optional[int] = None):
-        self._ping({'status': 'success', 'records': records, 'duration_ms': duration_ms})
+        self._ping({'status': 'success', 'records': records, 'duration_ms': duration_ms,
+                    'context': _resolution_context(self.ping_key)})
 
     def fail(self, exit_code: int = 1, output: str = '', duration_ms: Optional[int] = None):
         self._ping({
@@ -189,6 +225,7 @@ class CronGuard:
             'duration_ms': duration_ms,
             'context':     _run_context(output),
         })
+        _remember_failure(self.ping_key, output)
 
     def set_records(self, count: int):
         """Utilisé dans le context manager pour transmettre le nb de records."""
