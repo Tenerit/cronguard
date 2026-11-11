@@ -4,6 +4,7 @@
 // avec des attentes fixées avant la mesure (eval/secrets.ts) : l'IA ne sert que si elle fait nettement mieux.
 import axios from 'axios'
 import { llmHeaders } from './analyzer'
+export { FORMAT_RULES, formatSecrets } from '../sanitizer'   // règles livrées dans le masquage (2026-11-11)
 
 const SYSTEM = `Tu repères les secrets dans un journal technique : mots de passe, jetons, clés d'API, clés privées, identifiants de connexion.
 Recopie chaque secret EXACTEMENT tel qu'il apparaît (la valeur seule, sans le nom de la variable).
@@ -22,41 +23,6 @@ export async function scanSecretsRaw(log: string, timeout = 60_000): Promise<{ r
     const raw: string[] = json ? (JSON.parse(json[0]).secrets ?? []).filter((s: unknown) => typeof s === 'string') : []
     return { raw, kept: [...new Set(raw.map(s => s.trim()).filter(s => s.length >= 6 && log.includes(s)))] }
   } catch { return null }
-}
-
-// Essai 2 (2026-11-11) : règles par FORMAT connu (préfixes de fournisseurs, URL à mot de passe, options de ligne de
-// commande, variables d'environnement nommées comme un secret), à la manière des outils spécialisés. Écrites et commitées
-// AVANT le jeu de test de l'essai 2. Chaque règle capture la valeur seule (groupe 1) ou le jeton entier.
-export const FORMAT_RULES: RegExp[] = [
-  /\b(gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,}|glpat-[A-Za-z0-9_-]{20,})/g,          // GitHub, GitLab
-  /\b(xox[abposr]-[A-Za-z0-9-]{10,})/g,                                                          // Slack (jetons)
-  /hooks\.slack\.com\/services\/([A-Za-z0-9]+\/[A-Za-z0-9]+\/[A-Za-z0-9]+)/g,                    // Slack (webhook)
-  /\b(AIza[0-9A-Za-z_-]{30,})/g,                                                                 // Google
-  /\b(sk-(?:proj-|ant-[a-z0-9]+-)?[A-Za-z0-9_-]{20,})/g,                                          // OpenAI, Anthropic
-  /\b(SG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,})/g,                                              // SendGrid
-  /\b(npm_[A-Za-z0-9]{30,}|pypi-[A-Za-z0-9_-]{30,})/g,                                            // npm, PyPI
-  /\b(?:SK|AC)[0-9a-f]{32}\b|\b(AKIA|ASIA)[0-9A-Z]{16}\b/g,                                        // Twilio, AWS (id)
-  /\/bot(\d{6,}:[A-Za-z0-9_-]{30,})/g,                                                            // Telegram
-  /\b(?:AccountKey|SharedAccessKey|sig)=([A-Za-z0-9+/%=]{20,})/g,                                 // Azure
-  /-----BEGIN [A-Z ]*PRIVATE KEY-----([\s\S]*?)-----END [A-Z ]*PRIVATE KEY-----/g,               // clé privée
-  /\b[a-z][a-z0-9+.-]*:\/\/[^\s:/@]+:([^\s@/]+)@/gi,                                             // scheme://user:pass@
-  /\bAuthorization:\s*(?:Basic|Bearer|Token)\s+([A-Za-z0-9+/=._-]{8,})/gi,                      // en-tête HTTP
-  /\bcurl\b[^\n]*?\s(?:-u|--user)\s+[^\s:]+:(\S+)/g,                                             // curl -u user:pass
-  /(?:\b(?:docker|podman|helm|oras)\s+(?:registry\s+)?login\b[^\n]*?\s-p|--password)(?:\s+|=)(?![-$])['"]?([^\s'"]{4,})/g,   // login -p, --password
-  /\b[A-Z][A-Z0-9_]*(?:PASS|PASSWORD|PASSWD|PWD|TOKEN|SECRET|API_KEY|APIKEY|PRIVATE_KEY|AUTH)\s*=\s*['"]?([^\s'"]{4,})/g,  // VAR=…
-  /"(?:api_?key|apiKey|token|secret|password|passwd|access_?token|client_?secret|private_?key)"\s*:\s*"([^"]{6,})"/gi,    // JSON
-  /\baws_secret_access_key[\s=:]+([A-Za-z0-9/+]{40})/gi,                                          // AWS (secret)
-  /\b(?:token|apikey|api key|secret)\b[^\n\w]{0,3}\s*(?:provided:\s*)?([A-Za-z0-9_-]{24,})/gi,   // « token <long> »
-]
-
-/** Valeurs capturées par les règles de format. */
-export function formatSecrets(log: string): string[] {
-  const out = new Set<string>()
-  for (const re of FORMAT_RULES) for (const m of log.matchAll(re)) {
-    const v = (m.slice(1).find(Boolean) ?? m[0]).trim()
-    if (v.length >= 4 && !/^\$\{?\w+\}?$/.test(v)) out.add(v)   // $VAR : une référence, pas un secret
-  }
-  return [...out]
 }
 
 const entropy = (s: string) => {

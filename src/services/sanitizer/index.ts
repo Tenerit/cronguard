@@ -39,6 +39,41 @@ const PATTERNS: Array<{ name: string; regex: RegExp; replace: string }> = [
   { name: 'aws_secret', regex: /(?:aws.?secret|AWS_SECRET)[^\s]*\s*[:=]\s*[a-zA-Z0-9+/]{40}/gi, replace: '[AWS_SECRET]' },
 ]
 
+// Essai 2 (2026-11-11) : règles par FORMAT connu (préfixes de fournisseurs, URL à mot de passe, options de ligne de
+// commande, variables d'environnement nommées comme un secret), à la manière des outils spécialisés. Écrites et commitées
+// AVANT le jeu de test de l'essai 2. Chaque règle capture la valeur seule (groupe 1) ou le jeton entier.
+export const FORMAT_RULES: RegExp[] = [
+  /\b(gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,}|glpat-[A-Za-z0-9_-]{20,})/g,          // GitHub, GitLab
+  /\b(xox[abposr]-[A-Za-z0-9-]{10,})/g,                                                          // Slack (jetons)
+  /hooks\.slack\.com\/services\/([A-Za-z0-9]+\/[A-Za-z0-9]+\/[A-Za-z0-9]+)/g,                    // Slack (webhook)
+  /\b(AIza[0-9A-Za-z_-]{30,})/g,                                                                 // Google
+  /\b(sk-(?:proj-|ant-[a-z0-9]+-)?[A-Za-z0-9_-]{20,})/g,                                          // OpenAI, Anthropic
+  /\b(SG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,})/g,                                              // SendGrid
+  /\b(npm_[A-Za-z0-9]{30,}|pypi-[A-Za-z0-9_-]{30,})/g,                                            // npm, PyPI
+  /\b((?:SK|AC)[0-9a-f]{32})\b/g,                       // Twilio (jeton entier ; AWS AKIA… : règle aws_key plus bas)
+  /\/bot(\d{6,}:[A-Za-z0-9_-]{30,})/g,                                                            // Telegram
+  /\b(?:AccountKey|SharedAccessKey|sig)=([A-Za-z0-9+/%=]{20,})/g,                                 // Azure
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----([\s\S]*?)-----END [A-Z ]*PRIVATE KEY-----/g,               // clé privée
+  /\b[a-z][a-z0-9+.-]*:\/\/[^\s:/@]+:([^\s@/]+)@/gi,                                             // scheme://user:pass@
+  /\bAuthorization:\s*(?:Basic|Bearer|Token)\s+([A-Za-z0-9+/=._-]{8,})/gi,                      // en-tête HTTP
+  /\bcurl\b[^\n]*?\s(?:-u|--user)\s+[^\s:]+:(\S+)/g,                                             // curl -u user:pass
+  /(?:\b(?:docker|podman|helm|oras)\s+(?:registry\s+)?login\b[^\n]*?\s-p|--password)(?:\s+|=)(?![-$])['"]?([^\s'"]{4,})/g,   // login -p, --password
+  /\b[A-Z][A-Z0-9_]*(?:PASS|PASSWORD|PASSWD|PWD|TOKEN|SECRET|API_KEY|APIKEY|PRIVATE_KEY|AUTH)\s*=\s*['"]?([^\s'"]{4,})/g,  // VAR=…
+  /"(?:api_?key|apiKey|token|secret|password|passwd|access_?token|client_?secret|private_?key)"\s*:\s*"([^"]{6,})"/gi,    // JSON
+  /\baws_secret_access_key[\s=:]+([A-Za-z0-9/+]{40})/gi,                                          // AWS (secret)
+  /\b(?:token|apikey|api key|secret)\b[^\n\w]{0,3}\s*(?:provided:\s*)?([A-Za-z0-9_-]{24,})/gi,   // « token <long> »
+]
+
+/** Valeurs capturées par les règles de format. */
+export function formatSecrets(log: string): string[] {
+  const out = new Set<string>()
+  for (const re of FORMAT_RULES) for (const m of log.matchAll(re)) {
+    const v = (m.slice(1).find(Boolean) ?? m[0]).trim()
+    if (v.length >= 4 && !/^\$\{?\w+\}?$/.test(v)) out.add(v)   // $VAR : une référence, pas un secret
+  }
+  return [...out]
+}
+
 export interface SanitizeResult {
   clean: string
   redactedCount: number
@@ -56,7 +91,7 @@ export function sanitizeLogs(raw: string): SanitizeResult {
     clean = clean.slice(0, MAX_LOG_LENGTH) + '\n[...log truncated]'
   }
 
-  for (const { name, regex, replace } of PATTERNS) {
+  const apply = ({ name, regex, replace }: typeof PATTERNS[number]) => {
     const before = clean
     clean = clean.replace(regex, replace)
     if (clean !== before) {
@@ -64,6 +99,17 @@ export function sanitizeLogs(raw: string): SanitizeResult {
       redactedCount++
     }
   }
+  for (const p of PATTERNS) if (p.name !== 'email') apply(p)
+
+  // Secrets par format connu (essai 2, 2026-11-11 : 0 faux sur 40 journaux propres) : seule la valeur est masquée,
+  // le préfixe ou le nom de la variable restent visibles (« DB_PASS=[REDACTED] » garde le diagnostic).
+  const beforeFormats = clean
+  for (const v of formatSecrets(clean).sort((a, b) => b.length - a.length)) if (!v.includes('[REDACTED')) clean = clean.split(v).join('[REDACTED]')
+  if (clean !== beforeFormats) { patternsHit.push('format_secret'); redactedCount++ }
+
+  // E-mails EN DERNIER : avant, la règle mangeait « pL@cluster0.mongodb.net » dans mongodb+srv://app:Zx9-Qw8!pL@…
+  // et laissait voir le début du mot de passe (fuite trouvée par le test des formats).
+  for (const p of PATTERNS) if (p.name === 'email') apply(p)
 
   return { clean, redactedCount, patterns: patternsHit }
 }
