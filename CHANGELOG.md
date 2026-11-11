@@ -7,6 +7,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — l'IA nomme les jobs à l'import de la crontab : non adopté (2026-11-11, attentes fixées avant)
+- 84 lignes de crontab réelles (questions publiques), critique marqué à la main avant le run (`eval/job-names.ts`).
+- Remplies : acceptés par les garde-fous **100 %**, drapeau critique d'accord **82 %**, nom plus clair que celui du code pour **~70/84** (le code donne « root », « python3 », « time »…). **Non remplies : nom + description justes 62/84 = 74 % (attente ≥ 85 %), 7,1 s par job (attente ≤ 5).** 12 des 22 erreurs décrivent mal le planning (« hebdomadaire » pour lundi-vendredi, « minuit » pour 22 h), que le code connaît déjà ; les autres inventent (« base de données » pour un backup.sh). Le reverse shell du jeu est nommé et décrit comme malveillant.
+- Défaut trouvé dans le nommage du code : sur une crontab système (champ utilisateur), il prend « root » pour le nom du job.
+
+### Mesuré — l'IA repère les secrets que les règles ratent : non adopté (2026-11-11, attentes fixées avant)
+- 19 journaux avec un secret dans un format que le masquage rate (valeurs générées à l'exécution), 30 vrais journaux sans secret (`eval/secrets.ts`).
+- IA : rappel **84 %** (≥ 80 %), journaux propres masqués à tort **7 %** (≤ 15 %), **4,7 s** : remplies. Règle de code fixée avant : rappel 89 % mais **43 %** de journaux propres masqués à tort. **Critère d'écart IA − code ≥ 15 points non rempli (−5).** Ni l'IA (règle fixée avant) ni la règle de code (43 % de faux, elle masquerait versions et piles d'appels) ne sont livrées. Défaut de la pré-inscription : les faux de la règle de code n'étaient pas bornés. Détail : `eval/archive/SECRETS.md`, `eval/archive/JOB-NAMES.md`.
+
 ### Mesuré — l'IA pose des questions pour guider l'enquête : échec, non branché (2026-11-11, attentes fixées avant)
 - Quand la cause n'est pas établie, le 7B pose 2-3 questions ; le code n'accepte que celles qui finissent par « ? », citent un élément réel des faits, n'inventent rien et n'affirment pas de cause (`eval/questions.ts`, 37 pannes sans cause établie).
 - Remplies : au moins une question acceptée **97 %**, sorties sans identifiant inventé **99 %**, **8,3 s**. **Non remplies : une question pointe la vraie cause ou la bonne vérification dans 19 % des cas (attente ≥ 30 %) ; relecture humaine, ~5 utiles sur 20 (attente ≥ 70 %).** Les questions sont génériques (« Quel est le chemin du fichier où se trouve cette erreur ? »). Défaut du garde-fou trouvé : les en-têtes des faits (« Commande ») servaient d'ancre, ce qui gonfle le 97 %.
