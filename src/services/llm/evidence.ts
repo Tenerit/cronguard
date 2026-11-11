@@ -37,6 +37,13 @@ for (const [c, ws] of Object.entries(CONCEPTS)) for (const w of ws) CONCEPT_OF.s
 // « No such file », « not found », « bad interpreter » manquaient (public7, 2026-11-11) : aucune ligne n'était retenue.
 const ERROR_LINE = /error|erreur|fatal|fail|exception|refused|denied|killed|timeout|no space|panic|cannot|unable|invalid|expired|deadlock|no such file|not found|bad interpreter|segmentation fault|aborted/i
 
+/** Lignes d'erreur du log (dédoublonnées, les plus tardives), sinon ses dernières lignes : là où le job s'est arrêté. */
+export function errorLines(logs: string, max = 8): string[] {
+  const lines = [...new Set(logs.split('\n').map(l => l.trim()).filter(Boolean))]
+  const errs = lines.filter(l => ERROR_LINE.test(l))
+  return (errs.length ? errs : lines).slice(-max)
+}
+
 function terms(s: string): Map<string, number> {
   const out = new Map<string, number>()
   const words = s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9_.:/-]+/)
