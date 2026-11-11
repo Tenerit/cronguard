@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — « déjà vu ? » : retrouver une réparation passée par ressemblance : échec, non affiché (2026-11-11, attentes fixées avant)
+- Embeddings locaux (`nomic-embed-text`, ~274 Mo). Mémoire simulée : 160 pannes StackExchange, la réponse acceptée jouant la correction de l'équipe ; 124 pannes étiquetées en requêtes (`eval/recall.ts`).
+- Au seuil d'affichage fixé avant (cos ≥ 0,80) : couverture **10 %** (attente ≥ 10 %), précision **46 %** contre 21 % au hasard (2,2 × : attente ≥ 2 × remplie) mais **attente ≥ 60 % non remplie** : 7 corrections sur 13 montrées ne s'appliquent pas. Relecture : 2 ou 3 de ces 7 sont peut-être des sévérités de la grille (installer cronie, `DISPLAY`) ; même en les comptant justes, on reste à la limite. Seuils 0,6 / 0,7 / 0,9 : 35 / 47 / 67 % pour 90 / 41 / 2 % de couverture.
+- **Non affiché.** Le partage existant par signature exacte (même ligne d'erreur sur un autre job) reste le seul rappel montré. Limite de la mesure : un corpus public n'est pas l'historique d'une équipe, où la même panne revient sur le même environnement ; seul un pilote dira si le rappel y est plus juste. Détail : `eval/archive/RECALL.md`.
+
 ### Ajouté — compte rendu d'incident à envoyer soi-même (2026-11-11)
 - Sur chaque analyse : **« ✉ Préparer le compte rendu »** ouvre un brouillon dans la messagerie de l'utilisateur (objet, job, heures d'échec et de rétablissement, cause constatée, lignes de log, réparation constatée, correction, lien) ; il le relit, le complète (« Ce qui a été fait ») et l'envoie lui-même. **« ⧉ Copier le texte »** pour un ticket, un wiki ou Slack.
 - **CronGuard n'envoie rien** : pas de SMTP requis, destinataires choisis par l'utilisateur, textes déjà masqués côté serveur, aucune réécriture par l'IA (mesurée à 20 % de sens déformé). L'explication de l'IA, si présente, garde sa mention.
