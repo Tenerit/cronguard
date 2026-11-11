@@ -10,7 +10,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ### Mesuré — l'IA nomme les jobs à l'import de la crontab : non adopté (2026-11-11, attentes fixées avant)
 - 84 lignes de crontab réelles (questions publiques), critique marqué à la main avant le run (`eval/job-names.ts`).
 - Remplies : acceptés par les garde-fous **100 %**, drapeau critique d'accord **82 %**, nom plus clair que celui du code pour **~70/84** (le code donne « root », « python3 », « time »…). **Non remplies : nom + description justes 62/84 = 74 % (attente ≥ 85 %), 7,1 s par job (attente ≤ 5).** 12 des 22 erreurs décrivent mal le planning (« hebdomadaire » pour lundi-vendredi, « minuit » pour 22 h), que le code connaît déjà ; les autres inventent (« base de données » pour un backup.sh). Le reverse shell du jeu est nommé et décrit comme malveillant.
-- Défaut trouvé dans le nommage du code : sur une crontab système (champ utilisateur), il prend « root » pour le nom du job.
+- Rectificatif : le « root » pris pour nom de job venait de la simulation de la mesure, pas de l'import, qui gère la colonne utilisateur des crontabs système avec `--system`.
 
 ### Mesuré — l'IA repère les secrets que les règles ratent : non adopté (2026-11-11, attentes fixées avant)
 - 19 journaux avec un secret dans un format que le masquage rate (valeurs générées à l'exécution), 30 vrais journaux sans secret (`eval/secrets.ts`).

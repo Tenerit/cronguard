@@ -1,0 +1,464 @@
+[
+ {
+  "schedule": "0 5 * * 1-5",
+  "command": "/home/cvs/backup/cvs_backupScript.sh",
+  "source": "https://stackoverflow.com/questions/27382566/backup-script-on-crontab-not-working",
+  "critical": true
+ },
+ {
+  "schedule": "15 16 * * 1-5",
+  "command": "/home/cvs/backup/cvs_backupScript.sh 2>/home/cvs/backup/errorBackup.log >/home/cvs/backup/output.log",
+  "source": "https://stackoverflow.com/questions/27382566/backup-script-on-crontab-not-working",
+  "critical": true
+ },
+ {
+  "schedule": "15 0 * * *",
+  "command": "/share/CACHEDEV1_DATA/.scripts/backup.sh",
+  "source": "https://stackoverflow.com/questions/24058245/qnap-4-1-0-using-own-backup-script-with-crontab",
+  "critical": true
+ },
+ {
+  "schedule": "0 2 * * *",
+  "command": "path/to/my/script/local_databasesBackup.sh ; path/to/my/script/remote_databasesBackup.sh",
+  "source": "https://stackoverflow.com/questions/68664311/postgres-database-backup-not-working-locally-crontab-shell-script-using-expec",
+  "critical": true
+ },
+ {
+  "schedule": "0 4 * * *",
+  "command": "mysqldump -u root -p PASS database > backup_`date \"+\\%F\"`.sql 2> cron_back.log",
+  "source": "https://stackoverflow.com/questions/47056176/crontab-mysqldump-has-massive-error-log",
+  "critical": true
+ },
+ {
+  "schedule": "*/30 * * * *",
+  "command": "mysqldump -u root -pVERYSECUREPASSWORD --all-databases > /var/www/cloud/dump_komplett.sql &> /dev/null",
+  "source": "https://stackoverflow.com/questions/19904992/mysqldump-without-password-in-crontab",
+  "critical": true
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "~/.scripts/db_back_up.sh",
+  "source": "https://stackoverflow.com/questions/62831914/crontab-wont-work-with-mysqldump-command-not-found-mac-osx",
+  "critical": true
+ },
+ {
+  "schedule": "00 10 * * *",
+  "command": "root     mysqldump -u root -ppasswordD billing \"/home/backup/database_`date '+%m-%d-%Y'`.sql\"",
+  "source": "https://stackoverflow.com/questions/10310206/mysqldump-and-crontablinux",
+  "critical": true
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/usr/lib/postgresql/12/bin/pg_dump -h 127.0.0.1 -Fc db_kp -f /backup-nfs/dump_dbkp_TEST1`date +\\%d-\\%m-\\%y`.sql",
+  "source": "https://stackoverflow.com/questions/73968659/zero-bytes-when-backup-using-pg-dump-and-pg-dumpall-using-crontab",
+  "critical": true
+ },
+ {
+  "schedule": "0 1 * * *",
+  "command": "rsync -avzhe \"ssh -p 22\" root@192.168.201.8:/backups/mysql/ /home/DB >> /var/log/cron.log",
+  "source": "https://stackoverflow.com/questions/62321042/rsync-in-crontab-not-execute",
+  "critical": true
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "rsync -av --delete myuser@mybox:/home/backup/ /home/backup",
+  "source": "https://stackoverflow.com/questions/39460215/running-rsync-in-crontab-with-keys",
+  "critical": true
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "env >> /tmp/my_env_variables",
+  "source": "https://stackoverflow.com/questions/39460215/running-rsync-in-crontab-with-keys",
+  "critical": false
+ },
+ {
+  "schedule": "@daily",
+  "command": "rsync -rav --remove-source-files --files-from=<(find /home/qa/buildbot/master/packages/rhel7 -type f -mtime +30 -exec basename {} \\;) /home/qa/buildbot/master/packages/rhel7 192.168.1.31:/local/raid0/buildbotpackages/packages/rhel7",
+  "source": "https://stackoverflow.com/questions/57063844/rsync-succeeds-from-the-shell-but-complains-of-syntax-or-usage-error-from-cron",
+  "critical": null
+ },
+ {
+  "schedule": "*/2 * * * *",
+  "command": "/usr/bin/python /home/souza/Documets/Listener/listener.py",
+  "source": "https://stackoverflow.com/questions/8727935/execute-python-script-via-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/home/me/project/myscript.py",
+  "source": "https://stackoverflow.com/questions/12534135/crontab-not-executing-a-python-script",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "/path/to/keepalivescript.sh",
+  "source": "https://stackoverflow.com/questions/696839/how-do-i-write-a-bash-script-to-restart-a-process-if-it-dies",
+  "critical": null
+ },
+ {
+  "schedule": "@reboot",
+  "command": "/home/pi/distance2.py &",
+  "source": "https://stackoverflow.com/questions/70655860/crontab-python-script-query",
+  "critical": null
+ },
+ {
+  "schedule": "00,15,30,45 * * * *",
+  "command": "php /var/www/download.php",
+  "source": "https://stackoverflow.com/questions/6463044/crontab-php-php-script-runs-from-command-line-but-not-from-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "c:\\xampp\\php\\php.exe -q c:\\xampp\\htdocs\\abc\\sleep.php",
+  "source": "https://stackoverflow.com/questions/5577046/running-php-script-using-crontab-on-windows-wont-work",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/usr/bin/php /home/cron/checkStatus.php >/dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/51344503/crontab-for-php-script-that-will-run-a-nodejs-script",
+  "critical": null
+ },
+ {
+  "schedule": "0 3 * * *",
+  "command": "wget -q -O - \"http://mysite.it/script.php\"",
+  "source": "https://stackoverflow.com/questions/38523798/php-script-with-crontab-loop",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "echo test > test.txt",
+  "source": "https://stackoverflow.com/questions/75022296/running-node-script-with-crontab",
+  "critical": false
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "cd /path/to/script && node script.js",
+  "source": "https://stackoverflow.com/questions/75022296/running-node-script-with-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "cd /path/to/project && npm start",
+  "source": "https://stackoverflow.com/questions/75022296/running-node-script-with-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "cd /path/to/script && node script.js > test.txt",
+  "source": "https://stackoverflow.com/questions/75022296/running-node-script-with-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "00 09 * * 1-5",
+  "command": "root /usr/bin/curl -k \"http://localhost/notifications/cronRuleAction?&auth_id=some-uuid&password=somehash&action=action&type=type&sequence=User Sequence, User Sequence, User Sequence\"",
+  "source": "https://stackoverflow.com/questions/76203899/cron-execution-gets-terminated-using-curl-url-with-whitespaces-on-it",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/usr/bin/curl --silent \"http://localhost:8082/email-bulk?customer=Martin+Thoma&handler_pid=foo+f0a474c5-3cb1-4872-8689-c65cedb15bff&format_string=%7Breceived%3A%25y%25m%25d%7D+%7Bfoo%7D+%7Bfoo%7D+%7Bfoo%7D+%7Bfoo%7D%7Bfile_extension%7D&minutes_email=2\"",
+  "source": "https://stackoverflow.com/questions/46235362/how-can-i-make-crontab-work-with-curl-and-ampersands-in-urls",
+  "critical": null
+ },
+ {
+  "schedule": "0 * * * *",
+  "command": "wget -O \"/Users/me/Downloads/example.txt\" \"http://www.example.com/example.txt\"",
+  "source": "https://stackoverflow.com/questions/24288272/crontab-wget-not-working",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "wget -q --spider http://mytargeturl.com/my/url/",
+  "source": "https://stackoverflow.com/questions/29496731/crontab-doesnt-work-with-wget",
+  "critical": null
+ },
+ {
+  "schedule": "0 3 * * *",
+  "command": "/usr/bin/wget -O - https://portal.mywebsite.com/index.php/cron/daily_cron >/dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/52560709/crontab-wget-isnt-running-on-digital-ocean",
+  "critical": null
+ },
+ {
+  "schedule": "0 5 1 * *",
+  "command": "/usr/bin/wget -O - https://portal.mywebsite.com/index.php/cron/monthly_cron >/dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/52560709/crontab-wget-isnt-running-on-digital-ocean",
+  "critical": null
+ },
+ {
+  "schedule": "* 01 * * 1",
+  "command": "/home/myname/certbot-auto --quiet",
+  "source": "https://stackoverflow.com/questions/40297927/to-use-certbot-packages-from-the-epel-repository-need-to-be-installed",
+  "critical": null
+ },
+ {
+  "schedule": "*/2 * * * *",
+  "command": "/home/ben/services/ssl_renew.sh >> /var/log/cron.log 2>&1",
+  "source": "https://stackoverflow.com/questions/77156412/certbot-script-for-ssl-renewal-when-running-in-a-docker-container-is-not-worki",
+  "critical": null
+ },
+ {
+  "schedule": "0 */12 * * *",
+  "command": "root test -x /usr/bin/certbot -a \\! -d /run/systemd/system && perl -e 'sleep int(rand(43200))' && certbot -q renew",
+  "source": "https://stackoverflow.com/questions/51467873/certbot-cron-job-noinstallationerror",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "root logrotate -f /etc/logrotate.d/laravel.conf",
+  "source": "https://stackoverflow.com/questions/43388486/delete-log-file-when-exceeds-size-limit-every-minute-crontab-logrotate",
+  "critical": null
+ },
+ {
+  "schedule": "0,15,30,45 * * * *",
+  "command": "/data/tier2/scripts/recover_standby.sh SID >> /data/tier2/scripts/logs/recover_standby_SID_`date +\\%d\\%m\\%y`.log 2>&1",
+  "source": "https://stackoverflow.com/questions/14858752/logrotate-to-clean-up-date-stamped-files",
+  "critical": true
+ },
+ {
+  "schedule": "50 8 * * *",
+  "command": "/usr/sbin/logrotate -f /etc/logrotate.d/mariadb",
+  "source": "https://stackoverflow.com/questions/59158839/mysqldump-throws-an-access-denied-error-but-only-when-run-via-logrotate",
+  "critical": null
+ },
+ {
+  "schedule": "0 7 * * *",
+  "command": "root run-parts /etc/cron.daily",
+  "source": "https://stackoverflow.com/questions/21274522/logrotate-script-only-triggers-correctly-during-manual-execution",
+  "critical": null
+ },
+ {
+  "schedule": "0 24 * * *",
+  "command": "docker exec -it --user root lemp_mariadb mysqldump -uroot -pxxxxxxx iot  >/home/backup/backup_data.gz",
+  "source": "https://stackoverflow.com/questions/65382892/docker-exec-and-mysqldump-in-cronjob-problem",
+  "critical": true
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/usr/local/bin/python /code/script.py",
+  "source": "https://stackoverflow.com/questions/76411039/docker-cron-unable-to-access-file-despite-absolute-paths-in-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "15 4 * * *",
+  "command": "/var/www/mysite-nginx/nginx-reload.sh",
+  "source": "https://stackoverflow.com/questions/57159534/custom-shell-script-in-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "echo \"Hello world\" >> /var/log/cron.log 2>&1",
+  "source": "https://stackoverflow.com/questions/69949431/django-crontab-not-working-on-docker-python3-9-buster-image",
+  "critical": false
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "cd /home/administrator/www/my_application && RAILS_ENV=production /usr/bin/env rake import:import_twitter >> cron.log 2>> error.log",
+  "source": "https://stackoverflow.com/questions/3871312/run-rake-task-from-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "*/15 * * * *",
+  "command": "app_user cd /var/www/apps/my_app/current/ && rake thing:do_stuff RAILS_ENV=production",
+  "source": "https://stackoverflow.com/questions/4922828/rake-task-from-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "0 0,12 * * *",
+  "command": "/bin/bash -l -c 'cd /home/deployer/public/fulfillment_api/releases/20131010141756 && RACK_ENV=production bundle exec rake background_jobs:process_and_email['\\''khartnet@gmail.com'\\''] --silent'",
+  "source": "https://stackoverflow.com/questions/19300382/ruby-crontab-rake-task-fails-but-only-when-command-is-ran-by-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "echo \"crontab can log to reports\" >> /var/log/mazer-reports.log",
+  "source": "https://stackoverflow.com/questions/54046930/running-rake-tasks-from-crontab",
+  "critical": false
+ },
+ {
+  "schedule": "1/2 * * * *",
+  "command": "/path/to/php /path/to/artisan my:command",
+  "source": "https://stackoverflow.com/questions/77575755/laravel-scheduler-issue-1-2-cron-expression-valid-in-crontab-but-not",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "php ~/htdocs/artisan schedule:run >> /dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/48461077/crontab-isnt-running-laravel-scheduled-jobs",
+  "critical": null
+ },
+ {
+  "schedule": "*/10 * * * *",
+  "command": "/home/project/.virtualenvs/app/bin/python /home/project/workspace/app-backend/django-app/manage.py ping_google /sitemap.xml",
+  "source": "https://stackoverflow.com/questions/59246212/run-a-crontab-for-django-management-command-with-an-argument",
+  "critical": null
+ },
+ {
+  "schedule": "0,20,40 * * * *",
+  "command": "/home/mote/Desktop/CODE/ORION/djangorion/venv/bin/python /home/mote/Desktop/CODE/ORION/djangorion/manage.py crontab run d99f11ab3bcd8ffb80a4a4f3b76cb35c #django-cronjobs for orion",
+  "source": "https://stackoverflow.com/questions/64333605/crontab-django-error-bin-sh-usr-bin-crontab-file-or-directory-does-not-ex",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "./run.sh",
+  "source": "https://stackoverflow.com/questions/62601372/cant-run-crontab-django-command",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "root     python /srv/www/cpm/manage.py send_mail >> /srv/www/cpm/cron_mail.log",
+  "source": "https://serverfault.com/questions/353343/django-mailer-wont-stop-sending-emails",
+  "critical": null
+ },
+ {
+  "schedule": "09,39 * * * *",
+  "command": "root   [ -x /usr/lib/php5/maxlifetime ] && [ -d /var/lib/php5 ] && find /var/lib/php5/ -depth -mindepth 1 -maxdepth 1 -type f -ignore_readdir_race -cmin +$(/usr/lib/php5/maxlifetime) ! -execdir fuser -s {} 2>/dev/null \\; -delete",
+  "source": "https://stackoverflow.com/questions/20742638/fuser-process-php5-cron-job-using-high-amounts-of-cpu",
+  "critical": false
+ },
+ {
+  "schedule": "57 * * * *",
+  "command": "bash /root/up427.sh; echo $?; echo$*; echo $$ > /root/up427dirfromcron.txt",
+  "source": "https://stackoverflow.com/questions/36924518/youtube-upload-runs-from-terminal-but-not-cron-call",
+  "critical": null
+ },
+ {
+  "schedule": "0 */5 * * *",
+  "command": "find /home/swayraines -mmin -300 -exec tar -zcvf folder/backup/back.tar {} > /folder/backup/backlog.log 2>&1 \\;",
+  "source": "https://stackoverflow.com/questions/65084528/update-a-crontab-to-tar-new-updated-files-every-5-hours",
+  "critical": true
+ },
+ {
+  "schedule": "0 17 * * *",
+  "command": "sudo tar -cpzf backupfolder/localhost.tar.gz /var/www",
+  "source": "https://stackoverflow.com/questions/21515963/tar-archiving-via-cron-does-not-work",
+  "critical": true
+ },
+ {
+  "schedule": "0 3,12 * * *",
+  "command": "sh /local_share/backup/backup2.0.sh &>> /local_share/backup/backup.sh.log",
+  "source": "https://stackoverflow.com/questions/37405671/uploading-file-to-google-drive-using-gdrive-is-not-working-on-crontab",
+  "critical": true
+ },
+ {
+  "schedule": "01 5 * * *",
+  "command": "/home/BACKUP/backup_script.sh",
+  "source": "https://stackoverflow.com/questions/45728337/exclude-file-in-solaris-8-doesnt-work",
+  "critical": true
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "/home/ubuntu/s3syncer.sh",
+  "source": "https://stackoverflow.com/questions/51681611/interaction-between-aws-cli-crontab-and-user-privileges",
+  "critical": true
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/etc/tfe-config/update-config.sh",
+  "source": "https://stackoverflow.com/questions/64425920/realtime-config-update-based-on-cron-for-aws-ec2",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "python /scripts/s3_operations.py",
+  "source": "https://stackoverflow.com/questions/63889839/docker-compose-syncing-file-content-changes-on-host-to-volume-mounted-on-docker",
+  "critical": null
+ },
+ {
+  "schedule": "*/3 * * * *",
+  "command": "S3_BACKUPS_BUCKET=rake-backups /root/dump_psql.sh > /root/logs/cron-2018-01-28T02:24.log",
+  "source": "https://stackoverflow.com/questions/48482742/why-aws-cli-command-has-no-effect-while-calling-from-cron",
+  "critical": true
+ },
+ {
+  "schedule": "5 15 * * 1-5",
+  "command": "/Users/me/opt/anaconda3/bin/python /Users/me/Documents/my_text/sms_text.py",
+  "source": "https://stackoverflow.com/questions/69317389/crontab-isnt-running-python-script-as-intended",
+  "critical": null
+ },
+ {
+  "schedule": "45 8,12,16 4-31 * 1-5",
+  "command": "my_program",
+  "source": "https://stackoverflow.com/questions/46522946/crontab-cronie-run-certain-days-of-the-month",
+  "critical": null
+ },
+ {
+  "schedule": "*/30 8-17 * * 1-5",
+  "command": "/usr/local/bin/bash /Users/aschneider/NewRelic-OpenSource/updateOpenSources.sh",
+  "source": "https://stackoverflow.com/questions/67220038/bash-script-runs-fine-when-called-directly-but-cron-seemingly-refuses-to-run-it",
+  "critical": null
+ },
+ {
+  "schedule": "12 9 15,30 * *",
+  "command": "/home/run_ps.sh",
+  "source": "https://stackoverflow.com/questions/48811857/adjust-cron-for-30th-of-month",
+  "critical": null
+ },
+ {
+  "schedule": "* 0 1 * *",
+  "command": "backup_monthly.sh",
+  "source": "https://stackoverflow.com/questions/76641678/how-to-run-a-crontab-each-sunday-except-is-its-first-day-of-the-month",
+  "critical": true
+ },
+ {
+  "schedule": "* 0 2-31 * 0",
+  "command": "backup_weekly.sh",
+  "source": "https://stackoverflow.com/questions/76641678/how-to-run-a-crontab-each-sunday-except-is-its-first-day-of-the-month",
+  "critical": true
+ },
+ {
+  "schedule": "0 0 1 * *",
+  "command": "root   cd / && run-parts --report /etc/cron.monthly",
+  "source": "https://stackoverflow.com/questions/69803436/is-it-possible-to-configure-a-crontab-to-adjust-its-times-when-daylight-savings",
+  "critical": null
+ },
+ {
+  "schedule": "*/15 07-19 * * *",
+  "command": "/path/script",
+  "source": "https://stackoverflow.com/questions/41743720/crontab-run-every-15-minutes-between-certain-hours",
+  "critical": null
+ },
+ {
+  "schedule": "14,29,44,59 10-21 * * *",
+  "command": "wget -q http://site/message2.php",
+  "source": "https://stackoverflow.com/questions/31193926/20-crontab-messages-in-order-staggered-every-15-minutes",
+  "critical": null
+ },
+ {
+  "schedule": "13,28,43,58 10-21 * * *",
+  "command": "wget -q http://site/message3.php",
+  "source": "https://stackoverflow.com/questions/31193926/20-crontab-messages-in-order-staggered-every-15-minutes",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "su -s /bin/sh cron -c 'cd /srv/www/htdocs/my_project && /usr/local/bin/git pull origin master'",
+  "source": "https://stackoverflow.com/questions/13607734/git-pull-automatic-via-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "su -s /bin/sh nobody -c 'cd ~heilee/www && git pull -q origin master' >> ~/git.log",
+  "source": "https://stackoverflow.com/questions/4414140/git-auto-pull-using-cronjob",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "cd /var/www/example.com/wp-content/themes/mytheme && /usr/local/bin/git pull origin dev",
+  "source": "https://stackoverflow.com/questions/74833535/crontab-to-run-git-pull-as-www-data-user",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/app/Scripts/Test.sh",
+  "source": "https://stackoverflow.com/questions/52044408/jar-file-is-not-executed-when-used-in-shell-script-in-a-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "/usr/local/jdk/bin/java -jar /home/myuser/Desktop/Pre/myjar.jar",
+  "source": "https://stackoverflow.com/questions/10603939/crontab-executing-jar-with-properties-files",
+  "critical": null
+ }
+]
