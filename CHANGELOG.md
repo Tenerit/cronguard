@@ -7,6 +7,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — secrets, essai 3 : les règles par format généralisent à moitié (2026-11-11, attentes fixées avant)
+- Règles ajoutées et commitées avant un jeu neuf de 25 types tirés du catalogue des outils spécialisés, dont beaucoup absents des règles, et 40 textes de questions publiques jamais utilisés (`eval/secrets-3.ts`).
+- **Rappel 52 % (attente ≥ 80 % : non remplie)**, 3 % de textes propres masqués à tort (≤ 5 % : remplie). Sur trois essais, des règles par format attrapent environ la moitié des types qu'elles ne connaissent pas : le masquage s'améliore, il ne sera jamais complet. La protection qui reste vraie : ne pas écrire de secret dans la sortie d'un job ; le SDK masque désormais aussi à la source (voir plus bas, quand livré).
+
 ## [1.7.0] — 2026-11-11 — Réparation constatée, compte rendu d'incident, import qui nomme les jobs
 
 ### Ajouté — noms lisibles à l'import de la crontab ; secrets masqués par format (2026-11-11, décision fondateur)
