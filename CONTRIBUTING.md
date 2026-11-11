@@ -73,6 +73,15 @@ few-shot du feedback utilisateur. Le modèle est interchangeable.
 - Sécurité : ne jamais logguer de secret ; les logs envoyés au LLM passent par
   `sanitizeLogs`. Ne committez jamais `.env`.
 
+## Règle produit : constaté, jamais deviné
+
+Une nouvelle fonction n'entre que si elle remplit l'une de ces conditions, ou si un utilisateur en pilote la demande :
+- elle **constate** un fait de plus sur la panne ou la réparation (SDK, vérification en lecture seule, bornée dans le temps, jamais une valeur secrète) ;
+- elle **réduit le temps** entre la panne et la réparation confirmée, ou la charge pour l'équipe (compte rendu, import).
+
+Toute fonction qui fait juger ou deviner un modèle passe d'abord par une mesure **aux attentes fixées avant le test**
+(`eval/`) ; un échec est publié dans le CHANGELOG et la fonction n'est pas branchée.
+
 ## Pull requests
 
 1. Branche depuis `main`.

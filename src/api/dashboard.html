@@ -1139,7 +1139,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
   <div class="auth-card">
     <div class="auth-logo"><div class="s-dot"></div> Cron<span>Guard</span></div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:20px;font-family:var(--mono)" data-i18n="auth.tagline">
-      Supervision de cron jobs avec analyse IA
+      Supervision de cron jobs : la cause constatée, jamais devinée
     </div>
     <div class="field">
       <label class="field-label">API Key</label>
@@ -1391,7 +1391,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
         <span class="icon">≡</span> <span data-i18n="nav.logs">journal</span>
       </div>
       <div class="s-item" id="nav-analyses" data-click="setView" data-args='["analyses"]'>
-        <span class="icon">✦</span> <span data-i18n="nav.analyses">analyses ia</span>
+        <span class="icon">✦</span> <span data-i18n="nav.analyses">analyses</span>
       </div>
       <div class="s-item" id="nav-playground" data-click="setView" data-args='["playground"]'>
         <span class="icon">⚡</span> <span data-i18n="nav.playground">playground</span>
@@ -1442,7 +1442,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
           <div class="stat stat-fail"><div class="stat-label" data-i18n="stat.failed">en échec</div><div class="stat-val" id="s-fail">0</div><div class="stat-sub" data-i18n="stat.sub.activeAlerts">alertes actives</div></div>
           <div class="stat stat-late"><div class="stat-label" data-i18n="stat.late">en retard</div><div class="stat-val" id="s-late">0</div><div class="stat-sub" data-i18n="stat.sub.graceExceeded">grâce dépassée</div></div>
           <div class="stat stat-uptime"><div class="stat-label" data-i18n="stat.uptime">uptime 24h</div><div class="stat-val" id="s-uptime">100%</div><div class="stat-sub" data-i18n="stat.sub.successPct">% succès</div></div>
-          <div class="stat stat-ai"><div class="stat-label" data-i18n="stat.ai">analyses ia</div><div class="stat-val" id="s-ai">0</div><div class="stat-sub" data-i18n="stat.sub.last24h">dernières 24h</div></div>
+          <div class="stat stat-ai"><div class="stat-label" data-i18n="stat.ai">analyses</div><div class="stat-val" id="s-ai">0</div><div class="stat-sub" data-i18n="stat.sub.last24h">dernières 24h</div></div>
         </div>
         <div class="grid">
           <div class="panel">
@@ -2027,12 +2027,12 @@ GET  /health                      # Santé de l'API
 const I18N = {
   fr: {
     'nav.monitoring':'monitoring','nav.dashboard':'tableau de bord','nav.services':'services',
-    'nav.logs':'journal','nav.analyses':'analyses ia','nav.playground':'playground',
+    'nav.logs':'journal','nav.analyses':'analyses','nav.playground':'playground',
     'nav.account':'compte','nav.settings':'paramètres','nav.docs':'documentation','nav.logout':'déconnexion',
     'title.dashboard':'tableau de bord','title.services':'services','title.logs':'journal',
-    'title.analyses':'analyses ia','title.settings':'paramètres','title.docs':'documentation','title.playground':'playground',
+    'title.analyses':'analyses','title.settings':'paramètres','title.docs':'documentation','title.playground':'playground',
     'top.search':'filtrer les services...','top.newMonitor':'+ monitor','top.import':'importer une crontab','imp.link':'importer une crontab','imp.title':'importer une crontab','imp.sub':'Collez votre crontab : CronGuard propose un nom pour chaque job. Relisez et corrigez avant de créer.','imp.ph':'0 2 * * * pg_dump -Fc clients > /bak/clients.dump','imp.system':'crontab système (/etc/crontab : colonne utilisateur)','imp.analyze':'analyser →','imp.create':'créer les monitors →','imp.copy':'copier la crontab','imp.none':'Aucune ligne de job reconnue (les commentaires, variables et @reboot sont ignorés).','imp.progress':'Analyse','imp.found':'job(s).','imp.aiNote':'Noms proposés par l’IA locale, planning écrit par CronGuard : relisez avant de créer.','imp.codeNote':'Noms tirés de la commande (pas de modèle d’IA déclaré sur ce serveur).','imp.keep':'importer ce job','imp.critical':'critique','imp.paste':'Remplacez vos lignes par celles-ci (crontab -e) :','imp.created':'monitor(s) créé(s). Recollez la crontab ci-dessous.',
-    'stat.ok':'ok','stat.failed':'en échec','stat.late':'en retard','stat.uptime':'uptime 24h','stat.ai':'analyses ia',
+    'stat.ok':'ok','stat.failed':'en échec','stat.late':'en retard','stat.uptime':'uptime 24h','stat.ai':'analyses',
     'stat.sub.activeAlerts':'alertes actives','stat.sub.graceExceeded':'grâce dépassée',
     'stat.sub.successPct':'% succès','stat.sub.last24h':'dernières 24h',
     'panel.services':'services','filter.all':'tous','filter.alerts':'alertes',
@@ -2052,7 +2052,7 @@ const I18N = {
     'set.addWindow':'+ ajouter une fenêtre','set.noWindows':'Aucune fenêtre configurée.','set.active':'active','set.allMonitors':'tous les services','set.remove':'retirer',
     'set.team':'équipe','set.teamDesc':'Invitez des membres avec différents rôles :','set.noMembers':'Aucun membre pour l\'instant.',
     'set.invitedBy':'invité par','set.pending':'En attente','set.expires':'expire','set.cancel':'annuler','set.inviteMember':'+ inviter un membre',
-    'set.trial':'passer à l\'offre pro','set.trialDesc':'Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, analyses IA avancées.','set.startTrial':'Démarrer l\'essai 14 jours →',
+    'set.trial':'passer à l\'offre pro','set.trialDesc':'Essayez les fonctionnalités Pro pendant 14 jours : services illimités, alertes Slack, explication par l\'IA locale.','set.startTrial':'Démarrer l\'essai 14 jours →',
     'set.statusPage':'page de statut publique','set.statusPageDesc':'Partagez le statut de vos services. URL accessible sans authentification.','set.format':'Format',
     "set.tab.learning":"Apprentissage","learn.title":"apprentissage","learn.desc":"Les pannes que CronGuard ne reconnaît pas encore. Quand l'équipe en a corrigé une (✏️), faites-en une fiche d'équipe : elle sera reconnue sur tous vos jobs, sans modèle.","learn.candidates":"À transformer en fiche (corrigées par l'équipe)","learn.fixes":"Fiches d'équipe actives","learn.unrecognized":"Non reconnues, 7 derniers jours","learn.make":"Créer la fiche","learn.f.match":"Déclencheur (texte exact présent dans les logs)","learn.f.title":"Titre","learn.f.cause":"Cause","learn.f.action":"Correction","learn.f.category":"Catégorie","learn.save":"Créer la fiche","learn.cancel":"Annuler","learn.trigger":"déclencheur","learn.disable":"Désactiver","learn.waitFix":"en attente de correction (✏️)","learn.noCandidates":"Aucune panne corrigée à transformer. Corrigez une panne depuis l'alerte (✏️) pour qu'elle apparaisse ici.","learn.noFixes":"Aucune fiche d'équipe pour l'instant.","learn.noUnrecognized":"Toutes les pannes récentes sont reconnues.","learn.error":"Chargement impossible.","learn.saved":"Fiche d'équipe créée : active sur tous vos jobs.","learn.matchMissing":"Le déclencheur n'apparaît pas dans les logs de la panne : il ne la reconnaîtrait pas.","learn.invalid":"Champs incomplets (déclencheur ≥ 6 caractères, cause ≥ 10).","learn.confirmDisable":"Désactiver cette fiche d'équipe ?","learn.disabled":"Fiche désactivée.",'set.tab.account':'Compte','set.tab.notifications':'Notifications','set.tab.alerts':'Alertes','set.tab.team':'Équipe','set.tab.status':'Statut','set.tab.audit':'Audit',
     'set.audit':'journal d\'audit','set.auditDesc':'Qui a fait quoi, quand, et depuis quelle IP. Acteur = email SSO ou clé API. Conservé 90 jours.','audit.empty':'Aucune action enregistrée.','audit.denied':'Réservé aux admins.',
@@ -2075,13 +2075,13 @@ const I18N = {
     'empty.mon.title':'Aucun service configuré','empty.mon.desc':'Ajoutez un ping à la fin de votre script cron. CronGuard vous alerte si le job ne s\'exécute pas dans sa fenêtre de grâce.',
     'empty.mon.createFirst':'+ Créer mon premier service','empty.mon.seeDocs':'Voir la documentation →',
     'empty.mon.s1t':'1. Créer','empty.mon.s1d':'Obtenez une ping_key unique','empty.mon.s2t':'2. Intégrer','empty.mon.s2d':'curl -X POST /ping/KEY','empty.mon.s3t':'3. Recevoir','empty.mon.s3d':'Alerte + analyse IA auto',
-    'empty.an.intro':'L\'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :','empty.an.cta':'Tester l\'analyse IA maintenant →',
+    'empty.an.intro':'L\'IA analyse automatiquement chaque échec de cron job. Voici un exemple de ce que vous recevrez :','empty.an.cta':'Tester le diagnostic maintenant →',
     'empty.alerts':'aucune alerte active','empty.noResult':'aucun résultat pour','empty.activity':'aucune activité',
     'pg.title':'Playground diagnostic','pg.sub':'Collez des logs de cron job : CronGuard établit la cause à partir des faits, puis l\'IA locale l\'explique si elle est activée.',
     'pg.scenarios':'Scénarios prédéfinis :','pg.jobName':'Nom du job','pg.env':'Environnement','pg.exitCode':'Code de sortie',
     'pg.logsLabel':'Logs d\'erreur','pg.logsPh':'Collez ici les logs d\'erreur de votre cron job...','pg.analyze':'Analyser maintenant','pg.clear':'Effacer','pg.testCta':'Tester le LLM en direct →',
     'env.production':'production','env.staging':'staging','env.development':'development',
-    'auth.tagline':'Supervision de cron jobs avec analyse IA','auth.apiUrl':'URL de l\'API','auth.login':'→ Connexion','auth.errInvalid':'clé invalide ou API inaccessible','auth.errKey':'clé requise',
+    'auth.tagline':'Supervision de cron jobs : la cause constatée, jamais devinée','auth.apiUrl':'URL de l\'API','auth.login':'→ Connexion','auth.errInvalid':'clé invalide ou API inaccessible','auth.errKey':'clé requise',
     'empty.loading':'…','toast.refreshed':'Actualisé','toast.copied':'copié',
     'pill.ok':'ok','pill.late':'retard','pill.failed':'échec','pill.pause':'pause','pill.unknown':'inconnu',
     'ab.failing':'en échec','ab.late':'en retard','ab.investigate':'cliquez un service pour investiguer',
@@ -2097,8 +2097,8 @@ const I18N = {
     'sample.time':'il y a 2 min','sample.impact':'impact confirmé','sample.fix':'résolution estimée :',
     'sample.cause':"connexion refusée au serveur PostgreSQL",
     'sample.action':"verifier la disponibilité du service PostgreSQL et réessayer la connexion",'sample.prevention':"assurer que le service PostgreSQL est en ligne avant exécuter des backups",
-    'sample.checks':'Vérifications immédiates','sample.check1':"Vérifier la disponibilité du service PostgreSQL",'sample.check2':"Réessayer la connexion au serveur PostgreSQL",'sample.cta':'Tester l\'analyse IA maintenant →',
-    'never':'jamais','now':'à l\'instant','pending':'Analyse IA en cours...',
+    'sample.checks':'Vérifications immédiates','sample.check1':"Vérifier la disponibilité du service PostgreSQL",'sample.check2':"Réessayer la connexion au serveur PostgreSQL",'sample.cta':'Tester le diagnostic maintenant →',
+    'never':'jamais','now':'à l\'instant','pending':'Analyse en cours...',
     'toast.loadErr':'Erreur de chargement des services :','toast.acked':'Alertes acquittées','toast.snoozed':'Alertes silencieuses 1h',
     'toast.paused':'Service en pause 2h','toast.resumed':'Service repris','toast.testSent':'Alerte de test envoyée','toast.deleted':'Service supprimé',
     'toast.copyFail':'échec de la copie','toast.updated':'Service mis à jour','toast.slackSaved':'Webhook Slack enregistré','toast.webhookSaved':'Webhook enregistré',
@@ -2127,7 +2127,7 @@ const I18N = {
     'docs.anomalies':'détection d\'anomalies','docs.aTimeout':'Timeout (silence)','docs.aTimeoutD':'Si votre script ne ping pas dans la fenêtre de grâce (configurable), CronGuard détecte l\'absence et alerte. Couvre les crons qui ne tournent pas du tout.',
     'docs.aPerf':'Dérive de performance','docs.aPerfD':'Si un job prend ×2.5 sa durée de référence (7 jours), une alerte est émise avant le timeout. Détecte la dégradation progressive.',
     'docs.aOut':'Validation de sortie','docs.aOutD':'Exit 0 mais 0 enregistrement traité ? CronGuard reclasse en échec. Couvre les backups « réussis » qui ne font rien.',
-    'docs.aAI':'Analyse IA','docs.aAID':'Le LLM analyse les logs localement. Vos données ne quittent jamais votre serveur. Cause racine + action corrective en moins de 30s.',
+    'docs.aAI':'Diagnostic','docs.aAID':'Le LLM analyse les logs localement. Vos données ne quittent jamais votre serveur. Cause racine + action corrective en moins de 30s.',
     'docs.apiRef':'référence API','docs.shortcuts':'raccourcis clavier',
     'docs.scRefresh':'Rafraîchir','docs.scRefreshD':'Recharge toutes les données','docs.scSearch':'Rechercher','docs.scSearchD':'Focus sur le champ de recherche',
     'docs.scClose':'Fermer','docs.scCloseD':'Ferme le panneau ou la modale','docs.scNav':'Navigation','docs.scNavD':'Dashboard · Services · Journal · Analyses · Paramètres · Docs · Playground',
@@ -2138,22 +2138,22 @@ const I18N = {
     'a11y.themeLight':'Passer en thème clair','a11y.themeDark':'Passer en thème sombre',
     'demo.tag':'DÉMO','demo.note':'données fictives · lecture seule','demo.cta':'Installer chez vous →','demo.readonly':'Mode démo — lecture seule. Installez CronGuard pour agir.',
     'tour.next':'Suivant','tour.back':'Précédent','tour.skip':'Passer','tour.done':'Terminer','tour.replay':'Relancer la visite guidée',
-    'tour.welcome.t':'Bienvenue sur CronGuard','tour.welcome.b':'En 30 secondes : comment surveiller vos cron jobs et laisser l\'IA expliquer les pannes. Vous pouvez passer à tout moment.',
+    'tour.welcome.t':'Bienvenue sur CronGuard','tour.welcome.b':'En 30 secondes : CronGuard constate pourquoi un job échoue, puis ce qui l\'a réparé — sans rien deviner. Vous pouvez passer à tout moment.',
     'tour.services.t':'Vos services','tour.services.b':'Chaque cron surveillé apparaît ici avec son statut, sa tendance de durée et son score de santé. Cliquez une ligne pour le détail.',
-    'tour.create.t':'Créer un monitor','tour.create.b':'Vous obtenez une ping_key unique à coller en fin de script. Le cron ping CronGuard ; pas de ping = alerte.',
+    'tour.create.t':'Créer un monitor','tour.create.b':'Vous obtenez une ping_key. Avec le SDK (cg_run), CronGuard relève aussi l\'environnement réel du job : c\'est ce qui permet de constater la cause. Ou importez directement votre crontab.',
     'tour.overview.t':'Vue d\'ensemble','tour.overview.b':'Statuts agrégés, uptime, et le bandeau Impact (MTTR / downtime sur 30j) — la valeur prouvée, pas juste des alertes.',
-    'tour.ai.t':'Analyses IA','tour.ai.b':'À chaque panne, un LLM local analyse les logs : cause racine, action corrective et vérifications. Vos données ne quittent jamais le serveur.',
-    'tour.playground.t':'Playground diagnostic','tour.playground.b':'Collez n\'importe quels logs et voyez l\'analyse en direct. Essai-avant-achat, sans rien installer.',
+    'tour.ai.t':'Analyses','tour.ai.b':'À chaque panne : la cause constatée sur la machine (commandes de test du SDK, fiches, codes officiels), ou « non établie » avec la commande pour la reproduire. Puis la réparation constatée, à confirmer en un clic. Rien ne quitte votre serveur.',
+    'tour.playground.t':'Playground diagnostic','tour.playground.b':'Collez des logs et voyez ce que CronGuard établit — et ce qu\'il refuse de deviner. Sans rien installer.',
     'lang.label':'Langue',
   },
   en: {
     'nav.monitoring':'monitoring','nav.dashboard':'dashboard','nav.services':'services',
-    'nav.logs':'activity','nav.analyses':'ai analyses','nav.playground':'playground',
+    'nav.logs':'activity','nav.analyses':'analyses','nav.playground':'playground',
     'nav.account':'account','nav.settings':'settings','nav.docs':'documentation','nav.logout':'sign out',
     'title.dashboard':'dashboard','title.services':'services','title.logs':'activity',
-    'title.analyses':'ai analyses','title.settings':'settings','title.docs':'documentation','title.playground':'ai playground',
+    'title.analyses':'analyses','title.settings':'settings','title.docs':'documentation','title.playground':'ai playground',
     'top.search':'filter services...','top.newMonitor':'+ monitor','top.import':'import a crontab','imp.link':'import a crontab','imp.title':'import a crontab','imp.sub':'Paste your crontab: CronGuard suggests a name for each job. Review and fix before creating.','imp.ph':'0 2 * * * pg_dump -Fc clients > /bak/clients.dump','imp.system':'system crontab (/etc/crontab: user column)','imp.analyze':'analyze →','imp.create':'create the monitors →','imp.copy':'copy the crontab','imp.none':'No job line recognized (comments, variables and @reboot are skipped).','imp.progress':'Analyzing','imp.found':'job(s).','imp.aiNote':'Names suggested by the local AI, schedule written by CronGuard: review before creating.','imp.codeNote':'Names taken from the command (no AI model declared on this server).','imp.keep':'import this job','imp.critical':'critical','imp.paste':'Replace your lines with these (crontab -e):','imp.created':'monitor(s) created. Paste the crontab below.',
-    'stat.ok':'ok','stat.failed':'failed','stat.late':'late','stat.uptime':'uptime 24h','stat.ai':'ai analyses',
+    'stat.ok':'ok','stat.failed':'failed','stat.late':'late','stat.uptime':'uptime 24h','stat.ai':'analyses',
     'stat.sub.activeAlerts':'active alerts','stat.sub.graceExceeded':'grace exceeded',
     'stat.sub.successPct':'% success','stat.sub.last24h':'last 24h',
     'panel.services':'services','filter.all':'all','filter.alerts':'alerts',
@@ -2173,7 +2173,7 @@ const I18N = {
     'set.addWindow':'+ add a window','set.noWindows':'No window configured.','set.active':'active','set.allMonitors':'all services','set.remove':'remove',
     'set.team':'team','set.teamDesc':'Invite members with different roles:','set.noMembers':'No members yet.',
     'set.invitedBy':'invited by','set.pending':'Pending','set.expires':'expires','set.cancel':'cancel','set.inviteMember':'+ invite a member',
-    'set.trial':'upgrade to pro','set.trialDesc':'Try the Pro features for 14 days: unlimited services, Slack alerts, advanced AI analyses.','set.startTrial':'Start 14-day trial →',
+    'set.trial':'upgrade to pro','set.trialDesc':'Try the Pro features for 14 days: unlimited services, Slack alerts, local AI explanations.','set.startTrial':'Start 14-day trial →',
     'set.statusPage':'public status page','set.statusPageDesc':'Share your services status. URL accessible without authentication.','set.format':'Format',
     "set.tab.learning":"Learning","learn.title":"learning","learn.desc":"Failures CronGuard does not recognise yet. When your team has fixed one (✏️), turn it into a team sheet: it will be recognised on all your jobs, without a model.","learn.candidates":"To turn into a sheet (fixed by the team)","learn.fixes":"Active team sheets","learn.unrecognized":"Not recognised, last 7 days","learn.make":"Create sheet","learn.f.match":"Trigger (exact text found in the logs)","learn.f.title":"Title","learn.f.cause":"Cause","learn.f.action":"Fix","learn.f.category":"Category","learn.save":"Create sheet","learn.cancel":"Cancel","learn.trigger":"trigger","learn.disable":"Disable","learn.waitFix":"waiting for a fix (✏️)","learn.noCandidates":"No fixed failure to turn into a sheet. Fix a failure from the alert (✏️) to see it here.","learn.noFixes":"No team sheet yet.","learn.noUnrecognized":"Every recent failure is recognised.","learn.error":"Could not load.","learn.saved":"Team sheet created: active on all your jobs.","learn.matchMissing":"The trigger does not appear in the failure logs: it would not recognise it.","learn.invalid":"Incomplete fields (trigger >= 6 characters, cause >= 10).","learn.confirmDisable":"Disable this team sheet?","learn.disabled":"Sheet disabled.",'set.tab.account':'Account','set.tab.notifications':'Notifications','set.tab.alerts':'Alerts','set.tab.team':'Team','set.tab.status':'Status','set.tab.audit':'Audit',
     'set.audit':'audit log','set.auditDesc':'Who did what, when, and from which IP. Actor = SSO email or API key. Kept for 90 days.','audit.empty':'No action recorded yet.','audit.denied':'Admins only.',
@@ -2196,13 +2196,13 @@ const I18N = {
     'empty.mon.title':'No service configured','empty.mon.desc':'Add a ping at the end of your cron script. CronGuard alerts you if the job does not run within its grace window.',
     'empty.mon.createFirst':'+ Create my first service','empty.mon.seeDocs':'See documentation →',
     'empty.mon.s1t':'1. Create','empty.mon.s1d':'Get a unique ping_key','empty.mon.s2t':'2. Integrate','empty.mon.s2d':'curl -X POST /ping/KEY','empty.mon.s3t':'3. Receive','empty.mon.s3d':'Alert + auto AI analysis',
-    'empty.an.intro':'The AI automatically analyzes every cron job failure. Here is an example of what you will receive:','empty.an.cta':'Test the AI analysis now →',
+    'empty.an.intro':'The AI automatically analyzes every cron job failure. Here is an example of what you will receive:','empty.an.cta':'Test the diagnosis now →',
     'empty.alerts':'no active alerts','empty.noResult':'no result for','empty.activity':'no activity',
     'pg.title':'Diagnostic playground','pg.sub':'Paste cron job logs: CronGuard establishes the cause from facts, then the local AI explains it when enabled.',
     'pg.scenarios':'Preset scenarios:','pg.jobName':'Job name','pg.env':'Environment','pg.exitCode':'Exit code',
     'pg.logsLabel':'Error logs','pg.logsPh':'Paste your cron job error logs here...','pg.analyze':'Analyze now','pg.clear':'Clear','pg.testCta':'Test the LLM live →',
     'env.production':'production','env.staging':'staging','env.development':'development',
-    'auth.tagline':'Cron job monitoring with AI analysis','auth.apiUrl':'API URL','auth.login':'→ Sign in','auth.errInvalid':'invalid key or API unreachable','auth.errKey':'key required',
+    'auth.tagline':'Cron job monitoring: the cause observed, never guessed','auth.apiUrl':'API URL','auth.login':'→ Sign in','auth.errInvalid':'invalid key or API unreachable','auth.errKey':'key required',
     'empty.loading':'…','toast.refreshed':'Refreshed','toast.copied':'copied',
     'pill.ok':'ok','pill.late':'late','pill.failed':'failed','pill.pause':'paused','pill.unknown':'unknown',
     'ab.failing':'failing','ab.late':'late','ab.investigate':'click a service to investigate',
@@ -2218,8 +2218,8 @@ const I18N = {
     'sample.time':'2 min ago','sample.impact':'confirmed impact','sample.fix':'estimated resolution:',
     'sample.cause':"connexion refusée au serveur PostgreSQL",
     'sample.action':"verifier la disponibilité du service PostgreSQL et réessayer la connexion",'sample.prevention':"assurer que le service PostgreSQL est en ligne avant exécuter des backups",
-    'sample.checks':'Immediate checks','sample.check1':"Vérifier la disponibilité du service PostgreSQL",'sample.check2':"Réessayer la connexion au serveur PostgreSQL",'sample.cta':'Test the AI analysis now →',
-    'never':'never','now':'just now','pending':'AI analysis in progress...',
+    'sample.checks':'Immediate checks','sample.check1':"Vérifier la disponibilité du service PostgreSQL",'sample.check2':"Réessayer la connexion au serveur PostgreSQL",'sample.cta':'Test the diagnosis now →',
+    'never':'never','now':'just now','pending':'Analysis in progress...',
     'toast.loadErr':'Error loading services:','toast.acked':'Alerts acknowledged','toast.snoozed':'Alerts silenced 1h',
     'toast.paused':'Service paused 2h','toast.resumed':'Service resumed','toast.testSent':'Test alert sent','toast.deleted':'Service deleted',
     'toast.copyFail':'copy failed','toast.updated':'Service updated','toast.slackSaved':'Slack webhook saved','toast.webhookSaved':'Webhook saved',
@@ -2248,7 +2248,7 @@ const I18N = {
     'docs.anomalies':'anomaly detection','docs.aTimeout':'Timeout (silence)','docs.aTimeoutD':'If your script doesn\'t ping within the grace window (configurable), CronGuard detects the absence and alerts. Covers crons that don\'t run at all.',
     'docs.aPerf':'Performance drift','docs.aPerfD':'If a job takes ×2.5 its baseline duration (7 days), an alert fires before it times out. Detects gradual degradation.',
     'docs.aOut':'Output validation','docs.aOutD':'Exit 0 but 0 records processed? CronGuard reclassifies as a failure. Covers "successful" backups that do nothing.',
-    'docs.aAI':'AI analysis','docs.aAID':'The LLM analyzes logs locally. Your data never leaves your server. Root cause + corrective action in under 30s.',
+    'docs.aAI':'Diagnosis','docs.aAID':'The LLM analyzes logs locally. Your data never leaves your server. Root cause + corrective action in under 30s.',
     'docs.apiRef':'API reference','docs.shortcuts':'keyboard shortcuts',
     'docs.scRefresh':'Refresh','docs.scRefreshD':'Reloads all data','docs.scSearch':'Search','docs.scSearchD':'Focus the search field',
     'docs.scClose':'Close','docs.scCloseD':'Closes the panel or modal','docs.scNav':'Navigation','docs.scNavD':'Dashboard · Services · Activity · Analyses · Settings · Docs · AI Playground',
@@ -2259,12 +2259,12 @@ const I18N = {
     'a11y.themeLight':'Switch to light theme','a11y.themeDark':'Switch to dark theme',
     'demo.tag':'DEMO','demo.note':'sample data · read-only','demo.cta':'Self-host it →','demo.readonly':'Demo mode — read-only. Install CronGuard to take action.',
     'tour.next':'Next','tour.back':'Back','tour.skip':'Skip','tour.done':'Done','tour.replay':'Replay the guided tour',
-    'tour.welcome.t':'Welcome to CronGuard','tour.welcome.b':'In 30 seconds: how to monitor your cron jobs and let the AI explain failures. You can skip anytime.',
+    'tour.welcome.t':'Welcome to CronGuard','tour.welcome.b':'In 30 seconds: CronGuard observes why a job failed, then what fixed it — without guessing. You can skip anytime.',
     'tour.services.t':'Your services','tour.services.b':'Every monitored cron shows up here with its status, duration trend and health score. Click a row for details.',
-    'tour.create.t':'Create a monitor','tour.create.b':'You get a unique ping_key to drop at the end of your script. The cron pings CronGuard; no ping = alert.',
+    'tour.create.t':'Create a monitor','tour.create.b':'You get a ping_key. With the SDK (cg_run), CronGuard also records the job\'s real environment: that is how it observes the cause. Or import your crontab directly.',
     'tour.overview.t':'Overview','tour.overview.b':'Aggregated statuses, uptime, and the Impact strip (MTTR / downtime over 30d) — proven value, not just alerts.',
-    'tour.ai.t':'AI analyses','tour.ai.b':'On every failure a local LLM analyzes the logs: root cause, corrective action and checks. Your data never leaves the server.',
-    'tour.playground.t':'Diagnostic playground','tour.playground.b':'Paste any logs and watch the analysis live. Try-before-buy, with nothing to install.',
+    'tour.ai.t':'Analyses','tour.ai.b':'On every failure: the cause observed on the host (SDK test commands, known-fix sheets, official codes), or "not established" with the command to reproduce it. Then the observed fix, confirmed in one click. Nothing leaves your server.',
+    'tour.playground.t':'Diagnostic playground','tour.playground.b':'Paste logs and see what CronGuard establishes — and what it refuses to guess. Nothing to install.',
     'lang.label':'Language',
   },
 }

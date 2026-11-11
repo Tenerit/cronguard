@@ -1,6 +1,6 @@
 # CronGuard
 
-**Surveillance de cron jobs auto-hébergée, qui trouve pourquoi un job a échoué — sur votre propre machine — et l'explique avec une IA locale vérifiée avant de parler.**
+**Surveillance de cron jobs auto-hébergée, qui constate pourquoi un job a échoué — et ce qui l'a réparé — sur votre propre machine. Constaté, jamais deviné.**
 
 Un job échoue à 2h40. Les autres outils vous disent *qu'il* a cassé. CronGuard vous dit *pourquoi* :
 

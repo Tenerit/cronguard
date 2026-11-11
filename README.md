@@ -1,6 +1,6 @@
 # CronGuard
 
-**Self-hosted cron monitoring that finds out why a job failed — on your own machine — and explains it with a local AI that is checked before it speaks.**
+**Self-hosted cron monitoring that observes why a job failed — and what fixed it — on your own machine. Observed, never guessed.**
 
 A job fails at 2:40 a.m. Other monitors tell you *that* it broke. CronGuard tells you *why*:
 
@@ -265,7 +265,7 @@ PostgreSQL (monitors, runs, analyses, verified fixes, audit)  ◀─────
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). `npm run ci` runs what must pass: types, both test suites (jest and vitest), the production dependency audit, the build and an end-to-end run on a real PostgreSQL and Redis.
+See [CONTRIBUTING.md](CONTRIBUTING.md) — including the product rule: a feature gets in only if it observes one more fact or shortens the time to a confirmed fix; anything that makes a model judge or guess is measured first. `npm run ci` runs what must pass: types, both test suites (jest and vitest), the production dependency audit, the build and an end-to-end run on a real PostgreSQL and Redis.
 
 ## License
 
