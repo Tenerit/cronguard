@@ -15,7 +15,7 @@ import type { AnalysisResult, FewShotExample, ErrorCategory } from './analyzer'
 const SIM_THRESHOLD = 0.6   // en-dessous = pas assez pertinent pour servir d'exemple
 const CANDIDATES    = 200   // fenêtre de candidats récents à scorer en mémoire
 
-function fp(logs: string): string {
+export function fp(logs: string): string {   // texte embarqué : empreinte des logs masqués (aussi utilisé par eval/recall.ts)
   return fingerprintLogs(sanitizeLogs(logs).clean).slice(0, 1000)
 }
 
