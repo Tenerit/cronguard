@@ -47,7 +47,18 @@ cg_end() {
   end_time=$(_cg_now_ms)
   local duration_ms=$(( end_time - _CG_START_TIME ))
 
-  local output='""' context=""          # '""' : sans fichier de sortie, le JSON reste valide
+  local output='""' context="" expect_failed=0   # '""' : sans fichier de sortie, le JSON reste valide
+  # Sorties attendues (CG_EXPECT) : un code 0 sans le fichier attendu, vide ou pas récrit, est un échec.
+  if [[ "$exit_code" -eq 0 && -n "${CG_EXPECT:-}" ]]; then
+    local exp exp_json exp_msg
+    exp="$(_cg_context_fields expect)"
+    exp_json="$(printf '%s\n' "$exp" | head -n 1)"; exp_msg="$(printf '%s\n' "$exp" | sed -n 2p)"
+    if [[ "$exp_json" == *'"ok": false'* ]]; then
+      expect_failed=1
+      export _CG_EXPECT_JSON="$exp_json"
+      printf '\ncronguard: sortie attendue non conforme : %s\n' "$exp_msg" >> "$_CG_OUTPUT_FILE"
+    fi
+  fi
   if [[ -f "$_CG_OUTPUT_FILE" ]]; then
     # Tronque les logs à 3000 chars, échappe les guillemets
     output=$(tail -c 3000 "$_CG_OUTPUT_FILE" | python3 -c \
@@ -59,7 +70,7 @@ cg_end() {
   # comparer avant/après. Fichier 600 dans le dossier d'état de l'utilisateur, supprimé à la réussite.
   local marker
   marker="${CG_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/cronguard}/${_CG_PING_KEY//[^A-Za-z0-9_-]/_}.fail"
-  if [[ "$exit_code" -ne 0 ]]; then
+  if [[ "$exit_code" -ne 0 || $expect_failed -eq 1 ]]; then
     context="$(_cg_context_fields)"   # if, pas && : sûr sous set -e
     ( umask 077; mkdir -p "${marker%/*}" && tail -c 20000 "$_CG_OUTPUT_FILE" \
       | grep -E 'not found|No such file|Permission denied|cannot open|can.t open|cannot access|cannot stat|Read-only file system' \
@@ -69,9 +80,12 @@ cg_end() {
     context="$(_cg_context_fields)"
     rm -f "$marker"
   fi
+  # Vraie réussite : empreinte gardée pour répondre, au prochain échec, à « qu'est-ce qui a changé ? ».
+  if [[ "$exit_code" -eq 0 && $expect_failed -eq 0 ]]; then _cg_context_fields save >/dev/null; fi
+  unset _CG_EXPECT_JSON
   rm -f "$_CG_OUTPUT_FILE"
 
-  if [[ "$exit_code" -eq 0 ]]; then
+  if [[ "$exit_code" -eq 0 && $expect_failed -eq 0 ]]; then
     _cg_ping "$_CG_PING_KEY" \
       "{\"status\":\"success\",\"exit_code\":0,\"duration_ms\":$duration_ms$([ -n "$records" ] && echo ",\"records\":$records")$context}"
   else
@@ -156,7 +170,9 @@ cg_systemd_report() {
 _cg_context_fields() {
   local out="${_CG_OUTPUT_FILE:-}"
   [[ -n "$out" ]] && command -v cygpath >/dev/null 2>&1 && out="$(cygpath -w "$out")"   # Git Bash : python Windows
-  python3 - "$out" "${_CG_COMMAND:-}" 2>/dev/null <<'PY' || true
+  local sdir="${CG_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/cronguard}"
+  python3 - "$out" "${_CG_COMMAND:-}" "${1:-ctx}" "$sdir/${_CG_PING_KEY//[^A-Za-z0-9_-]/_}.ok.json" \
+    "${CG_EXPECT:-}" "$(( ${_CG_START_TIME:-0} / 1000 ))" 2>/dev/null <<'PY' || true
 import getpass, glob, json, os, re, sys
 out = open(sys.argv[1], errors='replace').read()[-20000:] if sys.argv[1] and os.path.exists(sys.argv[1]) else ''
 names = list(dict.fromkeys(m.group(1) for m in re.finditer(r'(?:^|\s)([\w.+-]+): (?:command )?not found', out, re.M)))[:5]
@@ -286,12 +302,123 @@ def _cg_paths(text):
             d['writable'] = os.access(q, os.W_OK)
         res.append(d)
     return res
+import time
+# Empreinte d'une exécution réussie (2026-11-11) : ce qui permet de répondre à « qu'est-ce qui a changé depuis la
+# dernière réussite ? ». Noms, chemins, tailles, dates, versions : jamais une valeur de variable ni un contenu de fichier.
+# Versions : seulement pour des outils connus (un --version sur un script quelconque pourrait avoir des effets).
+_CG_TOOLS = ('pg_dump', 'pg_restore', 'psql', 'mysqldump', 'mysql', 'mongodump', 'redis-cli', 'rsync', 'curl', 'wget',
+             'tar', 'gzip', 'zstd', 'python', 'python3', 'node', 'php', 'ruby', 'java', 'perl', 'aws', 'gcloud', 'az',
+             'docker', 'kubectl', 'git', 'rclone', 'restic', 'borg', 'openssl', 'ssh', 'scp', 'gpg', 'bundle', 'rake')
+def _cg_fingerprint(cmd):
+    import hashlib, shlex, shutil
+    fp = {'command': hashlib.sha256(cmd.encode()).hexdigest()[:16] if cmd else '', 'path': os.environ.get('PATH', '')[:1024],
+          'cwd': os.getcwd()[:256], 'vars': sorted(k for k in os.environ if re.match(r'^[A-Z][A-Z0-9_]*$', k))[:200],
+          'files': {}, 'tools': {}}
+    try:
+        words = shlex.split(cmd)
+    except Exception:
+        words = cmd.split()
+    for w in words[:40]:
+        p = os.path.expanduser(w)
+        if ('/' in w or '.' in w) and os.path.isfile(p):
+            st = os.stat(p)
+            fp['files'][w[:200]] = '%d:%d' % (st.st_size, int(st.st_mtime))
+    for w in words[:20]:
+        name = os.path.basename(w)
+        if name in _CG_TOOLS and name not in fp['tools']:
+            exe = shutil.which(w)
+            if not exe:
+                continue
+            try:
+                r = subprocess.run([exe, '--version'], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, timeout=2)
+                line = r.stdout.decode('utf-8', 'replace').strip().splitlines()
+                fp['tools'][name] = (line[0] if line else '')[:120]
+            except Exception:
+                pass
+    return fp
+def _cg_fp_diff(old, new):
+    import time
+    ch = []
+    if old.get('command') and old.get('command') != new.get('command'):
+        ch.append({'kind': 'command', 'label': 'commande modifiée'})
+    for k, label in (('path', 'PATH'), ('cwd', 'dossier de lancement')):
+        if old.get(k) is not None and old.get(k) != new.get(k):
+            ch.append({'kind': 'env', 'label': label, 'before': str(old.get(k))[:256], 'after': str(new.get(k))[:256]})
+    gone = sorted(set(old.get('vars', [])) - set(new.get('vars', [])))
+    for v in gone[:10]:
+        ch.append({'kind': 'var', 'label': 'variable %s absente depuis la dernière réussite' % v})
+    show = lambda s: '—' if s is None else '%s octets, %s' % (s.split(':')[0], time.strftime('%Y-%m-%d %H:%M', time.localtime(int(s.split(':')[1]))))
+    of, nf = old.get('files', {}), new.get('files', {})
+    for f in sorted(set(of) | set(nf)):
+        if of.get(f) != nf.get(f) and (f in of):
+            ch.append({'kind': 'file', 'label': '%s modifié depuis la dernière réussite' % f if f in nf else '%s disparu' % f,
+                       'before': show(of.get(f)), 'after': show(nf.get(f))})
+    ot, nt = old.get('tools', {}), new.get('tools', {})
+    for t in sorted(set(ot) & set(nt)):
+        if ot[t] != nt[t]:
+            ch.append({'kind': 'tool', 'label': 'version de %s' % t, 'before': ot[t], 'after': nt[t]})
+    return ch[:20]
+# Sorties attendues (CG_EXPECT) : « le job a réussi mais n'a rien produit ». Chaque élément, séparé par « ; » :
+# un motif de fichier, puis min=1M (taille minimale) et age=26h (âge maximal ; par défaut : modifié pendant CETTE exécution).
+def _cg_expect(spec, started):
+    import glob as g
+    units = {'k': 1024, 'm': 1024 ** 2, 'g': 1024 ** 3, '': 1}
+    secs = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+    out = []
+    for item in [x.strip() for x in (spec or '').split(';') if x.strip()][:5]:
+        parts = item.split()
+        pattern, opts = os.path.expanduser(parts[0]), dict(p.split('=', 1) for p in parts[1:] if '=' in p)
+        m = re.match(r'^(\d+)([kKmMgG]?)$', opts.get('min', '1'))
+        minimum = int(m.group(1)) * units[m.group(2).lower()] if m else 1
+        a = re.match(r'^(\d+)([smhd])$', opts.get('age', ''))
+        oldest = time.time() - int(a.group(1)) * secs[a.group(2)] if a else started - 2
+        hits = sorted(g.glob(pattern), key=lambda p: os.path.getmtime(p) if os.path.exists(p) else 0)
+        res = {'pattern': parts[0][:200], 'ok': False}
+        if not hits:
+            res['reason'] = 'absent'
+        else:
+            p = hits[-1]
+            st = os.stat(p)
+            res.update({'path': p[:200], 'size': st.st_size, 'mtime': int(st.st_mtime)})
+            if st.st_mtime < oldest:
+                res['reason'] = 'pas modifié pendant cette exécution' if not a else 'plus vieux que %s' % opts['age']
+            elif st.st_size < minimum:
+                res['reason'] = 'vide' if st.st_size == 0 else 'trop petit (%d octets, minimum %d)' % (st.st_size, minimum)
+            else:
+                res['ok'] = True
+        out.append(res)
+    return out
 # <<< cg-probes
+cmd = sys.argv[2][:1000]
+mode = sys.argv[3] if len(sys.argv) > 3 else 'ctx'
+fpfile = sys.argv[4] if len(sys.argv) > 4 else ''
+if mode == 'save':   # empreinte de cette réussite, pour la comparer au prochain échec (fichier 600)
+    try:
+        os.makedirs(os.path.dirname(fpfile), mode=0o700, exist_ok=True)
+        with os.fdopen(os.open(fpfile, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as f:
+            json.dump(_cg_fingerprint(cmd), f)
+    except Exception:
+        pass
+    sys.exit(0)
+if mode == 'expect':  # ligne 1 : résultats JSON ; ligne 2 : message lisible des sorties non conformes
+    res = _cg_expect(sys.argv[5], float(sys.argv[6]))
+    print(json.dumps(res))
+    print('; '.join('%s (%s)' % (r.get('path') or r['pattern'], r['reason']) for r in res if not r['ok']))
+    sys.exit(0)
 ctx.update(_cg_login(names))
 _p = _cg_paths(out)
 if _p:
     ctx['paths'] = _p
-cmd = sys.argv[2][:1000]
+if fpfile and os.path.exists(fpfile):   # qu'est-ce qui a changé depuis la dernière réussite ?
+    try:
+        _ch = _cg_fp_diff(json.load(open(fpfile)), _cg_fingerprint(cmd))
+        if _ch:
+            ctx['changed'] = _ch
+    except Exception:
+        pass
+if os.environ.get('_CG_EXPECT_JSON'):
+    ctx['expect'] = json.loads(os.environ['_CG_EXPECT_JSON'])
 sys.stdout.write((',"command":' + json.dumps(cmd) if cmd else '') + ',"context":' + json.dumps(ctx))
 PY
 }

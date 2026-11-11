@@ -20,7 +20,12 @@ export interface RunContext {
   loginOnlyVars?: string[]               // NOMS des variables présentes dans le shell de connexion, absentes sous cron
   loginFound?:    Record<string, string> // commande introuvable sous cron → où le shell de connexion la trouve
   paths?:         PathFact[]             // chemins cités par l'erreur, constatés sur la machine
+  changed?:       ChangeFact[]           // ce qui a changé depuis la dernière réussite (empreinte du SDK)
+  expect?:        ExpectFact[]           // sorties attendues (CG_EXPECT) vérifiées après un code 0
 }
+
+export interface ChangeFact { kind: 'command' | 'env' | 'var' | 'file' | 'tool'; label: string; before?: string; after?: string }
+export interface ExpectFact { pattern: string; ok: boolean; reason?: string; path?: string; size?: number; mtime?: number }
 
 export interface PathFact { path: string; relative: boolean; exists: boolean; owner?: string; mode?: string; readable?: boolean; writable?: boolean }
 
@@ -46,6 +51,15 @@ const CREDS     = /fe_sendauth: no password supplied|\(using password: NO\)|Unab
 
 export function contextFinding(logs: string, c?: RunContext): Finding | null {
   if (!c || !logs) return null
+
+  // 0. Le job a réussi (code 0)… sans produire ce qui est attendu : le constat le plus grave pour une sauvegarde.
+  const bad = c.expect?.filter(e => !e.ok) ?? []
+  if (bad.length) {
+    const what = bad.map(e => `${e.path ?? e.pattern} : ${e.reason ?? 'non conforme'}`).join(' ; ')
+    return { id: 'ctx-expect', category: 'data',
+      cause: `Le job s'est terminé sans erreur (code 0), mais ce qu'il doit produire n'est pas là : ${what}.`,
+      action: "Vérifier l'étape qui écrit ce fichier (destination, droits, filtre, source vide) : un code 0 ne prouve pas que la sauvegarde existe." }
+  }
 
   // 1. Commande introuvable… mais présente ailleurs sur la machine : le fait, pas une hypothèse.
   const nf = NOT_FOUND.exec(logs)

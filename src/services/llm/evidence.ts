@@ -97,10 +97,14 @@ function byCloseness(logs: string, cause: string, max: number): string[] {
 
 // Pour les lignes d'analyse lues en base : la cause vit dans diagnosis (jsonb, ou texte selon le driver).
 // Ajoute aussi la correction connue (pack) déclenchée par ces logs.
-export function withLogHints<T extends { diagnosis?: unknown; ping_output?: string | null }>(row: T, sanitize: (s: string) => string): T & { evidence: string[]; known_fix: KnownFix | null } {
+export function withLogHints<T extends { diagnosis?: unknown; ping_output?: string | null; ping_context?: unknown }>(row: T, sanitize: (s: string) => string): T & { evidence: string[]; known_fix: KnownFix | null; changed: unknown[] | null } {
   let d = row.diagnosis as { cause?: string } | string | null | undefined
   if (typeof d === 'string') { try { d = JSON.parse(d) } catch { d = null } }
   const cause = (d && typeof d === 'object' ? d.cause : '') ?? ''
   const logs = row.ping_output ? sanitize(row.ping_output) : ''
-  return { ...row, evidence: logs ? evidenceLines(logs, cause) : [], known_fix: knownFix(logs) }
+  // Du contexte du ping, seul « ce qui a changé depuis la dernière réussite » part vers le dashboard.
+  let ctx = row.ping_context as { changed?: unknown[] } | string | null | undefined
+  if (typeof ctx === 'string') { try { ctx = JSON.parse(ctx) } catch { ctx = null } }
+  const changed = ctx && typeof ctx === 'object' && Array.isArray(ctx.changed) ? ctx.changed : null
+  return { ...row, ping_context: undefined, evidence: logs ? evidenceLines(logs, cause) : [], known_fix: knownFix(logs), changed }
 }

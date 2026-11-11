@@ -383,6 +383,8 @@ function createAnalysisWorker() {
     if (analysis) {
       const clean = sanitizeLogs(ctx.logs).clean
       analysis.evidence = evidenceLines(clean, analysis.cause)
+      const changed = ctx.runContext?.changed ?? []
+      if (changed.length) analysis.changed = changed.slice(0, 3).map(c => c.label + (c.before !== undefined ? ` : ${c.before} → ${c.after}` : ''))
       // La correction vérifiée ou la fiche d'équipe (validées chez vous) priment : pas de fiche générique à côté.
       analysis.knownFix = analysis.verifiedFix || analysis.finding?.startsWith('team-') ? null : knownFix(clean)
     }

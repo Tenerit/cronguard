@@ -47,6 +47,16 @@ const Schema = z.object({
     })).max(5).optional(),
     found:    z.record(z.string().max(64), z.string().max(256))
                 .refine(o => Object.keys(o).length <= 10, 'found: 10 entrées max').optional(),
+    // Ce qui a changé depuis la dernière réussite (empreinte du SDK : noms, chemins, tailles, dates, versions).
+    changed:  z.array(z.object({
+      kind: z.enum(['command', 'env', 'var', 'file', 'tool']), label: z.string().max(300),
+      before: z.string().max(256).optional(), after: z.string().max(256).optional(),
+    })).max(20).optional(),
+    // Sorties attendues (CG_EXPECT) vérifiées par le SDK après un code 0.
+    expect:   z.array(z.object({
+      pattern: z.string().max(200), ok: z.boolean(), reason: z.string().max(80).optional(),
+      path: z.string().max(200).optional(), size: z.number().int().nonnegative().optional(), mtime: z.number().int().optional(),
+    })).max(5).optional(),
   }).optional(),
 })
 

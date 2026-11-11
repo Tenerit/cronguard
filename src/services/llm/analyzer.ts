@@ -97,6 +97,7 @@ export interface AnalysisResult {
   correlatedMonitors?: string[]
   knownFix?:     import('./known-fixes').KnownFix | null   // correction connue déclenchée par les logs (pack)
   evidence?:     string[]      // lignes de log liées à la cause, recopiées (jamais générées)
+  changed?:      string[]      // ce qui a changé depuis la dernière réussite (empreinte du SDK) : des faits, pas une cause
   finding?:      string        // cause établie par un fait constaté (command-lint / run-context), id de la règle
   verifiedFix?:  string        // date ISO : action = correction confirmée par un humain, pas une suggestion du modèle
 }

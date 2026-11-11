@@ -25,6 +25,7 @@ Usage :
     cg.fail(exit_code=1, output=str(e))
 """
 
+import json
 import time
 import traceback
 import functools
@@ -145,6 +146,93 @@ def _cg_paths(text):
             d['writable'] = os.access(q, os.W_OK)
         res.append(d)
     return res
+import time
+# Empreinte d'une exécution réussie (2026-11-11) : ce qui permet de répondre à « qu'est-ce qui a changé depuis la
+# dernière réussite ? ». Noms, chemins, tailles, dates, versions : jamais une valeur de variable ni un contenu de fichier.
+# Versions : seulement pour des outils connus (un --version sur un script quelconque pourrait avoir des effets).
+_CG_TOOLS = ('pg_dump', 'pg_restore', 'psql', 'mysqldump', 'mysql', 'mongodump', 'redis-cli', 'rsync', 'curl', 'wget',
+             'tar', 'gzip', 'zstd', 'python', 'python3', 'node', 'php', 'ruby', 'java', 'perl', 'aws', 'gcloud', 'az',
+             'docker', 'kubectl', 'git', 'rclone', 'restic', 'borg', 'openssl', 'ssh', 'scp', 'gpg', 'bundle', 'rake')
+def _cg_fingerprint(cmd):
+    import hashlib, shlex, shutil
+    fp = {'command': hashlib.sha256(cmd.encode()).hexdigest()[:16] if cmd else '', 'path': os.environ.get('PATH', '')[:1024],
+          'cwd': os.getcwd()[:256], 'vars': sorted(k for k in os.environ if re.match(r'^[A-Z][A-Z0-9_]*$', k))[:200],
+          'files': {}, 'tools': {}}
+    try:
+        words = shlex.split(cmd)
+    except Exception:
+        words = cmd.split()
+    for w in words[:40]:
+        p = os.path.expanduser(w)
+        if ('/' in w or '.' in w) and os.path.isfile(p):
+            st = os.stat(p)
+            fp['files'][w[:200]] = '%d:%d' % (st.st_size, int(st.st_mtime))
+    for w in words[:20]:
+        name = os.path.basename(w)
+        if name in _CG_TOOLS and name not in fp['tools']:
+            exe = shutil.which(w)
+            if not exe:
+                continue
+            try:
+                r = subprocess.run([exe, '--version'], stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, timeout=2)
+                line = r.stdout.decode('utf-8', 'replace').strip().splitlines()
+                fp['tools'][name] = (line[0] if line else '')[:120]
+            except Exception:
+                pass
+    return fp
+def _cg_fp_diff(old, new):
+    import time
+    ch = []
+    if old.get('command') and old.get('command') != new.get('command'):
+        ch.append({'kind': 'command', 'label': 'commande modifiée'})
+    for k, label in (('path', 'PATH'), ('cwd', 'dossier de lancement')):
+        if old.get(k) is not None and old.get(k) != new.get(k):
+            ch.append({'kind': 'env', 'label': label, 'before': str(old.get(k))[:256], 'after': str(new.get(k))[:256]})
+    gone = sorted(set(old.get('vars', [])) - set(new.get('vars', [])))
+    for v in gone[:10]:
+        ch.append({'kind': 'var', 'label': 'variable %s absente depuis la dernière réussite' % v})
+    show = lambda s: '—' if s is None else '%s octets, %s' % (s.split(':')[0], time.strftime('%Y-%m-%d %H:%M', time.localtime(int(s.split(':')[1]))))
+    of, nf = old.get('files', {}), new.get('files', {})
+    for f in sorted(set(of) | set(nf)):
+        if of.get(f) != nf.get(f) and (f in of):
+            ch.append({'kind': 'file', 'label': '%s modifié depuis la dernière réussite' % f if f in nf else '%s disparu' % f,
+                       'before': show(of.get(f)), 'after': show(nf.get(f))})
+    ot, nt = old.get('tools', {}), new.get('tools', {})
+    for t in sorted(set(ot) & set(nt)):
+        if ot[t] != nt[t]:
+            ch.append({'kind': 'tool', 'label': 'version de %s' % t, 'before': ot[t], 'after': nt[t]})
+    return ch[:20]
+# Sorties attendues (CG_EXPECT) : « le job a réussi mais n'a rien produit ». Chaque élément, séparé par « ; » :
+# un motif de fichier, puis min=1M (taille minimale) et age=26h (âge maximal ; par défaut : modifié pendant CETTE exécution).
+def _cg_expect(spec, started):
+    import glob as g
+    units = {'k': 1024, 'm': 1024 ** 2, 'g': 1024 ** 3, '': 1}
+    secs = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+    out = []
+    for item in [x.strip() for x in (spec or '').split(';') if x.strip()][:5]:
+        parts = item.split()
+        pattern, opts = os.path.expanduser(parts[0]), dict(p.split('=', 1) for p in parts[1:] if '=' in p)
+        m = re.match(r'^(\d+)([kKmMgG]?)$', opts.get('min', '1'))
+        minimum = int(m.group(1)) * units[m.group(2).lower()] if m else 1
+        a = re.match(r'^(\d+)([smhd])$', opts.get('age', ''))
+        oldest = time.time() - int(a.group(1)) * secs[a.group(2)] if a else started - 2
+        hits = sorted(g.glob(pattern), key=lambda p: os.path.getmtime(p) if os.path.exists(p) else 0)
+        res = {'pattern': parts[0][:200], 'ok': False}
+        if not hits:
+            res['reason'] = 'absent'
+        else:
+            p = hits[-1]
+            st = os.stat(p)
+            res.update({'path': p[:200], 'size': st.st_size, 'mtime': int(st.st_mtime)})
+            if st.st_mtime < oldest:
+                res['reason'] = 'pas modifié pendant cette exécution' if not a else 'plus vieux que %s' % opts['age']
+            elif st.st_size < minimum:
+                res['reason'] = 'vide' if st.st_size == 0 else 'trop petit (%d octets, minimum %d)' % (st.st_size, minimum)
+            else:
+                res['ok'] = True
+        out.append(res)
+    return out
 # <<< cg-probes
 
 
@@ -194,6 +282,37 @@ def _remember_failure(ping_key: str, output: str) -> None:
         pass
 
 
+def _job_command() -> str:
+    # Le job Python est le script lancé : son chemin (et ses arguments) entre dans l'empreinte.
+    import sys
+    return ' '.join(sys.argv)[:1000]
+
+
+def _job_fingerprint() -> dict:
+    import platform
+    fp = _cg_fingerprint(_job_command())
+    fp['tools']['python'] = platform.python_version()   # l'interpréteur du job, que la ligne de commande ne nomme pas
+    return fp
+
+
+def _save_fingerprint(ping_key: str) -> None:
+    try:
+        path = _marker(ping_key)[:-5] + '.ok.json'
+        os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+        with os.fdopen(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as f:
+            json.dump(_job_fingerprint(), f)
+    except Exception:
+        pass
+
+
+def _changes_since_success(ping_key: str) -> list:
+    try:
+        with open(_marker(ping_key)[:-5] + '.ok.json') as f:
+            return _cg_fp_diff(json.load(f), _job_fingerprint())
+    except Exception:
+        return []
+
+
 def _resolution_context(ping_key: str) -> Optional[dict]:
     """Contexte relevé à la première réussite après un échec, sinon None."""
     path = _marker(ping_key)
@@ -216,16 +335,32 @@ class CronGuard:
     # ── API directe ───────────────────────────────────────────────────────────
 
     def success(self, records: Optional[int] = None, duration_ms: Optional[int] = None):
+        # Sorties attendues (CG_EXPECT) : réussi sans le fichier attendu, vide ou pas récrit = échec (code 0).
+        spec = os.environ.get('CG_EXPECT')
+        if spec:
+            started = time.time() - (duration_ms or 0) / 1000
+            res = _cg_expect(spec, started)
+            bad = [r for r in res if not r['ok']]
+            if bad:
+                msg = 'cronguard: sortie attendue non conforme : ' + '; '.join('%s (%s)' % (r.get('path') or r['pattern'], r['reason']) for r in bad)
+                return self.fail(exit_code=0, output=msg, duration_ms=duration_ms, expect=res)
         self._ping({'status': 'success', 'records': records, 'duration_ms': duration_ms,
                     'context': _resolution_context(self.ping_key)})
+        _save_fingerprint(self.ping_key)
 
-    def fail(self, exit_code: int = 1, output: str = '', duration_ms: Optional[int] = None):
+    def fail(self, exit_code: int = 1, output: str = '', duration_ms: Optional[int] = None, expect: Optional[list] = None):
+        ctx = _run_context(output)
+        changed = _changes_since_success(self.ping_key)
+        if changed:
+            ctx['changed'] = changed
+        if expect:
+            ctx['expect'] = expect
         self._ping({
             'status':      'fail',
             'exit_code':   exit_code,
             'output':      output[:3000],
             'duration_ms': duration_ms,
-            'context':     _run_context(output),
+            'context':     ctx,
         })
         _remember_failure(self.ping_key, output)
 

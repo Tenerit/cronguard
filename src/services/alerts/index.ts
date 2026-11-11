@@ -107,10 +107,11 @@ export async function sendSlackAlert(payload: AlertPayload) {
       text: {
         type: 'mrkdwn',
         text: [
-          `*🧠 Analyse IA* \`${cat}\``,
+          `*🔍 Diagnostic* \`${cat}\``,
           `*Cause :* ${payload.analysis!.cause}`,
           `*${actionLabel(payload.analysis!)} :* ${payload.analysis!.action}`,
           prev ? `*Prévention :* ${prev}` : '',
+          payload.analysis!.changed?.length ? `*Changé depuis la dernière réussite :* ${payload.analysis!.changed.join(' ; ')}` : '',
           payload.analysis!.knownFix
             ? `*Correction connue (à adapter) — ${payload.analysis!.knownFix.title} :*\n` + payload.analysis!.knownFix.steps.map(s => `• ${s}`).join('\n')
             : '',
@@ -166,16 +167,17 @@ export async function sendEmailAlert(payload: AlertPayload) {
   const aiSection = hasAI
     ? `
     <div style="background:#f8f9fa;border-left:4px solid #6c63ff;padding:12px 16px;margin:16px 0;border-radius:4px;">
-      <p style="font-weight:600;margin:0 0 8px;">🧠 Analyse IA &nbsp;
+      <p style="font-weight:600;margin:0 0 8px;">🔍 Diagnostic &nbsp;
         <span style="font-size:11px;background:${catColor}22;color:${catColor};padding:2px 8px;border-radius:10px;font-family:monospace">${cat}</span>
       </p>
       <p style="margin:0 0 4px;"><strong>Cause :</strong> ${escapeHtml(payload.analysis!.cause)}</p>
       <p style="margin:0 0 4px;"><strong>${actionLabel(payload.analysis!)} :</strong> ${escapeHtml(payload.analysis!.action)}</p>
+      ${payload.analysis!.changed?.length ? `<p style="margin:0 0 4px;"><strong>Changé depuis la dernière réussite :</strong> ${escapeHtml(payload.analysis!.changed.join(' ; '))}</p>` : ''}
       ${payload.analysis!.knownFix ? `<div style="margin:8px 0 0;"><strong>Correction connue (à adapter) — ${escapeHtml(payload.analysis!.knownFix.title)}</strong><ul style="margin:4px 0 0;padding-left:18px;">${payload.analysis!.knownFix.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul></div>` : ''}
       ${payload.analysis!.evidence?.length ? `<pre style="margin:8px 0 0;font-size:11px;background:#fff;border:1px solid #e2e8f0;padding:6px 8px;white-space:pre-wrap;">${escapeHtml(payload.analysis!.evidence.join('\n'))}</pre>` : ''}
       ${payload.analysis!.prevention ? `<p style="margin:4px 0 0;color:#4a9aa7;"><strong>Prévention :</strong> ${escapeHtml(payload.analysis!.prevention)}</p>` : ''}
     </div>`
-    : `<p style="color:#888;">Analyse IA indisponible — vérifiez les logs manuellement.</p>`
+    : `<p style="color:#888;">Diagnostic indisponible — vérifiez les logs manuellement.</p>`
 
   const html = `
   <div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
@@ -271,6 +273,7 @@ export function teamsCard(payload: AlertPayload): object {
     { title: 'Cause',  value: a.cause },
     { title: actionLabel(a), value: a.verifiedFix ? a.action : a.action },
     { title: 'Sévérité', value: `${a.severity} · confiance ${a.confidence}` },
+    ...(a.changed?.length ? [{ title: 'Changé depuis la dernière réussite', value: a.changed.join(' ; ') }] : []),
   ] : [{ title: 'Analyse', value: 'Indisponible (voir les logs)' }]
   const body: object[] = [
     { type: 'TextBlock', size: 'Large', weight: 'Bolder', wrap: true, color: 'Attention',

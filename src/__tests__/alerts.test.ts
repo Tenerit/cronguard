@@ -82,7 +82,7 @@ describe('sendEmailAlert()', () => {
     await sendEmailAlert(payloadWithAI)
 
     const call = mockSendMail.mock.calls[0][0]
-    expect(call.html).toContain('Analyse IA')
+    expect(call.html).toContain('Diagnostic')
     expect(call.html).toContain('Connexion PostgreSQL réinitialisée')
     expect(call.html).toContain('Augmenter tcp_keepalives_idle')
   })
@@ -91,7 +91,14 @@ describe('sendEmailAlert()', () => {
     await sendEmailAlert(basePayload)
 
     const call = mockSendMail.mock.calls[0][0]
-    expect(call.html).toContain('Analyse IA indisponible')
+    expect(call.html).toContain('Diagnostic indisponible')
+  })
+
+  it("montre ce qui a changé depuis la dernière réussite, échappé", async () => {
+    await sendEmailAlert({ ...payloadWithAI, analysis: { ...payloadWithAI.analysis!, changed: ['version de pg_dump : 15.4 → <16.1>'] } })
+    const call = mockSendMail.mock.calls[0][0]
+    expect(call.html).toContain('Changé depuis la dernière réussite')
+    expect(call.html).toContain('15.4 → &lt;16.1&gt;')
   })
 
   it('HTML-escapes LLM output + job name in the email (no XSS via cause/jobName)', async () => {
@@ -144,7 +151,7 @@ describe('sendSlackAlert()', () => {
 
     const blocks = (mockedAxios.post.mock.calls[0][1] as any).blocks
     const analysisBlock = blocks.find((b: Record<string,any>) =>
-      JSON.stringify(b).includes('Analyse IA')
+      JSON.stringify(b).includes('Diagnostic')
     )
     expect(analysisBlock).toBeDefined()
     expect(JSON.stringify(analysisBlock)).toContain('Connexion PostgreSQL')
