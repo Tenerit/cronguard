@@ -11,8 +11,8 @@
 // mais sens déformé 4/20 (20 %) : négation inversée, barres obliques perdues dans un exemple. ÉCHEC → NON BRANCHÉ
 // (seule l'éval l'appelle). Les garde-fous vérifient les identifiants, pas le sens.
 import axios from 'axios'
-import { llmHeaders, isAnthropic, llmEnabled } from './analyzer'
-import { inventedIdentifiers, capSentences } from './explain'
+import { llmHeaders, isAnthropic, llmEnabled } from '../../src/services/llm/analyzer'
+import { inventedIdentifiers, capSentences } from '../../src/services/llm/explain'
 
 const SYSTEM = `Tu réécris le compte rendu d'une correction de panne, écrit par un technicien, pour qu'il soit clair pour n'importe quel membre de l'équipe.
 Garde exactement le même sens et les mêmes étapes. N'ajoute rien : aucune cause, aucune étape, aucune commande, aucun chemin.

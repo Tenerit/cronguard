@@ -11,8 +11,8 @@
 // cause 19 % (≥ 30 %) et utiles ~5/20 (≥ 70 %) : questions génériques (« quel est le chemin du fichier ? »). ÉCHEC →
 // NON BRANCHÉ (seule l'éval l'appelle). Défaut connu : les en-têtes des faits (« Commande ») servent d'ancre.
 import axios from 'axios'
-import { llmHeaders, isAnthropic, llmEnabled } from './analyzer'
-import { inventedIdentifiers } from './explain'
+import { llmHeaders, isAnthropic, llmEnabled } from '../../src/services/llm/analyzer'
+import { inventedIdentifiers } from '../../src/services/llm/explain'
 
 const SYSTEM = `Tu aides un technicien à enquêter sur l'échec d'une tâche planifiée dont la cause n'est PAS établie.
 À partir UNIQUEMENT des lignes d'erreur et des faits fournis, pose 2 ou 3 questions courtes qui l'aident à trouver la cause lui-même.

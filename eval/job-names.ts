@@ -11,7 +11,7 @@
 import 'dotenv/config'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { nameJobRaw } from '../src/services/llm/job-names'
+import { nameJobRaw } from './lib/job-names-v1'
 
 // Même règle que job_name() de sdk/bash/cronguard-import.sh (premier exécutable significatif, sans extension).
 function codeName(cmd: string): string {

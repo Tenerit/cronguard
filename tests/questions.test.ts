@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { acceptQuestion, anchors, questionFacts } from '../src/services/llm/questions'
+import { acceptQuestion, anchors, questionFacts } from '../eval/lib/questions'
 
 const facts = questionFacts({ command: 'pg_dump -Fc clients > /bak/clients.dump', exitCode: 1,
   errorLines: ['pg_dump: error: query failed: ERROR:  permission denied for table invoices'] })

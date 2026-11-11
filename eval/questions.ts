@@ -1,5 +1,5 @@
 /**
- * Rôle de l'IA « questions pour enquêter » (src/services/llm/questions.ts) — attentes fixées AVANT le run :
+ * Rôle de l'IA « questions pour enquêter » (eval/lib/questions.ts) — attentes fixées AVANT le run :
  *   ≥ 1 question acceptée dans ≥ 70 % des cas · brutes sans identifiant inventé ≥ 95 % ·
  *   une question acceptée pointe la vraie cause ou la bonne vérification (regex mech/act de la grille) dans ≥ 30 % ·
  *   relecture humaine de 20 cas (eval/archive/QUESTIONS.md) : cause affirmée en douce ≤ 10 %, utile ≥ 70 % · médiane ≤ 20 s.
@@ -10,7 +10,7 @@ import 'dotenv/config'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
 import { analysisWithoutModel } from '../src/services/llm/analyzer'
-import { questionsRaw, questionFacts } from '../src/services/llm/questions'
+import { questionsRaw, questionFacts } from './lib/questions'
 import { inventedIdentifiers } from '../src/services/llm/explain'
 import { errorLines } from '../src/services/llm/evidence'
 import { sanitizeLogs } from '../src/services/sanitizer'

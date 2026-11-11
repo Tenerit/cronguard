@@ -1,5 +1,5 @@
 /**
- * Rôle de l'IA « secrets que les règles ratent » (src/services/llm/secret-scan.ts) — attentes fixées AVANT le run :
+ * Rôle de l'IA « secrets que les règles ratent » (eval/lib/secret-scan.ts) — attentes fixées AVANT le run :
  *   20 journaux contenant un secret dans un format que le masquage actuel rate (vérifié ci-dessous, sinon le cas est
  *   exclu) ; 30 vrais journaux du corpus sans secret.
  *   - IA : secrets entièrement masqués (règles + IA) ≥ 80 % · journaux propres avec ≥ 1 masquage à tort ≤ 15 % ·
@@ -13,7 +13,7 @@ import 'dotenv/config'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { sanitizeLogs } from '../src/services/sanitizer'
-import { scanSecretsRaw, baselineSecrets } from '../src/services/llm/secret-scan'
+import { scanSecretsRaw, baselineSecrets } from './lib/secret-scan'
 
 let seed = 20261111
 const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296 }

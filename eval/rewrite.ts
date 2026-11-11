@@ -1,6 +1,6 @@
 /**
  * Rôle de l'IA « réécrire le compte rendu de correction de l'équipe » — mesure des attentes fixées AVANT le run
- * (src/services/llm/rewrite.ts) : acceptées ≥ 70 % · brutes sans identifiant inventé ≥ 95 % · plus courtes,
+ * (eval/lib/rewrite.ts) : acceptées ≥ 70 % · brutes sans identifiant inventé ≥ 95 % · plus courtes,
  * médiane ≤ 60 mots · relecture humaine de 20 réécritures (eval/REWRITE.md) : sens déformé ≤ 10 %.
  * Comptes rendus = réponses acceptées du corpus StackExchange (réglage) : les 60 premières de 80 à 700 caractères.
  *   LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M npx tsx eval/rewrite.ts
@@ -8,7 +8,7 @@
 import 'dotenv/config'
 import { readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { rewriteRaw, acceptRewrite } from '../src/services/llm/rewrite'
+import { rewriteRaw, acceptRewrite } from './lib/rewrite'
 
 const words = (s: string) => s.split(/\s+/).filter(Boolean).length
 const median = (v: number[]) => [...v].sort((a, b) => a - b)[Math.floor(v.length / 2)] ?? 0

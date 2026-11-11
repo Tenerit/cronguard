@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { acceptRewrite } from '../src/services/llm/rewrite'
+import { acceptRewrite } from '../eval/lib/rewrite'
 
 describe('réécriture du compte rendu : garde-fous', () => {
   it('acceptée : rien inventé, rien perdu', () => {

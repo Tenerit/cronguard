@@ -5,8 +5,8 @@
 // RÉSULTAT (essais 1 et 2, eval/archive/SECRETS*.md) : NON BRANCHÉ — +36 points de rappel mais 18 % de journaux propres
 // masqués à tort. Gardé pour refaire la mesure. Les règles par format, elles, sont livrées dans le sanitizer.
 import axios from 'axios'
-import { llmHeaders } from './analyzer'
-export { FORMAT_RULES, formatSecrets } from '../sanitizer'   // règles livrées dans le masquage (2026-11-11)
+import { llmHeaders } from '../../src/services/llm/analyzer'
+export { FORMAT_RULES, formatSecrets } from '../../src/services/sanitizer'   // règles livrées dans le masquage (2026-11-11)
 
 const SYSTEM = `Tu repères les secrets dans un journal technique : mots de passe, jetons, clés d'API, clés privées, identifiants de connexion.
 Recopie chaque secret EXACTEMENT tel qu'il apparaît (la valeur seule, sans le nom de la variable).
