@@ -455,6 +455,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
   padding:28px;width:480px;max-width:calc(100vw - 32px);
   box-shadow:var(--shadow-lg);
 }
+.modal-wide{width:680px;max-height:calc(100vh - 48px);overflow:auto}
+.imp-text{width:100%;font-family:var(--mono);font-size:11px;resize:vertical;margin-bottom:6px}
+.imp-sys{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text2);margin-bottom:8px}
+.imp-status{font-size:11px;color:var(--text2);margin:6px 0}
+.imp-row{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--border)}
+.imp-keep{padding-top:7px}.imp-main{flex:1;min-width:0}
+.imp-name{width:100%;font-family:var(--mono);font-size:12px}
+.imp-meta{font-size:11px;color:var(--text2);margin:4px 0 2px}
+.imp-crit{color:var(--amber);font-weight:600}
+.imp-cmd{display:block;font-family:var(--mono);font-size:10px;color:var(--text3);word-break:break-all}
+.imp-out{white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto;margin-top:8px}
 .modal-title{
   font-size:16px;font-weight:700;font-family:var(--sans);
   color:var(--text);margin-bottom:6px;letter-spacing:-.02em;
@@ -1051,6 +1062,7 @@ body.tour-center .tour-ring{display:none}
 /* ─── Mobile responsive (placé en fin de feuille pour gagner la cascade) ───── */
 @media (max-width: 768px) {
   .app{grid-template-columns:1fr}
+  .top-import{display:none}   /* coller une crontab se fait depuis un ordinateur ; le lien reste dans « + monitor » */
   .sidebar{display:none}
   .sidebar.open{display:flex;position:fixed;inset:0;z-index:50;width:240px}
   .mobile-menu-btn{display:flex}
@@ -1199,8 +1211,26 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
     </div>
     <div class="field-err" id="m-err"></div>
     <div class="modal-actions">
+      <button class="btn btn-ghost" data-click="openImport" data-i18n="imp.link">importer une crontab</button>
       <button class="btn btn-ghost" data-click="closeModal" data-i18n="mod.cancel">annuler</button>
       <button class="btn btn-primary" data-click="createMonitor" data-i18n="mod.new.create">créer →</button>
+    </div>
+  </div>
+
+  <!-- Import d'une crontab collée : planning écrit par le code, nom et rôle proposés par l'IA locale (essai 2 : 90 % juste) -->
+  <div class="modal modal-wide" id="modal-import" style="display:none">
+    <div class="modal-title" data-i18n="imp.title">importer une crontab</div>
+    <div class="modal-sub" data-i18n="imp.sub">Collez votre crontab : CronGuard propose un nom pour chaque job. Relisez et corrigez avant de créer.</div>
+    <textarea class="field-input imp-text" id="imp-text" rows="6" spellcheck="false" data-i18n-ph="imp.ph" placeholder="0 2 * * * pg_dump -Fc clients > /bak/clients.dump"></textarea>
+    <label class="imp-sys"><input type="checkbox" id="imp-system"> <span data-i18n="imp.system">crontab système (/etc/crontab : colonne utilisateur)</span></label>
+    <div class="imp-status" id="imp-status" role="status" aria-live="polite"></div>
+    <div id="imp-rows"></div>
+    <pre class="curl-success imp-out" id="imp-out" style="display:none"></pre>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-click="closeModal" data-i18n="mod.cancel">annuler</button>
+      <button class="btn btn-ghost" id="imp-copy" style="display:none" data-click="copyImport" data-i18n="imp.copy">copier la crontab</button>
+      <button class="btn btn-ghost" id="imp-analyze" data-click="analyzeImport" data-i18n="imp.analyze">analyser →</button>
+      <button class="btn btn-primary" id="imp-create" style="display:none" data-click="createImport" data-i18n="imp.create">créer les monitors →</button>
     </div>
   </div>
 
@@ -1396,6 +1426,7 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
         <div class="live" id="live-indicator" role="status" aria-live="polite"><div class="live-dot" aria-hidden="true"></div> <span id="live-ts">live</span></div>
         <button class="theme-toggle" id="theme-toggle" data-click="toggleTheme" aria-label="Changer de thème">☀</button>
         <button class="btn btn-ghost" data-click="refreshAll" data-i18n-title="top.refresh" data-i18n-aria="a11y.refresh" aria-label="Rafraîchir" title="Rafraîchir (R)">↻</button>
+        <button class="btn btn-ghost top-import" data-click="openImport" data-i18n="top.import">importer une crontab</button>
         <button class="btn btn-primary" data-click="openModal" data-i18n="top.newMonitor">+ monitor</button>
       </div>
     </div>
@@ -2000,7 +2031,7 @@ const I18N = {
     'nav.account':'compte','nav.settings':'paramètres','nav.docs':'documentation','nav.logout':'déconnexion',
     'title.dashboard':'tableau de bord','title.services':'services','title.logs':'journal',
     'title.analyses':'analyses ia','title.settings':'paramètres','title.docs':'documentation','title.playground':'playground',
-    'top.search':'filtrer les services...','top.newMonitor':'+ monitor',
+    'top.search':'filtrer les services...','top.newMonitor':'+ monitor','top.import':'importer une crontab','imp.link':'importer une crontab','imp.title':'importer une crontab','imp.sub':'Collez votre crontab : CronGuard propose un nom pour chaque job. Relisez et corrigez avant de créer.','imp.ph':'0 2 * * * pg_dump -Fc clients > /bak/clients.dump','imp.system':'crontab système (/etc/crontab : colonne utilisateur)','imp.analyze':'analyser →','imp.create':'créer les monitors →','imp.copy':'copier la crontab','imp.none':'Aucune ligne de job reconnue (les commentaires, variables et @reboot sont ignorés).','imp.progress':'Analyse','imp.found':'job(s).','imp.aiNote':'Noms proposés par l’IA locale, planning écrit par CronGuard : relisez avant de créer.','imp.codeNote':'Noms tirés de la commande (pas de modèle d’IA déclaré sur ce serveur).','imp.keep':'importer ce job','imp.critical':'critique','imp.paste':'Remplacez vos lignes par celles-ci (crontab -e) :','imp.created':'monitor(s) créé(s). Recollez la crontab ci-dessous.',
     'stat.ok':'ok','stat.failed':'en échec','stat.late':'en retard','stat.uptime':'uptime 24h','stat.ai':'analyses ia',
     'stat.sub.activeAlerts':'alertes actives','stat.sub.graceExceeded':'grâce dépassée',
     'stat.sub.successPct':'% succès','stat.sub.last24h':'dernières 24h',
@@ -2121,7 +2152,7 @@ const I18N = {
     'nav.account':'account','nav.settings':'settings','nav.docs':'documentation','nav.logout':'sign out',
     'title.dashboard':'dashboard','title.services':'services','title.logs':'activity',
     'title.analyses':'ai analyses','title.settings':'settings','title.docs':'documentation','title.playground':'ai playground',
-    'top.search':'filter services...','top.newMonitor':'+ monitor',
+    'top.search':'filter services...','top.newMonitor':'+ monitor','top.import':'import a crontab','imp.link':'import a crontab','imp.title':'import a crontab','imp.sub':'Paste your crontab: CronGuard suggests a name for each job. Review and fix before creating.','imp.ph':'0 2 * * * pg_dump -Fc clients > /bak/clients.dump','imp.system':'system crontab (/etc/crontab: user column)','imp.analyze':'analyze →','imp.create':'create the monitors →','imp.copy':'copy the crontab','imp.none':'No job line recognized (comments, variables and @reboot are skipped).','imp.progress':'Analyzing','imp.found':'job(s).','imp.aiNote':'Names suggested by the local AI, schedule written by CronGuard: review before creating.','imp.codeNote':'Names taken from the command (no AI model declared on this server).','imp.keep':'import this job','imp.critical':'critical','imp.paste':'Replace your lines with these (crontab -e):','imp.created':'monitor(s) created. Paste the crontab below.',
     'stat.ok':'ok','stat.failed':'failed','stat.late':'late','stat.uptime':'uptime 24h','stat.ai':'ai analyses',
     'stat.sub.activeAlerts':'active alerts','stat.sub.graceExceeded':'grace exceeded',
     'stat.sub.successPct':'% success','stat.sub.last24h':'last 24h',
@@ -2387,6 +2418,22 @@ function demoPreview(body) {
     model:'exemple enregistré, vos logs ne sont pas analysés', fromCache:false, _meta:{ logs_length:(body.logs||'').length } }
 }
 
+// Crontab d'exemple : 5 lignes réelles du jeu de l'essai 2 du nommage (questions StackExchange).
+const DEMO_CRONTAB = `# crontab -l
+MAILTO=ops@example.com
+0 5 * * 1-5 /home/cvs/backup/cvs_backupScript.sh
+* 01 * * 1 /home/myname/certbot-auto --quiet
+*/5 * * * * /home/ubuntu/s3syncer.sh
+0 17 * * * sudo tar -cpzf backupfolder/localhost.tar.gz /var/www
+* * * * * cd /home/administrator/www/my_application && RAILS_ENV=production /usr/bin/env rake import:import_twitter >> cron.log 2>> error.log`
+const DEMO_SUGGEST = {
+  '/home/cvs/backup/cvs_backupScript.sh': { name:'cvs-backup-script', role:'Effectue une sauvegarde du système CVS', critical:true, when:'du lundi au vendredi, à 05:00' },
+  '/home/myname/certbot-auto --quiet': { name:'renew-ssl-certs', role:'Renouvelle les certificats SSL', critical:false, when:'le lundi, toutes les minutes de 01:00 à 01:59' },
+  '/home/ubuntu/s3syncer.sh': { name:'s3-sync', role:'Synchronise le contenu avec S3', critical:true, when:'toutes les 5 minutes' },
+  'sudo tar -cpzf backupfolder/localhost.tar.gz /var/www': { name:'create-localhost-backup', role:'Crée une sauvegarde du dossier www local', critical:true, when:'tous les jours, à 17:00' },
+  'cd /home/administrator/www/my_application && RAILS_ENV=production /usr/bin/env rake import:import_twitter >> cron.log 2>> error.log': { name:'import-twitter-data', role:"Importe les données Twitter dans l'application", critical:false, when:'toutes les minutes' },
+}
+
 async function demoApi(path, opts={}) {
   const method = (opts.method || 'GET').toUpperCase()
   const body   = opts.body ? JSON.parse(opts.body) : {}
@@ -2394,6 +2441,11 @@ async function demoApi(path, opts={}) {
   if (path.startsWith('/monitors/analyze/preview')) {
     await new Promise(r => setTimeout(r, 1400 + Math.random()*1200))
     return demoPreview(body)
+  }
+  // Import de crontab : sorties réelles de l'essai 2 (eval/archive/JOB-NAMES-2.md), recopiées telles quelles.
+  if (path === '/monitors/suggest-name') {
+    await new Promise(r => setTimeout(r, 600 + Math.random() * 500))
+    return DEMO_SUGGEST[body.command] ?? { name: null, role: null, critical: null, when: null }
   }
   // Écritures désactivées en démo
   if (method !== 'GET') { toast(t('demo.readonly'), 'info'); return { ok:true, demo:true } }
@@ -3356,6 +3408,7 @@ async function doDelete(id) {
 function openModal() {
   document.getElementById('modal-form').style.display = ''
   document.getElementById('modal-success').style.display = 'none'
+  document.getElementById('modal-import').style.display = 'none'
   document.getElementById('m-err').textContent = ''
   ;['m-name','m-schedule','m-emin','m-emax'].forEach(id => document.getElementById(id).value='')
   document.getElementById('modal-bg').classList.remove('hidden')
@@ -3366,6 +3419,98 @@ function closeModal() {
   document.getElementById('modal-bg').classList.add('hidden')
   loadMonitors()
 }
+
+// ─── Import d'une crontab collée (même règles que sdk/bash/cronguard-import.sh) ───────────────────────────────
+// Planning écrit par le serveur (scheduleText), nom + rôle proposés par l'IA locale si déclarée, sinon le nom
+// de la commande. Les noms restent modifiables ; rien n'est créé avant « créer les monitors ».
+let importJobs = []
+function openImport() {
+  openModal()
+  document.getElementById('modal-form').style.display = 'none'
+  document.getElementById('modal-import').style.display = ''
+  document.getElementById('imp-text').value = DEMO ? DEMO_CRONTAB : ''
+  ;['imp-rows', 'imp-status'].forEach(id => document.getElementById(id).textContent = '')
+  ;['imp-out', 'imp-copy', 'imp-create'].forEach(id => document.getElementById(id).style.display = 'none')
+  document.getElementById('imp-analyze').style.display = ''
+  importJobs = []
+  setTimeout(() => document.getElementById('imp-text').focus(), 50)
+}
+
+// Nom de secours = premier exécutable significatif, sans extension (job_name() du script d'import).
+function codeJobName(cmd) {
+  const words = cmd.split(/\s+/)
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i]
+    if (w === 'cd') { i++; continue }
+    if (/=/.test(w) || /^-/.test(w) || /^(&&|\|\||;|\||sudo|nice|ionice|flock|timeout|env|bash|sh|node|php|\/usr\/bin\/env)$/.test(w) || /^(>|<|2>)/.test(w) || /^python/.test(w)) continue
+    return (w.split('/').pop().replace(/\.[^.]*$/, '') || 'job').replace(/[^A-Za-z0-9_.-]/g, '-').slice(0, 60)
+  }
+  return 'job'
+}
+
+function parseCrontab(text, system) {
+  const jobs = []
+  for (const raw of text.split('\n')) {
+    const line = raw.trim()
+    if (!line || line.startsWith('#') || /^[A-Za-z_][A-Za-z0-9_]*=/.test(line) || line.startsWith('@reboot') || line.includes('cg_run')) continue
+    const m = line.match(/^(@\w+)\s+(.*)$/) || line.match(/^((?:\S+\s+){4}\S+)\s+(.*)$/)
+    if (!m) continue
+    let schedule = m[1].replace(/\s+/g, ' '), cmd = m[2], user = ''
+    if (system) { user = cmd.split(/\s+/)[0]; cmd = cmd.slice(user.length).trim() }
+    if (cmd) jobs.push({ schedule, cmd, user })
+  }
+  return jobs.slice(0, 100)
+}
+
+async function analyzeImport() {
+  const jobs = parseCrontab(document.getElementById('imp-text').value, document.getElementById('imp-system').checked)
+  const status = document.getElementById('imp-status')
+  if (!jobs.length) { status.textContent = t('imp.none'); return }
+  document.getElementById('imp-analyze').style.display = 'none'
+  for (let i = 0; i < jobs.length; i++) {
+    status.textContent = `${t('imp.progress')} ${i + 1}/${jobs.length}…`
+    let s = {}
+    try { s = await api('/monitors/suggest-name', { method: 'POST', body: JSON.stringify({ command: jobs[i].cmd, schedule: jobs[i].schedule }) }) } catch { /* nom du code */ }
+    Object.assign(jobs[i], { name: /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s.name || '') ? s.name : codeJobName(jobs[i].cmd), ai: !!s.name,
+      role: s.role || '', when: s.when || jobs[i].schedule, critical: s.critical === true })
+  }
+  importJobs = jobs
+  status.textContent = `${jobs.length} ${t('imp.found')} ${jobs.some(j => j.ai) ? t('imp.aiNote') : t('imp.codeNote')}`
+  document.getElementById('imp-rows').innerHTML = jobs.map((j, i) => `<div class="imp-row">
+    <label class="imp-keep"><input type="checkbox" checked id="imp-keep-${i}" aria-label="${esc(t('imp.keep'))}"></label>
+    <div class="imp-main">
+      <input class="field-input imp-name" id="imp-name-${i}" value="${esc(j.name)}" maxlength="60" aria-label="${esc(t('mod.new.name'))}">
+      <div class="imp-meta">${j.role ? esc(j.role) + ' — ' : ''}${esc(j.when)}${j.critical ? ` <span class="imp-crit">⚑ ${t('imp.critical')}</span>` : ''}</div>
+      <code class="imp-cmd">${esc(j.cmd.slice(0, 160))}</code>
+    </div></div>`).join('')
+  document.getElementById('imp-create').style.display = ''
+}
+
+async function createImport() {
+  const out = [], seen = {}
+  for (let i = 0; i < importJobs.length; i++) {
+    if (!document.getElementById(`imp-keep-${i}`).checked) continue
+    const j = importJobs[i]
+    let name = document.getElementById(`imp-name-${i}`).value.trim() || codeJobName(j.cmd)
+    seen[name] = (seen[name] || 0) + 1
+    if (seen[name] > 1) name += '-' + seen[name]
+    let m
+    try { m = await api('/monitors', { method: 'POST', body: JSON.stringify({ name, schedule: j.schedule.startsWith('@') ? undefined : j.schedule }) }) }
+    catch (e) { toast(`${name} : ${e.message}`, 'err'); continue }
+    if (!m || m.demo) return   // démo : lecture seule (toast déjà affiché)
+    // La commande d'origine passe en $0, un seul niveau d'apostrophes : ' → '\''
+    out.push(`${j.schedule}${j.user ? ' ' + j.user : ''} CRONGUARD_URL=${BASE_URL} bash -c 'source /usr/local/lib/cronguard.sh && cg_run ${m.ping_key} bash -c "$0"' '${j.cmd.replace(/'/g, "'\\''")}'`)
+  }
+  if (!out.length) return
+  const pre = document.getElementById('imp-out')
+  pre.textContent = `# ${t('imp.paste')}\n` + out.join('\n')
+  pre.style.display = ''
+  document.getElementById('imp-copy').style.display = ''
+  document.getElementById('imp-create').style.display = 'none'
+  document.getElementById('imp-status').textContent = `${out.length} ${t('imp.created')}`
+}
+
+function copyImport() { copyText(document.getElementById('imp-out').textContent, t('toast.copied')) }
 
 async function createMonitor() {
   const name     = document.getElementById('m-name').value.trim()
