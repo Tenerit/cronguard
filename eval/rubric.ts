@@ -153,6 +153,20 @@ export const LABELS: Record<string, Label> = {
   'p6-selenium-firefox-version': { mech: /version|mise à jour|update|incompatib|upgrade/i, act: /version|hold|apt-mark|mettre à jour|upgrade|downgrade|épingl|pin/i, key: /Can't load the profile/ },
   'p6-mysql-2002-disk-full':     { mech: /disque|\bdisk\b|espace|space|error (number )?28|errno 28/i, act: /\bdf\b|espace|space|disque|\bdisk\b|libérer|free/i, key: /ERROR 2002|Can't connect to local MySQL server/ },
 
+  // ── Public7 (TEST, requêtes figées avant la précision des fiches, gelé brut cc9e6ff ; étiquettes écrites avant tout run) ──
+  'p7-quartz-job-already-stored': { mech: /d[ée]j[aà] (enregistr|pr[ée]sent|stock)|already exists|persist|job ?store|base (de|des) (jobs|t[aâ]ches)/i, act: /vider|supprim|wipe|remplac|replace|v[ée]rifier.{0,40}exist|existe d[ée]j[aà]/i, key: /ObjectAlreadyExistsException/ },
+  'p7-php-killed-oom':            { mech: /m[ée]moire|memory|\boom\b/i, act: /dmesg|m[ée]moire|memory|limite/i, key: /^Killed$/m },
+  'p7-node-heap-parallel':        { mech: /parall|simultan|concurren|await|en m[eê]me temps|lots|batch/i, act: /await|s[ée]quentiel|lots|batch|un par un|parall/i, key: /heap out of memory/ },
+  'p7-cron-mail-postfix-domain':  { mech: /postfix|mydestination|domaine|nom d'h[oô]te|hostname|lui-m[eê]me|local/i, act: /mydestination|postfix|main\.cf/i, key: /postfix\/smtp/ },
+  'p7-docker-cron-not-installed': { mech: /pas install|non install|absent|not installed|paquet|package|image/i, act: /apt-get.{0,30}install.{0,20}cron|install(er)? (le paquet )?cron/i, key: /crontab: not found/ },
+  'p7-conda-activate-bashrc':     { mech: /bashrc|bash_profile|conda|profil|shell de connexion|\blogin\b|environnement/i, act: /conda activate|\s-l\b|bashrc|source|chemin absolu|python d(u|e l')/i, key: /activate: No such file/ },
+  'p7-crontab-and-chained-line':  { mech: /&&|ligne s[ée]par|m[eê]me ligne|ligne (de )?crontab|fr[ée]quence|syntaxe (de )?crontab|commande suivante/i, act: /ligne s[ée]par|separate line|nouvelle ligne|&&/i, key: /\*\/5: not found/ },
+  'p7-k8s-busybox-no-kubectl':    { mech: /kubectl.{0,50}(absent|install|introuvable|n'est pas|pas dans)|busybox|image/i, act: /bitnami|image.{0,40}kubectl|kubectl.{0,40}image|install(er)? kubectl/i, key: /Exit Code:\s+127/ },
+  'p7-php-relative-backup-dir':   { mech: /relati|absolu|dossier courant|r[ée]pertoire (courant|de base)|base directory/i, act: /absolu|absolute|chdir|\bcd\b/i, key: /No such file or directory/ },
+  'p7-readonly-fs-errors':        { mech: /disque|\bdisk\b|secteur|media error|erreurs? (de lecture|du disque|mat[ée]rielle)|fsck|corromp|syst[eè]me de fichiers|mat[ée]riel/i, act: /fsck/i, key: /media error|error: \{ UNC \}/ },
+  'p7-bad-interpreter-not-exec':  { mech: /ex[ée]cutable|droit|chmod|permission|interpr[ée]teur/i, act: /chmod|ex[ée]cutable|droit/i, key: /bad interpreter/ },
+  'p7-crontab-pasted-in-bash':    { mech: /bash|crontab -e|pas une commande|ligne de crontab|planification|syntaxe (de )?crontab|coll[ée]e?/i, act: /crontab -e/i, key: /\*\/10/ },
+
   // ── Public4 (TEST, collecté avant les leviers contexte d'exécution / vérification de commande) ──
   'p4-python-version-cron':     { mech: /version|python ?2|interpréteur|ancien python|autre python/i, act: /python ?2\.7|python3|shebang|chemin|version/i, key: /SyntaxError/ },
   'p4-laravel-mail-template':   { mech: /template|\bvue\b|\bview\b|welcome/i, act: /emails\.welcome|template|\bvue\b|\bview\b/i, key: /Undefined variable: errors/ },

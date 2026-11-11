@@ -21,7 +21,10 @@ import { PUBLIC4_CASES } from './public-cases-4'
 import { PUBLIC5_CASES } from './public-cases-5'
 import { PUBLIC6_CASES } from './public-cases-6'
 
-const ALL = [...CASES, ...PUBLIC_CASES, ...PUBLIC2_CASES, ...PUBLIC3_CASES, ...PUBLIC4_CASES, ...PUBLIC5_CASES, ...PUBLIC6_CASES]
+import { PUBLIC7_CASES } from './public-cases-7'
+// EXPLAIN_SET=public7 : seulement le jeu hors échantillon (mesure du 2026-11-11).
+const ALL = process.env.EXPLAIN_SET === 'public7' ? PUBLIC7_CASES
+  : [...CASES, ...PUBLIC_CASES, ...PUBLIC2_CASES, ...PUBLIC3_CASES, ...PUBLIC4_CASES, ...PUBLIC5_CASES, ...PUBLIC6_CASES]
 const median = (v: number[]) => [...v].sort((a, b) => a - b)[Math.floor(v.length / 2)] ?? 0
 const words = (s: string) => s.split(/\s+/).filter(Boolean).length
 const sentences = (s: string) => s.split(/[.!?](\s|$)/).filter(x => x && x.trim().length > 3).length
