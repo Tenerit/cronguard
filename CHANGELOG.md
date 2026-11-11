@@ -7,6 +7,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — nommage des jobs, essai 2 : le code écrit le planning, l'IA nomme (2026-11-11, attentes fixées avant)
+- Jeu neuf de 77 lignes de crontab réelles (`eval/job-names-2.ts`). Le planning est écrit par le code (`scheduleText` : formes courantes en français, l'expression telle quelle sinon, et le piège « jour du mois OU jour de semaine » non traduit) ; l'IA ne reçoit que la commande.
+- **Remplies : affichage juste 69/77 = 90 % (≥ 85 %, contre 74 % à l'essai 1), plus clair que le nom du code pour la grande majorité, critique 96 %, noms acceptés 100 %. Non remplie : 5,6 s par job (attente ≤ 5).** Erreurs restantes : suppositions (« du système », « source externe », « script PHP » pour un .sh).
+- Défaut du code trouvé et corrigé : « 0 24 * * * » était affiché « à 24:00 » ; une valeur hors limites est maintenant signalée (« expression invalide : cron ne lancera pas ce job »).
+
+### Mesuré — secrets, essai 2 : règles par format et IA en complément (2026-11-11, attentes fixées avant)
+- Règles par format commitées avant un jeu neuf de 25 types de secrets ; 40 journaux propres des jeux publics (`eval/secrets-2.ts`).
+- Règles seules : **0 % de faux** (≤ 5 % : remplie) mais **rappel 56 %** (≥ 80 % : non remplie). IA en complément : **+36 points** (rappel 92 %, ≥ 10 : remplie) mais **18 % de journaux propres masqués à tort** (≤ 10 % : non remplie ; 5 des 7 faux sont des marque-places des auteurs comme `<password>`, 2 de vrais dégâts). Ni l'un ni l'autre livré sur cette base. Détail : `eval/archive/SECRETS-2.md`.
+
 ### Mesuré — l'IA nomme les jobs à l'import de la crontab : non adopté (2026-11-11, attentes fixées avant)
 - 84 lignes de crontab réelles (questions publiques), critique marqué à la main avant le run (`eval/job-names.ts`).
 - Remplies : acceptés par les garde-fous **100 %**, drapeau critique d'accord **82 %**, nom plus clair que celui du code pour **~70/84** (le code donne « root », « python3 », « time »…). **Non remplies : nom + description justes 62/84 = 74 % (attente ≥ 85 %), 7,1 s par job (attente ≤ 5).** 12 des 22 erreurs décrivent mal le planning (« hebdomadaire » pour lundi-vendredi, « minuit » pour 22 h), que le code connaît déjà ; les autres inventent (« base de données » pour un backup.sh). Le reverse shell du jeu est nommé et décrit comme malveillant.

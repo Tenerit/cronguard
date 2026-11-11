@@ -53,6 +53,11 @@ export function scheduleText(expr: string): string {
   const f = e.split(' ')
   if (f.length !== 5) return `selon « ${e} »`
   const [m, h, dom, mon, dow] = f
+  // Valeur hors limites (« 0 24 * * * ») : cron refuse la ligne, le job ne tournera jamais — on le dit.
+  const LIMITS: Array<[string, number, number]> = [[m, 0, 59], [h, 0, 23], [dom, 1, 31], [mon, 1, 12], [dow, 0, 7]]
+  const values = (v: string) => (v.replace(/\/\d+$/, '').match(/\d+/g) ?? []).map(Number)   // « */12 » : 12 est un pas, pas une valeur
+  if (LIMITS.some(([v, lo, hi]) => values(v).some(n => n < lo || n > hi)))
+    return `expression invalide « ${e} » : cron ne lancera pas ce job`
   // Jour du mois ET jour de semaine restreints : cron lance si l'UN OU L'AUTRE correspond — piège classique, on ne le traduit pas.
   if (dom !== '*' && dow !== '*') return `selon « ${e} »`
   const parts = [time(m, h), monthDays(dom), months(mon), days(dow)]

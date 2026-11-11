@@ -16,6 +16,12 @@ describe('scheduleText — planning écrit par le code', () => {
     ['@reboot', 'au démarrage de la machine'],
   ])('%s → %s', (expr, txt) => expect(scheduleText(expr)).toBe(txt))
 
+  it('signale une valeur hors limites au lieu de la traduire', () => {
+    expect(scheduleText('0 24 * * *')).toBe('expression invalide « 0 24 * * * » : cron ne lancera pas ce job')
+    expect(scheduleText('*/30 * * * *')).toBe('toutes les 30 minutes')
+    expect(scheduleText('0 */12 * * *')).toBe('toutes les 12 heures, à la minute 00')
+  })
+
   it("rend telle quelle une forme qu'il ne sait pas dire", () => {
     expect(scheduleText('45 8,12,16 4-31 * 1-5')).toBe('selon « 45 8,12,16 4-31 * 1-5 »')
   })
