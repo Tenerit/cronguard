@@ -59,8 +59,19 @@ export const FORMAT_RULES: RegExp[] = [
   /\bcurl\b[^\n]*?\s(?:-u|--user)\s+[^\s:]+:(\S+)/g,                                             // curl -u user:pass
   /(?:\b(?:docker|podman|helm|oras)\s+(?:registry\s+)?login\b[^\n]*?\s-p|--password)(?:\s+|=)(?![-$])['"]?([^\s'"]{4,})/g,   // login -p, --password
   /\b[A-Z][A-Z0-9_]*(?:PASS|PASSWORD|PASSWD|PWD|TOKEN|SECRET|API_KEY|APIKEY|PRIVATE_KEY|AUTH)\s*=\s*['"]?([^\s'"]{4,})/g,  // VAR=…
-  /"(?:api_?key|apiKey|token|secret|password|passwd|access_?token|client_?secret|private_?key)"\s*:\s*"([^"]{6,})"/gi,    // JSON
+  /"(?:api_?key|apiKey|token|secret|password|passwd|access_?token|client_?secret|private_?key(?:_?id)?)"\s*:\s*"([^"]{6,})"/gi,    // JSON
   /\baws_secret_access_key[\s=:]+([A-Za-z0-9/+]{40})/gi,                                          // AWS (secret)
+  // Essai 3 (2026-11-11) : formats ratés à l'essai 2, ajoutés AVANT le jeu de test de l'essai 3.
+  /\b(key-[0-9a-f]{32})\b/g,                                                                       // Mailgun
+  /\b(do[por]_v1_[a-f0-9]{64})\b/g,                                                                // DigitalOcean
+  /\b([MN][A-Za-z\d]{23,25}\.[\w-]{6}\.[\w-]{27,38})\b/g,                                          // Discord (bot)
+  /https:\/\/([0-9a-f]{32})@[\w.-]*sentry\.io/g,                                                   // Sentry DSN
+  /\b(whsec_[A-Za-z0-9]{24,})\b/g,                                                                 // Stripe (webhook)
+  /\bldap\w+\b[^\n]*?\s-w\s+['"]?([^\s'"]{4,})/g,                                                  // ldapsearch -w
+  /(?:^|\s)AUTH\s+(?!\[)([^\s]{6,})/g,                                                             // redis AUTH
+  /define\(\s*['"][A-Z_]*(?:PASS|PASSWORD|SECRET|KEY|TOKEN)[A-Z_]*['"]\s*,\s*['"]([^'"]{4,})['"]/g,  // PHP define()
+  /(?:office|outlook)\.com\/webhook(?:b2)?\/(\S+)/gi,                                              // Teams / Outlook
+  /^\s*[a-z_]*(?:secret|password|passwd|token|api_?key)[a-z_]*\s*=\s*(\S{4,})/gim,                // fichier ini (rclone…)
   /\b(?:token|apikey|api key|secret)\b[^\n\w]{0,3}\s*(?:provided:\s*)?([A-Za-z0-9_-]{24,})/gi,   // « token <long> »
 ]
 
