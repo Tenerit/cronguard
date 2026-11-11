@@ -713,11 +713,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .an-filter-badge:hover{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,.2)}
 
 /* ─── Feedback ───────────────────────────────────────────────────────────── */
-.feedback-row{display:flex;gap:6px;margin-top:10px;align-items:center;padding-top:10px;border-top:1px solid var(--border)}
+.feedback-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center;padding-top:10px;border-top:1px solid var(--border)}
 .fb-btn{
   font-size:11px;padding:3px 10px;border-radius:var(--radius-md);
   border:1px solid var(--border);background:transparent;
-  cursor:pointer;transition:all .15s ease;
+  cursor:pointer;transition:all .15s ease;white-space:nowrap;
 }
 .fb-btn:hover{border-color:var(--border2);transform:scale(1.05)}
 .fb-btn.active-pos{border-color:var(--green);background:var(--green-dim)}
@@ -2058,7 +2058,7 @@ const I18N = {
     'mttr.downtime':'Indispo. totale','mttr.downtimeSub':'cumulée sur 30 jours','mttr.dataLoss':'Perte de données','mttr.dataLossSub':'impact confirmé',
     'ansum.analyses':'analyses','ansum.analysesSub':'total récent','ansum.todo':'à traiter','ansum.todoSub':'high + critical',
     'ansum.topCat':'catégorie n°1','ansum.cases':'cas','ansum.resolution':'résolution','ansum.resolutionSub':'min en moyenne',
-    'an.lead':'Piste à vérifier :','an.evidence':'Lignes de log liées','an.known':'Correction connue (à adapter)','an.knownTip':'Procédure standard livrée avec CronGuard, déclenchée par le texte des logs : pas une correction vérifiée chez vous','an.evidenceTip':'Recopiées de vos logs, choisies par proximité avec la cause : à vérifier, pas une preuve','an.verified':'Correction vérifiée','fb.fixBtn':'Ce qui a réglé la panne','fb.fixPrompt':'Qu\'est-ce qui a réellement réglé cette panne ? Ce sera proposé si elle revient.','toast.fixSaved':'Correction mémorisée','an.resolution':'Réparation constatée entre l’échec et la réussite (relevé par le SDK) :','an.resolutionConfirm':'✓ C’est bien la correction','an.resolutionNone':'Le job refonctionne sans différence relevée : la réparation est hors du champ des vérifications (base, serveur distant, code). Notez ce qui a été fait avec « Ce qui a réglé la panne ».','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
+    'an.lead':'Piste à vérifier :','an.evidence':'Lignes de log liées','an.known':'Correction connue (à adapter)','an.knownTip':'Procédure standard livrée avec CronGuard, déclenchée par le texte des logs : pas une correction vérifiée chez vous','an.evidenceTip':'Recopiées de vos logs, choisies par proximité avec la cause : à vérifier, pas une preuve','an.verified':'Correction vérifiée','fb.fixBtn':'Ce qui a réglé la panne','fb.fixPrompt':'Qu\'est-ce qui a réellement réglé cette panne ? Ce sera proposé si elle revient.','toast.fixSaved':'Correction mémorisée','rep.mail':'Préparer le compte rendu','rep.mailTip':'Ouvre un brouillon dans votre messagerie : relisez, complétez, envoyez vous-même. CronGuard n’envoie rien.','rep.copy':'Copier le texte','rep.copied':'Compte rendu copié','rep.emlSaved':'Brouillon téléchargé : ouvrez-le dans votre messagerie pour le compléter et l’envoyer','rep.subject':'Compte rendu d’incident','rep.job':'Job','rep.failedAt':'Échec','rep.exit':'code de sortie','rep.restored':'Rétabli','rep.cause':'Cause constatée','rep.done':'Ce qui a été fait (à compléter)','rep.link':'Détail dans CronGuard','rep.footer':'Préparé par CronGuard à partir des faits relevés. À relire et compléter avant envoi.','an.resolution':'Réparation constatée entre l’échec et la réussite (relevé par le SDK) :','an.resolutionConfirm':'✓ C’est bien la correction','an.resolutionNone':'Le job refonctionne sans différence relevée : la réparation est hors du champ des vérifications (base, serveur distant, code). Notez ce qui a été fait avec « Ce qui a réglé la panne ».','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
     'impact.none':'Aucun incident résolu sur les 30 derniers jours.','impact.recurring':'Récurrents','impact.header':'Impact · 30 derniers jours',
     'impact.incidents':'incidents','impact.affected':'service(s) touché(s)','impact.mttr':'MTTR moyen','impact.mttrSub':'temps de rétablissement',
     'impact.downtime':'indispo. totale','impact.downtimeSub':'cumulée','impact.dataLoss':'perte de données','impact.dataLossSub':'impact confirmé',
@@ -2179,7 +2179,7 @@ const I18N = {
     'mttr.downtime':'Total downtime','mttr.downtimeSub':'over 30 days','mttr.dataLoss':'Data loss','mttr.dataLossSub':'confirmed impact',
     'ansum.analyses':'analyses','ansum.analysesSub':'recent total','ansum.todo':'to handle','ansum.todoSub':'high + critical',
     'ansum.topCat':'top category','ansum.cases':'cases','ansum.resolution':'resolution','ansum.resolutionSub':'avg minutes',
-    'an.lead':'Lead to verify:','an.evidence':'Related log lines','an.known':'Known fix (adapt it)','an.knownTip':'Standard procedure shipped with CronGuard, triggered by the log text: not a fix verified on your systems','an.evidenceTip':'Copied from your logs, picked by closeness to the cause: check them, they are not proof','an.verified':'Verified fix','fb.fixBtn':'What fixed it','fb.fixPrompt':'What actually fixed this failure? It will be suggested if it happens again.','toast.fixSaved':'Fix saved','an.resolution':'Fix observed between the failure and the success (recorded by the SDK):','an.resolutionConfirm':'✓ That was the fix','an.resolutionNone':'The job works again with no observed difference: the fix is outside what the checks see (database, remote server, code). Note what was done with “What fixed it”.','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
+    'an.lead':'Lead to verify:','an.evidence':'Related log lines','an.known':'Known fix (adapt it)','an.knownTip':'Standard procedure shipped with CronGuard, triggered by the log text: not a fix verified on your systems','an.evidenceTip':'Copied from your logs, picked by closeness to the cause: check them, they are not proof','an.verified':'Verified fix','fb.fixBtn':'What fixed it','fb.fixPrompt':'What actually fixed this failure? It will be suggested if it happens again.','toast.fixSaved':'Fix saved','rep.mail':'Draft the report','rep.mailTip':'Opens a draft in your mail app: review it, complete it, send it yourself. CronGuard sends nothing.','rep.copy':'Copy text','rep.copied':'Report copied','rep.emlSaved':'Draft downloaded: open it in your mail app to complete and send it','rep.subject':'Incident report','rep.job':'Job','rep.failedAt':'Failed','rep.exit':'exit code','rep.restored':'Restored','rep.cause':'Observed cause','rep.done':'What was done (to complete)','rep.link':'Details in CronGuard','rep.footer':'Drafted by CronGuard from the recorded facts. Review and complete before sending.','an.resolution':'Fix observed between the failure and the success (recorded by the SDK):','an.resolutionConfirm':'✓ That was the fix','an.resolutionNone':'The job works again with no observed difference: the fix is outside what the checks see (database, remote server, code). Note what was done with “What fixed it”.','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
     'impact.none':'No incident resolved in the last 30 days.','impact.recurring':'Recurring','impact.header':'Impact · last 30 days',
     'impact.incidents':'incidents','impact.affected':'service(s) affected','impact.mttr':'avg MTTR','impact.mttrSub':'time to recovery',
     'impact.downtime':'total downtime','impact.downtimeSub':'cumulative','impact.dataLoss':'data loss','impact.dataLossSub':'confirmed impact',
@@ -2328,7 +2328,7 @@ const DEMO_AN = [
     ping_exit_code:127, ping_output:'Reindexing products…\\n/opt/search/reindex.sh: line 4: es-reindex: command not found',
     evidence:['/opt/search/reindex.sh: line 4: es-reindex: command not found'],
     correlated_monitors:[],
-    resolution:{"changes":[{"kind":"env","label":"PATH","before":"/usr/bin:/bin","after":"/home/search/.local/bin:/usr/bin:/bin"}],"text":"Réparation constatée : PATH : /usr/bin:/bin → /home/search/.local/bin:/usr/bin:/bin"},
+    resolution:{"changes":[{"kind":"env","label":"PATH","before":"/usr/bin:/bin","after":"/home/search/.local/bin:/usr/bin:/bin"}],"text":"Réparation constatée : PATH : /usr/bin:/bin → /home/search/.local/bin:/usr/bin:/bin","at":dISO(60*26-38)},
     diag:{"cause":"Votre shell de connexion trouve « es-reindex » dans /home/search/.local/bin, le cron non : son PATH (/usr/bin:/bin) ne contient pas ce dossier.","action":"Appeler /home/search/.local/bin/es-reindex en chemin absolu, ou ajouter PATH=/home/search/.local/bin:/usr/bin:/bin en tête de la crontab.","prevention":"","checks":["cron démarre avec un PATH réduit (souvent /usr/bin:/bin) : un outil sous /usr/local/bin, nvm ou pyenv y est invisible.","Appeler la commande en chemin absolu (command -v <outil> pour le trouver), ou définir PATH= en tête de la crontab."],"category":"dependency","data_impact":"none"} },
 ].map(a => ({ ...a, diagnosis: JSON.stringify(a.diag), checks: a.diag.checks }))   // evidence / known_fix : sorties réelles de evidenceLines() / knownFix() sur ces logs
 
@@ -3091,6 +3091,8 @@ function renderAnalyses() {
         <button class="fb-btn ${a.user_feedback==='negative'?'active-neg':''}"
           data-click="sendFeedback" data-args="${esc(JSON.stringify([`${a.id||''}`, "negative", `an-${a.id||i}`]))}">👎</button>
         <button class="fb-btn" data-click="recordFix" data-args="${esc(JSON.stringify([`${a.id||''}`]))}">${t('fb.fixBtn')}</button>
+        <button class="fb-btn" title="${esc(t('rep.mailTip'))}" data-click="mailReport" data-args="${esc(JSON.stringify([`${a.id||''}`]))}">✉ ${t('rep.mail')}</button>
+        <button class="fb-btn" data-click="copyReport" data-args="${esc(JSON.stringify([`${a.id||''}`]))}">⧉ ${t('rep.copy')}</button>
       </div>
     </div>`
   }).join('')
@@ -4110,6 +4112,53 @@ async function confirmResolution(analysisId, text) {
     toast(t('toast.fixSaved'), 'ok')
     await loadAnalyses()
   } catch(e) { toast(e.message, 'err') }
+}
+
+// Compte rendu d'incident : construit dans le navigateur à partir de l'analyse (textes déjà masqués côté serveur,
+// aucune réécriture par l'IA). CronGuard n'envoie rien : brouillon dans la messagerie de l'utilisateur, qui le
+// relit, le complète et l'envoie lui-même ; ou texte à copier (ticket, wiki, Slack).
+function incidentReport(id) {
+  const a = analysesData.find(x => String(x.id) === String(id))
+  if (!a) return null
+  const d = (typeof a.diagnosis === 'string' ? parse(a.diagnosis) : a.diagnosis) || {}
+  let r = a.resolution
+  if (typeof r === 'string') r = parse(r)
+  const job = a.monitorName || a.monitor_name || '?'
+  const L = []
+  L.push(`${t('rep.job')} : ${job}${a.env ? ` (${a.env})` : ''}`)
+  L.push(`${t('rep.failedAt')} : ${fmtDateTime(a.created_at)}${a.ping_exit_code != null ? ` · ${t('rep.exit')} ${a.ping_exit_code}` : ''}`)
+  if (r?.at) L.push(`${t('rep.restored')} : ${fmtDateTime(r.at)} (≈ ${Math.max(1, Math.round((new Date(r.at) - new Date(a.created_at)) / 60000))} min)`)
+  L.push('', `${t('rep.cause')} :`, d.cause || '—')
+  if (a.explanation) L.push('', `${t('an.explain')} ${a.explanation}`)
+  if (Array.isArray(a.evidence) && a.evidence.length) L.push('', t('an.evidence') + ' :', ...a.evidence.map(x => '  ' + x))
+  if (r?.changes?.length) L.push('', t('an.resolution'), ...r.changes.map(c => `  - ${c.label}${c.before !== undefined ? ` : ${c.before} → ${c.after}` : ''}`))
+  const fix = a.verified_fix   // texte brut (mail / presse-papiers), jamais injecté dans le HTML
+  if (fix) L.push('', `${t('an.verified')} : ${fix}`)
+  else if (d.action) L.push('', `${t('an.lead')} ${d.action}`)
+  L.push('', `${t('rep.done')} :`, '  ', '', `${t('rep.link')} : ${location.origin}${location.pathname}`, '—', t('rep.footer'))
+  return { subject: `[CronGuard] ${t('rep.subject')} — ${job}, ${fmtDateTime(a.created_at)}`, body: L.join('\n') }
+}
+
+function mailReport(id) {
+  const rep = incidentReport(id)
+  if (!rep) return
+  const href = `mailto:?subject=${encodeURIComponent(rep.subject)}&body=${encodeURIComponent(rep.body)}`
+  // Au-delà de ~1 800 caractères, certaines messageries tronquent un lien mailto : brouillon .eml à la place.
+  if (href.length <= 1800) { location.href = href; return }
+  const b64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)))
+  const eml = ['X-Unsent: 1', 'To: ', `Subject: =?UTF-8?B?${b64(rep.subject)}?=`, 'MIME-Version: 1.0',
+    'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64(rep.body.replace(/\n/g, '\r\n')).replace(/.{76}/g, '$&\r\n')].join('\r\n')
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(new Blob([eml], { type: 'message/rfc822' }))
+  link.download = 'compte-rendu-incident.eml'
+  link.click()
+  setTimeout(() => URL.revokeObjectURL(link.href), 1000)
+  toast(t('rep.emlSaved'), 'ok')
+}
+
+function copyReport(id) {
+  const rep = incidentReport(id)
+  if (rep) copyText(`${rep.subject}\n\n${rep.body}`, t('rep.copied'))
 }
 
 // ─── Feedback analyses ───────────────────────────────────────────────────────

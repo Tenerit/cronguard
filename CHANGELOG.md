@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — compte rendu d'incident à envoyer soi-même (2026-11-11)
+- Sur chaque analyse : **« ✉ Préparer le compte rendu »** ouvre un brouillon dans la messagerie de l'utilisateur (objet, job, heures d'échec et de rétablissement, cause constatée, lignes de log, réparation constatée, correction, lien) ; il le relit, le complète (« Ce qui a été fait ») et l'envoie lui-même. **« ⧉ Copier le texte »** pour un ticket, un wiki ou Slack.
+- **CronGuard n'envoie rien** : pas de SMTP requis, destinataires choisis par l'utilisateur, textes déjà masqués côté serveur, aucune réécriture par l'IA (mesurée à 20 % de sens déformé). L'explication de l'IA, si présente, garde sa mention.
+- Lien `mailto:` jusqu'à ~1 800 caractères ; au-delà, brouillon `.eml` (UTF-8, `X-Unsent: 1`) téléchargé, qu'Outlook ou Thunderbird ouvrent comme brouillon modifiable. Encodage vérifié dans le navigateur. Rangée de boutons qui passe à la ligne sur téléphone.
+
 ### Ajouté — résolution constatée dans le dashboard (2026-11-11)
 - Le contexte relevé par le SDK à l'échec est gardé avec le ping (migration v25 : `pings.context`, `pings.command`, `analyses.resolution`). À la première réussite qui suit, le worker compare les deux relevés et range la différence sur l'analyse de l'échec.
 - Dans l'analyse : « Réparation constatée entre l'échec et la réussite » avec chaque changement (avant → après) et le bouton **« ✓ C'est bien la correction »**, qui l'enregistre comme correction de l'équipe : resservie si la panne revient, et transformable en fiche d'équipe. Sans différence relevée, le dashboard le dit (réparation hors du champ des vérifications) et invite à noter ce qui a été fait.
