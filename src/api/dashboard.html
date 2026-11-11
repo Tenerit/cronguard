@@ -3496,7 +3496,7 @@ async function createImport() {
     if (seen[name] > 1) name += '-' + seen[name]
     let m
     try { m = await api('/monitors', { method: 'POST', body: JSON.stringify({ name, schedule: j.schedule.startsWith('@') ? undefined : j.schedule }) }) }
-    catch (e) { toast(`${name} : ${e.message}`, 'err'); continue }
+    catch (e) { const why = e.message; toast(`${name} : ${why}`, 'err'); continue }   // toast = textContent
     if (!m || m.demo) return   // démo : lecture seule (toast déjà affiché)
     // La commande d'origine passe en $0, un seul niveau d'apostrophes : ' → '\''
     out.push(`${j.schedule}${j.user ? ' ' + j.user : ''} CRONGUARD_URL=${BASE_URL} bash -c 'source /usr/local/lib/cronguard.sh && cg_run ${m.ping_key} bash -c "$0"' '${j.cmd.replace(/'/g, "'\\''")}'`)
