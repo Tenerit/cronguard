@@ -37,6 +37,8 @@ export function contextDiff(fail: Run, ok: Run): Change[] {
     // Fichier que le job devait créer (son dossier parent est relevé) : qu'il existe après la réussite est une
     // conséquence, pas la réparation — c'est le dossier qui porte la cause.
     if (!p.exists && probed.has(p.path.replace(/\/[^/]+$/, ''))) continue
+    // Apparu ou disparu : c'est le changement ; ses droits d'avant/après n'ont pas de « avant » à comparer.
+    if (p.exists !== q.exists) { out.push({ kind: 'path', label: `${p.path} : existe`, before: show(p.exists), after: show(q.exists) }); continue }
     for (const [k, label] of PATH_FIELDS) {
       if (p[k] === undefined && q[k] === undefined) continue
       if (p[k] !== q[k]) out.push({ kind: 'path', label: `${p.path} : ${label}`, before: show(p[k]), after: show(q[k]) })

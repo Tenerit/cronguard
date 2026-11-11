@@ -83,13 +83,14 @@ export function loginProbe(names: string[]): Record<string, unknown> {
 
 export function pathProbe(text: string): Array<Record<string, unknown>> {
   const fs = require('fs'), os = require('os'), p = require('path')
-  const cands: string[] = []
+  const cands: string[] = [], denied = new Set<string>()
   for (const line of text.split('\n')) {
     if (!/No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system/i.test(line)) continue
     // Chemin non cité : jeton entier depuis un début de mot (« data/input.csv », pas « /input.csv »).
     for (const m of line.matchAll(/'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?\/?[\w.@+-]+(?:\/[\w.@+-]+)+)/g)) {
       const v = m[1] ?? m[2] ?? m[3]
       if ((v.includes('/') || v.includes('.')) && !cands.includes(v)) cands.push(v)
+      if ((v.includes('/') || v.includes('.')) && /Permission denied|Read-only file system/i.test(line)) denied.add(v)
     }
   }
   const expand = (v: string) => v.startsWith('~') ? p.join(os.homedir(), v.slice(1)) : v
@@ -97,7 +98,7 @@ export function pathProbe(text: string): Array<Record<string, unknown>> {
   for (const v of cands) {
     todo.push(v)
     const parent = p.dirname(expand(v))
-    if (!fs.existsSync(expand(v)) && parent && parent !== '.' && fs.existsSync(parent) && !todo.includes(parent)) todo.push(parent)   // fichier à créer : le dossier parent porte les droits
+    if ((denied.has(v) || !fs.existsSync(expand(v))) && parent && parent !== '.' && fs.existsSync(parent) && !todo.includes(parent)) todo.push(parent)   // fichier à créer : le dossier parent porte les droits
   }
   return todo.slice(0, 5).map(v => {
     const q = expand(v), d: Record<string, unknown> = { path: v.slice(0, 256), relative: !p.isAbsolute(q), exists: fs.existsSync(q) }

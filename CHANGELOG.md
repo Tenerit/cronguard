@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — résolution constatée : la réparation se voit-elle ? (2026-11-11, attentes fixées avant)
+- Le SDK (bash et Python) relance ses vérifications à la **première réussite après un échec**, sur les mêmes lignes d'erreur, et `contextDiff` compare les deux relevés : variable désormais fournie, dossier devenu modifiable, commande modifiée, fichier apparu. Rien n'est deviné ; une réparation hors du champ des vérifications n'affiche rien.
+- Labo cron réel (`eval/resolution-lab.ts`), 11 pannes puis la réparation qu'un ops ferait. **Résultat fixé avant : 7/11 cas justes (attente ≥ 7, remplie), 8 changements parasites (attente ≤ 1, NON remplie).**
+- Deux défauts trouvés et corrigés après coup : (1) les réparations de droits (`chown`) étaient invisibles, car à la réussite le fichier existait et son dossier n'était plus relevé ; le dossier parent est maintenant relevé aussi pour un chemin refusé (3 SDK) ; (2) un fichier apparu affichait aussi propriétaire et droits « — → … », redondants. **Après correction : 11/11, 0 parasite** — sur les mêmes scénarios, donc pas une confirmation indépendante. Le labo de diagnostic reste à 11/11.
+- Limites : scénarios écrits par nous, une seule cause et une seule réparation chacun ; un vrai serveur change aussi pour d'autres raisons entre deux exécutions (mises à jour, autre job). Le SDK Node ne relève pas encore la réussite.
+
 ### Mesuré — l'IA réécrit le compte rendu de correction de l'équipe : échec, non branché (2026-11-11, attentes fixées avant)
 - Idée : reformuler la correction écrite par l'équipe (✏️) pour la rendre lisible par tous, sans rien ajouter. 60 réponses acceptées du corpus StackExchange servent de comptes rendus (`eval/rewrite.ts`).
 - Critères automatiques remplis : réécritures acceptées par les garde-fous **70 %** (attente ≥ 70 %), sorties sans identifiant inventé **98 %** (≥ 95 %), **30 mots** en médiane contre 46 à l'origine, 13 s.

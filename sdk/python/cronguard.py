@@ -112,7 +112,7 @@ def _cg_login(names):
         res['loginFound'] = where
     return res
 def _cg_paths(text):
-    cands = []
+    cands, denied = [], set()
     for line in text.splitlines():
         if not re.search(r"No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system", line, re.I):
             continue
@@ -121,12 +121,14 @@ def _cg_paths(text):
             p = next(g for g in m.groups() if g)
             if ('/' in p or '.' in p) and p not in cands:
                 cands.append(p)
+            if ('/' in p or '.' in p) and re.search(r"Permission denied|Read-only file system", line, re.I):
+                denied.add(p)
     todo = []
     for p in cands:
         todo.append(p)
         par = os.path.dirname(os.path.expanduser(p))
-        if not os.path.exists(os.path.expanduser(p)) and par and os.path.isdir(par) and par not in todo:
-            todo.append(par)   # fichier à créer : c'est le dossier parent qui porte les droits
+        if (p in denied or not os.path.exists(os.path.expanduser(p))) and par and os.path.isdir(par) and par not in todo:
+            todo.append(par)   # fichier à créer ou refusé : le dossier parent porte les droits (relevé aussi à la réussite)
     res = []
     for p in todo[:5]:
         q = os.path.expanduser(p)
