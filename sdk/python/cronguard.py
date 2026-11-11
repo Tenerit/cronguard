@@ -233,10 +233,146 @@ def _cg_expect(spec, started):
                 res['ok'] = True
         out.append(res)
     return out
+# Mémoire et disque (2026-11-11) : des faits au lieu de « code 137, probablement la mémoire ». Compteur oom_kill du
+# cgroup v2 du job (avant/après l'exécution), limite et pic mémoire, espace libre des dossiers concernés.
+def _cg_cgroup_dir():
+    try:
+        for line in open('/proc/self/cgroup'):
+            if line.startswith('0::'):
+                return '/sys/fs/cgroup' + line[3:].strip().rstrip('/')
+    except Exception:
+        pass
+    return None
+def _cg_oom_kills():
+    d = _cg_cgroup_dir()
+    try:
+        for line in open(d + '/memory.events'):
+            if line.startswith('oom_kill '):
+                return int(line.split()[1])
+    except Exception:
+        pass
+    return None
+def _cg_resources(oom_start, paths):
+    res, d = {}, _cg_cgroup_dir()
+    now = _cg_oom_kills()
+    if oom_start not in (None, '') and now is not None and now > int(oom_start):
+        res['oomKills'] = now - int(oom_start)
+    for name, key in (('memory.max', 'memMax'), ('memory.peak', 'memPeak')):
+        try:
+            v = open(d + '/' + name).read().strip()
+            res[key] = v[:32]
+        except Exception:
+            pass
+    disk, seen = [], set()
+    for p in [os.getcwd()] + [x['path'] for x in paths if x.get('exists')]:
+        q = os.path.expanduser(p)
+        q = q if os.path.isdir(q) else os.path.dirname(q) or '.'
+        try:
+            st = os.statvfs(q)
+        except Exception:
+            continue
+        key = (st.f_fsid if hasattr(st, 'f_fsid') else q)
+        if key in seen:
+            continue
+        seen.add(key)
+        disk.append({'path': p[:200], 'free': st.f_bavail * st.f_frsize, 'total': st.f_blocks * st.f_frsize})
+    if disk:
+        res['disk'] = disk[:4]
+    return res
+# Réseau : pour les hôtes cités par une erreur réseau, résolution DNS puis connexion TCP (2 s max chacune), vers
+# ces seuls hôtes, sans rien envoyer. CG_PROBE_NET=0 désactive.
+_CG_PORTS = {'http': 80, 'https': 443, 'ftp': 21, 'postgres': 5432, 'postgresql': 5432, 'mysql': 3306, 'redis': 6379,
+             'amqp': 5672, 'mongodb': 27017, 'smtp': 25, 'ldap': 389, 'ssh': 22}
+def _cg_net(text, cmd=''):
+    import socket
+    if os.environ.get('CG_PROBE_NET') == '0':
+        return []
+    url = r'\b([a-z][a-z0-9+.-]*)://(?:[^@/\s]+@)?([A-Za-z0-9.-]+)(?::(\d{1,5}))?'
+    cands, neterr = [], False
+    for line in text.splitlines():
+        if not re.search(r'refused|timed? ?out|resolve|unreachable|could not connect|couldn.t connect|no route|getaddrinfo|ENOTFOUND|ECONNREFUSED|EHOSTUNREACH|Name or service not known|Temporary failure in name resolution|Connection reset', line, re.I):
+            continue
+        neterr = True
+        for m in re.finditer(url, line):
+            cands.append((m.group(2), int(m.group(3)) if m.group(3) else _CG_PORTS.get(m.group(1).lower())))
+        for m in re.finditer(r'\b((?:[A-Za-z0-9-]+\.)+[A-Za-z0-9-]+|localhost|\d+\.\d+\.\d+\.\d+)(?::|,? port | port )(\d{1,5})\b', line):
+            cands.append((m.group(1), int(m.group(2))))
+        for m in re.finditer(r'resolve host:? \'?([A-Za-z0-9.-]+)', line):
+            cands.append((m.group(1), None))
+    if neterr:   # l'erreur est réseau : les URL de la commande donnent souvent le port que le message tait
+        for m in re.finditer(url, cmd):
+            cands.append((m.group(2), int(m.group(3)) if m.group(3) else _CG_PORTS.get(m.group(1).lower())))
+    best = {}
+    for host, port in cands:   # un hôte : la version avec port l'emporte
+        if host not in best or (best[host] is None and port):
+            best[host] = port
+    out = []
+    for host, port in list(best.items())[:3]:
+        r = {'host': host[:253], 'port': port or 0}
+        try:
+            ip = socket.getaddrinfo(host, port or 80, proto=socket.IPPROTO_TCP)[0][4][0]
+            r['dns'] = 'ok'
+        except Exception:
+            r['dns'] = 'fail'
+            out.append(r)
+            continue
+        if not port:
+            out.append(r)
+            continue
+        s = None
+        try:
+            s = socket.create_connection((ip, port), timeout=2)
+            r['tcp'] = 'open'
+        except ConnectionRefusedError:
+            r['tcp'] = 'refused'
+        except socket.timeout:
+            r['tcp'] = 'timeout'
+        except OSError:
+            r['tcp'] = 'unreachable'
+        finally:
+            if s:
+                s.close()
+        out.append(r)
+    return out
+# Secrets masqués sur la machine du job, avant tout envoi (mêmes formats que le masquage du serveur, qui repasse derrière).
+_CG_MASK = [
+    r'(?i)\b(?:password|passwd|pwd|secret)\s*[:=]\s*(?!(?:YES|NO)\b)(\S+)',
+    r'(?i)\b[a-z][a-z0-9+.-]*://[^\s:/@]+:([^\s@/]+)@',
+    r'(?i)\bbearer\s+([A-Za-z0-9_\-.]{20,})',
+    r'(?i)\bAuthorization:\s*(?:Basic|Bearer|Token)\s+([A-Za-z0-9+/=._-]{8,})',
+    r'(eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)',
+    r'\b(AKIA[0-9A-Z]{16})\b', r'(?i)\baws_secret_access_key[\s=:]+([A-Za-z0-9/+]{40})',
+    r'(?i)\b((?:sk|pk|rk|re)_(?:live|test|prod|staging)_[A-Za-z0-9_-]{16,})',
+    r'(?i)\b(?:api[_-]?key|x-api-key|apikey|auth[_-]?token|access[_-]?token|secret[_-]?key)\s*[=:]\s*([A-Za-z0-9_\-.]{20,})',
+    r'\b(gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{22,}|glpat-[A-Za-z0-9_-]{20,})',
+    r'\b(xox[abposr]-[A-Za-z0-9-]{10,})', r'hooks\.slack\.com/services/([A-Za-z0-9]+/[A-Za-z0-9]+/[A-Za-z0-9]+)',
+    r'\b(AIza[0-9A-Za-z_-]{30,})', r'\b(sk-(?:proj-|ant-[a-z0-9]+-)?[A-Za-z0-9_-]{20,})',
+    r'\b(SG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,})', r'\b(npm_[A-Za-z0-9]{30,}|pypi-[A-Za-z0-9_-]{30,})',
+    r'/bot(\d{6,}:[A-Za-z0-9_-]{30,})', r'\b(?:AccountKey|SharedAccessKey|sig)=([A-Za-z0-9+/%=]{20,})',
+    r'-----BEGIN [A-Z ]*PRIVATE KEY-----([\s\S]*?)-----END [A-Z ]*PRIVATE KEY-----',
+    r'\bcurl\b[^\n]*?\s(?:-u|--user)\s+[^\s:]+:(\S+)',
+    r'(?:\b(?:docker|podman|helm|oras)\s+(?:registry\s+)?login\b[^\n]*?\s-p|--password)(?:\s+|=)(?![-$])[\'"]?([^\s\'"]{4,})',
+    r'(?i)\b(?:mysql(?:dump|admin|import)?)\b[^\n|;&]*?\s-p(?!\s)([^\s]+)', r'(?i)\bsshpass\s+-p\s*(\S+)',
+    r'\b[A-Z][A-Z0-9_]*(?:PASS|PASSWORD|PASSWD|PWD|TOKEN|SECRET|API_KEY|APIKEY|PRIVATE_KEY|AUTH)\s*=\s*[\'"]?([^\s\'"]{4,})',
+    r'(?i)"(?:api_?key|apiKey|token|secret|password|passwd|access_?token|client_?secret|private_?key(?:_?id)?)"\s*:\s*"([^"]{6,})"',
+    r'\b(key-[0-9a-f]{32})\b', r'\b(do[por]_v1_[a-f0-9]{64})\b', r'\b(whsec_[A-Za-z0-9]{24,})\b',
+    r'https://([0-9a-f]{32})@[\w.-]*sentry\.io', r'\bldap\w+\b[^\n]*?\s-w\s+[\'"]?([^\s\'"]{4,})',
+    r'(?:^|\s)AUTH\s+(?!\[)([^\s]{6,})', r'(?im)^\s*[a-z_]*(?:secret|password|passwd|token|api_?key)[a-z_]*\s*=\s*(\S{4,})',
+]
+def _cg_mask(text):
+    vals = set()
+    for pat in _CG_MASK:
+        for m in re.finditer(pat, text, re.M):
+            v = next((g for g in m.groups() if g), m.group(0))
+            if v and len(v) >= 4 and not re.match(r'^\$\{?\w+\}?$', v) and '[REDACTED' not in v:
+                vals.add(v)
+    for v in sorted(vals, key=len, reverse=True):
+        text = text.replace(v, '[REDACTED]')
+    return text
 # <<< cg-probes
 
 
-def _run_context(output: str = '') -> dict:
+def _run_context(output: str = '', oom_start: Optional[int] = None) -> dict:
     """Environnement réel du job à l'échec (noms, chemins, booléens ; aucune valeur secrète).
     Permet au serveur d'établir les pannes « marche à la main, pas en cron » (locale, HOME, agent SSH…)."""
     import getpass
@@ -256,6 +392,10 @@ def _run_context(output: str = '') -> dict:
     paths = _cg_paths(out)
     if paths:
         ctx['paths'] = paths
+    ctx['resources'] = _cg_resources(oom_start, paths)
+    net = _cg_net(out, _job_command())
+    if net:
+        ctx['net'] = net
     return ctx
 
 
@@ -348,8 +488,10 @@ class CronGuard:
                     'context': _resolution_context(self.ping_key)})
         _save_fingerprint(self.ping_key)
 
-    def fail(self, exit_code: int = 1, output: str = '', duration_ms: Optional[int] = None, expect: Optional[list] = None):
-        ctx = _run_context(output)
+    def fail(self, exit_code: int = 1, output: str = '', duration_ms: Optional[int] = None, expect: Optional[list] = None,
+             oom_start: Optional[int] = None):
+        output = _cg_mask(output)   # secrets masqués sur la machine du job, avant tout envoi
+        ctx = _run_context(output, oom_start)
         changed = _changes_since_success(self.ping_key)
         if changed:
             ctx['changed'] = changed
@@ -372,6 +514,7 @@ class CronGuard:
 
     def __enter__(self):
         self._start = time.time()
+        self._oom = _cg_oom_kills()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -384,6 +527,7 @@ class CronGuard:
                 exit_code=1,
                 output=f"{exc_type.__name__}: {exc_val}\n{''.join(traceback.format_tb(exc_tb))}",
                 duration_ms=duration_ms,
+                oom_start=getattr(self, '_oom', None),
             )
         return False  # Ne supprime pas l'exception
 
@@ -417,6 +561,7 @@ def monitor(ping_key: str, base_url: str = CRONGUARD_URL):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs) -> Any:
             start = time.time()
+            oom = _cg_oom_kills()
             try:
                 result = fn(*args, **kwargs)
                 duration_ms = int((time.time() - start) * 1000)
@@ -433,6 +578,7 @@ def monitor(ping_key: str, base_url: str = CRONGUARD_URL):
                     exit_code=1,
                     output=traceback.format_exc(),
                     duration_ms=duration_ms,
+                    oom_start=oom,
                 )
                 raise
         return wrapper

@@ -52,6 +52,17 @@ const Schema = z.object({
       kind: z.enum(['command', 'env', 'var', 'file', 'tool']), label: z.string().max(300),
       before: z.string().max(256).optional(), after: z.string().max(256).optional(),
     })).max(20).optional(),
+    // Mémoire et disque relevés par le SDK à l'échec (cgroup v2, statvfs) : des nombres, pas des valeurs sensibles.
+    resources: z.object({
+      oomKills: z.number().int().nonnegative().max(1_000_000).optional(),
+      memMax: z.string().max(32).optional(), memPeak: z.string().max(32).optional(),
+      disk: z.array(z.object({ path: z.string().max(200), free: z.number().nonnegative(), total: z.number().nonnegative() })).max(4).optional(),
+    }).optional(),
+    // Réseau : DNS puis TCP vers les seuls hôtes cités par l'erreur.
+    net: z.array(z.object({
+      host: z.string().max(253), port: z.number().int().min(0).max(65535),   // 0 : DNS seul (port inconnu)
+      dns: z.enum(['ok', 'fail']), tcp: z.enum(['open', 'refused', 'timeout', 'unreachable']).optional(),
+    })).max(3).optional(),
     // Sorties attendues (CG_EXPECT) vérifiées par le SDK après un code 0.
     expect:   z.array(z.object({
       pattern: z.string().max(200), ok: z.boolean(), reason: z.string().max(80).optional(),

@@ -22,6 +22,8 @@ export interface RunContext {
   paths?:         PathFact[]             // chemins cités par l'erreur, constatés sur la machine
   changed?:       ChangeFact[]           // ce qui a changé depuis la dernière réussite (empreinte du SDK)
   expect?:        ExpectFact[]           // sorties attendues (CG_EXPECT) vérifiées après un code 0
+  resources?:     { oomKills?: number; memMax?: string; memPeak?: string; disk?: Array<{ path: string; free: number; total: number }> }
+  net?:           Array<{ host: string; port: number; dns: 'ok' | 'fail'; tcp?: 'open' | 'refused' | 'timeout' | 'unreachable' }>
 }
 
 export interface ChangeFact { kind: 'command' | 'env' | 'var' | 'file' | 'tool'; label: string; before?: string; after?: string }
@@ -45,6 +47,14 @@ export function inferRunner(logs: string, reported?: Runner): Runner | undefined
 
 export interface Finding { id: string; category: ErrorCategory; cause: string; action: string }
 
+/** Taille lisible : 1536 → « 1,5 Ko », 67108864 → « 64 Mo ». */
+function bytes(n: number): string {
+  const u = ['octets', 'Ko', 'Mo', 'Go', 'To']
+  let i = 0
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++ }
+  return `${i ? n.toFixed(n < 10 ? 1 : 0).replace('.', ',') : n} ${u[i]}`
+}
+
 const NOT_FOUND = /(?:^|\s)([\w.+-]+): (?:command )?not found|exec: "?([\w.+-]+)"?: executable file not found/m
 // Identifiants ABSENTS (pas faux) : un mauvais mot de passe ne dit rien de l'utilisateur du cron.
 const CREDS     = /fe_sendauth: no password supplied|\(using password: NO\)|Unable to locate credentials|NoCredentialsError|Permission denied \(publickey|gpg: .*(No secret key|No public key)/i
@@ -59,6 +69,41 @@ export function contextFinding(logs: string, c?: RunContext): Finding | null {
     return { id: 'ctx-expect', category: 'data',
       cause: `Le job s'est terminé sans erreur (code 0), mais ce qu'il doit produire n'est pas là : ${what}.`,
       action: "Vérifier l'étape qui écrit ce fichier (destination, droits, filtre, source vide) : un code 0 ne prouve pas que la sauvegarde existe." }
+  }
+
+  // Mémoire : le compteur oom_kill du cgroup a bougé pendant l'exécution — le noyau a tué un processus du job.
+  const r = c.resources
+  if (r?.oomKills) {
+    const lim = r.memMax && /^\d+$/.test(r.memMax) ? `, limite ${bytes(+r.memMax)}` : ''
+    const peak = r.memPeak && /^\d+$/.test(r.memPeak) ? `, pic ${bytes(+r.memPeak)}` : ''
+    return { id: 'ctx-oom', category: 'resources',
+      cause: `Le noyau a tué un processus du job faute de mémoire (OOM) : compteur oom_kill du cgroup +${r.oomKills} pendant l'exécution${lim}${peak}.`,
+      action: 'Augmenter la limite mémoire du conteneur ou du service, ou réduire la consommation du job (lots plus petits, traitement en flux).' }
+  }
+  // Disque plein : l'erreur le dit ET le SDK l'a constaté sur le volume concerné.
+  const full = /No space left|ENOSPC|disk full|Disk quota exceeded/i.test(logs)
+    ? r?.disk?.find(d => d.total > 0 && (d.free / d.total < 0.02 || d.free < 64 * 1024 ** 2)) : undefined
+  if (full) {
+    return { id: 'ctx-disk-full', category: 'resources',
+      cause: `Le volume de ${full.path} est plein : ${bytes(full.free)} libres sur ${bytes(full.total)} (${(100 * full.free / full.total).toFixed(1)} %), constaté par le SDK au moment de la panne.`,
+      action: 'Libérer de la place ou agrandir le volume ; vérifier la rotation des sauvegardes, des logs et des fichiers temporaires.' }
+  }
+  // Réseau : DNS puis TCP vers l'hôte cité par l'erreur, au moment de la panne.
+  const n = c.net?.[0]
+  if (n) {
+    const at = `${n.host}:${n.port}`
+    if (n.dns === 'fail') return { id: 'ctx-net-dns', category: 'network',
+      cause: `Le nom « ${n.host} » ne se résout pas depuis la machine du job (constaté par le SDK au moment de la panne).`,
+      action: 'Vérifier le nom, le DNS de la machine (/etc/resolv.conf) et le réseau du conteneur.' }
+    if (n.tcp === 'refused') return { id: 'ctx-net-refused', category: 'network',
+      cause: `Rien n'écoute sur ${at} : connexion refusée, constatée par le SDK au moment de la panne.`,
+      action: 'Vérifier que le service cible tourne et écoute sur ce port (systemctl status, ss -ltnp), ou que le port est le bon.' }
+    if (n.tcp === 'timeout' || n.tcp === 'unreachable') return { id: 'ctx-net-timeout', category: 'network',
+      cause: `${at} ne répond pas (${n.tcp === 'timeout' ? 'aucune réponse en 2 s' : 'hôte injoignable'}) : pare-feu, filtrage réseau ou machine éteinte.`,
+      action: 'Vérifier la route et les règles de pare-feu entre la machine du job et la cible, et que la cible est allumée.' }
+    if (n.tcp === 'open') return { id: 'ctx-net-open', category: 'network',
+      cause: `${at} répond au moment de la vérification : la panne était passagère, ou vient d'après la connexion (authentification, requête).`,
+      action: 'Relancer le job ; si ça recommence, regarder le service cible au moment de la panne (redémarrage, saturation).' }
   }
 
   // 1. Commande introuvable… mais présente ailleurs sur la machine : le fait, pas une hypothèse.
