@@ -10,6 +10,8 @@ import { recallSimilar, recallVerifiedFix, sameErrorRecently, errorSignature } f
 import { evidenceLines } from '../services/llm/evidence'
 import { explainCached } from '../services/llm/explain'
 import { teamFixAnalysis } from '../services/team-fixes'
+import { contextDiff, resolutionText } from '../services/resolution'
+import type { RunContext } from '../services/llm/run-context'
 import { knownFix }      from '../services/llm/known-fixes'
 import { planHasAI }     from '../config/plans'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
@@ -67,11 +69,29 @@ function createPingWorker() {
       return
     }
 
+    const fail = status === 'fail'
     const { rows: [ping] } = await db.query(
-      `INSERT INTO pings (monitor_id,status,duration_ms,records,exit_code,output)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-      [monitorId, status, durationMs, records, exitCode, (output ?? '').slice(0, 5000)]
+      `INSERT INTO pings (monitor_id,status,duration_ms,records,exit_code,output,context,command)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+      [monitorId, status, durationMs, records, exitCode, (output ?? '').slice(0, 5000),
+       fail && runContext ? JSON.stringify(runContext) : null, fail && command ? command.slice(0, 1000) : null]
     )
+
+    // Résolution constatée : le SDK n'envoie un contexte en réussite qu'à la première réussite après un échec.
+    // On le compare à celui de ce dernier échec et on range la différence sur son analyse (vide = réparé hors du
+    // champ des vérifications, ce qui se dit aussi). shortcut: si la réussite arrive avant que l'analyse de
+    // l'échec soit écrite (job relancé en quelques secondes), rien n'est rangé ; à revoir si ça arrive en pilote.
+    if (!fail && runContext) {
+      const { rows: [last] } = await db.query(
+        `SELECT p.context, p.command, a.id AS analysis_id FROM pings p JOIN analyses a ON a.ping_id = p.id
+         WHERE p.monitor_id = $1 AND p.status = 'fail' AND p.context IS NOT NULL ORDER BY p.pinged_at DESC LIMIT 1`, [monitorId])
+      if (last) {
+        const ctxOf = (v: unknown) => (typeof v === 'string' ? JSON.parse(v) : v) as RunContext
+        const changes = contextDiff({ command: last.command ?? undefined, context: ctxOf(last.context) }, { command, context: runContext })
+        await db.query(`UPDATE analyses SET resolution = $2 WHERE id = $1`,
+          [last.analysis_id, JSON.stringify({ changes, text: changes.length ? resolutionText(changes) : null, at: new Date().toISOString() })])
+      }
+    }
 
     // La complétion (success/fail) efface l'état "en cours" du run
     await db.query(

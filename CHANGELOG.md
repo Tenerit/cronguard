@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — résolution constatée dans le dashboard (2026-11-11)
+- Le contexte relevé par le SDK à l'échec est gardé avec le ping (migration v25 : `pings.context`, `pings.command`, `analyses.resolution`). À la première réussite qui suit, le worker compare les deux relevés et range la différence sur l'analyse de l'échec.
+- Dans l'analyse : « Réparation constatée entre l'échec et la réussite » avec chaque changement (avant → après) et le bouton **« ✓ C'est bien la correction »**, qui l'enregistre comme correction de l'équipe : resservie si la panne revient, et transformable en fiche d'équipe. Sans différence relevée, le dashboard le dit (réparation hors du champ des vérifications) et invite à noter ce qui a été fait.
+- Testé de bout en bout (vrai PostgreSQL, worker) : PATH fourni à la réussite constaté et renvoyé au dashboard. Exemple réel ajouté à la démo.
+
 ### Mesuré — résolution constatée : la réparation se voit-elle ? (2026-11-11, attentes fixées avant)
 - Le SDK (bash et Python) relance ses vérifications à la **première réussite après un échec**, sur les mêmes lignes d'erreur, et `contextDiff` compare les deux relevés : variable désormais fournie, dossier devenu modifiable, commande modifiée, fichier apparu. Rien n'est deviné ; une réparation hors du champ des vérifications n'affiche rien.
 - Labo cron réel (`eval/resolution-lab.ts`), 11 pannes puis la réparation qu'un ops ferait. **Résultat fixé avant : 7/11 cas justes (attente ≥ 7, remplie), 8 changements parasites (attente ≤ 1, NON remplie).**

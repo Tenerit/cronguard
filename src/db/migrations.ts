@@ -358,6 +358,14 @@ async function v21(client: {query(sql: string, params?: unknown[]): Promise<{ ro
   if (changed) logger.info(`[DB] v21 : secrets masqués dans ${changed} sortie(s) de job déjà stockée(s)`)
 }
 
+// ─── V25 : résolution constatée — le contexte relevé par le SDK à l'échec (noms, chemins, booléens : aucune valeur
+// secrète) est gardé avec le ping ; à la première réussite qui suit, la différence est rangée sur l'analyse.
+async function v25(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE pings ADD COLUMN IF NOT EXISTS context JSONB`)
+  await client.query(`ALTER TABLE pings ADD COLUMN IF NOT EXISTS command TEXT`)
+  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS resolution JSONB`)
+}
+
 // ─── V24 : fiches d'équipe (fin de la boucle d'apprentissage) : une correction de l'équipe, validée par un admin,
 // devient une fiche active sur tous les jobs du client. Déclencheur littéral, jamais une regex utilisateur.
 async function v24(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
@@ -468,8 +476,9 @@ export async function runMigrations() {
     await v22(client)
     await v23(client)
     await v24(client)
+    await v25(client)
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v24)')
+    logger.info('[DB] Migrations terminées (v1 → v25)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

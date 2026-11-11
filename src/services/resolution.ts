@@ -16,6 +16,13 @@ const PATH_FIELDS: Array<[keyof PathFact, string]> = [
 ]
 const show = (v: unknown) => v === undefined || v === '' ? '—' : typeof v === 'boolean' ? (v ? 'oui' : 'non') : String(v)
 
+/** Texte enregistré comme correction quand l'équipe confirme (même limite que la correction saisie : 500). */
+export function resolutionText(changes: Change[]): string {
+  const parts = changes.map(c => c.kind === 'command' ? `commande remplacée par « ${c.after} »`
+    : c.before !== undefined ? `${c.label} : ${c.before} → ${c.after}` : c.label)
+  return `Réparation constatée : ${parts.join(' ; ')}`.slice(0, 500)
+}
+
 export function contextDiff(fail: Run, ok: Run): Change[] {
   const out: Change[] = []
   if (fail.command && ok.command && fail.command !== ok.command) out.push({ kind: 'command', label: 'commande modifiée', before: fail.command, after: ok.command })

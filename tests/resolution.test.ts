@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { contextDiff } from '../src/services/resolution'
+import { contextDiff, resolutionText } from '../src/services/resolution'
 
 describe('contextDiff — résolution constatée', () => {
   it('montre la variable fournie, le dossier réparé et la commande modifiée', () => {
@@ -15,6 +15,13 @@ describe('contextDiff — résolution constatée', () => {
   it('ne montre rien quand la réparation est hors du champ des sondes', () => {
     const ctx = { user: 'app', path: '/usr/bin', loginPath: '/bin', loginOnlyVars: ['X'] }
     expect(contextDiff({ command: 'curl x', context: ctx }, { command: 'curl x', context: { ...ctx } })).toEqual([])
+  })
+
+  it('résume la réparation pour la correction confirmée, sous 500 caractères', () => {
+    const txt = resolutionText([{ kind: 'var', label: 'variable API_TOKEN désormais fournie au job' },
+      { kind: 'command', label: 'commande modifiée', before: 'sh a.sh', after: 'bash a.sh' }])
+    expect(txt).toBe('Réparation constatée : variable API_TOKEN désormais fournie au job ; commande remplacée par « bash a.sh »')
+    expect(resolutionText([{ kind: 'env', label: 'PATH', before: 'x', after: 'y'.repeat(900) }]).length).toBe(500)
   })
 
   it("n'affirme pas qu'une variable est fournie si la sonde de connexion n'a pas tourné", () => {

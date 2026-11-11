@@ -207,6 +207,22 @@ async function main() {
     body: JSON.stringify({ status: 'fail', output: 'x', context: { path: 'x'.repeat(5000) } }) })
   check('Contexte : champ trop long refusé (400)', badCtx.status === 400, String(badCtx.status))
 
+  // ─── Résolution constatée : contexte de l'échec comparé à celui de la première réussite ───
+  const { rows: [monR] } = await db.query(`INSERT INTO monitors (client_id, name, grace_period) VALUES ($1,'reindex-search',300) RETURNING id, ping_key`, [client.id])
+  const ctxFail = { user: 'search', home: '/home/search', path: '/usr/bin:/bin', shell: '/bin/sh' }
+  const resRun = await fail('/opt/search/reindex.sh: line 4: es-reindex: command not found', { command: '/opt/search/reindex.sh', context: ctxFail }, monR)
+  await fetch(`http://localhost:${API_PORT}/ping/${monR.ping_key}`, { method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ status: 'success', exit_code: 0, command: '/opt/search/reindex.sh', context: { ...ctxFail, path: '/home/search/.local/bin:/usr/bin:/bin' } }) })
+  let resolution: { changes?: Array<{ label: string; after?: string }>; text?: string } | null = null
+  for (let i = 0; i < 40 && !resolution; i++) {
+    await sleep(250)
+    resolution = (await db.query(`SELECT resolution FROM analyses WHERE id=$1`, [resRun.id])).rows[0].resolution
+  }
+  check('Résolution : le PATH fourni à la réussite est constaté sur l\'analyse de l\'échec',
+    resolution?.changes?.length === 1 && resolution.changes[0].label === 'PATH' && resolution.changes[0].after === '/home/search/.local/bin:/usr/bin:/bin', JSON.stringify(resolution))
+  const shown = await (await get(`/monitors/${monR.id}/analyses`, client.api_key)).json() as Array<{ id: string; resolution?: unknown }>
+  check('Résolution : renvoyée avec l\'analyse au dashboard', shown.some(r => r.id === resRun.id && r.resolution), JSON.stringify(shown).slice(0, 120))
+
   // ─── Lien signé d'une alerte : valider / corriger sans se connecter ─────────
   // Jeton recalculé ici avec le même format que review-links.ts (id.exp.hmac), secret lu en base.
   await db.query(`INSERT INTO app_secrets (name, value) VALUES ('review_links', $1) ON CONFLICT (name) DO NOTHING`, [crypto.randomBytes(32).toString('hex')])

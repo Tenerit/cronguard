@@ -851,6 +851,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .an-evidence-h{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;font-family:var(--sans)}
 .an-known{font-size:11px;color:var(--text2);background:var(--bg3);border-left:2px solid var(--green);padding:4px 8px;margin:0 0 8px;border-radius:4px}
 .an-known ul{margin:2px 0 0;padding-left:16px}.an-known li{margin:1px 0;word-break:break-word}
+.an-resolution{font-size:11px;color:var(--text2);background:var(--bg3);border-left:2px solid var(--blue);padding:6px 8px;margin:0 0 8px;border-radius:4px}
+.an-resolution ul{margin:2px 0 6px;padding-left:16px}.an-resolution li{margin:1px 0;word-break:break-word}.an-resolution code{font-family:var(--mono);font-size:10px}
+.an-resolution-none{border-left-color:var(--text3)}
 .pr-cause{font-size:13px;color:var(--text);margin-bottom:8px;line-height:1.6;font-weight:500}
 .pr-action{font-size:12px;color:var(--text2);padding:8px 12px;background:rgba(52,211,153,.06);border-radius:var(--radius);border-left:2px solid var(--green);margin-bottom:8px}
 .pr-prevention{font-size:11px;color:var(--text3);padding:8px 12px;background:rgba(96,165,250,.05);border-radius:var(--radius);border-left:2px solid var(--blue);margin-bottom:8px}
@@ -2055,7 +2058,7 @@ const I18N = {
     'mttr.downtime':'Indispo. totale','mttr.downtimeSub':'cumulée sur 30 jours','mttr.dataLoss':'Perte de données','mttr.dataLossSub':'impact confirmé',
     'ansum.analyses':'analyses','ansum.analysesSub':'total récent','ansum.todo':'à traiter','ansum.todoSub':'high + critical',
     'ansum.topCat':'catégorie n°1','ansum.cases':'cas','ansum.resolution':'résolution','ansum.resolutionSub':'min en moyenne',
-    'an.lead':'Piste à vérifier :','an.evidence':'Lignes de log liées','an.known':'Correction connue (à adapter)','an.knownTip':'Procédure standard livrée avec CronGuard, déclenchée par le texte des logs : pas une correction vérifiée chez vous','an.evidenceTip':'Recopiées de vos logs, choisies par proximité avec la cause : à vérifier, pas une preuve','an.verified':'Correction vérifiée','fb.fixBtn':'Ce qui a réglé la panne','fb.fixPrompt':'Qu\'est-ce qui a réellement réglé cette panne ? Ce sera proposé si elle revient.','toast.fixSaved':'Correction mémorisée','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
+    'an.lead':'Piste à vérifier :','an.evidence':'Lignes de log liées','an.known':'Correction connue (à adapter)','an.knownTip':'Procédure standard livrée avec CronGuard, déclenchée par le texte des logs : pas une correction vérifiée chez vous','an.evidenceTip':'Recopiées de vos logs, choisies par proximité avec la cause : à vérifier, pas une preuve','an.verified':'Correction vérifiée','fb.fixBtn':'Ce qui a réglé la panne','fb.fixPrompt':'Qu\'est-ce qui a réellement réglé cette panne ? Ce sera proposé si elle revient.','toast.fixSaved':'Correction mémorisée','an.resolution':'Réparation constatée entre l’échec et la réussite (relevé par le SDK) :','an.resolutionConfirm':'✓ C’est bien la correction','an.resolutionNone':'Le job refonctionne sans différence relevée : la réparation est hors du champ des vérifications (base, serveur distant, code). Notez ce qui a été fait avec « Ce qui a réglé la panne ».','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'aucune analyse ne correspond aux filtres','an.reset':'réinitialiser les filtres',
     'impact.none':'Aucun incident résolu sur les 30 derniers jours.','impact.recurring':'Récurrents','impact.header':'Impact · 30 derniers jours',
     'impact.incidents':'incidents','impact.affected':'service(s) touché(s)','impact.mttr':'MTTR moyen','impact.mttrSub':'temps de rétablissement',
     'impact.downtime':'indispo. totale','impact.downtimeSub':'cumulée','impact.dataLoss':'perte de données','impact.dataLossSub':'impact confirmé',
@@ -2176,7 +2179,7 @@ const I18N = {
     'mttr.downtime':'Total downtime','mttr.downtimeSub':'over 30 days','mttr.dataLoss':'Data loss','mttr.dataLossSub':'confirmed impact',
     'ansum.analyses':'analyses','ansum.analysesSub':'recent total','ansum.todo':'to handle','ansum.todoSub':'high + critical',
     'ansum.topCat':'top category','ansum.cases':'cases','ansum.resolution':'resolution','ansum.resolutionSub':'avg minutes',
-    'an.lead':'Lead to verify:','an.evidence':'Related log lines','an.known':'Known fix (adapt it)','an.knownTip':'Standard procedure shipped with CronGuard, triggered by the log text: not a fix verified on your systems','an.evidenceTip':'Copied from your logs, picked by closeness to the cause: check them, they are not proof','an.verified':'Verified fix','fb.fixBtn':'What fixed it','fb.fixPrompt':'What actually fixed this failure? It will be suggested if it happens again.','toast.fixSaved':'Fix saved','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
+    'an.lead':'Lead to verify:','an.evidence':'Related log lines','an.known':'Known fix (adapt it)','an.knownTip':'Standard procedure shipped with CronGuard, triggered by the log text: not a fix verified on your systems','an.evidenceTip':'Copied from your logs, picked by closeness to the cause: check them, they are not proof','an.verified':'Verified fix','fb.fixBtn':'What fixed it','fb.fixPrompt':'What actually fixed this failure? It will be suggested if it happens again.','toast.fixSaved':'Fix saved','an.resolution':'Fix observed between the failure and the success (recorded by the SDK):','an.resolutionConfirm':'✓ That was the fix','an.resolutionNone':'The job works again with no observed difference: the fix is outside what the checks see (database, remote server, code). Note what was done with “What fixed it”.','an.info.diag':'diagnostic','an.info.diags':'diagnostics','an.none':'no analysis matches the filters','an.reset':'reset filters',
     'impact.none':'No incident resolved in the last 30 days.','impact.recurring':'Recurring','impact.header':'Impact · last 30 days',
     'impact.incidents':'incidents','impact.affected':'service(s) affected','impact.mttr':'avg MTTR','impact.mttrSub':'time to recovery',
     'impact.downtime':'total downtime','impact.downtimeSub':'cumulative','impact.dataLoss':'data loss','impact.dataLossSub':'confirmed impact',
@@ -2319,6 +2322,14 @@ const DEMO_AN = [
     known_fix:{"id":"http-429","title":"Limite de débit de l'API atteinte (429)","steps":["Respecter l'en-tête Retry-After et réessayer avec un délai exponentiel.","Étaler les appels (moins de parallélisme, lots plus petits).","Vérifier qu'un autre job n'utilise pas la même clé au même moment."]},
     correlated_monitors:[],
     diag:{"cause":"Trop de requêtes envoyées à l'API dans la fenêtre autorisée : sa limite de débit est atteinte.","action":"Respecter Retry-After avec un délai exponentiel et étaler les appels.","prevention":"","checks":["Respecter l'en-tête Retry-After et réessayer avec un délai exponentiel.","Vérifier qu'un autre job n'utilise pas la même clé au même moment."],"severity":"medium","category":"dependency","confidence":"high","data_impact":"none","fix_minutes":15}  },
+  // Résolution constatée : sortie réelle de contextDiff() (PATH fourni dans la crontab entre l'échec et la réussite).
+  { id:'a4', monitor_id:'d4', monitorName:'reindex-search', env:'production', alert_type:'fail', model_used:'knowledge', created_at:dISO(60*26), from_cache:false,
+    confidence:'high', data_impact:'none', fix_minutes:10, severity:'medium', category:'dependency',
+    ping_exit_code:127, ping_output:'Reindexing products…\\n/opt/search/reindex.sh: line 4: es-reindex: command not found',
+    evidence:['/opt/search/reindex.sh: line 4: es-reindex: command not found'],
+    correlated_monitors:[],
+    resolution:{"changes":[{"kind":"env","label":"PATH","before":"/usr/bin:/bin","after":"/home/search/.local/bin:/usr/bin:/bin"}],"text":"Réparation constatée : PATH : /usr/bin:/bin → /home/search/.local/bin:/usr/bin:/bin"},
+    diag:{"cause":"Votre shell de connexion trouve « es-reindex » dans /home/search/.local/bin, le cron non : son PATH (/usr/bin:/bin) ne contient pas ce dossier.","action":"Appeler /home/search/.local/bin/es-reindex en chemin absolu, ou ajouter PATH=/home/search/.local/bin:/usr/bin:/bin en tête de la crontab.","prevention":"","checks":["cron démarre avec un PATH réduit (souvent /usr/bin:/bin) : un outil sous /usr/local/bin, nvm ou pyenv y est invisible.","Appeler la commande en chemin absolu (command -v <outil> pour le trouver), ou définir PATH= en tête de la crontab."],"category":"dependency","data_impact":"none"} },
 ].map(a => ({ ...a, diagnosis: JSON.stringify(a.diag), checks: a.diag.checks }))   // evidence / known_fix : sorties réelles de evidenceLines() / knownFix() sur ces logs
 
 const DEMO_CLIENT = { id:'demo', email:'demo@cronguard.dev', plan:'pro', slack_webhook:null, webhook_url:null,
@@ -3063,6 +3074,7 @@ function renderAnalyses() {
       <div class="an-cause">🔍 ${esc(cause)}</div>
       ${a.explanation ? `<div class="an-explain"><span class="an-checks-label">${t('an.explain')}</span> ${esc(a.explanation)}</div>` : ''}
       ${evidenceHtml(a.evidence)}
+      ${resolutionHtml(a)}
       ${knownFixHtml(a.known_fix, a.verified_fix)}
       ${a.verified_fix
         ? `<div class="an-action">✓ ${t('an.verified')} (${esc(String(a.fix_verified_at||'').slice(0,10))}) : ${esc(a.verified_fix)}</div>`
@@ -3209,6 +3221,7 @@ function renderDrawerBody(m, history, analyses) {
       </div>
       <div class="d-analysis-cause">🔍 ${esc(cause)}</div>
       ${evidenceHtml(a.evidence)}
+      ${resolutionHtml(a)}
       ${knownFixHtml(a.known_fix, a.verified_fix)}
       ${action    ? `<div class="d-analysis-action">→ ${t('an.lead')} ${esc(action)}</div>` : ''}
       ${prevention && prevention !== action ? `<div style="font-size:10px;color:var(--text3);padding:4px 6px;background:var(--bg2);border-radius:3px;border-left:2px solid var(--blue);margin-bottom:4px">🛡 ${esc(prevention)}</div>` : ''}
@@ -4076,6 +4089,27 @@ function evidenceHtml(ev) {
 function knownFixHtml(kf, verified) {
   if (!kf || verified || !Array.isArray(kf.steps)) return ''
   return `<div class="an-known" title="${esc(t('an.knownTip'))}"><div class="an-evidence-h">${t('an.known')}</div><div style="font-weight:600;color:var(--text)">${esc(kf.title)}</div><ul>${kf.steps.map(x => '<li>' + esc(String(x)) + '</li>').join('')}</ul></div>`
+}
+
+// Résolution constatée : ce qui a changé entre l'échec et la première réussite (relevé par le SDK, rien de deviné).
+// Masquée une fois une correction enregistrée : la confirmation EST cette correction.
+function resolutionHtml(a) {
+  let r = a.resolution
+  if (typeof r === 'string') { try { r = JSON.parse(r) } catch { r = null } }
+  if (!r || a.verified_fix || !Array.isArray(r.changes)) return ''
+  if (!r.changes.length) return `<div class="an-resolution an-resolution-none">${t('an.resolutionNone')}</div>`
+  const line = c => esc(c.label) + (c.before !== undefined ? ` : <code>${esc(c.before)}</code> → <code>${esc(c.after)}</code>` : '')
+  return `<div class="an-resolution"><div class="an-evidence-h">${t('an.resolution')}</div><ul>${r.changes.map(c => '<li>' + line(c) + '</li>').join('')}</ul>` +
+    (r.text && a.id ? `<button class="btn btn-primary" style="font-size:11px;padding:4px 10px" data-click="confirmResolution" data-args="${esc(JSON.stringify([String(a.id), r.text]))}">${t('an.resolutionConfirm')}</button>` : '') + '</div>'
+}
+
+async function confirmResolution(analysisId, text) {
+  try {
+    const r = await api(`/monitors/analyses/${analysisId}/fix`, { method: 'POST', body: JSON.stringify({ fix: text }) })
+    if (r && r.demo) return
+    toast(t('toast.fixSaved'), 'ok')
+    await loadAnalyses()
+  } catch(e) { toast(e.message, 'err') }
 }
 
 // ─── Feedback analyses ───────────────────────────────────────────────────────

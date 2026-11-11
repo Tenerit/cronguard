@@ -113,7 +113,7 @@ dashboardRouter.get('/analyses', asyncHandler(async (req, res) => {
     SELECT a.id, a.diagnosis, a.model_used, a.alert_type, a.severity,
            a.category, a.prevention, a.confidence, a.correlated_monitors,
            a.user_feedback, a.from_cache, a.tokens_in, a.tokens_out, a.created_at,
-           a.checks, a.data_impact, a.fix_minutes, a.ping_id, a.verified_fix, a.fix_verified_at,
+           a.checks, a.data_impact, a.fix_minutes, a.ping_id, a.verified_fix, a.fix_verified_at, a.resolution,
            m.id AS monitor_id, m.name AS monitor_name, m.env,
            p.output    AS ping_output,
            p.exit_code AS ping_exit_code

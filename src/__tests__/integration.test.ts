@@ -119,6 +119,8 @@ beforeAll(async () => {
       output      TEXT,
       records     INT,
       exit_code   INT,
+      context     JSONB,
+      command     TEXT,
       pinged_at   TIMESTAMPTZ DEFAULT NOW()
     )
   `)
@@ -143,6 +145,7 @@ beforeAll(async () => {
       signature   TEXT,
       recognized_by TEXT,
       explanation TEXT,
+      resolution  JSONB,
       created_at  TIMESTAMPTZ DEFAULT NOW()
     )
   `)
