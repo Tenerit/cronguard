@@ -94,6 +94,15 @@ Si le serveur a un modèle d'explication local, l'aperçu propose pour chaque jo
 
 La crontab n'est jamais modifiée : vous relisez et recollez le résultat. Pour les timers systemd, un script à relire ajoute un `ExecStopPost=` à chaque service, sans toucher à sa commande. SDK Bash (`cg_run`), Node.js, Python et simple `curl` : voir le [README anglais](README.md#instrument-your-jobs).
 
+**Ce qu'ajoutent les SDK bash et Python** (lecture seule, jamais la valeur d'une variable ni le contenu d'un fichier) :
+- **Ce qui a changé depuis la dernière réussite.** Chaque réussite laisse une empreinte sur la machine (commande, PATH, dossier de lancement, *noms* des variables, taille et date des fichiers cités par la commande, version des outils connus). À l'échec, l'alerte dit ce qui a changé : `version de pg_dump : 15.4 → 16.1`, `variable API_TOKEN absente depuis la dernière réussite`. Un fait à côté du diagnostic, jamais présenté comme la cause.
+- **« Réussi mais rien produit ».** Déclarez ce qu'un job doit produire ; un code 0 sans ce fichier devient un échec :
+  ```bash
+  CG_EXPECT="/bak/db-*.dump min=1M" cg_run "votre-ping-key" /scripts/backup.sh   # par défaut, écrit pendant cette exécution ; age=26h pour élargir
+  ```
+
+Labo (attentes fixées avant, `eval/sdk-lab.ts`) : le changement responsable montré dans 8 jobs cassés sur 8, rien quand rien n'a changé ; sorties vides, pas récrites, absentes ou trop petites détectées 5 sur 5, aucune fausse alerte sur 22 exécutions normales.
+
 ---
 
 ## Notifications

@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — SDK : ce qui a changé depuis la dernière réussite ; « réussi mais rien produit » (2026-11-11, attentes fixées avant)
+- **Empreinte de chaque réussite** (SDK bash et Python, bloc de vérifications partagé) : hachage de la commande, PATH, dossier de lancement, *noms* des variables, taille et date des fichiers cités par la commande, version des outils connus seulement (`--version` jamais lancé sur un script quelconque). Fichier 600 dans le dossier d'état. À l'échec, la différence part avec le ping et s'affiche dans le dashboard et dans **toutes les alertes** (« Changé depuis la dernière réussite »), comme un fait, jamais comme la cause.
+- **`CG_EXPECT`** : après un code 0, le SDK vérifie les sorties déclarées (motif, `min=`, `age=` ; par défaut, écrites pendant cette exécution). Absente, vide, pas récrite ou trop petite : l'exécution devient un échec et le serveur l'établit comme un fait (`ctx-expect`).
+- **Mesuré** (`eval/sdk-lab.ts`, conteneur jetable) : changement responsable montré **8 sur 8**, rien quand rien n'a changé, **0 parasite** ; sorties non conformes **5 sur 5**, cause établie 5 sur 5, **0 fausse alerte sur 22** exécutions normales. Le 1er passage du labo avait un défaut de l'outil de mesure (arguments aplatis : une redirection visait `cg_run`), qui donnait 22 fausses alertes ; corrigé avant le 2e, attentes inchangées. Scénarios écrits par nous.
+- Les alertes Slack et mail titrent « Diagnostic » au lieu d'« Analyse IA ». Le SDK Node n'a pas encore l'empreinte ni `CG_EXPECT`.
+
 ### Mesuré — secrets, essai 3 : les règles par format généralisent à moitié (2026-11-11, attentes fixées avant)
 - Règles ajoutées et commitées avant un jeu neuf de 25 types tirés du catalogue des outils spécialisés, dont beaucoup absents des règles, et 40 textes de questions publiques jamais utilisés (`eval/secrets-3.ts`).
 - **Rappel 52 % (attente ≥ 80 % : non remplie)**, 3 % de textes propres masqués à tort (≤ 5 % : remplie). Sur trois essais, des règles par format attrapent environ la moitié des types qu'elles ne connaissent pas : le masquage s'améliore, il ne sera jamais complet. La protection qui reste vraie : ne pas écrire de secret dans la sortie d'un job ; le SDK masque désormais aussi à la source (voir plus bas, quand livré).

@@ -136,6 +136,17 @@ curl http://localhost:3000/ping/your-ping-key/$?          # one-liner: 0 = succe
 curl http://localhost:3000/ping/your-ping-key/start       # hung-job detection: start, then the result at the end
 ```
 
+**What the bash and Python SDKs add** (read-only, never a variable value or a file content):
+- **What changed since the last success.** Every success leaves a fingerprint on the host (command, PATH, launch dir, variable *names*, size and date of the files the command names, version of known tools). On failure the alert says what changed: `pg_dump version: 15.4 → 16.1`, `variable API_TOKEN missing since the last success`. A fact next to the diagnosis, never presented as the cause.
+- **"Succeeded but produced nothing."** Declare what a job must produce; an exit code 0 without it becomes a failure:
+  ```bash
+  CG_EXPECT="/bak/db-*.dump min=1M" cg_run "your-ping-key" /scripts/backup.sh   # by default the file must be written during this run; age=26h to relax
+  ```
+
+Lab (pre-registered, `eval/sdk-lab.ts`): the responsible change shown in 8/8 broken jobs and nothing shown when nothing changed; empty, stale, missing or too small outputs caught 5/5 with 0 false alarm on 22 normal runs.
+
+The Node SDK covers the test commands and the observed fix; fingerprints and `CG_EXPECT` are bash and Python for now.
+
 ---
 
 ## Notifications

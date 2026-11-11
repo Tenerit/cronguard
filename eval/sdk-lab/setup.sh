@@ -14,7 +14,9 @@ require('http').createServer((q, r) => { let b = ''; q.on('data', d => b += d).o
   require('fs').writeFileSync('/lab/out/' + k + '-' + n[k] + '.json', b); r.end('{}') }) }).listen(9999, '127.0.0.1')" &
 sleep 1
 export CRONGUARD_URL=http://127.0.0.1:9999 CG_STATE_DIR=/tmp/cg-state CG_PROBE_LOGIN=0
-run() { key="$1"; shift; bash -c ". /opt/cronguard.sh; cg_run $key $*" || true; }
+# Arguments passés tels quels (« $@ ») : avec « $* », une redirection dans sh -c '… > f' visait cg_run lui-même
+# (défaut du 1er run du labo, corrigé avant le 2e ; les attentes n'ont pas changé).
+run() { bash -c '. /opt/cronguard.sh; cg_run "$@"' _ "$@" || true; }
 
 # ── 1. Outil mis à jour (pg_dump 15.4 → 16.1, le nouveau échoue) ──
 printf '#!/bin/sh\n[ "$1" = --version ] && echo "pg_dump (PostgreSQL) 15.4" && exit 0\nexit 0\n' > /opt/tools/pg_dump; chmod +x /opt/tools/pg_dump
