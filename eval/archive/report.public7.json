@@ -1,0 +1,344 @@
+{
+  "date": "2026-11-11T14:04:12.686Z",
+  "set": "public7",
+  "runs": 1,
+  "model": "llama3.2:3b",
+  "summary": {
+    "A": {
+      "note": "3.8",
+      "ci95": [
+        "3.8",
+        "3.8"
+      ],
+      "runs": [
+        "3.8"
+      ],
+      "covered": {
+        "note": "5.0",
+        "n": 6
+      },
+      "uncovered": {
+        "note": "2.5",
+        "n": 6
+      },
+      "lab": "—",
+      "public": "—",
+      "public2": "—",
+      "public3": "—",
+      "public4": "—",
+      "public5": "—",
+      "public6": "—",
+      "public7": "3.8",
+      "criteria": {
+        "cause_mecanisme": "17 %",
+        "action": "25 %",
+        "categorie": "42 %",
+        "rien_invente": "92 %",
+        "preuve": "83 %"
+      },
+      "latence_mediane_s": "0.0",
+      "parsable": "100 %"
+    }
+  },
+  "rows": [
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-quartz-job-already-stored",
+      "covered": true,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie database ≠ code",
+          "preuve : ligne décisive non liée"
+        ]
+      },
+      "cause": "Une autre transaction tient un verrou sur les mêmes lignes ou tables trop longtemps (job concurrent, transaction restée ouverte).",
+      "action": "Identifier la session bloquante et la terminer, puis décaler le job ou raccourcir les transactions concurrentes.",
+      "model": "knowledge",
+      "ms": 3
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-php-killed-oom",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ resources",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « Killed ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 5
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-node-heap-parallel",
+      "covered": true,
+      "g": {
+        "total": 5,
+        "mech": 0,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "Le traitement charge plus de données que la limite de tas Node.js par défaut.",
+      "action": "Traiter par lots, ou augmenter NODE_OPTIONS=--max-old-space-size sans dépasser la RAM.",
+      "model": "knowledge",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-cron-mail-postfix-domain",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie network ≠ dependency"
+        ]
+      },
+      "cause": "Rien n'écoute sur l'adresse et le port appelés : service arrêté ou redémarré, mauvais port, ou service lié à une autre interface.",
+      "action": "Vérifier que le service cible tourne et écoute sur ce port (systemctl status, ss -ltnp), puis relancer le job.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-docker-cron-not-installed",
+      "covered": true,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "cron démarre avec un PATH minimal (/usr/bin:/bin) : la commande installée ailleurs (/usr/local/bin, nvm, pyenv) est introuvable.",
+      "action": "Appeler la commande en chemin absolu (command -v <outil> pour le trouver) ou définir PATH= en tête de la crontab.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-conda-activate-bashrc",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "Le script active un virtualenv par un chemin introuvable sous cron (chemin relatif, PATH réduit, ou sh qui ne connaît pas source) : le bon environnement Python n'est jamais chargé.",
+      "action": "Ne pas activer : appeler directement le python du virtualenv en chemin absolu (/chemin/venv/bin/python script.py).",
+      "model": "knowledge",
+      "ms": 2
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-crontab-and-chained-line",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ code",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « /bin/ash: */5: not found ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-k8s-busybox-no-kubectl",
+      "covered": false,
+      "g": {
+        "total": 2,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 0,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ dependency",
+          "preuve : ligne décisive non liée",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « Pods Statuses:  0 Running / 0 Succeeded / 0 Failed ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 2
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-php-relative-backup-dir",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ code",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « sh: site-backups/CLIENT_DIRECTORY/DB_DUMP_FILE.sql: No such file or directory ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 1
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-readonly-fs-errors",
+      "covered": false,
+      "g": {
+        "total": 3,
+        "mech": 0,
+        "act": 0,
+        "cat": 0,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "catégorie unknown ≠ resources",
+          "abstention honnête (+1)"
+        ]
+      },
+      "cause": "Cause non établie (aucune fiche ne correspond) : le job s'arrête sur « Jun 26 10:07:07 mal kernel: [  529.846666] ata1.00: error: { UNC } ».",
+      "action": "Lancer les commandes de test ci-dessous : elles reproduisent la panne dans l'environnement exact du cron.",
+      "model": "none",
+      "ms": 2
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-bad-interpreter-not-exec",
+      "covered": true,
+      "g": {
+        "total": 10,
+        "mech": 4,
+        "act": 3,
+        "cat": 1,
+        "noInvent": 1,
+        "evidence": 1,
+        "honesty": 0,
+        "why": []
+      },
+      "cause": "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…), ou le service qui l'écrit le crée avec des droits restrictifs (umask du service, rotation de logs).",
+      "action": "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
+      "model": "knowledge",
+      "ms": 0
+    },
+    {
+      "run": 0,
+      "arm": "A",
+      "set": "public7",
+      "name": "p7-crontab-pasted-in-bash",
+      "covered": false,
+      "g": {
+        "total": 1,
+        "mech": 0,
+        "act": 0,
+        "cat": 1,
+        "noInvent": 0,
+        "evidence": 1,
+        "honesty": -1,
+        "why": [
+          "cause : symptôme ou mauvaise cause",
+          "action hors sujet",
+          "inventé : /chemin/du/projet",
+          "fausse cause sûre d'elle (−1)"
+        ]
+      },
+      "cause": "La commande appelle un script par un chemin relatif : sous cron, le dossier courant est le HOME de l'utilisateur, pas celui du script.",
+      "action": "Utiliser le chemin absolu du script, ou faire cd /chemin/du/projet && avant la commande.",
+      "model": "knowledge",
+      "ms": 0
+    }
+  ]
+}

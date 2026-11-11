@@ -44,3 +44,14 @@ describe('evidenceLines', () => {
     expect(withLogHints({ diagnosis: null, ping_output: null }, sanitize).evidence).toEqual([])
   })
 })
+
+describe('ligne retenue pour les messages courants sans « error » (public7)', () => {
+  it.each([
+    'sh: site-backups/CLIENT/DB.sql: No such file or directory',
+    '/bin/ash: */5: not found',
+    '/bin/sh: /srv/job.py: /usr/bin/python2.6: bad interpreter: Permission denied',
+  ])('%s', line => { expect(evidenceLines(line, '', 1)).toEqual([line]) })
+  it('sinon, la dernière ligne du log', () => {
+    expect(evidenceLines(['step 1', 'step 2', 'stopping now'].join(String.fromCharCode(10)), '', 1)).toEqual(['stopping now'])
+  })
+})

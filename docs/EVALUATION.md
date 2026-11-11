@@ -37,7 +37,7 @@ Comparisons are only made **paired, in the same session**: between sessions the 
 | public4 | 17 | StackExchange, with the cron command when the post gives it, collected before the command and context levers | read, tuning |
 | public5 | 12 | StackExchange, collected 2026-11-10 after every change | read, tuning |
 | public6 | 15 | StackExchange, frozen raw before removing model deduction; labels written before any run | read, tuning |
-| public7 | — | 40 queries fixed before the sheet-precision work ([`eval/collect-public7.mjs`](../eval/collect-public7.mjs)); collection pending (StackExchange quota) | next held-out test |
+| public7 | 12 | StackExchange, 40 queries fixed before the sheet-precision work, frozen raw (cc9e6ff), labels before any run | held-out test 2026-11-11: **3.5/10** (3.8 after the evidence-line fix); sheet misfires 5 of 7 covered: the precision work did not generalise |
 | cron lab | 11 | real failures under a real `crond` in a container, bash and Python SDKs ([`eval/cron-lab.ts`](../eval/cron-lab.ts)) | functional proof, written by us: 11/11 with the test commands, 3/11 without |
 
 Every public set follows a rule fixed before seeing any result: for a list of pre-written queries, take the **first** StackExchange result that has an error log and an accepted answer; drop a case only when the answer establishes no cause, with the reason written in the file ([`eval/public-cases-*.ts`](../eval)). Once a set's outputs have been read to understand failures, it becomes a tuning set and a new one is collected for the next honest measurement.

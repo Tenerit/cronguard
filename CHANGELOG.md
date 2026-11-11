@@ -7,6 +7,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — public7, test hors échantillon (2026-11-11, 12 cas, attentes fixées avant)
+- **Fiches** : ratés **5 sur 7 couvertes (71 %)** pour une attente ≤ 20 %, note des pannes couvertes **5,0** pour une attente ≥ 7 : **attentes non remplies**. Le travail de précision du 10/11 (ratés 15 → 5 sur les jeux lus) **ne se généralise pas** : les fiches génériques répondent encore sur un symptôme en aval (« verrou » pour un job Quartz déjà enregistré, « service arrêté » pour un postfix mal configuré, « PATH de cron » pour `crontab` absent de l'image Docker).
+- **Note globale** (comportement par défaut, sans modèle) : **3,5/10**, puis **3,8** après correction de l'extraction de ligne ci-dessous (preuve 58 → 83 %).
+- **Explication de l'IA** : couverture 71 %, rien d'inventé 100 %, 18,3 s ; mécanisme gardé non mesurable (1 cas). Limite constatée : l'explication est fidèle à la fiche **même quand la fiche se trompe**, et peut transformer un exemple de la fiche en affirmation (« l'outil se trouve dans /usr/local/bin »).
+
+### Corrigé — ligne d'erreur non retenue (2026-11-11)
+- `No such file`, `not found`, `bad interpreter` n'étaient pas reconnus comme lignes d'erreur : aucune ligne n'était retenue (« aucune ligne d'erreur reconnue »), ce qui privait l'abstention, la signature de la panne et le brouillon de fiche d'équipe. Repli sur la dernière ligne du log si rien n'est reconnu.
+
 ### Mesuré — ce qui ne l'était pas (2026-11-11, attentes fixées avant chaque mesure)
 - **Grâce apprise** (`eval/grace-sim.ts`, simulation avec les vraies `isLate`/`graceMs`, jobs horaires, grâce réglée 5 min) : fausses alertes « en retard » **−98 % à −100 %** sur les jobs plus longs que leur grâce (154 → 3, 200 → 0, 158 → 0), aucun changement sur les jobs courts ; retard de détection d'une vraie absence ≤ 1,2 × p95. Attentes remplies. **Défaut trouvé et corrigé** : la grâce apprise pouvait dépasser l'intervalle du cron (61,6 min pour un job horaire très variable) ; elle est maintenant plafonnée à l'intervalle (la grâce réglée à la main n'est jamais réduite).
 - **Partage des corrections entre jobs** (`eval/shared-fix-risk.ts`) : signatures communes à des pannes différentes, 5,4 % des 112 cas étiquetés et 8,1 % du corpus — **attente ≤ 5 % non remplie** en brut. Relecture des cas étiquetés : 1 paire sur 3 a la même cause (`bundle: command not found`, partage utile), 2 non (`SyntaxError: invalid syntax`, `timeout during connect` de certbot) : faux partage réel 4/112 (3,6 %). Gardé en confiance moyenne avec le job d'origine nommé ; pas mis en avant. Le bénéfice ne se mesure qu'avec de vraies équipes.

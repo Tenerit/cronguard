@@ -34,7 +34,8 @@ const CONCEPTS: Record<string, string[]> = {
 const CONCEPT_OF = new Map<string, string>()
 for (const [c, ws] of Object.entries(CONCEPTS)) for (const w of ws) CONCEPT_OF.set(w, c)
 
-const ERROR_LINE = /error|erreur|fatal|fail|exception|refused|denied|killed|timeout|no space|panic|cannot|unable|invalid|expired|deadlock/i
+// « No such file », « not found », « bad interpreter » manquaient (public7, 2026-11-11) : aucune ligne n'était retenue.
+const ERROR_LINE = /error|erreur|fatal|fail|exception|refused|denied|killed|timeout|no space|panic|cannot|unable|invalid|expired|deadlock|no such file|not found|bad interpreter|segmentation fault|aborted/i
 
 function terms(s: string): Map<string, number> {
   const out = new Map<string, number>()
@@ -76,7 +77,8 @@ function byCloseness(logs: string, cause: string, max: number): string[] {
   })
   if (!scored.length) {
     // Rien de commun avec la cause : la dernière ligne d'erreur reste la meilleure piste.
-    const last = [...seen].reverse().find(l => ERROR_LINE.test(l))
+    // Sans mot d'erreur reconnu : la dernière ligne du log, là où le job s'est arrêté.
+    const last = [...seen].reverse().find(l => ERROR_LINE.test(l)) ?? [...seen].pop()
     return last ? [last.slice(0, 240)] : []
   }
   return scored
