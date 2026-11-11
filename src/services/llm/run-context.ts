@@ -60,7 +60,8 @@ const NOT_FOUND = /(?:^|\s)([\w.+-]+): (?:command )?not found|exec: "?([\w.+-]+)
 const CREDS     = /fe_sendauth: no password supplied|\(using password: NO\)|Unable to locate credentials|NoCredentialsError|Permission denied \(publickey|gpg: .*(No secret key|No public key)/i
 
 export function contextFinding(logs: string, c?: RunContext): Finding | null {
-  if (!c || !logs) return null
+  // Sans log aussi : un job tué par OOM n'écrit souvent rien, et c'est le constat du SDK qui parle (labo du 11/11).
+  if (!c) return null
 
   // 0. Le job a réussi (code 0)… sans produire ce qui est attendu : le constat le plus grave pour une sauvegarde.
   const bad = c.expect?.filter(e => !e.ok) ?? []
@@ -85,7 +86,7 @@ export function contextFinding(logs: string, c?: RunContext): Finding | null {
     ? r?.disk?.find(d => d.total > 0 && (d.free / d.total < 0.02 || d.free < 64 * 1024 ** 2)) : undefined
   if (full) {
     return { id: 'ctx-disk-full', category: 'resources',
-      cause: `Le volume de ${full.path} est plein : ${bytes(full.free)} libres sur ${bytes(full.total)} (${(100 * full.free / full.total).toFixed(1)} %), constaté par le SDK au moment de la panne.`,
+      cause: `Le volume de ${full.path} est plein : ${bytes(full.free)} libres sur ${bytes(full.total)} (${(100 * full.free / full.total).toFixed(1).replace(".", ",")} %), constaté par le SDK au moment de la panne.`,
       action: 'Libérer de la place ou agrandir le volume ; vérifier la rotation des sauvegardes, des logs et des fichiers temporaires.' }
   }
   // Réseau : DNS puis TCP vers l'hôte cité par l'erreur, au moment de la panne.
@@ -105,6 +106,8 @@ export function contextFinding(logs: string, c?: RunContext): Finding | null {
       cause: `${at} répond au moment de la vérification : la panne était passagère, ou vient d'après la connexion (authentification, requête).`,
       action: 'Relancer le job ; si ça recommence, regarder le service cible au moment de la panne (redémarrage, saturation).' }
   }
+
+  if (!logs) return null
 
   // 1. Commande introuvable… mais présente ailleurs sur la machine : le fait, pas une hypothèse.
   const nf = NOT_FOUND.exec(logs)

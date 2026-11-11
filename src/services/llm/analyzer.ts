@@ -366,6 +366,11 @@ type LogOnlyContext = Pick<JobContext, 'logs' | 'exitCode' | 'failCount7d' | 'co
 
 function analysisWithoutEvidence(ctx: LogOnlyContext): AnalysisResult {
   const exit = ctx.exitCode !== undefined ? ` (code de sortie ${ctx.exitCode})` : ''
+  // Pas de log, mais un constat du SDK (OOM, sortie attendue absente) : c'est lui qui établit la cause.
+  const seen = contextFinding('', ctx.runContext)
+  if (seen) return { cause: seen.cause, action: seen.action, prevention: '', checks: [], severity: 'high', category: seen.category,
+    confidence: 'high', data_impact: 'possible', fix_minutes: 30, fromCache: false, correlatedMonitors: ctx.correlatedFailures,
+    model: 'knowledge', finding: seen.id }
   return {
     cause:       `Échec sans log${exit} : cause impossible à déterminer.`,
     action:      'Consulter les logs du job sur son hôte.',

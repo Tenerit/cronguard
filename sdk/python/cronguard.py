@@ -252,7 +252,7 @@ def _cg_oom_kills():
     except Exception:
         pass
     return None
-def _cg_resources(oom_start, paths):
+def _cg_resources(oom_start, paths, text=''):
     res, d = {}, _cg_cgroup_dir()
     now = _cg_oom_kills()
     if oom_start not in (None, '') and now is not None and now > int(oom_start):
@@ -264,7 +264,11 @@ def _cg_resources(oom_start, paths):
         except Exception:
             pass
     disk, seen = [], set()
-    for p in [os.getcwd()] + [x['path'] for x in paths if x.get('exists')]:
+    # Chemins cités par une erreur d'espace disque (« error writing '/full/big': No space left ») : c'est leur volume
+    # qu'il faut mesurer, pas seulement le dossier de lancement (défaut trouvé par le labo du 11/11).
+    full = [m.group(1) or m.group(2) for line in text.splitlines() if re.search(r'No space left|ENOSPC|Disk quota exceeded|disk full', line, re.I)
+            for m in re.finditer(r"'(/[^']+)'|(?:^|\s)(/[\w./@+-]+)", line)]
+    for p in full[:3] + [os.getcwd()] + [x['path'] for x in paths if x.get('exists')]:
         q = os.path.expanduser(p)
         q = q if os.path.isdir(q) else os.path.dirname(q) or '.'
         try:
@@ -392,7 +396,7 @@ def _run_context(output: str = '', oom_start: Optional[int] = None) -> dict:
     paths = _cg_paths(out)
     if paths:
         ctx['paths'] = paths
-    ctx['resources'] = _cg_resources(oom_start, paths)
+    ctx['resources'] = _cg_resources(oom_start, paths, out)
     net = _cg_net(out, _job_command())
     if net:
         ctx['net'] = net
