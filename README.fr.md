@@ -86,6 +86,8 @@ CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --apply    # crée le
 CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --systemd --apply > add-cronguard.sh   # timers systemd
 ```
 
+Si le serveur a un modèle d'explication local, l'aperçu propose pour chaque job un nom lisible et son rôle (« postgres-backup — Sauvegarde la base clients avec pg_dump — tous les jours, à 02:30 ⚑ critique ») ; le planning est toujours écrit par le code. Mesuré sur 77 lignes de crontab réelles : affichage juste à 90 %, d'où l'aperçu à relire avant `--apply`. `--no-ai` garde le nom de la commande.
+
 La crontab n'est jamais modifiée : vous relisez et recollez le résultat. Pour les timers systemd, un script à relire ajoute un `ExecStopPost=` à chaque service, sans toucher à sa commande. SDK Bash (`cg_run`), Node.js, Python et simple `curl` : voir le [README anglais](README.md#instrument-your-jobs).
 
 ---

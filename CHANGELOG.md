@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — noms lisibles à l'import de la crontab ; secrets masqués par format (2026-11-11, décision fondateur)
+- `cronguard-import.sh` appelle `POST /monitors/suggest-name` pour chaque job : planning écrit par le code (`scheduleText`), nom et rôle proposés par l'IA locale si un modèle d'explication est déclaré, drapeau « critique ». Aperçu à relire avant `--apply` ; `--no-ai` garde le nom de la commande. Le script n'accepte qu'un nom `[a-z0-9-]` (un nom piégé renvoyé par le serveur est ignoré). Commande masquée avant d'aller au modèle. **Écart assumé** : 5,6 s par job au lieu des 5 s fixées avant ; tous les critères de qualité de l'essai 2 sont remplis, et l'import se fait une fois.
+- Masquage : les règles par format de l'essai 2 sont livrées dans `sanitizeLogs` (jetons GitHub et GitLab, Slack, Google, OpenAI et Anthropic, SendGrid, npm et PyPI, Telegram, Azure, clés privées, `scheme://user:pass@`, `docker login -p`, `curl -u`, `*_PASS=`, clés JSON). Seule la valeur est masquée (`DB_PASS=[REDACTED]`). **Écart assumé** : rappel 56 % sur l'essai (80 % visés) ; livré parce que 0 faux sur 40 journaux propres : ces règles ne peuvent qu'ajouter du masquage.
+- **Fuite corrigée** (trouvée par les tests des formats) : sur `mongodb+srv://app:Zx9-Qw8!pL@hôte`, la règle des e-mails masquait `pL@hôte` et laissait voir le début du mot de passe ; elle passe maintenant en dernier.
+
 ### Mesuré — nommage des jobs, essai 2 : le code écrit le planning, l'IA nomme (2026-11-11, attentes fixées avant)
 - Jeu neuf de 77 lignes de crontab réelles (`eval/job-names-2.ts`). Le planning est écrit par le code (`scheduleText` : formes courantes en français, l'expression telle quelle sinon, et le piège « jour du mois OU jour de semaine » non traduit) ; l'IA ne reçoit que la commande.
 - **Remplies : affichage juste 69/77 = 90 % (≥ 85 %, contre 74 % à l'essai 1), plus clair que le nom du code pour la grande majorité, critique 96 %, noms acceptés 100 %. Non remplie : 5,6 s par job (attente ≤ 5).** Erreurs restantes : suppositions (« du système », « source externe », « script PHP » pour un .sh).

@@ -3,7 +3,9 @@
 // planning lu par le code, nom au format kebab-case, description sans identifiant absent de la commande. Comparé au
 // nommage du code (cronguard-import.sh : premier exécutable de la commande) avec des attentes fixées avant (eval/job-names.ts).
 import axios from 'axios'
-import { llmHeaders } from './analyzer'
+import { llmHeaders, llmEnabled, isAnthropic } from './analyzer'
+import { sanitizeLogs } from '../sanitizer'
+import { scheduleText } from '../schedule-text'
 import { inventedIdentifiers } from './explain'
 
 const SYSTEM = `Tu nommes des tâches planifiées (cron) pour un tableau de bord de supervision.
@@ -66,4 +68,14 @@ export async function nameJobRaw(line: string, timeout = 60_000): Promise<{ raw:
       ? { nom, description, critique: raw.critique === true } : null
     return { raw, ok, invented }
   } catch { return null }
+}
+
+/** À l'import d'une crontab : planning écrit par le code, nom + rôle proposés par l'IA (essai 2 : affichage juste 90 %,
+ *  5,6 s par job — au-dessus des 5 s visés, accepté par le fondateur pour un import fait une fois). Sans modèle
+ *  d'explication déclaré : name null, le nom du code reste. La commande est masquée avant d'aller au modèle. */
+export async function suggestJobName(command: string, schedule?: string): Promise<{ name: string | null; role: string | null; critical: boolean | null; when: string | null }> {
+  const when = schedule ? scheduleText(schedule) : null
+  if (!process.env.LLM_EXPLAIN_MODEL || !llmEnabled() || isAnthropic()) return { name: null, role: null, critical: null, when }
+  const r = await nameJobRaw2(sanitizeLogs(command).clean)
+  return { name: r?.nom ?? null, role: r?.role ?? null, critical: r ? r.critique : null, when }
 }

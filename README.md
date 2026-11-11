@@ -93,6 +93,8 @@ CRONGUARD_API_KEY=cg_live_... sdk/bash/cronguard-import.sh --apply    # create m
 
 For `/etc/crontab` or `/etc/cron.d/*` (extra user column), pass the file and `--system`.
 
+If the server has a local explanation model, the preview suggests a readable name and role for each job (`postgres-backup — backs up the clients database with pg_dump — every day at 02:30 ⚑ critical`); the schedule is always written by code. Measured on 77 real crontab lines: right 90 % of the time, which is why you review the preview before `--apply`. `--no-ai` keeps the command name.
+
 ### systemd timers
 
 `--systemd` creates one monitor per enabled timer and prints a root script that adds an `ExecStopPost=` drop-in to each service: it reports the result, the exit status and the journal of that run. The service's own command is not changed.

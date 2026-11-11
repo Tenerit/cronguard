@@ -46,6 +46,10 @@ describe.skipIf(!hasBash)('cronguard-import.sh', () => {
           res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ findings: lintCommand(JSON.parse(body).command) }))
           return
         }
+        if (req.url === '/monitors/suggest-name') {   // serveur sans modèle d'explication : le nom du code reste
+          res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ name: null, role: null, critical: null, when: null }))
+          return
+        }
         const m = JSON.parse(body); created.push(m)
         res.writeHead(201, { 'Content-Type': 'application/json' })
           .end(JSON.stringify({ id: 'x', ping_key: `pk-${created.length}`, name: m.name }))

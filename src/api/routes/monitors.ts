@@ -11,6 +11,7 @@ import { withLogHints, evidenceLines }   from '../../services/llm/evidence'
 import { knownFix }                      from '../../services/llm/known-fixes'
 import { findAnalysis, recordFeedback, recordFix } from '../../services/analysis-feedback'
 import { lintCommand }                   from '../../services/llm/command-lint'
+import { suggestJobName }                from '../../services/llm/job-names'
 import { monitorLimitFor }               from '../../config/plans'
 
 export const monitorsRouter = Router()
@@ -282,6 +283,15 @@ monitorsRouter.post('/lint', asyncHandler(async (req, res) => {
   const parsed = z.object({ command: z.string().min(1).max(1000) }).safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'command requis (1000 caractères max)' })
   res.json({ findings: lintCommand(parsed.data.command) })
+}))
+
+// ─── POST /suggest-name — nom d'un job à l'import de la crontab (cronguard-import.sh) ─────
+// Planning écrit par le code ; nom et rôle proposés par l'IA locale si un modèle d'explication est déclaré.
+// Lecture seule, rien n'est stocké : l'admin voit l'aperçu et choisit d'appliquer.
+monitorsRouter.post('/suggest-name', requireRole('member'), asyncHandler(async (req, res) => {
+  const parsed = z.object({ command: z.string().min(1).max(1000), schedule: z.string().max(120).optional() }).safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: 'command requis (1000 caractères max)' })
+  res.json(await suggestJobName(parsed.data.command, parsed.data.schedule))
 }))
 
 // ─── POST /analyze/preview — Analyse immédiate avec diagnostic complet ────────

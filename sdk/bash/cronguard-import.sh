@@ -11,6 +11,10 @@
 #   CRONGUARD_API_KEY=cg_live_... ./cronguard-import.sh --apply    # crée les monitors
 #   ./cronguard-import.sh --apply /etc/cron.d/backups              # depuis un fichier
 #   ./cronguard-import.sh --systemd [--apply] [x.timer …]          # timers systemd
+#   ./cronguard-import.sh --no-ai                                  # noms du code seulement
+#
+# Noms : si le serveur a un modèle d'explication local (LLM_EXPLAIN_MODEL), il propose un nom et
+# un rôle pour chaque job ; le planning est toujours écrit par le code. Relisez l'aperçu avant --apply.
 #
 # --systemd : un monitor par timer activé (ou ceux nommés). Affiche un script à relire puis
 # lancer en root, qui ajoute un drop-in ExecStopPost= au service (cg_systemd_report) : la
@@ -30,12 +34,13 @@ CRONGUARD_URL="${CRONGUARD_URL:-http://localhost:3000}"
 CRONGUARD_ENV="${CRONGUARD_ENV:-production}"
 CRONGUARD_LIB="${CRONGUARD_LIB:-/usr/local/lib/cronguard.sh}"
 
-apply=0; system=0; systemd=0; src=""; timers=()
+apply=0; system=0; systemd=0; ai=1; src=""; timers=()
 for arg in "$@"; do
   case "$arg" in
     --apply)   apply=1 ;;
     --system)  system=1 ;;
     --systemd) systemd=1 ;;
+    --no-ai)   ai=0 ;;
     -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
     *.timer)   timers+=("$arg") ;;
     *) src="$arg" ;;
@@ -180,7 +185,16 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   if [[ $system -eq 1 ]]; then user="${rest%%[[:space:]]*}"; rest="${rest#"$user"}"; rest="${rest#"${rest%%[![:space:]]*}"}"; fi
   [[ -z "$rest" ]] && { out+="$line"$'\n'; continue; }
 
-  name="$(job_name "$rest")"
+  name="$(job_name "$rest")"; role=""; when="$sched"; crit=""
+  # Nom proposé par l'IA locale du serveur (si déclarée), planning écrit par le code. Nom limité à [a-z0-9-].
+  if [[ $ai -eq 1 && -n "${CRONGUARD_API_KEY:-}" ]]; then
+    sug="$(curl -sS -m 60 -X POST "$CRONGUARD_URL/monitors/suggest-name" -H 'Content-Type: application/json' -H "X-API-Key: $CRONGUARD_API_KEY" -d "{\"command\":$(json_str "$rest"),\"schedule\":$(json_str "$sched")}" 2>/dev/null || true)"
+    field() { printf '%s' "$sug" | grep -o "\"$1\":\"[^\"]*\"" | head -1 | sed "s/^\"$1\":\"//; s/\"\$//" || true; }
+    ai_name="$(field name)"; role="$(field role)"; w="$(field when)"
+    [[ "$ai_name" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] && name="$ai_name"
+    [[ -n "$w" ]] && when="$w"
+    [[ "$sug" == *'"critical":true'* ]] && crit=" ⚑ critique"
+  fi
   if [[ -n "${seen[$name]:-}" ]]; then seen[$name]=$(( ${seen[$name]} + 1 )); name="$name-${seen[$name]}"; else seen[$name]=1; fi
 
   # Prévention : risques connus de la commande (%, -p espacé, syntaxe bash sous sh…), avant toute panne.
@@ -197,7 +211,9 @@ while IFS= read -r line || [[ -n "$line" ]]; do
     key="$(create_monitor "$name" "\"schedule\":$(json_str "$sched")")"
     if [[ -z "$key" ]]; then out+="$line"$'\n'; continue; fi
     created=$((created+1))
-    echo "✓ $name ($sched)" >&2
+    echo "✓ $name — ${role:+$role — }$when$crit" >&2
+  else
+    echo "• $name — ${role:+$role — }$when$crit" >&2
   fi
 
   # La commande d'origine passe en $0, un seul niveau d'apostrophes : ' → '\''
