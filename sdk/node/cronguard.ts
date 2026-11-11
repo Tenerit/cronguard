@@ -134,15 +134,43 @@ function runContext(output = '') {
   }
 }
 
+// Résolution constatée (même règle que les SDK bash et Python) : à l'échec, on garde les seules lignes que lisent les
+// sondes ; à la première réussite qui suit, les MÊMES sondes sont relancées sur ces lignes, pour comparer avant/après.
+// Fichier 600 dans le dossier d'état de l'utilisateur, supprimé à la réussite.
+const PROBE_LINE = /not found|No such file|Permission denied|cannot open|can.t open|cannot access|cannot stat|Read-only file system/
+export function failMarker(pingKey: string): string {
+  const { join } = require('path'), os = require('os')
+  const base = process.env.CG_STATE_DIR || join(process.env.XDG_STATE_HOME || join(os.homedir(), '.local', 'state'), 'cronguard')
+  return join(base, pingKey.replace(/[^A-Za-z0-9_-]/g, '_') + '.fail')
+}
+function rememberFailure(pingKey: string, output = '') {
+  try {
+    const fs = require('fs'), path = failMarker(pingKey)
+    fs.mkdirSync(require('path').dirname(path), { recursive: true, mode: 0o700 })
+    fs.writeFileSync(path, output.slice(-20000).split('\n').filter(l => PROBE_LINE.test(l)).slice(-20).join('\n'), { mode: 0o600 })
+  } catch { /* le monitoring ne casse jamais le job */ }
+}
+function resolutionContext(pingKey: string) {
+  try {
+    const fs = require('fs'), path = failMarker(pingKey)
+    const lines = fs.readFileSync(path, 'utf8')
+    fs.unlinkSync(path)
+    return runContext(lines)
+  } catch { return undefined }
+}
+
 export class CronGuard {
   constructor(private readonly baseUrl: string) {}
 
   async success(pingKey: string, opts: PingOptions = {}) {
-    return this.ping(pingKey, { status: 'success', ...opts })
+    const context = resolutionContext(pingKey)
+    return this.ping(pingKey, { status: 'success', ...opts, ...(context ? { context } : {}) })
   }
 
   async fail(pingKey: string, opts: PingOptions = {}) {
-    return this.ping(pingKey, { status: 'fail', ...opts, context: runContext(opts.output) })
+    const context = runContext(opts.output)
+    rememberFailure(pingKey, opts.output)
+    return this.ping(pingKey, { status: 'fail', ...opts, context })
   }
 
   // ── Wrapper "fire and forget" ─────────────────────────────────────────────

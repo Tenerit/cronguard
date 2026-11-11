@@ -54,6 +54,28 @@ async function drainQueuesFirst(): Promise<void> {
   }
 }
 
+// ─── Résolution constatée ─────────────────────────────────────────────────────
+// Compare le contexte du dernier échec (qui a une analyse, pas encore de résolution) à celui de la première réussite
+// qui le suit, et range la différence sur l'analyse (vide = réparé hors du champ des vérifications, ce qui se dit
+// aussi). Appelée à la réussite ET à l'écriture de l'analyse : la première où les deux côtés existent gagne, même
+// si le job réussit avant que l'analyse de l'échec soit écrite.
+async function attachResolution(monitorId: string): Promise<void> {
+  const { rows: [f] } = await db.query(
+    `SELECT p.context, p.command, p.pinged_at, a.id AS analysis_id FROM pings p JOIN analyses a ON a.ping_id = p.id
+     WHERE p.monitor_id = $1 AND p.status = 'fail' AND p.context IS NOT NULL ORDER BY p.pinged_at DESC LIMIT 1`, [monitorId])
+  if (!f) return
+  const { rows: [already] } = await db.query(`SELECT resolution FROM analyses WHERE id = $1`, [f.analysis_id])
+  if (already?.resolution) return
+  const { rows: [ok] } = await db.query(
+    `SELECT context, command, pinged_at FROM pings WHERE monitor_id = $1 AND status = 'success' AND context IS NOT NULL
+     AND pinged_at > $2 ORDER BY pinged_at ASC LIMIT 1`, [monitorId, f.pinged_at])
+  if (!ok) return
+  const ctxOf = (v: unknown) => (typeof v === 'string' ? JSON.parse(v) : v) as RunContext
+  const changes = contextDiff({ command: f.command ?? undefined, context: ctxOf(f.context) }, { command: ok.command ?? undefined, context: ctxOf(ok.context) })
+  await db.query(`UPDATE analyses SET resolution = $2 WHERE id = $1`,
+    [f.analysis_id, JSON.stringify({ changes, text: changes.length ? resolutionText(changes) : null, at: new Date(ok.pinged_at).toISOString() })])
+}
+
 // ─── Worker 1 : Ping processor ────────────────────────────────────────────────
 
 function createPingWorker() {
@@ -74,24 +96,11 @@ function createPingWorker() {
       `INSERT INTO pings (monitor_id,status,duration_ms,records,exit_code,output,context,command)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
       [monitorId, status, durationMs, records, exitCode, (output ?? '').slice(0, 5000),
-       fail && runContext ? JSON.stringify(runContext) : null, fail && command ? command.slice(0, 1000) : null]
+       runContext ? JSON.stringify(runContext) : null, runContext && command ? command.slice(0, 1000) : null]
     )
 
     // Résolution constatée : le SDK n'envoie un contexte en réussite qu'à la première réussite après un échec.
-    // On le compare à celui de ce dernier échec et on range la différence sur son analyse (vide = réparé hors du
-    // champ des vérifications, ce qui se dit aussi). shortcut: si la réussite arrive avant que l'analyse de
-    // l'échec soit écrite (job relancé en quelques secondes), rien n'est rangé ; à revoir si ça arrive en pilote.
-    if (!fail && runContext) {
-      const { rows: [last] } = await db.query(
-        `SELECT p.context, p.command, a.id AS analysis_id FROM pings p JOIN analyses a ON a.ping_id = p.id
-         WHERE p.monitor_id = $1 AND p.status = 'fail' AND p.context IS NOT NULL ORDER BY p.pinged_at DESC LIMIT 1`, [monitorId])
-      if (last) {
-        const ctxOf = (v: unknown) => (typeof v === 'string' ? JSON.parse(v) : v) as RunContext
-        const changes = contextDiff({ command: last.command ?? undefined, context: ctxOf(last.context) }, { command, context: runContext })
-        await db.query(`UPDATE analyses SET resolution = $2 WHERE id = $1`,
-          [last.analysis_id, JSON.stringify({ changes, text: changes.length ? resolutionText(changes) : null, at: new Date().toISOString() })])
-      }
-    }
+    if (!fail && runContext) await attachResolution(monitorId)
 
     // La complétion (success/fail) efface l'état "en cours" du run
     await db.query(
@@ -406,6 +415,8 @@ function createAnalysisWorker() {
         ]
       )
       analysisId = ins.rows[0]?.id
+      // Le job a peut-être déjà réussi pendant l'analyse : la réparation constatée se range maintenant.
+      await attachResolution(ctx.monitorId).catch(err => logger.warn('[Worker] résolution non rangée', { err: (err as Error).message }))
     }
 
     // shouldAlert avec protection FK

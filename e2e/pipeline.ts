@@ -220,6 +220,17 @@ async function main() {
   }
   check('Résolution : le PATH fourni à la réussite est constaté sur l\'analyse de l\'échec',
     resolution?.changes?.length === 1 && resolution.changes[0].label === 'PATH' && resolution.changes[0].after === '/home/search/.local/bin:/usr/bin:/bin', JSON.stringify(resolution))
+  // Réussite AVANT que l'analyse de l'échec soit écrite (job relancé aussitôt) : la résolution se range quand même.
+  const { rows: [monF] } = await db.query(`INSERT INTO monitors (client_id, name, grace_period) VALUES ($1,'fast-retry',300) RETURNING id, ping_key`, [client.id])
+  const pingF = (body: object) => fetch(`http://localhost:${API_PORT}/ping/${monF.ping_key}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+  await pingF({ status: 'fail', exit_code: 1, output: '/opt/x.sh: line 2: es-reindex: command not found', command: '/opt/x.sh', context: ctxFail })
+  await pingF({ status: 'success', exit_code: 0, command: '/opt/x.sh', context: { ...ctxFail, path: '/opt/bin:/usr/bin:/bin' } })
+  let fast: { changes?: Array<{ label: string }> } | null = null
+  for (let i = 0; i < 120 && !fast; i++) {
+    await sleep(250)
+    fast = (await db.query(`SELECT resolution FROM analyses WHERE monitor_id=$1`, [monF.id])).rows[0]?.resolution ?? null
+  }
+  check('Résolution : rangée même si la réussite arrive avant l\'analyse de l\'échec', fast?.changes?.[0]?.label === 'PATH', JSON.stringify(fast))
   const shown = await (await get(`/monitors/${monR.id}/analyses`, client.api_key)).json() as Array<{ id: string; resolution?: unknown }>
   check('Résolution : renvoyée avec l\'analyse au dashboard', shown.some(r => r.id === resRun.id && r.resolution), JSON.stringify(shown).slice(0, 120))
 

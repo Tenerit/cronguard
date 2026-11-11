@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest'
-import { mkdtempSync, mkdirSync, writeFileSync } from 'fs'
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { pathProbe, loginProbe } from '../sdk/node/cronguard'
+import { pathProbe, loginProbe, failMarker, CronGuard } from '../sdk/node/cronguard'
 
 const cwd = process.cwd()
 afterEach(() => process.chdir(cwd))
@@ -30,5 +30,22 @@ describe('SDK Node : commandes de test (mêmes règles que bash/Python)', () => 
     process.env.CG_PROBE_LOGIN = '0'
     expect(loginProbe(['node'])).toEqual({})
     delete process.env.CG_PROBE_LOGIN
+  })
+})
+
+describe('SDK Node : résolution constatée', () => {
+  it("relance les vérifications à la première réussite après un échec, une seule fois", async () => {
+    process.env.CG_STATE_DIR = mkdtempSync(join(tmpdir(), 'cg-state-'))
+    process.env.CG_PROBE_LOGIN = '0'
+    const sent: Array<Record<string, unknown>> = []
+    const cg = new CronGuard('http://localhost:1')
+    ;(cg as unknown as { ping: (k: string, b: Record<string, unknown>) => Promise<void> }).ping = async (_k, b) => { sent.push(b) }
+    await cg.fail('job-1', { exitCode: 1, output: 'boot\ncat: data/input.csv: No such file or directory\nsecret=hunter2' })
+    expect(readFileSync(failMarker('job-1'), 'utf8')).toBe('cat: data/input.csv: No such file or directory')   // seules les lignes des sondes
+    await cg.success('job-1')
+    await cg.success('job-1')
+    expect(sent[1].context).toMatchObject({ paths: [{ path: 'data/input.csv' }] })
+    expect(sent[2].context).toBeUndefined()
+    delete process.env.CG_STATE_DIR; delete process.env.CG_PROBE_LOGIN
   })
 })
