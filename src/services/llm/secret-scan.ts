@@ -2,6 +2,8 @@
 // d'elles (jamais à leur place) : l'IA ne peut qu'ajouter des masquages. Le code ne garde que des sous-chaînes
 // recopiées EXACTEMENT du log (rien d'inventé) et assez longues. Comparé à une règle de code simple (baselineSecrets)
 // avec des attentes fixées avant la mesure (eval/secrets.ts) : l'IA ne sert que si elle fait nettement mieux.
+// RÉSULTAT (essais 1 et 2, eval/archive/SECRETS*.md) : NON BRANCHÉ — +36 points de rappel mais 18 % de journaux propres
+// masqués à tort. Gardé pour refaire la mesure. Les règles par format, elles, sont livrées dans le sanitizer.
 import axios from 'axios'
 import { llmHeaders } from './analyzer'
 export { FORMAT_RULES, formatSecrets } from '../sanitizer'   // règles livrées dans le masquage (2026-11-11)

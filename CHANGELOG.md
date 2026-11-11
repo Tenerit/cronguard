@@ -7,6 +7,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+## [1.7.0] — 2026-11-11 — Réparation constatée, compte rendu d'incident, import qui nomme les jobs
+
 ### Ajouté — noms lisibles à l'import de la crontab ; secrets masqués par format (2026-11-11, décision fondateur)
 - `cronguard-import.sh` appelle `POST /monitors/suggest-name` pour chaque job : planning écrit par le code (`scheduleText`), nom et rôle proposés par l'IA locale si un modèle d'explication est déclaré, drapeau « critique ». Aperçu à relire avant `--apply` ; `--no-ai` garde le nom de la commande. Le script n'accepte qu'un nom `[a-z0-9-]` (un nom piégé renvoyé par le serveur est ignoré). Commande masquée avant d'aller au modèle. **Écart assumé** : 5,6 s par job au lieu des 5 s fixées avant ; tous les critères de qualité de l'essai 2 sont remplis, et l'import se fait une fois.
 - Masquage : les règles par format de l'essai 2 sont livrées dans `sanitizeLogs` (jetons GitHub et GitLab, Slack, Google, OpenAI et Anthropic, SendGrid, npm et PyPI, Telegram, Azure, clés privées, `scheme://user:pass@`, `docker login -p`, `curl -u`, `*_PASS=`, clés JSON). Seule la valeur est masquée (`DB_PASS=[REDACTED]`). **Écart assumé** : rappel 56 % sur l'essai (80 % visés) ; livré parce que 0 faux sur 40 journaux propres : ces règles ne peuvent qu'ajouter du masquage.

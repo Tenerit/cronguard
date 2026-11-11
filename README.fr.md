@@ -7,7 +7,8 @@ Un job échoue à 2h40. Les autres outils vous disent *qu'il* a cassé. CronGuar
 1. **Il constate.** À l'échec, le SDK lance sur la machine du job des commandes de test en lecture seule : ce que votre shell de connexion trouve et que cron ne trouve pas (commandes, *noms* des variables d'environnement), à qui appartiennent les fichiers cités par l'erreur, qui a lancé le job (crontab, conteneur, systemd, Kubernetes, launchd).
 2. **Il diagnostique sur des faits.** Ces constats, la commande du cron, une bibliothèque d'environ 110 pannes de cron connues et les codes de sortie officiels établissent la cause. Rien n'est deviné : quand rien ne l'établit, CronGuard l'écrit (« cause non établie ») et donne la commande qui reproduit la panne dans l'environnement exact du cron.
 3. **Une IA locale l'explique en langage simple.** Le modèle ne choisit jamais la cause : il reformule celle qui est établie pour la personne d'astreinte. Le code rejette toute phrase qui cite un chemin, une commande ou une option absents des faits, ou qui perd une des possibilités listées.
-4. **Il apprend de votre équipe.** Corrigez une panne depuis l'alerte (✏️) : CronGuard ressert votre correction la fois suivante, sur tous les jobs de l'équipe.
+4. **Il constate aussi la réparation.** À la première réussite après une panne, le SDK relance les mêmes vérifications et montre ce qui a changé : une variable désormais fournie, un dossier devenu modifiable, une commande modifiée. Un clic (**✓ C'est bien la correction**) l'enregistre comme correction de l'équipe ; une réparation hors du champ des vérifications (droits en base, serveur distant) est dite telle quelle, pas devinée.
+5. **Il apprend de votre équipe.** Corrigez une panne depuis l'alerte (✏️) : CronGuard ressert votre correction la fois suivante, sur tous les jobs de l'équipe. **Préparer le compte rendu** ouvre le rapport d'incident dans votre propre messagerie, prérempli avec les faits, à compléter et envoyer vous-même.
 
 **Pour qui :** équipes ops / SRE / data dont les jobs critiques (sauvegardes, ETL, synchronisation de facturation) tournent là où les logs ne doivent pas partir vers un SaaS tiers : secteur régulé, réseau isolé, ou simplement privé. Rien ne quitte votre infrastructure, IA comprise.
 
@@ -45,7 +46,10 @@ Un outil classique aurait écrit `backup-db is DOWN`.
 | **Bibliothèque de pannes connues** (~110 fiches) | Messages standard des jobs et de leurs outils (PostgreSQL, MySQL, rsync, SSH, GPG, certificats, identifiants cloud, Docker, mémoire, disque…) reliés au mécanisme et à la correction. Une fiche dont le message correspond à plusieurs causes les liste toutes au lieu d'en choisir une. Chaque fiche est testée contre les pannes voisines qu'elle ne doit pas reconnaître. |
 | **Codes officiels** | Code de sortie du shell (126, 127, 128+N), `curl: (N)`, `rsync (code N)` d'après leurs pages de manuel. |
 | **Abstention honnête** | Pas de fait, pas de supposition : « cause non établie » et la commande qui reproduit la panne dans l'environnement exact du cron (`env -i HOME=… PATH=… /bin/sh -c '<votre commande>'`). |
-| **IA locale vérifiée** | Explique en langage simple une cause établie, après l'alerte, une fois par type de panne. Garde-fous dans le code (voir plus bas). Facultative. |
+| **Réparation constatée** | Le contexte de l'échec et celui de la première réussite qui suit sont comparés : ce qui a changé s'affiche sur l'analyse de la panne et se confirme en un clic. Labo : réparation visible dans 7 cas sur 11 comme fixé avant, 11 sur 11 après correction de deux défauts trouvés par le test (mêmes scénarios). |
+| **Compte rendu d'incident** | Un clic le prépare dans votre messagerie (ou copie le texte pour un ticket) : heures, cause constatée, lignes de log, réparation constatée, partie « ce qui a été fait ». CronGuard n'envoie rien, aucun serveur de mail requis, aucune réécriture par l'IA. |
+| **Import de crontab** | Collez une crontab dans le dashboard (ou lancez `cronguard-import.sh`) : le planning est écrit en clair par le code, l'IA locale propose un nom lisible et repère les jobs critiques, vous relisez et créez. |
+| **IA locale vérifiée** | Explique en langage simple une cause établie, après l'alerte, une fois par type de panne ; nomme les jobs à l'import. Garde-fous dans le code (voir plus bas). Facultative. |
 | **Mémoire de l'équipe** | Les corrections confirmées depuis l'alerte sont resservies pour la même panne. Une panne que CronGuard ne reconnaissait pas, une fois corrigée par l'équipe, devient une **fiche d'équipe** en un clic (Paramètres › Apprentissage, admins) : pré-remplie depuis la ligne d'erreur et la vraie correction, vérifiée contre les logs d'origine, puis reconnue sur tous les jobs de l'équipe sans modèle. Les pannes non reconnues sont aussi listées dans le rapport hebdomadaire. |
 
 ---
@@ -108,7 +112,7 @@ Mesurée, pas affirmée. Les critères sont écrits avant chaque test ; les éch
 
 | Test | Résultat |
 |---|---|
-| **Vraies pannes cron dans un conteneur** (vrai `crond`, un utilisateur avec son `~/.profile`, SDK bash, 8 pannes de cause connue) | **8/8 causes établies avec les commandes de test, 3/8 sans** ; le vrai bug applicatif reste « non établi », rien d'inventé. Scénarios écrits par nous : preuve que ça marche sur un vrai cron, pas un taux de couverture. |
+| **Vraies pannes cron dans un conteneur** (vrai `crond`, un utilisateur avec son `~/.profile`, SDK bash et Python, 11 pannes de cause connue) | **11 sur 11 causes établies avec les commandes de test, 3 sur 11 sans** ; le vrai bug applicatif reste « non établi », rien d'inventé. Scénarios écrits par nous : preuve que ça marche sur un vrai cron, pas un taux de couverture. |
 | **Pannes StackExchange hors échantillon** (public6, 15 cas collectés avant les changements) | Causes fausses affirmées : **12 sur 30 sans déduction par le modèle, contre 20 sur 30 avec**, pour autant de causes justes. Note 3,9/10 contre 4,2 (écart non significatif). Ces cas n'ont que des logs, sans commandes de test. |
 | Pannes couvertes par la bibliothèque | 9,2/10 sur les cas de réglage, **5,0 hors échantillon** : la bibliothèque se généralise imparfaitement, d'où l'apprentissage par votre équipe. |
 
@@ -129,6 +133,10 @@ Nous avons mesuré ce qu'un modèle local fait bien. Pour **trouver** une cause 
 | Temps médian, après l'alerte | 15,5 s |
 
 `llama3.2:3b` échoue au même test (76 % de mécanismes gardés) : l'explication demande le 7B.
+
+**Deuxième rôle — nommer les jobs à l'import.** Quand le code écrit le planning et que le modèle ne reçoit que la commande, ce qu'affiche CronGuard (nom, rôle, planning) est juste pour 69 lignes de crontab réelles sur 77 (90 %), et les jobs critiques sont bien repérés dans 96 % des cas. Vous relisez les noms avant toute création.
+
+**Rôles essayés puis écartés**, chacun mesuré contre des attentes fixées avant : réécrire le compte rendu de l'équipe (sens déformé une fois sur cinq), poser des questions d'enquête (génériques, 19 % pointent la cause), retrouver une ancienne réparation par ressemblance (46 % de précision), repérer les secrets que les règles ratent (18 % de journaux propres masqués à tort). Le motif : un 7B reformule ou nomme bien une entrée courte et sûre ; il échoue dès qu'il doit juger ou deviner. Détails dans le [CHANGELOG](CHANGELOG.md).
 
 **Les garde-fous sont dans le code, pas dans le prompt :** l'explication est écartée (la cause vérifiée s'affiche seule) si elle cite un identifiant absent des faits, perd une des possibilités listées par la cause, ou dépasse trois phrases. La cause vérifiée reste toujours affichée au-dessus, étiquetée.
 

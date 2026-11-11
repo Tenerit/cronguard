@@ -7,7 +7,8 @@ A job fails at 2:40 a.m. Other monitors tell you *that* it broke. CronGuard tell
 1. **It observes.** On failure the SDK runs read-only test commands on the job's host: what your login shell finds that cron does not (commands, the *names* of environment variables), who owns the files the error mentions, who launched the job (crontab, container, systemd, Kubernetes, launchd).
 2. **It diagnoses from facts.** Those observations, the cron command itself, a library of ~110 known cron failures and official exit codes establish the cause. Nothing is guessed: when nothing establishes it, CronGuard says *"cause not established"* and gives the command that reproduces the failure in cron's exact environment.
 3. **A local AI explains it in plain words.** The model never picks the cause; it rewrites the established one for whoever is on call. Code rejects any sentence that cites a path, command or option absent from the facts, or that drops one of the listed possibilities.
-4. **It learns from your team.** Fix a failure from the alert (✏️) and CronGuard serves your fix the next time — on every job of your team.
+4. **It observes the repair too.** At the first success after a failure, the SDK reruns the same checks and shows what changed — a variable now provided, a directory now writable, a different command. One click (**✓ That was the fix**) records it as your team's fix; a repair outside what the checks see (a database grant, a remote server) is said plainly instead of guessed.
+5. **It learns from your team.** Fix a failure from the alert (✏️) and CronGuard serves your fix the next time — on every job of your team. **Draft the report** opens the incident report in your own mail app, prefilled with the facts, for you to complete and send.
 
 **Who it's for:** ops / SRE / data teams whose critical jobs (backups, ETL, billing sync) run where logs must not go to a third-party SaaS: regulated, air-gapped, or simply private. Nothing leaves your infra, the AI included.
 
@@ -45,7 +46,10 @@ A classic monitor would have said `backup-db is DOWN`.
 | **Known-fix library** (~110 sheets) | Standard messages of cron jobs and their tools (PostgreSQL, MySQL, rsync, SSH, GPG, certificates, cloud credentials, Docker, memory, disk…) mapped to the mechanism and the fix. A sheet whose trigger fits several causes lists them all instead of picking one. Each sheet is tested against the failures it must not match. |
 | **Official codes** | Shell exit status (126, 127, 128+N signals), `curl: (N)`, `rsync (code N)` from their man pages. |
 | **Honest abstention** | No fact, no guess: "cause not established" plus the command that reproduces the failure under cron's exact environment (`env -i HOME=… PATH=… /bin/sh -c '<your command>'`). |
-| **Verified local AI** | Explains an established cause in plain words, after the alert, cached per failure type. Guard-railed in code (see below). Optional. |
+| **Observed fix** | The run context of the failure and of the first success after it are compared: what changed is shown on the failed analysis and confirmed in one click. Lab: the repair was visible in 7/11 cases as pre-registered, 11/11 after fixing two defects the test found (same scenarios). |
+| **Incident report** | One click drafts it in your own mail app (or copies the text for a ticket): times, observed cause, log lines, observed fix, a "what was done" section. CronGuard sends nothing, no SMTP needed, no AI rewriting. |
+| **Crontab import** | Paste a crontab in the dashboard (or run `cronguard-import.sh`): the schedule is written in plain words by code, the local AI suggests a readable name and flags critical jobs, you review and create. |
+| **Verified local AI** | Explains an established cause in plain words, after the alert, cached per failure type; names jobs at import. Guard-railed in code (see below). Optional. |
 | **Team memory** | Fixes confirmed from the alert are reused for the same failure. A failure CronGuard did not recognise, once fixed by the team, becomes a **team sheet** in one click (Settings › Learning, admins): prefilled from the failure line and the real fix, checked against the original logs, then recognised on every job of the team without a model. Failures nobody recognises yet are also listed in the weekly report. |
 
 ---
@@ -160,7 +164,7 @@ Measured, not asserted. Criteria are written down before each test; failures are
 
 | Test | Result |
 |---|---|
-| **Real cron failures in a container** (real `crond`, a user with their own `~/.profile`, bash SDK, 8 failures with a known cause) | **8/8 causes established with the test commands, 3/8 without**; the genuine application bug left as "not established", nothing invented. Scenarios written by us: proof it works on real cron, not a coverage figure. |
+| **Real cron failures in a container** (real `crond`, a user with their own `~/.profile`, bash and Python SDKs, 11 failures with a known cause) | **11/11 causes established with the test commands, 3/11 without**; the genuine application bug left as "not established", nothing invented. Scenarios written by us: proof it works on real cron, not a coverage figure. |
 | **Held-out StackExchange failures** (public6, 15 cases collected before the changes) | Wrong causes stated as fact: **12/30 without model deduction vs 20/30 with it**, for the same number of right causes. Score 3.9/10 vs 4.2 (not significant). These cases have logs only — no host probes. |
 | Failures the known-fix library covers | 9.2/10 on the cases we tuned on, **5.0 on held-out ones**: the library generalises imperfectly, which is why it learns from your team. |
 
@@ -181,6 +185,10 @@ We measured what a local model is good at. Asked to **find** an unknown cause, a
 | Median time, after the alert | 15.5 s |
 
 `llama3.2:3b` failed the same test (76 % mechanism kept): the explainer needs the 7B.
+
+**Second job — naming jobs at import.** With the schedule written by code and only the command given to the model, what CronGuard shows (name, role, schedule) was right for 69 of 77 real crontab lines (90 %), and critical jobs were flagged right 96 % of the time. You review the names before anything is created.
+
+**Jobs we tried and dropped**, each measured against expectations fixed beforehand: rewriting the team's fix report (meaning distorted 1 time in 5), asking investigation questions (generic, 19 % pointed at the cause), recalling a similar past fix by embeddings (46 % precision), spotting secrets the rules miss (18 % of clean logs masked by mistake). Pattern: a 7B model is good at rewording or naming a short, trusted input; it fails as soon as it must judge or guess. Details in the [CHANGELOG](CHANGELOG.md).
 
 **The guards are code, not prompt:** an explanation is dropped (the verified cause is shown alone) if it cites an identifier absent from the facts, drops one of the possibilities the cause lists, or runs past three sentences. The verified cause always stays above it, labelled.
 

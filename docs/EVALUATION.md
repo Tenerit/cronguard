@@ -63,7 +63,7 @@ The held-out figures are the honest ones; 7.8 is optimistic because those cases 
 
 | Measure | Result |
 |---|---|
-| Cron lab, with vs without the SDK test commands | **8/8 vs 3/8** (the real application bug stays "not established") |
+| Cron lab, with vs without the SDK test commands | **11/11 vs 3/11** (bash and Python SDKs; the real application bug stays "not established") |
 | public6 held-out, without vs with model deduction | score 3.9 vs 4.2 (diff 0.4, CI −0.1 to +0.8, n.s.); **wrong causes stated as fact 12 vs 20 of 30** |
 | Covered failures, tuning vs held-out | 9.2 vs **5.0** on public6: the sheets generalise imperfectly |
 | Sheet precision (misfires on read sets) | 15 → 5 after placing decisive signals first and listing alternatives in generic sheets (tuning figure; public7 will judge) |
