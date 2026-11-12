@@ -165,6 +165,16 @@ The Node SDK does the same inside `monitor()` (`cgStep('upload')` for steps), wi
 
 ---
 
+## Pilot report
+
+At the end of a trial, measure it on your own server; nothing is sent anywhere:
+
+```bash
+docker compose exec api node dist/services/pilot-report.js --days 30 > pilot.md
+```
+
+Failures, share whose cause was established and by which source (observed on the host, team fix, exit code, generic library, not established), 👍/👎 from the team, fixes observed and confirmed, time to restore. Anonymised by default; `--names` and `--signatures` add job names and the unrecognised error lines (review before sharing).
+
 ## Notifications
 
 Alerts go out on every configured channel, followed by a recovery notice with the downtime.

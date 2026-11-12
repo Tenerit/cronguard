@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — rapport de pilote (2026-11-12)
+- `node dist/services/pilot-report.js --days 30` (`npm run pilot:report`) : à la fin d'un essai, le rapport en Markdown calculé **sur le serveur du client**, sans rien envoyer. Pannes, part dont la cause a été établie et par quelle source (constaté sur la machine, fiche d'équipe, code de sortie, bibliothèque générique, non établi), 👍/👎 de l'équipe, réparations constatées et confirmées, temps de rétablissement.
+- Anonymisé par défaut (ni nom de job ni texte d'erreur) ; `--names` et `--signatures` les ajoutent, avec un avertissement.
+- Le rapport dit lui-même ses limites : « établi » compte la source qui a répondu, pas la justesse, que seuls les 👍/👎 mesurent ; la bibliothèque générique est à environ 4/10 sur des pannes jamais vues.
+- Vérifié en e2e sur un vrai PostgreSQL (chiffres égaux à ceux de la base, aucun nom ni ligne d'erreur dans la version anonymisée), 4 tests unitaires.
+
 ### Tests — fin des schémas recopiés (2026-11-12)
 - Les tests d'intégration (pg-mem) rejouent les **vraies** migrations v1 → v25 au lieu d'un schéma de ~185 lignes écrit à la main, qui devait être tenu à jour à chaque colonne. Mesuré : tout passe sur pg-mem sauf 3 reprises de données (`UPDATE` sans effet sur une base vide) et la table du marqueur de schéma, seuls ordres tolérés.
 - Trouvé en route : pg-mem refuse NULL dans un `CHECK (x IN …)`, ce que PostgreSQL accepte ; l'ancien schéma recopié n'avait simplement pas ces contraintes. Le test les réécrit en `x IS NULL OR x IN …`, de même sens. Les identifiants de test deviennent des UUID, comme en production (le schéma recopié acceptait n'importe quel texte).

@@ -31,6 +31,7 @@
     "start:self-monitor": "node dist/workers/self-monitor.worker.js",
     "db:migrate": "node dist/db/migrations.js",
     "seed": "node dist/db/seed.js",
+    "pilot:report": "node dist/services/pilot-report.js",
     "test": "jest --runInBand --forceExit",
     "test:watch": "jest --watch",
     "test:coverage": "jest --runInBand --forceExit --coverage",

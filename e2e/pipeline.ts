@@ -367,6 +367,16 @@ async function main() {
   check('Vue responsable : +3 incidents, +2 cette semaine, +1 avec correction écrite',
     imp.incidents - imp0.incidents === 3 && imp.week - imp0.week === 2 && imp.documented - imp0.documented === 1, JSON.stringify({ imp0, imp }))
 
+  // Kit pilote : rapport calculé sur la base du client, anonymisé par défaut.
+  const { pilotReport } = await import('../src/services/pilot-report')
+  const rep = await pilotReport(db, { clientId: client.id, days: 30 })
+  const { rows: [cnt] } = await db.query(`SELECT COUNT(*)::int AS n, COUNT(*) FILTER (WHERE recognized_by IS NOT NULL)::int AS k
+    FROM analyses a JOIN monitors m ON m.id = a.monitor_id WHERE m.client_id = $1`, [client.id])
+  check('Rapport pilote : chiffres de la base, aucun nom de job ni ligne d erreur',
+    rep.includes(`| Diagnosed failures | ${cnt.n} |`) && rep.includes(`(${cnt.k}/${cnt.n})`) && !rep.includes('quota-sync') && !rep.includes('quota table locked'), rep.slice(0, 600))
+  const repNamed = await pilotReport(db, { clientId: client.id, days: 30, names: true, signatures: true })
+  check('Rapport pilote --names --signatures : noms présents et avertissement', repNamed.includes('quota-sync') && repNamed.includes('review before sharing'))
+
 }
 
 async function finish(fatal?: Error) {
