@@ -147,6 +147,16 @@ Lab (pre-registered, `eval/sdk-lab.ts`): the responsible change shown in 8/8 bro
 
 **Also in the bash and Python SDKs:** `cg_step dump` / `cg_step upload` (the failure says in which step it stopped and how long the previous ones took); a ping the server did not receive is kept and replayed in order; an overlap with the previous run is reported (`CG_SKIP_IF_RUNNING=1` skips the run); memory (OOM from the cgroup), full volume and network (DNS, refused, no answer) are established as facts; secrets are masked on the host before sending. Before the first failure, `cg_doctor "<command>"` checks a command as cron will run it, without running it.
 
+**Static binary (no bash, python3 or curl on the host):** [`sdk/go`](sdk/go), standard library only, ~6 MB.
+
+```bash
+docker run --rm -v "$PWD/sdk/go:/src" -w /src -e CGO_ENABLED=0 golang:1.23-alpine go build -ldflags "-s -w" -o cronguard .
+cronguard run your-ping-key -- /scripts/backup.sh      # exit code = the command's; output still printed
+cronguard step upload                                   # from inside the job, like cg_step
+```
+
+Same state files as the bash and Python SDKs (you can switch without losing the fingerprint or the queued pings), same masking list (checked by a test against Python), and the same facts except the login-shell comparison. It survives the OOM kill of its command, so the kernel's kill is reported as a fact. Lab in a bare Alpine container with `--memory=100m`: OOM kill and full volume established, pings replayed in order, a bash success followed by a Go failure shows only the two real changes. Linux and macOS; not Windows.
+
 **Kubernetes:** [`sdk/kubernetes/cronjob.yaml`](sdk/kubernetes/cronjob.yaml) runs the bash SDK in a CronJob (image with bash, curl and python3; a small volume keeps the fingerprint and the unsent pings between pods). Checked in a container with the same paths and command, not on a real cluster.
 
 The Node SDK does the same inside `monitor()` (`cgStep('upload')` for steps), with three gaps: no OOM counter (a Node process killed by the kernel takes the SDK with it; the missing ping alerts), no `CG_SKIP_IF_RUNNING` and no `doctor`, and `CG_EXPECT` wildcards only in the file name.

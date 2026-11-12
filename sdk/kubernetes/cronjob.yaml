@@ -9,6 +9,9 @@
 # - The job image needs bash, curl and python3 (the probes are Python). Without curl nothing is sent:
 #   pings wait in the state volume and are replayed in order once curl is there. Without python3 the run is still
 #   reported (exit code, logs, duration) but without the context facts.
+#   Image without bash, curl or python3: build sdk/go into the image and use
+#     command: ["/usr/local/bin/cronguard", "run", "$(CG_PING_KEY)", "--", "/scripts/backup.sh"]
+#   (no ConfigMap needed then; it also reports an OOM kill of the command when the container survives it).
 # - A pod starts empty: without the volume below, "what changed since the last success", the replay of
 #   pings the server did not receive and the observed fix are lost at every run. The PVC keeps them.
 #   ReadWriteOnce is enough because concurrencyPolicy: Forbid never runs two pods at once.

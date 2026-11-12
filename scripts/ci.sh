@@ -25,6 +25,11 @@ step jest        npm test
 step vitest      npx vitest run
 step audit-prod  npm audit --omit=dev --audit-level=high
 step build       npm run build
+if command -v go >/dev/null; then
+  step sdk-go bash -c 'cd sdk/go && go vet ./... && go build -o /tmp/cg-go . && CG_TEST_BIN=/tmp/cg-go go test -count=1 ./...'
+else
+  echo "  - sdk-go                 ignoré (pas de Go ; tourne dans GitHub Actions)"
+fi
 if [[ "${CI_SKIP_E2E:-}" == 1 ]]; then
   echo "  - e2e                    ignoré (CI_SKIP_E2E=1)"
 else

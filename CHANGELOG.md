@@ -7,6 +7,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — binaire Go sans dépendance (2026-11-12)
+- `sdk/go` : `cronguard run <clé> -- <commande>` et `cronguard step <nom>`, bibliothèque standard seule, binaire statique d'environ 6 Mo. Pour les machines et images sans bash, python3 ni curl.
+- Mêmes fichiers d'état que bash et Python (empreinte, file, verrou, marqueur d'échec) ; même liste de masquage que Python, moins les assertions `(?!…)` que le moteur regex de Go ne connaît pas, remplacées par un refus de la valeur (test). Constats : chemins, mémoire (compteur OOM : le binaire survit à la mise à mort de sa commande), disque, réseau, lanceur, ce qui a changé, `CG_EXPECT`, étapes, chevauchement et `CG_SKIP_IF_RUNNING`, résolution constatée. Manque : la comparaison avec le shell de connexion, et `doctor`.
+- 8 tests Go (CI : job `sdk-go`). Labo dans une Alpine nue (ni bash, ni python3, ni curl), `--memory=100m` : `oomKills: 1` établi, code 137 rendu ; disque plein établi (`/full/big`, 0 octet libre) ; réussite enregistrée par le SDK bash puis échec du binaire : seuls les deux vrais changements sortent (variable retirée, script modifié).
+- Premier essai disque : `head` de busybox ne dit que « I/O error », sans « No space left » ; rien à constater dans ce message-là, refait avec `dd`.
+- Différence : la sortie de la commande reste affichée (le SDK bash la garde pour lui) ; mots de la commande séparés par les espaces, pas par `shlex`.
+
 ### Corrigé — pannes perdues : durée 0, et code de sortie du SDK Node (2026-11-12)
 - **Le serveur refusait `duration_ms: 0`** (400), et un 4xx n'est pas rejoué : la panne entière était perdue. Touchés : les jobs qui échouent en moins d'1 ms, et **tout job de moins d'une seconde sur busybox/Alpine**, dont `date` ne donne pas les millisecondes (aussi les réussites, d'où de fausses alertes « en retard »). 0 est maintenant accepté et enregistré comme durée non mesurée, pour ne pas fausser la référence des alertes de lenteur. Trouvé en relisant le test Kubernetes, qui envoyait `"duration_ms":0` à un faux serveur. Vérifié en e2e.
 - **Le SDK Node envoyait `exitCode` et `durationMs`**, que le serveur ignore (il attend `exit_code`, `duration_ms`) : code de sortie et durée n'arrivaient jamais. Corrigé, et la sortie est bornée à 3 000 caractères comme en Python (au-delà de 4 000, le serveur refusait le ping).

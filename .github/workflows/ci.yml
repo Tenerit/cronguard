@@ -44,6 +44,23 @@ jobs:
       - name: Security audit
         run: npm audit --audit-level=high
 
+  # ─── 1b. SDK Go (binaire sans dépendance) — même masquage que Python, vérifié ─
+  sdk-go:
+    name: SDK Go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/go
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: CGO_ENABLED=0 go build -ldflags "-s -w" -o cronguard .
+      - run: CG_TEST_BIN=$PWD/cronguard go test -count=1 ./...
+
   # ─── 2. Intégration RÉELLE — Postgres + Redis (pas de mock) ───────────────────
   # Tue le risque « vert tout-mocké » : les vraies migrations SQL s'appliquent sur
   # un vrai Postgres (pg-mem ne le garantit pas — cf. dérive de schéma), et le seed
