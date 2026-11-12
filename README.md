@@ -177,7 +177,7 @@ Failures, share whose cause was established and by which source (observed on the
 
 ## Notifications
 
-Alerts go out on every configured channel, followed by a recovery notice with the downtime.
+Alerts go out on every configured channel, followed by a recovery notice with the downtime. Alert language is an account setting (Settings › Account › Alert language, French or English): labels, buttons, recovery and escalation messages, and the facts reported by the SDKs. The diagnosis text of the fix library is still French.
 
 | Channel | Setup |
 |---|---|

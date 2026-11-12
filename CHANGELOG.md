@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — alertes en anglais, 1er temps (2026-11-12)
+- **Langue des alertes par compte** (`clients.lang`, migration v26 ; Réglages › Compte › Langue des alertes), distincte de la langue de l'interface, qui suit le navigateur. Sans réglage, rien ne change : français.
+- Traduits : l'habillage de **tous** les canaux (e-mail, Slack, Teams, Discord, Google Chat, Mattermost, ntfy, PagerDuty), le rétablissement, l'escalade, et les **faits relevés par les SDK** (variable disparue, fichier modifié, version d'outil, étape où le job s'est arrêté). Ces faits sont traduits côté serveur à partir des libellés des SDK : un SDK déjà installé chez un client reçoit aussi des alertes en anglais, sans mise à jour.
+- **Pas encore traduit :** le texte de diagnostic des 111 fiches et des constats du serveur (cause, action, étapes de correction). Il demande une relecture avant traduction ; une alerte en anglais montre donc encore une cause en français quand elle vient d'une fiche.
+- Tests : en anglais, plus aucun mot français dans l'habillage des 6 plateformes testées (Teams, Discord, Google Chat, Mattermost, ntfy, PagerDuty) ; e2e sur un vrai PostgreSQL (langue enregistrée, langue inconnue refusée).
+
 ### Ajouté — rapport de pilote (2026-11-12)
 - `node dist/services/pilot-report.js --days 30` (`npm run pilot:report`) : à la fin d'un essai, le rapport en Markdown calculé **sur le serveur du client**, sans rien envoyer. Pannes, part dont la cause a été établie et par quelle source (constaté sur la machine, fiche d'équipe, code de sortie, bibliothèque générique, non établi), 👍/👎 de l'équipe, réparations constatées et confirmées, temps de rétablissement.
 - Anonymisé par défaut (ni nom de job ni texte d'erreur) ; `--names` et `--signatures` les ajoutent, avec un avertissement.

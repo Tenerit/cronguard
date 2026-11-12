@@ -146,7 +146,7 @@ clientsRouter.post('/dlq/replay', requireRole('admin'), asyncHandler(async (_req
 
 clientsRouter.get('/me', asyncHandler(async (req, res) => {
   const { rows: [client] } = await db.query(`
-    SELECT id, email, plan, slack_webhook, webhook_url, teams_webhook, channels,
+    SELECT id, email, plan, slack_webhook, webhook_url, teams_webhook, channels, lang,
            escalation_email, escalation_webhook, escalation_after_min,
            created_at,
       (SELECT COUNT(*) FROM monitors WHERE client_id = $1 AND active = true) AS monitor_count
@@ -172,6 +172,7 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
     escalation_email:       z.string().email().optional().or(z.literal('')),
     escalation_webhook:     z.string().url().optional().or(z.literal('')),
     escalation_after_min:   z.number().int().min(1).max(1440).optional(),
+    lang:                   z.enum(['fr', 'en']).optional(),   // langue des alertes
   })
   const parsed = Schema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
@@ -202,9 +203,10 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
         escalation_webhook   = CASE WHEN $10 THEN $9  ELSE escalation_webhook   END,
         escalation_after_min = COALESCE($11, escalation_after_min),
         teams_webhook        = CASE WHEN $13 THEN $12 ELSE teams_webhook        END,
-        channels             = COALESCE($14::jsonb, channels)
+        channels             = COALESCE($14::jsonb, channels),
+        lang                 = COALESCE($15, lang)
     WHERE id = $1
-    RETURNING id, email, plan, slack_webhook, webhook_url, teams_webhook, channels, app_url,
+    RETURNING id, email, plan, slack_webhook, webhook_url, teams_webhook, channels, app_url, lang,
               escalation_email, escalation_webhook, escalation_after_min
   `, [
     res.locals.clientId,
@@ -221,6 +223,7 @@ clientsRouter.patch('/settings', requireRole('admin'), asyncHandler(async (req, 
     d.teams_webhook       || null,   // $12
     teamsGiven,                      // $13
     channels,                        // $14
+    d.lang                ?? null,   // $15
   ])
   await audit(res, 'settings.updated', 'client', res.locals.clientId, { fields: Object.keys(d) })
   res.json(client)

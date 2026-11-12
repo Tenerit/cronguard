@@ -41,6 +41,7 @@ async function runEscalations() {
       escalationEmail:   t.escalationEmail,
       escalationWebhook: t.escalationWebhook,
       analysis:          t.lastAnalysis,
+      lang:              t.lang ?? undefined,
     })
   }
 }

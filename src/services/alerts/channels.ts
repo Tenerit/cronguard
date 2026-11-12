@@ -7,6 +7,7 @@ import { logger } from '../../config/logger'
 import { redis } from '../../config/redis'
 import { isSafeWebhookTarget } from '../webhook-guard'
 import type { AlertPayload, RecoveryPayload } from './index'
+import { T, langOf, localizeFact } from './i18n'
 
 export type ChannelType = 'discord' | 'gchat' | 'mattermost' | 'ntfy' | 'pagerduty'
 export type Channels = Partial<Record<ChannelType, string>>   // URL du webhook, ou clé de routage PagerDuty
@@ -15,21 +16,21 @@ const PD_URL = 'https://events.pagerduty.com/v2/enqueue'
 const EMOJI: Record<string, string> = { critical: '🔴', high: '🟠', medium: '🟡', low: '🔵' }
 const COLOR: Record<string, number> = { critical: 0xd73a49, high: 0xe36209, medium: 0xdbab09, low: 0x0366d6 }
 
-interface Msg { title: string; facts: Array<[string, string]>; line?: string; ok?: string; fix?: string; status: string; severity: string }
+interface Msg { title: string; facts: Array<[string, string]>; line?: string; ok?: string; fix?: string; status: string; severity: string; L: typeof T['fr'] }
 
-function message(p: AlertPayload): Msg {
-  const a = p.analysis
+export function message(p: AlertPayload): Msg {
+  const a = p.analysis, lang = langOf(p.client.lang), L = T[lang]
   return {
-    title: `${EMOJI[a?.severity ?? 'medium']} ${p.jobName} en échec (${p.env})`,
-    facts: a ? [['Cause', a.cause], [a.verifiedFix ? 'Correction vérifiée' : 'Piste à vérifier', a.action],
-      ...(a.changed?.length ? [['Changé depuis la dernière réussite', a.changed.join(' ; ')] as [string, string]] : []),
-      ...(a.step ? [['Étape', a.step] as [string, string]] : [])] : [['Analyse', 'Indisponible (voir les logs)']],
+    title: `${EMOJI[a?.severity ?? 'medium']} ${L.failedShort(p.jobName, p.env)}`,
+    facts: a ? [[L.cause, a.cause], [a.verifiedFix ? L.verifiedFix : L.toCheck, a.action],
+      ...(a.changed?.length ? [[L.changed, a.changed.map(c => localizeFact(lang, c)).join(' ; ')] as [string, string]] : []),
+      ...(a.step ? [[L.step, localizeFact(lang, a.step)] as [string, string]] : [])] : [[L.analysis, L.unavailable]],
     line: a?.evidence?.[0], ok: p.reviewUrl, fix: p.reviewUrl && `${p.reviewUrl}?v=fix`,
-    status: p.statusPageUrl, severity: a?.severity ?? 'medium',
+    status: p.statusPageUrl, severity: a?.severity ?? 'medium', L,
   }
 }
 
-const links = (m: Msg) => [m.ok && `[✅ Analyse juste](${m.ok})`, m.fix && `[✏️ Corriger](${m.fix})`, `[Page de statut](${m.status})`].filter(Boolean).join(' · ')
+const links = (m: Msg) => [m.ok && `[${m.L.analysisRight}](${m.ok})`, m.fix && `[${m.L.fix}](${m.fix})`, `[${m.L.statusPage}](${m.status})`].filter(Boolean).join(' · ')
 
 // ─── Formats par plateforme (purs : testés sans réseau) ───────────────────────
 export const format = {
@@ -43,8 +44,8 @@ export const format = {
       ...m.facts.map(([topLabel, text]) => ({ decoratedText: { topLabel, text, wrapText: true } })),
       ...(m.line ? [{ textParagraph: { text: `<font color="#888888">${m.line.replace(/</g, '&lt;')}</font>` } }] : []),
       { buttonList: { buttons: [
-        ...(m.ok ? [{ text: '✅ Analyse juste', onClick: { openLink: { url: m.ok } } }, { text: '✏️ Corriger', onClick: { openLink: { url: m.fix } } }] : []),
-        { text: 'Page de statut', onClick: { openLink: { url: m.status } } },
+        ...(m.ok ? [{ text: m.L.analysisRight, onClick: { openLink: { url: m.ok } } }, { text: m.L.fix, onClick: { openLink: { url: m.fix } } }] : []),
+        { text: m.L.statusPage, onClick: { openLink: { url: m.status } } },
       ] } },
     ] }],
   } }] }),
@@ -58,14 +59,14 @@ export const format = {
   ntfy: (m: Msg, topic: string) => ({ topic, title: m.title, priority: m.severity === 'critical' || m.severity === 'high' ? 5 : 4,
     tags: ['rotating_light'], message: [...m.facts.map(([k, v]) => `${k} : ${v}`), m.line].filter(Boolean).join('\n'),
     click: m.ok ?? m.status,
-    actions: [...(m.ok ? [{ action: 'view', label: '✅ Analyse juste', url: m.ok }, { action: 'view', label: '✏️ Corriger', url: m.fix }] : []),
-              { action: 'view', label: 'Statut', url: m.status }].slice(0, 3) }),
+    actions: [...(m.ok ? [{ action: 'view', label: m.L.analysisRight, url: m.ok }, { action: 'view', label: m.L.fix, url: m.fix }] : []),
+              { action: 'view', label: m.L.statusShort, url: m.status }].slice(0, 3) }),
 
   // PagerDuty Events v2 : déclenche l'incident ; dedup_key = le job → le rétablissement le résout.
   pagerduty: (m: Msg, key: string, job: string) => ({ routing_key: key, event_action: 'trigger', dedup_key: `cronguard:${job}`,
     payload: { summary: m.title.slice(0, 1024), source: 'cronguard', severity: m.severity === 'critical' ? 'critical' : m.severity === 'high' ? 'error' : 'warning',
-      custom_details: Object.fromEntries([...m.facts, ...(m.line ? [['Ligne décisive', m.line]] : [])]) },
-    links: [...(m.ok ? [{ href: m.ok, text: '✅ Analyse juste' }, { href: m.fix!, text: '✏️ Corriger' }] : []), { href: m.status, text: 'Page de statut' }] }),
+      custom_details: Object.fromEntries([...m.facts, ...(m.line ? [[m.L.decisiveLine, m.line]] : [])]) },
+    links: [...(m.ok ? [{ href: m.ok, text: m.L.analysisRight }, { href: m.fix!, text: m.L.fix }] : []), { href: m.status, text: m.L.statusPage }] }),
 }
 
 /** URL de base et topic d'une URL ntfy (https://ntfy.exemple/cronguard → base + « cronguard »). */
@@ -98,11 +99,11 @@ export async function sendChannelAlerts(p: AlertPayload, ch: Channels | undefine
 
 export async function sendChannelRecovery(p: RecoveryPayload, ch: Channels | undefined) {
   if (!ch) return
-  const title = `✅ Rétabli : ${p.jobName} (${p.env})`, jobs: Promise<void>[] = []
+  const L = T[langOf(p.client.lang)], title = `✅ ${L.restored(p.jobName)} (${p.env})`, jobs: Promise<void>[] = []
   if (ch.discord)    jobs.push(post('discord', ch.discord, { embeds: [{ title, color: 0x2dba4e, url: p.statusPageUrl }] }))
   if (ch.gchat)      jobs.push(post('gchat', ch.gchat, { text: title }))
   if (ch.mattermost) jobs.push(post('mattermost', ch.mattermost, { username: 'CronGuard', text: title }))
-  if (ch.ntfy) { const n = splitNtfy(ch.ntfy); if (n) jobs.push(post('ntfy', n.base, { topic: n.topic, title, message: 'Le job est de nouveau OK.', tags: ['white_check_mark'] })) }
+  if (ch.ntfy) { const n = splitNtfy(ch.ntfy); if (n) jobs.push(post('ntfy', n.base, { topic: n.topic, title, message: L.restoredBody(null), tags: ['white_check_mark'] })) }
   if (ch.pagerduty)  jobs.push(post('pagerduty', PD_URL, { routing_key: ch.pagerduty, event_action: 'resolve', dedup_key: `cronguard:${p.jobName}` }))
   await Promise.allSettled(jobs)
 }

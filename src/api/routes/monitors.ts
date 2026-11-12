@@ -207,7 +207,7 @@ monitorsRouter.post('/:id/resume', requireRole('admin'), ownsMonitor, asyncHandl
 
 monitorsRouter.post('/:id/test', ownsMonitor, asyncHandler(async (req, res) => {
   const { rows: [monitor] } = await db.query(`
-    SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url, c.teams_webhook, c.channels
+    SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url, c.teams_webhook, c.channels, c.lang
     FROM monitors m JOIN clients c ON c.id = m.client_id
     WHERE m.id = $1
   `, [req.params.id])
@@ -232,7 +232,7 @@ monitorsRouter.post('/:id/test', ownsMonitor, asyncHandler(async (req, res) => {
     },
     alertCount:    1,
     statusPageUrl: `${process.env.APP_URL ?? 'http://localhost:3000'}/status/${req.params.id}`,
-    client: { email: monitor.email, slackWebhook: monitor.slack_webhook, webhookUrl: monitor.webhook_url, teamsWebhook: monitor.teams_webhook, channels: monitor.channels },
+    client: { email: monitor.email, slackWebhook: monitor.slack_webhook, webhookUrl: monitor.webhook_url, teamsWebhook: monitor.teams_webhook, channels: monitor.channels, lang: monitor.lang },
   })
 
   await audit(res, 'monitor.test', 'monitor', req.params.id)

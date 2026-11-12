@@ -1720,6 +1720,8 @@ async function loadSettings() {
     if (c.escalation_after_min) document.getElementById('set-esc-delay').value   = c.escalation_after_min
     const langSel = document.getElementById('set-lang')
     if (langSel) langSel.value = localStorage.getItem('cg_lang') || ''
+    const alertLang = document.getElementById('set-alert-lang')
+    if (alertLang) alertLang.value = c.lang === 'en' ? 'en' : 'fr'
     loadTeamMembers()
     loadMaintenanceWindows()
 
@@ -1737,6 +1739,14 @@ async function loadSettings() {
       tzSelect.appendChild(opt)
     })
   } catch(e) { console.error(e) }
+}
+
+// Langue des alertes : réglage du compte (toute l'équipe), distinct de la langue de l'interface (ce navigateur).
+async function setAlertLang(lang) {
+  try {
+    await api('/clients/settings', { method: 'PATCH', body: JSON.stringify({ lang }) })
+    toast(t('toast.alertLangSaved'), 'ok')
+  } catch(e) { toast(e.message, 'err') }
 }
 
 async function saveSlack() {

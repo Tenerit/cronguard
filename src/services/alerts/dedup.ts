@@ -145,6 +145,7 @@ export interface EscalationTarget {
   alertCount:  number
   escalationEmail?:   string
   escalationWebhook?: string
+  lang?:              'fr' | 'en' | null
   lastAnalysis?: {
     cause?:    string
     action?:   string
@@ -165,6 +166,7 @@ export async function checkEscalations(): Promise<EscalationTarget[]> {
       c.escalation_email,
       c.escalation_webhook,
       c.escalation_after_min,
+      c.lang,
       (
         SELECT row_to_json(x) FROM (
           SELECT cause, action, category, severity FROM analyses
@@ -193,7 +195,7 @@ export async function checkEscalations(): Promise<EscalationTarget[]> {
   return rows.map((r: {
     monitor_id: string; client_id: string; job_name: string; env: string
     first_fired: Date; alert_count: number
-    escalation_email?: string; escalation_webhook?: string
+    escalation_email?: string; escalation_webhook?: string; lang?: 'fr' | 'en' | null
     last_analysis?: { cause?: string; action?: string; category?: string; severity?: string } | null
   }) => {
     const la = r.last_analysis
@@ -209,6 +211,7 @@ export async function checkEscalations(): Promise<EscalationTarget[]> {
       alertCount:         r.alert_count,
       escalationEmail:    r.escalation_email,
       escalationWebhook:  r.escalation_webhook,
+      lang:               r.lang,
       lastAnalysis:       parsedAnalysis
         ? { ...parsedAnalysis, severity: r.last_analysis?.severity }
         : null,

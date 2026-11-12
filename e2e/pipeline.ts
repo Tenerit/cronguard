@@ -367,6 +367,15 @@ async function main() {
   check('Vue responsable : +3 incidents, +2 cette semaine, +1 avec correction écrite',
     imp.incidents - imp0.incidents === 3 && imp.week - imp0.week === 2 && imp.documented - imp0.documented === 1, JSON.stringify({ imp0, imp }))
 
+  // Langue des alertes : réglage du compte, lu par le worker.
+  const setLang = await fetch(`http://localhost:${API_PORT}/clients/settings`, { method: 'PATCH',
+    headers: { 'X-API-Key': client.api_key, 'content-type': 'application/json' }, body: JSON.stringify({ lang: 'en' }) })
+  const { rows: [cl] } = await db.query(`SELECT lang FROM clients WHERE id = $1`, [client.id])
+  const badLang = await fetch(`http://localhost:${API_PORT}/clients/settings`, { method: 'PATCH',
+    headers: { 'X-API-Key': client.api_key, 'content-type': 'application/json' }, body: JSON.stringify({ lang: 'de' }) })
+  check('Langue des alertes : « en » enregistrée, langue inconnue refusée', setLang.status === 200 && cl.lang === 'en' && badLang.status === 400,
+    JSON.stringify({ set: setLang.status, lang: cl.lang, bad: badLang.status }))
+
   // Kit pilote : rapport calculé sur la base du client, anonymisé par défaut.
   const { pilotReport } = await import('../src/services/pilot-report')
   const rep = await pilotReport(db, { clientId: client.id, days: 30 })

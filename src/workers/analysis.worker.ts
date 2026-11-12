@@ -137,7 +137,7 @@ function createPingWorker() {
             la?.severity ?? null, la?.category ?? null, la?.data_impact ?? null, rootCause, la?.id ?? null])
 
         const { rows: [rc] } = await db.query(`
-          SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url, c.teams_webhook, c.channels
+          SELECT m.name, m.env, c.email, c.slack_webhook, c.webhook_url, c.teams_webhook, c.channels, c.lang
           FROM monitors m JOIN clients c ON c.id = m.client_id WHERE m.id = $1
         `, [monitorId])
         if (rc) {
@@ -145,7 +145,7 @@ function createPingWorker() {
             jobName: rc.name, env: rc.env,
             downMs:  durationMs,
             statusPageUrl: `${APP_URL}/status/${monitorId}`,
-            client: { email: rc.email, slackWebhook: rc.slack_webhook, webhookUrl: rc.webhook_url, teamsWebhook: rc.teams_webhook, channels: rc.channels },
+            client: { email: rc.email, slackWebhook: rc.slack_webhook, webhookUrl: rc.webhook_url, teamsWebhook: rc.teams_webhook, channels: rc.channels, lang: rc.lang },
           })
         }
       }
@@ -342,7 +342,7 @@ function createAnalysisWorker() {
 
     // Guard : client et monitor doivent toujours exister
     const { rows: [client] } = await db.query(
-      `SELECT email, slack_webhook, webhook_url, teams_webhook, channels, plan FROM clients WHERE id=$1`, [ctx.clientId]
+      `SELECT email, slack_webhook, webhook_url, teams_webhook, channels, lang, plan FROM clients WHERE id=$1`, [ctx.clientId]
     )
     if (!client) { logger.warn('[Worker] Client supprimé, job ignoré', { clientId: ctx.clientId }); return }
 
@@ -443,7 +443,7 @@ function createAnalysisWorker() {
         fixUrl: analysisId ? `${APP_URL}/dashboard#fix=${analysisId}` : undefined,
         // Valider / corriger depuis l'alerte, sans se connecter (astreinte) : lien signé pour CETTE analyse.
         reviewUrl: analysisId ? `${APP_URL}/r/${await signReviewToken(analysisId)}` : undefined,
-        client: { email: client.email, slackWebhook: client.slack_webhook, webhookUrl: client.webhook_url, teamsWebhook: client.teams_webhook, channels: client.channels },
+        client: { email: client.email, slackWebhook: client.slack_webhook, webhookUrl: client.webhook_url, teamsWebhook: client.teams_webhook, channels: client.channels, lang: client.lang },
       })
     }
 

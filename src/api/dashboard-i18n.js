@@ -120,7 +120,7 @@ const I18N = {
     'tour.overview.t':'Vue d\'ensemble','tour.overview.b':'Statuts agrégés, uptime, et le bandeau Impact (MTTR / downtime sur 30j) — la valeur prouvée, pas juste des alertes.',
     'tour.ai.t':'Analyses','tour.ai.b':'À chaque panne : la cause constatée sur la machine (commandes de test du SDK, fiches, codes officiels), ou « non établie » avec la commande pour la reproduire. Puis la réparation constatée, à confirmer en un clic. Rien ne quitte votre serveur.',
     'tour.playground.t':'Playground diagnostic','tour.playground.b':'Collez des logs et voyez ce que CronGuard établit — et ce qu\'il refuse de deviner. Sans rien installer.',
-    'lang.label':'Langue',
+    'lang.label':'Langue','lang.alerts':'Langue des alertes','toast.alertLangSaved':'Langue des alertes enregistrée',
   },
   en: {
     'nav.monitoring':'monitoring','nav.dashboard':'dashboard','nav.services':'services',
@@ -241,6 +241,6 @@ const I18N = {
     'tour.overview.t':'Overview','tour.overview.b':'Aggregated statuses, uptime, and the Impact strip (MTTR / downtime over 30d) — proven value, not just alerts.',
     'tour.ai.t':'Analyses','tour.ai.b':'On every failure: the cause observed on the host (SDK test commands, known-fix sheets, official codes), or "not established" with the command to reproduce it. Then the observed fix, confirmed in one click. Nothing leaves your server.',
     'tour.playground.t':'Diagnostic playground','tour.playground.b':'Paste logs and see what CronGuard establishes — and what it refuses to guess. Nothing to install.',
-    'lang.label':'Language',
+    'lang.label':'Language','lang.alerts':'Alert language','toast.alertLangSaved':'Alert language saved',
   },
 }

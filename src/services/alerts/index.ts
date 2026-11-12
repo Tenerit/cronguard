@@ -7,6 +7,7 @@ import { escapeHtml }   from '../escape'
 import { redis }        from '../../config/redis'
 import type { AnalysisResult } from '../llm/analyzer'
 import { sendChannelAlerts, sendChannelRecovery, type Channels } from './channels'
+import { T, langOf, localizeFact, type Lang } from './i18n'
 
 // Compteur cross-process des échecs de LIVRAISON de notification. Exposé en /metrics
 // (cronguard_notification_failures_total) → un canal qui tombe en silence (SMTP mal
@@ -39,9 +40,10 @@ const SEVERITY_EMOJI: Record<string, string> = {
 }
 
 // Une correction confirmée par un humain n'a pas le même statut qu'une suggestion du modèle.
-function actionLabel(a: AnalysisResult): string {
-  return a.verifiedFix ? `Correction vérifiée (${a.verifiedFix.slice(0, 10)})` : 'Piste à vérifier'
+export function actionLabel(a: AnalysisResult, lang: Lang = 'fr'): string {
+  return a.verifiedFix ? `${T[lang].verifiedFix} (${a.verifiedFix.slice(0, 10)})` : T[lang].toCheck
 }
+const factsOf = (a: AnalysisResult, lang: Lang) => (a.changed ?? []).map(c => localizeFact(lang, c)).join(' ; ')
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,6 +63,7 @@ export interface AlertPayload {
     webhookUrl?:   string
     teamsWebhook?: string
     channels?:     Channels     // Discord, Google Chat, Mattermost, ntfy, PagerDuty (channels.ts)
+    lang?:         Lang         // clients.lang ; absent = français
   }
 }
 
@@ -70,6 +73,7 @@ export async function sendSlackAlert(payload: AlertPayload) {
   const { slackWebhook } = payload.client
   if (!slackWebhook) return
 
+  const lang    = langOf(payload.client.lang), L = T[lang]
   const emoji   = SEVERITY_EMOJI[payload.analysis?.severity ?? 'medium']
   const hasAI   = !!payload.analysis
   const isRepeat = (payload.alertCount ?? 1) > 1
@@ -82,18 +86,18 @@ export async function sendSlackAlert(payload: AlertPayload) {
       type: 'header',
       text: {
         type: 'plain_text',
-        text: `${emoji}${isRepeat ? ' [REPEAT]' : ''} Job en échec : ${payload.jobName}`,
+        text: `${emoji}${isRepeat ? ' [REPEAT]' : ''} ${L.failed(payload.jobName)}`,
         emoji: true,
       },
     },
     {
       type: 'section',
       fields: [
-        { type: 'mrkdwn', text: `*Environnement*\n${payload.env}` },
-        { type: 'mrkdwn', text: `*Dernier ping*\n${payload.lastPingAt ?? 'Jamais'}` },
+        { type: 'mrkdwn', text: `*${L.env}*\n${payload.env}` },
+        { type: 'mrkdwn', text: `*${L.lastPing}*\n${payload.lastPingAt ?? L.never}` },
         ...(isRepeat ? [
-          { type: 'mrkdwn', text: `*Alertes envoyées*\n${payload.alertCount}` },
-          { type: 'mrkdwn', text: `*Durée incident*\n${duration ?? '?'}` },
+          { type: 'mrkdwn', text: `*${L.alertsSent}*\n${payload.alertCount}` },
+          { type: 'mrkdwn', text: `*${L.incidentDuration}*\n${duration ?? '?'}` },
         ] : []),
       ],
     },
@@ -107,17 +111,17 @@ export async function sendSlackAlert(payload: AlertPayload) {
       text: {
         type: 'mrkdwn',
         text: [
-          `*🔍 Diagnostic* \`${cat}\``,
-          `*Cause :* ${payload.analysis!.cause}`,
-          `*${actionLabel(payload.analysis!)} :* ${payload.analysis!.action}`,
-          prev ? `*Prévention :* ${prev}` : '',
-          payload.analysis!.changed?.length ? `*Changé depuis la dernière réussite :* ${payload.analysis!.changed.join(' ; ')}` : '',
-          payload.analysis!.step ? `*Étape :* ${payload.analysis!.step}` : '',
+          `*🔍 ${L.diagnosis}* \`${cat}\``,
+          `*${L.cause} :* ${payload.analysis!.cause}`,
+          `*${actionLabel(payload.analysis!, lang)} :* ${payload.analysis!.action}`,
+          prev ? `*${L.prevention} :* ${prev}` : '',
+          payload.analysis!.changed?.length ? `*${L.changed} :* ${factsOf(payload.analysis!, lang)}` : '',
+          payload.analysis!.step ? `*${L.step} :* ${localizeFact(lang, payload.analysis!.step)}` : '',
           payload.analysis!.knownFix
-            ? `*Correction connue (à adapter) — ${payload.analysis!.knownFix.title} :*\n` + payload.analysis!.knownFix.steps.map(s => `• ${s}`).join('\n')
+            ? `*${L.knownFix} — ${payload.analysis!.knownFix.title} :*\n` + payload.analysis!.knownFix.steps.map(s => `• ${s}`).join('\n')
             : '',
           payload.analysis!.evidence?.length
-            ? '*Lignes de log liées :*\n```' + payload.analysis!.evidence.join('\n').replace(/```/g, "'''") + '```'
+            ? `*${L.logLines} :*\n` + '```' + payload.analysis!.evidence.join('\n').replace(/```/g, "'''") + '```'
             : '',
         ].filter(Boolean).join('\n'),
       },
@@ -128,16 +132,16 @@ export async function sendSlackAlert(payload: AlertPayload) {
     type: 'actions',
     elements: [{
       type: 'button',
-      text: { type: 'plain_text', text: 'Voir la page de statut' },
+      text: { type: 'plain_text', text: L.seeStatus },
       url:  payload.statusPageUrl,
       style: 'primary',
     },
     ...(payload.reviewUrl ? [
-      { type: 'button', text: { type: 'plain_text', text: '✅ Analyse juste' }, url: payload.reviewUrl },
-      { type: 'button', text: { type: 'plain_text', text: '✏️ Corriger' }, url: `${payload.reviewUrl}?v=fix` },
+      { type: 'button', text: { type: 'plain_text', text: L.analysisRight }, url: payload.reviewUrl },
+      { type: 'button', text: { type: 'plain_text', text: L.fix }, url: `${payload.reviewUrl}?v=fix` },
     ] : payload.fixUrl ? [{
       type: 'button',
-      text: { type: 'plain_text', text: 'Ce qui a réglé la panne' },
+      text: { type: 'plain_text', text: L.whatFixed },
       url:  payload.fixUrl,
     }] : [])],
   })
@@ -155,6 +159,7 @@ export async function sendSlackAlert(payload: AlertPayload) {
 // ─── Email ───────────────────────────────────────────────────────────────────
 
 export async function sendEmailAlert(payload: AlertPayload) {
+  const lang     = langOf(payload.client.lang), L = T[lang]
   const emoji    = SEVERITY_EMOJI[payload.analysis?.severity ?? 'medium']
   const hasAI    = !!payload.analysis
 
@@ -168,43 +173,43 @@ export async function sendEmailAlert(payload: AlertPayload) {
   const aiSection = hasAI
     ? `
     <div style="background:#f8f9fa;border-left:4px solid #6c63ff;padding:12px 16px;margin:16px 0;border-radius:4px;">
-      <p style="font-weight:600;margin:0 0 8px;">🔍 Diagnostic &nbsp;
+      <p style="font-weight:600;margin:0 0 8px;">🔍 ${L.diagnosis} &nbsp;
         <span style="font-size:11px;background:${catColor}22;color:${catColor};padding:2px 8px;border-radius:10px;font-family:monospace">${cat}</span>
       </p>
-      <p style="margin:0 0 4px;"><strong>Cause :</strong> ${escapeHtml(payload.analysis!.cause)}</p>
-      <p style="margin:0 0 4px;"><strong>${actionLabel(payload.analysis!)} :</strong> ${escapeHtml(payload.analysis!.action)}</p>
-      ${payload.analysis!.changed?.length ? `<p style="margin:0 0 4px;"><strong>Changé depuis la dernière réussite :</strong> ${escapeHtml(payload.analysis!.changed.join(' ; '))}</p>` : ''}
-      ${payload.analysis!.step ? `<p style="margin:0 0 4px;"><strong>Étape :</strong> ${escapeHtml(payload.analysis!.step)}</p>` : ''}
-      ${payload.analysis!.knownFix ? `<div style="margin:8px 0 0;"><strong>Correction connue (à adapter) — ${escapeHtml(payload.analysis!.knownFix.title)}</strong><ul style="margin:4px 0 0;padding-left:18px;">${payload.analysis!.knownFix.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul></div>` : ''}
+      <p style="margin:0 0 4px;"><strong>${L.cause} :</strong> ${escapeHtml(payload.analysis!.cause)}</p>
+      <p style="margin:0 0 4px;"><strong>${actionLabel(payload.analysis!, lang)} :</strong> ${escapeHtml(payload.analysis!.action)}</p>
+      ${payload.analysis!.changed?.length ? `<p style="margin:0 0 4px;"><strong>${L.changed} :</strong> ${escapeHtml(factsOf(payload.analysis!, lang))}</p>` : ''}
+      ${payload.analysis!.step ? `<p style="margin:0 0 4px;"><strong>${L.step} :</strong> ${escapeHtml(localizeFact(lang, payload.analysis!.step))}</p>` : ''}
+      ${payload.analysis!.knownFix ? `<div style="margin:8px 0 0;"><strong>${L.knownFix} — ${escapeHtml(payload.analysis!.knownFix.title)}</strong><ul style="margin:4px 0 0;padding-left:18px;">${payload.analysis!.knownFix.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul></div>` : ''}
       ${payload.analysis!.evidence?.length ? `<pre style="margin:8px 0 0;font-size:11px;background:#fff;border:1px solid #e2e8f0;padding:6px 8px;white-space:pre-wrap;">${escapeHtml(payload.analysis!.evidence.join('\n'))}</pre>` : ''}
-      ${payload.analysis!.prevention ? `<p style="margin:4px 0 0;color:#4a9aa7;"><strong>Prévention :</strong> ${escapeHtml(payload.analysis!.prevention)}</p>` : ''}
+      ${payload.analysis!.prevention ? `<p style="margin:4px 0 0;color:#4a9aa7;"><strong>${L.prevention} :</strong> ${escapeHtml(payload.analysis!.prevention)}</p>` : ''}
     </div>`
-    : `<p style="color:#888;">Diagnostic indisponible — vérifiez les logs manuellement.</p>`
+    : `<p style="color:#888;">${L.unavailableMail}</p>`
 
   const html = `
   <div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
-    <h2 style="color:#e53e3e;">${emoji} Job en échec : ${escapeHtml(payload.jobName)}</h2>
+    <h2 style="color:#e53e3e;">${emoji} ${escapeHtml(L.failed(payload.jobName))}</h2>
     <table style="width:100%;border-collapse:collapse;margin:16px 0;">
       <tr>
-        <td style="padding:8px;color:#666;">Environnement</td>
+        <td style="padding:8px;color:#666;">${L.env}</td>
         <td style="padding:8px;font-weight:500;">${payload.env}</td>
       </tr>
       <tr style="background:#f8f9fa;">
-        <td style="padding:8px;color:#666;">Dernier ping reçu</td>
-        <td style="padding:8px;font-weight:500;">${payload.lastPingAt ?? 'Jamais'}</td>
+        <td style="padding:8px;color:#666;">${L.lastPingReceived}</td>
+        <td style="padding:8px;font-weight:500;">${payload.lastPingAt ?? L.never}</td>
       </tr>
     </table>
     ${aiSection}
     <a href="${payload.statusPageUrl}"
        style="display:inline-block;background:#6c63ff;color:white;padding:10px 20px;
               border-radius:6px;text-decoration:none;margin-top:8px;">
-      Voir la page de statut →
+      ${L.seeStatus} →
     </a>
     ${payload.reviewUrl
-      ? `<a href="${escapeHtml(payload.reviewUrl)}" style="display:inline-block;color:#238636;padding:10px 20px;margin-top:8px;">✅ Analyse juste</a><a href="${escapeHtml(payload.reviewUrl)}?v=fix" style="display:inline-block;color:#1f6feb;padding:10px 20px;margin-top:8px;">✏️ Corriger</a>`
-      : payload.fixUrl ? `<a href="${escapeHtml(payload.fixUrl)}" style="display:inline-block;color:#6c63ff;padding:10px 20px;margin-top:8px;">Ce qui a réglé la panne →</a>` : ''}
+      ? `<a href="${escapeHtml(payload.reviewUrl)}" style="display:inline-block;color:#238636;padding:10px 20px;margin-top:8px;">${L.analysisRight}</a><a href="${escapeHtml(payload.reviewUrl)}?v=fix" style="display:inline-block;color:#1f6feb;padding:10px 20px;margin-top:8px;">${L.fix}</a>`
+      : payload.fixUrl ? `<a href="${escapeHtml(payload.fixUrl)}" style="display:inline-block;color:#6c63ff;padding:10px 20px;margin-top:8px;">${L.whatFixed} →</a>` : ''}
     <p style="color:#aaa;font-size:12px;margin-top:24px;">
-      CronGuard · <a href="#">Gérer les alertes</a>
+      CronGuard · <a href="#">${L.manageAlerts}</a>
     </p>
   </div>`
 
@@ -212,7 +217,7 @@ export async function sendEmailAlert(payload: AlertPayload) {
     await getMailer().sendMail({
       from:    `"CronGuard" <${process.env.SMTP_FROM}>`,
       to:      payload.client.email,
-      subject: `${emoji} Job en échec : ${payload.jobName} (${payload.env})`,
+      subject: `${emoji} ${L.failed(payload.jobName)} (${payload.env})`,
       html,
     })
     logger.info('[Alert] Email sent', { to: payload.client.email, job: payload.jobName })
@@ -270,26 +275,26 @@ export async function sendWebhookAlert(payload: AlertPayload) {
 // une carte adaptative. Lisible en 5 s à 2h40 : cause, action, ligne décisive, deux boutons de retour.
 // Les boutons ouvrent la page signée /r/<jeton> : pas de bot Azure, rien à déclarer chez Microsoft.
 export function teamsCard(payload: AlertPayload): object {
-  const a = payload.analysis
+  const a = payload.analysis, lang = langOf(payload.client.lang), L = T[lang]
   const facts = a ? [
-    { title: 'Cause',  value: a.cause },
-    { title: actionLabel(a), value: a.verifiedFix ? a.action : a.action },
-    { title: 'Sévérité', value: `${a.severity} · confiance ${a.confidence}` },
-    ...(a.changed?.length ? [{ title: 'Changé depuis la dernière réussite', value: a.changed.join(' ; ') }] : []),
-    ...(a.step ? [{ title: 'Étape', value: a.step }] : []),
-  ] : [{ title: 'Analyse', value: 'Indisponible (voir les logs)' }]
+    { title: L.cause,  value: a.cause },
+    { title: actionLabel(a, lang), value: a.action },
+    { title: L.severity, value: `${a.severity} · ${L.confidence} ${a.confidence}` },
+    ...(a.changed?.length ? [{ title: L.changed, value: factsOf(a, lang) }] : []),
+    ...(a.step ? [{ title: L.step, value: localizeFact(lang, a.step) }] : []),
+  ] : [{ title: L.analysis, value: L.unavailable }]
   const body: object[] = [
     { type: 'TextBlock', size: 'Large', weight: 'Bolder', wrap: true, color: 'Attention',
-      text: `${SEVERITY_EMOJI[a?.severity ?? 'medium']} ${payload.jobName} en échec (${payload.env})` },
+      text: `${SEVERITY_EMOJI[a?.severity ?? 'medium']} ${L.failedShort(payload.jobName, payload.env)}` },
     { type: 'FactSet', facts },
   ]
   const line = a?.evidence?.[0]
   if (line) body.push({ type: 'TextBlock', text: line, wrap: true, fontType: 'Monospace', size: 'Small', isSubtle: true })
   const actions: object[] = payload.reviewUrl ? [
-    { type: 'Action.OpenUrl', title: '✅ Analyse juste', url: payload.reviewUrl },
-    { type: 'Action.OpenUrl', title: '✏️ Corriger', url: `${payload.reviewUrl}?v=fix` },
+    { type: 'Action.OpenUrl', title: L.analysisRight, url: payload.reviewUrl },
+    { type: 'Action.OpenUrl', title: L.fix, url: `${payload.reviewUrl}?v=fix` },
   ] : []
-  actions.push({ type: 'Action.OpenUrl', title: 'Page de statut', url: payload.statusPageUrl })
+  actions.push({ type: 'Action.OpenUrl', title: L.statusPage, url: payload.statusPageUrl })
   return { type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', contentUrl: null,
     content: { $schema: 'http://adaptivecards.io/schemas/adaptive-card.json', type: 'AdaptiveCard', version: '1.4', body, actions } }] }
 }
@@ -330,21 +335,23 @@ export interface RecoveryPayload {
     webhookUrl?:   string
     teamsWebhook?: string
     channels?:     Channels     // Discord, Google Chat, Mattermost, ntfy, PagerDuty (channels.ts)
+    lang?:         Lang         // clients.lang ; absent = français
   }
 }
 
 export async function sendRecovery(p: RecoveryPayload) {
   const downtime = p.downMs ? formatDuration(p.downMs) : null
+  const L = T[langOf(p.client.lang)]
 
   const slack = async () => {
     if (!p.client.slackWebhook) return
     if (!(await isSafeWebhookTarget(p.client.slackWebhook))) return
     await axios.post(p.client.slackWebhook, {
       blocks: [
-        { type: 'header', text: { type: 'plain_text', text: `✅ Rétabli : ${p.jobName}`, emoji: true } },
+        { type: 'header', text: { type: 'plain_text', text: `✅ ${L.restored(p.jobName)}`, emoji: true } },
         { type: 'section', fields: [
-          { type: 'mrkdwn', text: `*Environnement*\n${p.env}` },
-          ...(downtime ? [{ type: 'mrkdwn', text: `*Durée de l'incident*\n${downtime}` }] : []),
+          { type: 'mrkdwn', text: `*${L.env}*\n${p.env}` },
+          ...(downtime ? [{ type: 'mrkdwn', text: `*${L.incidentLength}*\n${downtime}` }] : []),
         ] },
       ],
     }, { timeout: 5000 })
@@ -354,12 +361,12 @@ export async function sendRecovery(p: RecoveryPayload) {
     await getMailer().sendMail({
       from:    `"CronGuard" <${process.env.SMTP_FROM}>`,
       to:      p.client.email,
-      subject: `✅ Rétabli : ${p.jobName} (${p.env})`,
+      subject: `✅ ${L.restored(p.jobName)} (${p.env})`,
       html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;">
-        <h2 style="color:#2dba8c;">✅ Job rétabli : ${escapeHtml(p.jobName)}</h2>
-        <p style="color:#555;">Le job a de nouveau pingé avec succès${downtime ? ` après ${downtime} d'incident` : ''}.</p>
-        <a href="${p.statusPageUrl}" style="display:inline-block;background:#2dba8c;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;margin-top:8px;">Voir la page de statut →</a>
+        <h2 style="color:#2dba8c;">✅ ${escapeHtml(L.jobRestored(p.jobName))}</h2>
+        <p style="color:#555;">${L.restoredBody(downtime)}</p>
+        <a href="${p.statusPageUrl}" style="display:inline-block;background:#2dba8c;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;margin-top:8px;">${L.seeStatus} →</a>
       </div>`,
     })
   }
@@ -382,8 +389,8 @@ export async function sendRecovery(p: RecoveryPayload) {
     if (!p.client.teamsWebhook || !(await isSafeWebhookTarget(p.client.teamsWebhook))) return
     await axios.post(p.client.teamsWebhook, { type: 'message', attachments: [{ contentType: 'application/vnd.microsoft.card.adaptive', contentUrl: null,
       content: { $schema: 'http://adaptivecards.io/schemas/adaptive-card.json', type: 'AdaptiveCard', version: '1.4', body: [
-        { type: 'TextBlock', size: 'Large', weight: 'Bolder', color: 'Good', wrap: true, text: `✅ Rétabli : ${p.jobName} (${p.env})` },
-        ...(downtime ? [{ type: 'TextBlock', text: `Durée de l'incident : ${downtime}`, wrap: true }] : []),
+        { type: 'TextBlock', size: 'Large', weight: 'Bolder', color: 'Good', wrap: true, text: `✅ ${L.restored(p.jobName)} (${p.env})` },
+        ...(downtime ? [{ type: 'TextBlock', text: `${L.incidentLength} : ${downtime}`, wrap: true }] : []),
       ] } }] }, { timeout: 5000 })
   }
 
@@ -405,19 +412,21 @@ export interface EscalationPayload {
   escalationEmail?:   string
   escalationWebhook?: string
   analysis?: { cause?: string; action?: string; severity?: string; category?: string } | null
+  lang?: Lang
 }
 
 export async function sendEscalation(p: EscalationPayload) {
   const down    = formatDuration(Date.now() - p.firstFired.getTime())
   const emoji   = SEVERITY_EMOJI[p.analysis?.severity ?? 'high']
-  const subject = `🚨 [ESCALADE] Job toujours en échec : ${p.jobName} (${down})`
+  const L       = T[langOf(p.lang)]
+  const subject = L.escSubject(p.jobName, down)
 
   const email = async () => {
     if (!p.escalationEmail) return
     const aiBlock = p.analysis?.cause
-      ? `<p style="margin:4px 0"><strong>Cause connue :</strong> ${escapeHtml(p.analysis.cause)}</p>
-         <p style="margin:4px 0"><strong>Piste à vérifier :</strong> ${escapeHtml(p.analysis.action ?? '—')}</p>`
-      : `<p style="color:#888">Aucune analyse IA disponible.</p>`
+      ? `<p style="margin:4px 0"><strong>${L.knownCause} :</strong> ${escapeHtml(p.analysis.cause)}</p>
+         <p style="margin:4px 0"><strong>${L.toCheck} :</strong> ${escapeHtml(p.analysis.action ?? '—')}</p>`
+      : `<p style="color:#888">${L.noAnalysis}</p>`
 
     await getMailer().sendMail({
       from:    `"CronGuard" <${process.env.SMTP_FROM}>`,
@@ -425,19 +434,18 @@ export async function sendEscalation(p: EscalationPayload) {
       subject,
       html: `
       <div style="font-family:sans-serif;max-width:560px;margin:0 auto;border-top:4px solid #e53e3e;padding-top:16px;">
-        <h2 style="color:#e53e3e;margin:0 0 4px;">🚨 Escalade : ${escapeHtml(p.jobName)}</h2>
+        <h2 style="color:#e53e3e;margin:0 0 4px;">🚨 ${escapeHtml(L.escTitle(p.jobName))}</h2>
         <p style="color:#555;margin:0 0 16px;">
-          Ce job est en échec depuis <strong>${down}</strong> et n'a pas été pris en charge
-          (${p.alertCount} alerte${p.alertCount > 1 ? 's' : ''} envoyée${p.alertCount > 1 ? 's' : ''}).
+          ${L.escBody(down, p.alertCount)}
         </p>
         <div style="background:#fff5f5;border-left:4px solid #e53e3e;padding:12px 16px;border-radius:4px;">
           ${aiBlock}
         </div>
         <a href="${p.statusPageUrl}" style="display:inline-block;background:#e53e3e;color:white;
            padding:10px 20px;border-radius:6px;text-decoration:none;margin-top:16px;">
-          Voir le statut et acquitter →
+          ${L.ackStatus} →
         </a>
-        <p style="color:#aaa;font-size:12px;margin-top:24px;">CronGuard · Escalade automatique</p>
+        <p style="color:#aaa;font-size:12px;margin-top:24px;">CronGuard · ${L.autoEsc}</p>
       </div>`,
     })
     logger.info('[Alert] Escalation email sent', { to: p.escalationEmail, job: p.jobName, down })
