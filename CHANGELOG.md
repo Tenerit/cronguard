@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Tests — cas dorés communs aux 4 SDK (2026-11-12)
+- `sdk/testdata/golden.json` : 25 cas de masquage et 8 cas de « ce qui a changé », que le bloc partagé bash/Python, le SDK Node et le binaire Go doivent rendre à l'identique (`tests/sdk-golden.test.ts`, `sdk/go/golden_test.go`). Référence : le bloc partagé ; `python sdk/testdata/make-golden.py` régénère, à faire seulement pour un changement voulu.
+- Avant, seule la liste des motifs de masquage était comparée : Node et Go pouvaient rendre autre chose sans qu'un test le voie.
+- Contre-épreuves : un libellé changé dans le SDK Node fait échouer un cas ; chacun des 3 refus qui remplacent en Go les assertions `(?!…)` fait échouer un cas quand on le retire. Au premier essai, ces 3 retraits passaient inaperçus : les cas ne testaient pas ce que je croyais (« AUTH [REDACTED] » est déjà protégé par un autre filtre) ; 4 cas ajoutés.
+- Non couvert : les sondes qui touchent le disque ou le réseau (chemins, `CG_EXPECT`, DNS/TCP), testées SDK par SDK.
+
 ### Ajouté — alertes en anglais, 1er temps (2026-11-12)
 - **Langue des alertes par compte** (`clients.lang`, migration v26 ; Réglages › Compte › Langue des alertes), distincte de la langue de l'interface, qui suit le navigateur. Sans réglage, rien ne change : français.
 - Traduits : l'habillage de **tous** les canaux (e-mail, Slack, Teams, Discord, Google Chat, Mattermost, ntfy, PagerDuty), le rétablissement, l'escalade, et les **faits relevés par les SDK** (variable disparue, fichier modifié, version d'outil, étape où le job s'est arrêté). Ces faits sont traduits côté serveur à partir des libellés des SDK : un SDK déjà installé chez un client reçoit aussi des alertes en anglais, sans mise à jour.

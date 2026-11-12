@@ -50,6 +50,7 @@ git config core.hooksPath scripts/git-hooks
 - Les tests d'intégration rejouent les **vraies** migrations (`src/db/migrations.ts`) sur `pg-mem` : une
   nouvelle colonne ne s'ajoute qu'à un seul endroit. Si une migration ne passe pas sur `pg-mem`, le test
   s'arrête ; ne l'ajouter à la liste `TOLERATED` que si c'est une reprise de données sans effet sur une base vide.
+- Un changement de masquage ou de « ce qui a changé » dans un SDK se fait dans les 4 (bloc partagé, Node, Go) ; `python sdk/testdata/make-golden.py` régénère les cas dorés, à relire dans le diff.
 - Les identifiants insérés par les tests sont des UUID (`randomUUID()`), comme en production.
 
 ## Architecture (survol)

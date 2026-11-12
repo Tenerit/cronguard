@@ -1,0 +1,433 @@
+{
+ "mask": [
+  {
+   "in": "password=hunter22 failed",
+   "out": "password=[REDACTED] failed"
+  },
+  {
+   "in": "PermitRootLogin password=NO",
+   "out": "PermitRootLogin password=NO"
+  },
+  {
+   "in": "secret: YES",
+   "out": "secret: YES"
+  },
+  {
+   "in": "connect postgres://app:S3cretPw@db.internal:5432/shop failed",
+   "out": "connect postgres://app:[REDACTED]@db.internal:5432/shop failed"
+  },
+  {
+   "in": "mongodb+srv://u:p%40ss:w0rd@cluster0.x.mongodb.net/db",
+   "out": "mongodb+srv://u:[REDACTED]@cluster0.x.mongodb.net/db"
+  },
+  {
+   "in": "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJlMTIz",
+   "out": "Authorization: Bearer [REDACTED]"
+  },
+  {
+   "in": "AWS key AKIAIOSFODNN7EXAMPLE rejected",
+   "out": "AWS key [REDACTED] rejected"
+  },
+  {
+   "in": "git clone https://ghp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@github.com/x/y",
+   "out": "git clone https://[REDACTED]@github.com/x/y"
+  },
+  {
+   "in": "curl -u admin:Tr0ub4dor https://api.local",
+   "out": "curl -u admin:[REDACTED] https://api.local"
+  },
+  {
+   "in": "docker login -p $REG_PASS registry.local",
+   "out": "docker login -p $REG_PASS registry.local"
+  },
+  {
+   "in": "docker login -p Sup3rS3cret registry.local",
+   "out": "docker login -p [REDACTED] registry.local"
+  },
+  {
+   "in": "mysqldump -u root -pr00tpw shop",
+   "out": "mysqldump -u root -p[REDACTED] shop"
+  },
+  {
+   "in": "AUTH [REDACTED]",
+   "out": "AUTH [REDACTED]"
+  },
+  {
+   "in": "AUTH redispass123",
+   "out": "AUTH [REDACTED]"
+  },
+  {
+   "in": "{\"api_key\": \"kkkkkkkkkkkkkkkkkkkkkkkk\", \"user\": \"bob\"}",
+   "out": "{\"api_key\": \"[REDACTED]\", \"user\": \"bob\"}"
+  },
+  {
+   "in": "DB_PASSWORD=zx81spectrum ./run.sh",
+   "out": "DB_PASSWORD=[REDACTED] ./run.sh"
+  },
+  {
+   "in": "export API_TOKEN=${API_TOKEN}",
+   "out": "export API_TOKEN=${API_TOKEN}"
+  },
+  {
+   "in": "hooks.slack.com/services/T000/B000/XXXXXXXXXXXXXXXXXXXXXXXX",
+   "out": "hooks.slack.com/services/[REDACTED]"
+  },
+  {
+   "in": "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA\n-----END RSA PRIVATE KEY-----",
+   "out": "-----BEGIN RSA PRIVATE KEY-----[REDACTED]-----END RSA PRIVATE KEY-----"
+  },
+  {
+   "in": "nothing secret here: exit 1",
+   "out": "nothing secret here: exit 1"
+  },
+  {
+   "in": "password=NOPE1234",
+   "out": "password=[REDACTED]"
+  },
+  {
+   "in": "password=NO,retry",
+   "out": "password=[REDACTED]"
+  },
+  {
+   "in": "mode secret: NO,fallback",
+   "out": "mode secret: NO,fallback"
+  },
+  {
+   "in": "docker login -u bob -p --password-stdin registry.local",
+   "out": "docker login -u bob -p --password-stdin registry.local"
+  },
+  {
+   "in": "AUTH [user-list]",
+   "out": "AUTH [user-list]"
+  }
+ ],
+ "fpdiff": [
+  {
+   "name": "rien n’a changé",
+   "old": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "new": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "out": []
+  },
+  {
+   "name": "variable disparue",
+   "old": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "new": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "out": [
+    {
+     "kind": "var",
+     "label": "variable PGPASSWORD absente depuis la dernière réussite"
+    }
+   ]
+  },
+  {
+   "name": "PATH et dossier",
+   "old": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "new": {
+    "command": "abc",
+    "path": "/usr/local/bin:/usr/bin",
+    "cwd": "/",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "out": [
+    {
+     "kind": "env",
+     "label": "PATH",
+     "before": "/usr/bin:/bin",
+     "after": "/usr/local/bin:/usr/bin"
+    },
+    {
+     "kind": "env",
+     "label": "dossier de lancement",
+     "before": "/srv",
+     "after": "/"
+    }
+   ]
+  },
+  {
+   "name": "version d’outil",
+   "old": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "new": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 16.1"
+    }
+   },
+   "out": [
+    {
+     "kind": "tool",
+     "label": "version de pg_dump",
+     "before": "pg_dump (PostgreSQL) 15.4",
+     "after": "pg_dump (PostgreSQL) 16.1"
+    }
+   ]
+  },
+  {
+   "name": "commande modifiée",
+   "old": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "new": {
+    "command": "def",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "out": [
+    {
+     "kind": "command",
+     "label": "commande modifiée"
+    }
+   ]
+  },
+  {
+   "name": "fichier modifié",
+   "old": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "new": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "45:1700000300"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "out": [
+    {
+     "kind": "file",
+     "label": "/srv/run.sh modifié depuis la dernière réussite",
+     "before": "18 octets, 2023-11-14 23:13",
+     "after": "45 octets, 2023-11-14 23:18"
+    }
+   ]
+  },
+  {
+   "name": "fichier disparu",
+   "old": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "new": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {},
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "out": [
+    {
+     "kind": "file",
+     "label": "/srv/run.sh disparu",
+     "before": "18 octets, 2023-11-14 23:13",
+     "after": "—"
+    }
+   ]
+  },
+  {
+   "name": "outil nouveau : rien (on ne compare que les outils déjà vus)",
+   "old": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {}
+   },
+   "new": {
+    "command": "abc",
+    "path": "/usr/bin:/bin",
+    "cwd": "/srv",
+    "vars": [
+     "HOME",
+     "PGPASSWORD",
+     "TOKEN"
+    ],
+    "files": {
+     "/srv/run.sh": "18:1700000000"
+    },
+    "tools": {
+     "pg_dump": "pg_dump (PostgreSQL) 15.4"
+    }
+   },
+   "out": []
+  }
+ ]
+}
