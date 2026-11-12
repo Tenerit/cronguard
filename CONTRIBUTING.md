@@ -47,8 +47,10 @@ git config core.hooksPath scripts/git-hooks
 - `npm test` a besoin de Redis (pour les tests d'intégration). Postgres est mocké
   via `pg-mem` ; certaines requêtes (LATERAL, CTE, `::interval`) y sont partiellement
   supportées → ces tests tolèrent `200` **ou** `500`.
-- Toute nouvelle colonne DB doit être ajoutée **et** dans `src/db/migrations.ts`
-  **et** dans le schéma `pg-mem` de `src/__tests__/integration.test.ts`.
+- Les tests d'intégration rejouent les **vraies** migrations (`src/db/migrations.ts`) sur `pg-mem` : une
+  nouvelle colonne ne s'ajoute qu'à un seul endroit. Si une migration ne passe pas sur `pg-mem`, le test
+  s'arrête ; ne l'ajouter à la liste `TOLERATED` que si c'est une reprise de données sans effet sur une base vide.
+- Les identifiants insérés par les tests sont des UUID (`randomUUID()`), comme en production.
 
 ## Architecture (survol)
 

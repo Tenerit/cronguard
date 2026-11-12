@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Tests — fin des schémas recopiés (2026-11-12)
+- Les tests d'intégration (pg-mem) rejouent les **vraies** migrations v1 → v25 au lieu d'un schéma de ~185 lignes écrit à la main, qui devait être tenu à jour à chaque colonne. Mesuré : tout passe sur pg-mem sauf 3 reprises de données (`UPDATE` sans effet sur une base vide) et la table du marqueur de schéma, seuls ordres tolérés.
+- Trouvé en route : pg-mem refuse NULL dans un `CHECK (x IN …)`, ce que PostgreSQL accepte ; l'ancien schéma recopié n'avait simplement pas ces contraintes. Le test les réécrit en `x IS NULL OR x IN …`, de même sens. Les identifiants de test deviennent des UUID, comme en production (le schéma recopié acceptait n'importe quel texte).
+- `api.test.ts` validait les pings avec sa propre copie du schéma zod : c'est cette copie qui n'aurait jamais vu le refus de `duration_ms: 0`. Il utilise maintenant le schéma exporté par `src/api/routes/ping.ts`, avec un test de la durée 0.
+- README : `curl` seul ne remonte aucun fait ; renvoi vers le binaire statique.
+
 ### Ajouté — binaire Go sans dépendance (2026-11-12)
 - `sdk/go` : `cronguard run <clé> -- <commande>` et `cronguard step <nom>`, bibliothèque standard seule, binaire statique d'environ 6 Mo. Pour les machines et images sans bash, python3 ni curl.
 - Mêmes fichiers d'état que bash et Python (empreinte, file, verrou, marqueur d'échec) ; même liste de masquage que Python, moins les assertions `(?!…)` que le moteur regex de Go ne connaît pas, remplacées par un refus de la valeur (test). Constats : chemins, mémoire (compteur OOM : le binaire survit à la mise à mort de sa commande), disque, réseau, lanceur, ce qui a changé, `CG_EXPECT`, étapes, chevauchement et `CG_SKIP_IF_RUNNING`, résolution constatée. Manque : la comparaison avec le shell de connexion, et `doctor`.

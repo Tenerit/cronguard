@@ -22,8 +22,9 @@ let realRedis: Redis
 let app: express.Application
 
 // On mock le module db pour injecter pg-mem
+let migrationDb: unknown   // client tolérant, le temps des migrations seulement
 jest.mock('../db', () => ({
-  get db() { return pgPool },
+  get db() { return migrationDb ?? pgPool },
 }))
 
 // On mock redis pour injecter notre instance réelle Redis locale
@@ -57,198 +58,30 @@ beforeAll(async () => {
   // pg-mem n'implémente pas gen_random_uuid() : on l'enregistre pour que les tables à
   // `DEFAULT gen_random_uuid()` (audit_logs) insèrent comme sur le vrai Postgres (cf. §2).
   mem.public.registerFunction({
-    name: 'gen_random_uuid', returns: DataType.text, impure: true, implementation: () => randomUUID(),
+    name: 'gen_random_uuid', returns: DataType.uuid, impure: true, implementation: () => randomUUID(),
   })
 
   const adapter = mem.adapters.createPg()
   pgPool = new adapter.Pool() as unknown as Pool
 
-  // Crée le schéma minimal
-  await pgPool.query(`
-    CREATE TABLE clients (
-      id          TEXT PRIMARY KEY,
-      email       TEXT UNIQUE NOT NULL,
-      stripe_id   TEXT,
-      plan        TEXT NOT NULL DEFAULT 'free',
-      api_key     TEXT UNIQUE NOT NULL,
-      slack_webhook TEXT,
-      webhook_url TEXT,
-      teams_webhook TEXT,
-      channels JSONB NOT NULL DEFAULT '{}',
-      app_url     TEXT,
-      escalation_email     TEXT,
-      escalation_webhook   TEXT,
-      escalation_after_min INT NOT NULL DEFAULT 30,
-      first_ping_at TIMESTAMPTZ,
-      onboarding_sent BOOLEAN DEFAULT false,
-      trial_ends_at TIMESTAMPTZ,
-      reset_token  TEXT,
-      reset_token_exp TIMESTAMPTZ,
-      created_at  TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE monitors (
-      id           TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-      client_id    TEXT,
-      name         TEXT NOT NULL,
-      ping_key     TEXT UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-      schedule     TEXT,
-      grace_period INT NOT NULL DEFAULT 300,
-      expected_min INT,
-      expected_max INT,
-      env          TEXT NOT NULL DEFAULT 'production',
-      active       BOOLEAN DEFAULT TRUE,
-      paused_until TIMESTAMPTZ,
-      last_ping_at TIMESTAMPTZ,
-      last_status  TEXT DEFAULT 'unknown',
-      last_start_at TIMESTAMPTZ,
-      hung_alerted BOOLEAN DEFAULT false,
-      notes        TEXT,
-      created_at   TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE pings (
-      id          TEXT PRIMARY KEY,
-      monitor_id  TEXT REFERENCES monitors(id) ON DELETE CASCADE,
-      status      TEXT NOT NULL,
-      duration_ms INT,
-      output      TEXT,
-      records     INT,
-      exit_code   INT,
-      context     JSONB,
-      command     TEXT,
-      pinged_at   TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE analyses (
-      id          TEXT PRIMARY KEY,
-      monitor_id  TEXT REFERENCES monitors(id) ON DELETE CASCADE,
-      ping_id     TEXT REFERENCES pings(id) ON DELETE SET NULL,
-      error_hash  TEXT NOT NULL,
-      diagnosis   TEXT NOT NULL,
-      cause       TEXT,
-      action      TEXT,
-      model_used  TEXT NOT NULL,
-      alert_type  TEXT NOT NULL DEFAULT 'fail',
-      severity    TEXT NOT NULL DEFAULT 'medium',
-      from_cache  BOOLEAN NOT NULL DEFAULT false,
-      tokens_in   INT DEFAULT 0,
-      tokens_out  INT DEFAULT 0,
-      verified_fix TEXT,
-      fix_verified_at TIMESTAMPTZ,
-      signature   TEXT,
-      recognized_by TEXT,
-      explanation TEXT,
-      resolution  JSONB,
-      created_at  TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE team_fixes (
-      id              TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-      client_id       TEXT NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
-      match           TEXT NOT NULL,
-      title           TEXT NOT NULL,
-      cause           TEXT NOT NULL,
-      action          TEXT NOT NULL,
-      category        TEXT NOT NULL DEFAULT 'unknown',
-      source_analysis TEXT REFERENCES analyses(id) ON DELETE SET NULL,
-      created_by      TEXT,
-      active          BOOLEAN NOT NULL DEFAULT true,
-      created_at      TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE alert_states (
-      id           TEXT PRIMARY KEY,
-      monitor_id   TEXT REFERENCES monitors(id) ON DELETE CASCADE,
-      status       TEXT NOT NULL DEFAULT 'firing',
-      first_fired  TIMESTAMPTZ DEFAULT NOW(),
-      last_alerted TIMESTAMPTZ DEFAULT NOW(),
-      snooze_until TIMESTAMPTZ,
-      alert_count  INT DEFAULT 1,
-      escalated_at TIMESTAMPTZ,
-      UNIQUE (monitor_id)
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE maintenance_windows (
-      id           TEXT PRIMARY KEY,
-      client_id    TEXT REFERENCES clients(id) ON DELETE CASCADE,
-      monitor_id   TEXT REFERENCES monitors(id) ON DELETE CASCADE,
-      label        TEXT NOT NULL DEFAULT '',
-      cron_expr    TEXT NOT NULL,
-      duration_min INT  NOT NULL DEFAULT 60,
-      active       BOOLEAN NOT NULL DEFAULT true,
-      created_at   TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE team_members (
-      id          TEXT PRIMARY KEY,
-      client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,
-      email       TEXT NOT NULL,
-      role        TEXT NOT NULL DEFAULT 'member',
-      api_key     TEXT UNIQUE NOT NULL,
-      invited_by  TEXT,
-      created_at  TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE invitations (
-      id          TEXT PRIMARY KEY,
-      client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,
-      email       TEXT NOT NULL,
-      role        TEXT NOT NULL DEFAULT 'member',
-      token       TEXT UNIQUE NOT NULL,
-      expires_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      accepted_at TIMESTAMPTZ,
-      invited_by  TEXT,
-      created_at  TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE audit_logs (
-      id          TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-      client_id   TEXT REFERENCES clients(id) ON DELETE CASCADE,
-      actor       TEXT,
-      action      TEXT NOT NULL,
-      resource    TEXT NOT NULL,
-      resource_id TEXT,
-      meta        TEXT DEFAULT '{}',
-      ip          TEXT,
-      created_at  TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
-
-  await pgPool.query(`
-    CREATE TABLE incidents (
-      id           TEXT PRIMARY KEY,
-      monitor_id   TEXT REFERENCES monitors(id) ON DELETE CASCADE,
-      started_at   TIMESTAMPTZ NOT NULL,
-      resolved_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      duration_ms  BIGINT,
-      alert_count  INT DEFAULT 1,
-      severity     TEXT,
-      category     TEXT,
-      data_impact  TEXT,
-      root_cause   TEXT,
-      analysis_id  TEXT,
-      created_at   TIMESTAMPTZ DEFAULT NOW()
-    )
-  `)
+  // Le VRAI schéma : src/db/migrations.ts rejoué sur pg-mem (plus de copie à tenir à jour à la main, qui dérivait).
+  // pg-mem ne sait pas exécuter 3 reprises de données (UPDATE sur des tables vides ici, sans effet) ni la table du
+  // marqueur de schéma : ces ordres-là seuls sont tolérés, tout autre échec arrête le test.
+  // Mesuré le 2026-11-12 : tout le reste des migrations v1 → v25 passe tel quel.
+  mem.public.registerFunction({ name: 'pg_advisory_xact_lock', args: [DataType.integer], returns: DataType.text, implementation: () => '' })
+  const TOLERATED = /^\s*UPDATE\s+(analyses|clients|team_members)\s+SET|migration_markers/
+  migrationDb = { connect: async () => ({
+    query: async (sql: string, params?: unknown[]) => {
+      // pg-mem refuse NULL dans un CHECK (PostgreSQL l'accepte) : « x IS NULL OR » rend le même sens au CHECK.
+      sql = sql.replace(/CHECK \((\w+) IN \(/g, 'CHECK ($1 IS NULL OR $1 IN (')
+      try { return await pgPool.query(sql, params) }
+      catch (e) { if (TOLERATED.test(sql)) return { rows: [] }; throw e }
+    },
+    release() {},
+  }) }
+  const { runMigrations } = await import('../db/migrations')
+  await runMigrations()
+  migrationDb = undefined
 
   // Charge l'app après setup de la DB
   process.env.DATABASE_URL = 'mock'
@@ -284,7 +117,7 @@ afterAll(async () => {
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
 async function createTestClient(email = `test${Date.now()}@example.com`) {
-  const id     = `c-${Date.now()}-${Math.floor(Math.random()*99999)}`
+  const id     = randomUUID()
   const apiKey = `ak-${Date.now()}-${Math.floor(Math.random()*99999)}`
   const { rows: [client] } = await pgPool.query(
     'INSERT INTO clients (id, email, api_key) VALUES ($1,$2,$3) RETURNING id, email',
@@ -294,7 +127,7 @@ async function createTestClient(email = `test${Date.now()}@example.com`) {
 }
 
 async function createTestMonitor(clientId: string, name = 'test-job') {
-  const id      = `m-${Date.now()}-${Math.floor(Math.random()*99999)}`
+  const id      = randomUUID()
   const pingKey = `pk-${Date.now()}-${Math.floor(Math.random()*99999)}`
   const { rows: [monitor] } = await pgPool.query(
     'INSERT INTO monitors (id,client_id,name,ping_key,grace_period) VALUES ($1,$2,$3,$4,300) RETURNING id, ping_key, name',
@@ -653,7 +486,7 @@ describe('Clients — profil et paramètres', () => {
 
 describe('Maintenance windows — PATCH ne doit pas réinjecter les defaults (zod 4)', () => {
   async function createWindow(clientId: string) {
-    const id = `w-${Date.now()}-${Math.floor(Math.random()*99999)}`
+    const id = randomUUID()
     const { rows: [w] } = await pgPool.query(
       `INSERT INTO maintenance_windows (id, client_id, label, cron_expr, duration_min, active)
        VALUES ($1,$2,'nightly-etl','0 2 * * *',90,false) RETURNING *`,
@@ -701,7 +534,7 @@ describe('sameErrorBefore — même empreinte sur ce monitor, 7 jours', () => {
     const { hashError, sanitizeLogs } = await import('../services/sanitizer')
     await pgPool.query(
       `INSERT INTO analyses (id, monitor_id, error_hash, diagnosis, model_used, created_at) VALUES ($1,$2,$3,'{}','m',$4)`,
-      [`a-${Date.now()}-${Math.random()}`, monitorId, hashError(jobName, sanitizeLogs(logs).clean),
+      [randomUUID(), monitorId, hashError(jobName, sanitizeLogs(logs).clean),
        new Date(Date.now() - ageDays * 86400_000)]
     )
   }

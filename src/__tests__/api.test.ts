@@ -78,7 +78,7 @@ process.env.NODE_ENV     = 'test'
 // Build a minimal test app mirroring the real routes
 import { db } from '../db'
 import { pingQueue } from '../queue'
-import { z } from 'zod'
+import { Schema as RealPingSchema } from '../api/routes/ping'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
@@ -103,13 +103,7 @@ function buildApp() {
     }
   }
 
-  const PingSchema = z.object({
-    status:      z.enum(['success', 'fail']),
-    duration_ms: z.number().int().positive().max(86_400_000).optional(),
-    records:     z.number().int().nonnegative().max(1_000_000_000).optional(),
-    exit_code:   z.number().int().min(-999).max(999).optional(),
-    output:      z.string().max(4000).optional(),
-  })
+  const PingSchema = RealPingSchema   // le vrai schéma de src/api/routes/ping.ts
 
   // POST /ping/:pingKey
   app.post('/ping/:pingKey', async (req, res) => {
@@ -203,6 +197,16 @@ describe('POST /ping/:pingKey', () => {
       .post('/ping/test-key')
       .send({ status: 'success', duration_ms: 99_999_999_999 })
     expect(res.status).toBe(400)
+  })
+
+  it('accepts duration_ms 0 (sub-millisecond failure, busybox) and stores it as not measured', async () => {
+    const res = await request(app)
+      .post('/ping/test-key')
+      .send({ status: 'fail', exit_code: 127, duration_ms: 0, output: 'x: not found' })
+    expect(res.status).toBe(200)
+    const job = (pingQueue.add as jest.Mock).mock.calls.at(-1)[1]
+    expect(job.exit_code).toBe(127)
+    expect(job.duration_ms).toBeUndefined()
   })
 
   it('rejects negative records', async () => {

@@ -16,7 +16,8 @@ const limiter = rateLimit({
   message: { error: 'Too many pings' },
 })
 
-const Schema = z.object({
+// Exporté pour les tests : ils valident avec CE schéma, pas avec une copie (une copie n'avait pas vu le refus de 0).
+export const Schema = z.object({
   status:      z.enum(['success', 'fail']),
   // 0 accepté (un job qui échoue en moins d'1 ms, ou busybox qui ne compte qu'en secondes) mais enregistré comme
   // non mesuré : refusé, le ping entier était perdu ; gardé à 0, il fausserait la référence des alertes de lenteur.

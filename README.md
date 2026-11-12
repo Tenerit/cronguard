@@ -136,6 +136,8 @@ curl http://localhost:3000/ping/your-ping-key/$?          # one-liner: 0 = succe
 curl http://localhost:3000/ping/your-ping-key/start       # hung-job detection: start, then the result at the end
 ```
 
+Plain `curl` only reports success or failure: no logs masked on the host, no facts. On a host without bash or python3, the [static binary](sdk/go) sends the same facts as the SDKs.
+
 **What the bash and Python SDKs add** (read-only, never a variable value or a file content):
 - **What changed since the last success.** Every success leaves a fingerprint on the host (command, PATH, launch dir, variable *names*, size and date of the files the command names, version of known tools). On failure the alert says what changed: `pg_dump version: 15.4 → 16.1`, `variable API_TOKEN missing since the last success`. A fact next to the diagnosis, never presented as the cause.
 - **"Succeeded but produced nothing."** Declare what a job must produce; an exit code 0 without it becomes a failure:
