@@ -64,8 +64,10 @@ cg_end() {
     fi
   fi
   # Processus du job tué par le noyau (mémoire) alors que le job sort avec 0 (script qui ignore l'échec d'une
-  # commande) : c'est une panne silencieuse, signalée comme telle (labo clients du 12/11 : non détectée avant).
-  if [[ "$exit_code" -eq 0 && $expect_failed -eq 0 && "${_CG_OOM_START:-}" =~ ^[0-9]+$ ]]; then
+  # commande) : panne silencieuse, signalée. Le compteur vaut pour tout le cgroup (autres jobs compris) : il faut aussi
+  # la trace « Killed » que le shell du job écrit quand un de ses processus est tué (sinon fausse alerte).
+  if [[ "$exit_code" -eq 0 && $expect_failed -eq 0 && "${_CG_OOM_START:-}" =~ ^[0-9]+$ ]] \
+     && grep -qw Killed "$_CG_OUTPUT_FILE" 2>/dev/null; then
     local oom_now
     oom_now=$(awk '/^oom_kill /{print $2}' "/sys/fs/cgroup$(sed -n 's/^0:://p' /proc/self/cgroup 2>/dev/null)/memory.events" 2>/dev/null)
     if [[ "$oom_now" =~ ^[0-9]+$ && $oom_now -gt $_CG_OOM_START ]]; then

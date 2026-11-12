@@ -535,11 +535,8 @@ class CronGuard:
     # ── API directe ───────────────────────────────────────────────────────────
 
     def success(self, records: Optional[int] = None, duration_ms: Optional[int] = None, oom_start: Optional[int] = None):
-        # Processus tué par le noyau (mémoire) pendant un job qui finit sans exception : panne silencieuse, signalée.
-        now = _cg_oom_kills()
-        if oom_start is not None and now is not None and now > oom_start:
-            return self.fail(exit_code=0, duration_ms=duration_ms, oom_start=oom_start,
-                             output='cronguard: un processus du job a été tué par le noyau (mémoire) pendant cette exécution, malgré la réussite')
+        # oom_start : gardé pour l'interface. Une réussite n'est PAS changée en panne sur le seul compteur oom_kill : il vaut
+        # pour tout le cgroup (autres jobs compris) et le SDK Python ne voit pas la sortie de ses sous-processus.
         # Sorties attendues (CG_EXPECT) : réussi sans le fichier attendu, vide ou pas récrit = échec (code 0).
         spec = os.environ.get('CG_EXPECT')
         if spec:

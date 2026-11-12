@@ -218,7 +218,8 @@ func report(key, command string, code int, start time.Time, raw []byte, oomStart
 		}
 	}
 	// Processus tué par le noyau (mémoire) alors que la commande sort avec 0 : panne silencieuse, signalée.
-	if code == 0 && !expectFailed && oomStart != nil {
+	// Le compteur vaut pour tout le cgroup (autres jobs compris) : il faut aussi la trace « Killed » du shell du job.
+	if code == 0 && !expectFailed && oomStart != nil && killedWord.MatchString(text) {
 		if now := oomKills(); now != nil && *now > *oomStart {
 			expectFailed = true
 			text += "\ncronguard: un processus du job a été tué par le noyau (mémoire) pendant cette exécution, malgré le code 0\n"
@@ -558,9 +559,10 @@ func oomKills() *int {
 }
 
 var (
-	noSpace   = regexp.MustCompile(`(?i)No space left|ENOSPC|Disk quota exceeded|disk full`)
-	spacePath = regexp.MustCompile(`'(/[^']+)'|(?:^|\s)(/[\w./@+-]+)`)
-	cmdPath   = regexp.MustCompile(`(?:^|[\s=])(/[\w./@+*-]+)`)
+	noSpace    = regexp.MustCompile(`(?i)No space left|ENOSPC|Disk quota exceeded|disk full`)
+	spacePath  = regexp.MustCompile(`'(/[^']+)'|(?:^|\s)(/[\w./@+-]+)`)
+	killedWord = regexp.MustCompile(`\bKilled\b`)
+	cmdPath    = regexp.MustCompile(`(?:^|[\s=])(/[\w./@+*-]+)`)
 )
 
 func resources(oomStart *int, paths []map[string]any, text, command string) map[string]any {

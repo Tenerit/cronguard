@@ -72,7 +72,13 @@ const NOT_FOUND = /(?:^|\s)([\w.+-]+): (?:command )?not found|exec: "?([\w.+-]+)
 // Identifiants ABSENTS (pas faux) : un mauvais mot de passe ne dit rien de l'utilisateur du cron.
 const CREDS     = /fe_sendauth: no password supplied|\(using password: NO\)|Unable to locate credentials|NoCredentialsError|Permission denied \(publickey|gpg: .*(No secret key|No public key)/i
 
-export function contextFinding(logs: string, c?: RunContext): Finding | null {
+// Le compteur oom_kill est celui du cgroup ENTIER (conteneur, ou cron.service pour tous les jobs d'un hôte systemd) :
+// un OOM d'un autre job qui tourne en même temps le fait monter aussi. On ne l'attribue à CE job que s'il en porte la
+// trace : code 137 (tué par le signal 9) ou « Killed » dans sa propre sortie (labo clients du 12/11 : cause fausse sinon).
+export const killedTrace = (logs: string, exitCode?: number) =>
+  exitCode === 137 || exitCode === -9 || /\bKilled\b|SIGKILL|signal 9|exit status 137/i.test(logs)
+
+export function contextFinding(logs: string, c?: RunContext, exitCode?: number): Finding | null {
   // Sans log aussi : un job tué par OOM n'écrit souvent rien, et c'est le constat du SDK qui parle (labo du 11/11).
   if (!c) return null
 
@@ -87,7 +93,7 @@ export function contextFinding(logs: string, c?: RunContext): Finding | null {
 
   // Mémoire : le compteur oom_kill du cgroup a bougé pendant l'exécution — le noyau a tué un processus du job.
   const r = c.resources
-  if (r?.oomKills) {
+  if (r?.oomKills && killedTrace(logs, exitCode)) {
     const lim = r.memMax && /^\d+$/.test(r.memMax) ? `, limite ${bytes(+r.memMax)}` : ''
     const peak = r.memPeak && /^\d+$/.test(r.memPeak) ? `, pic ${bytes(+r.memPeak)}` : ''
     return { id: 'ctx-oom', category: 'resources',

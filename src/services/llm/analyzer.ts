@@ -368,7 +368,7 @@ type LogOnlyContext = Pick<JobContext, 'logs' | 'exitCode' | 'failCount7d' | 'co
 function analysisWithoutEvidence(ctx: LogOnlyContext): AnalysisResult {
   const exit = ctx.exitCode !== undefined ? ` (code de sortie ${ctx.exitCode})` : ''
   // Pas de log, mais un constat du SDK (OOM, sortie attendue absente) : c'est lui qui établit la cause.
-  const seen = contextFinding('', ctx.runContext)
+  const seen = contextFinding('', ctx.runContext, ctx.exitCode)
   if (seen) return { cause: seen.cause, action: seen.action, prevention: '', checks: [], severity: 'high', category: seen.category,
     confidence: 'high', data_impact: 'possible', fix_minutes: 30, fromCache: false, correlatedMonitors: ctx.correlatedFailures,
     model: 'knowledge', finding: seen.id }
@@ -407,7 +407,7 @@ export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'act
   res: T, cleanLogs: string, job?: Pick<JobContext, 'command' | 'runContext' | 'exitCode'>,
 ): T {
   const kf = knownFix(cleanLogs)
-  const observed = commandFinding(job?.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job?.runContext)
+  const observed = commandFinding(job?.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job?.runContext, job?.exitCode)
   if (observed) return { ...res, cause: observed.cause, action: observed.action, category: observed.category,
     checks: kf ? kf.steps.slice(0, 3) : res.checks, confidence: 'high', finding: observed.id, ...(kf ? { knownFix: kf } : {}) }
   // Sans fiche : sens officiel d'un code (curl / rsync dans les logs, sinon code de sortie 126/127/128+N).
@@ -445,8 +445,8 @@ function restatedLine(cause: string, logs: string): string | null {
 }
 
 /** Une source déterministe établit-elle la cause ? (mêmes sources et même ordre que groundWithKnownFix) */
-export function hasCertainKnowledge(cleanLogs: string, job: Pick<JobContext, 'command' | 'runContext'>): boolean {
-  const observed = commandFinding(job.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job.runContext)
+export function hasCertainKnowledge(cleanLogs: string, job: Pick<JobContext, 'command' | 'runContext' | 'exitCode'>): boolean {
+  const observed = commandFinding(job.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job.runContext, job.exitCode)
   return !!(observed || knownFix(cleanLogs) || toolCodeFinding(cleanLogs))
 }
 
