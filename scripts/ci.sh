@@ -27,8 +27,10 @@ step audit-prod  npm audit --omit=dev --audit-level=high
 step build       npm run build
 if command -v go >/dev/null; then
   step sdk-go bash -c 'cd sdk/go && go vet ./... && go build -o /tmp/cg-go . && CG_TEST_BIN=/tmp/cg-go go test -count=1 ./...'
+elif docker image inspect golang:1.23-alpine >/dev/null 2>&1; then
+  step sdk-go env MSYS_NO_PATHCONV=1 docker run --rm -v "$PWD/sdk:/src" -w /src/go -e CGO_ENABLED=0 -e GOFLAGS=-buildvcs=false     golang:1.23-alpine sh -c 'test -z "$(gofmt -l .)" && go vet ./... && go build -o /tmp/cg-go . && CG_TEST_BIN=/tmp/cg-go go test -count=1 ./...'
 else
-  echo "  - sdk-go                 ignoré (pas de Go ; tourne dans GitHub Actions)"
+  echo "  - sdk-go                 ignoré (ni Go ni l'image golang:1.23-alpine)"
 fi
 if [[ "${CI_SKIP_E2E:-}" == 1 ]]; then
   echo "  - e2e                    ignoré (CI_SKIP_E2E=1)"
