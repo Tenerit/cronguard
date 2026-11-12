@@ -40,16 +40,6 @@
    ]
   },
   {
-   "id": "g13",
-   "url": "https://stackoverflow.com/questions/59407306/how-to-set-up-laravel-cron-job-in-cpanel",
-   "truth": "php artisan lancé hors du dossier du projet : faire cd vers le projet avant.",
-   "keywords": [
-    "dossier",
-    "cd",
-    "relatif"
-   ]
-  },
-  {
    "id": "g19",
    "url": "https://askubuntu.com/questions/611336/why-putting-a-script-in-etc-cron-hourly-is-not-working",
    "truth": "run-parts ignore un fichier dont le nom contient un point (ou un caractère hors [A-Za-z0-9_-]) : le script de /etc/cron.hourly ne tourne jamais.",
@@ -116,6 +106,17 @@
     "/usr/sbin",
     "introuvable"
    ]
+  },
+  {
+   "id": "g46",
+   "url": "https://stackoverflow.com/questions/65084528/update-a-crontab-to-tar-new-updated-files-every-5-hours",
+   "truth": "find -exec tar relancé pour chaque fichier : l'archive est réécrite à chaque fois et ne garde que le dernier fichier (et -mmin sans signe ne trouve presque rien).",
+   "keywords": [
+    "tar",
+    "dernier fichier",
+    "-exec",
+    "-mmin"
+   ]
   }
  ],
  "excluded": {
@@ -151,6 +152,7 @@
   "b4-18": "question de planification",
   "b4-19": "reverse shell : non reproduit",
   "b4-21": "cause supposée (« I think »)",
-  "b4-23": "cause supposée (conseil de débogage)"
+  "b4-23": "cause supposée (conseil de débogage)",
+  "b3-13": "symptôme dû au PHP CGI de cPanel (argv absent), non reproductible fidèlement ; décidé avant tout scénario"
  }
 }
