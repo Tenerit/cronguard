@@ -25,7 +25,7 @@ COPY --from=builder --chown=cronguard:cronguard /app/node_modules ./node_modules
 COPY --from=builder --chown=cronguard:cronguard /app/package.json ./
 
 # Copie les fichiers HTML du dashboard
-COPY --chown=cronguard:cronguard src/api/dashboard.html ./dist/api/
+COPY --chown=cronguard:cronguard src/api/dashboard.html src/api/dashboard.css src/api/dashboard-i18n.js src/api/dashboard.js ./dist/api/
 COPY --chown=cronguard:cronguard src/api/status.html    ./dist/api/
 
 USER cronguard

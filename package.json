@@ -18,7 +18,7 @@
   "main": "dist/api/index.js",
   "scripts": {
     "setup": "node setup.js",
-    "build": "tsc && node -e \"const fs=require('fs');['dashboard.html','status.html'].forEach(f=>fs.copyFileSync('src/api/'+f,'dist/api/'+f))\"",
+    "build": "tsc && node -e \"const fs=require('fs');['dashboard.html','dashboard.css','dashboard-i18n.js','dashboard.js','status.html'].forEach(f=>fs.copyFileSync('src/api/'+f,'dist/api/'+f))\"",
     "build:watch": "tsc --watch",
     "dev": "tsx watch src/api/index.ts",
     "worker:dev": "tsx watch src/workers/analysis.worker.ts",

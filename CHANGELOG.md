@@ -7,6 +7,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Modifié — dashboard découpé (2026-11-12)
+- `dashboard.html` (4 740 lignes) devient une page de 930 lignes et trois fichiers servis tels quels : `dashboard.css`, `dashboard-i18n.js` (traductions FR/EN), `dashboard.js` (application et démo). Aucune ligne de contenu modifiée ; ordre de chargement identique. Les Dockerfiles et la compilation copient les nouveaux fichiers ; la démo statique marche toujours (chemins relatifs). Seul le petit script anti-flash du thème reste en ligne, autorisé par son empreinte. `style-src 'unsafe-inline'` reste nécessaire : ~190 attributs `style=` dans les gabarits.
+
 ### Ajouté — SDK : mémoire et disque, réseau, secrets masqués sur la machine du job (2026-11-11, attentes fixées avant)
 - **Mémoire et disque** : compteur `oom_kill` du cgroup v2 au démarrage et à l'échec, limite et pic mémoire, espace libre du dossier de lancement et des chemins cités (y compris par « No space left »). Le serveur établit l'OOM (`ctx-oom`) et le volume plein (`ctx-disk-full`, seulement si l'erreur le dit aussi) comme des faits, au lieu de « code 137, probablement la mémoire ». Sur un hôte systemd, le cgroup est celui du service cron : le pic mémoire peut inclure d'autres jobs, le compteur OOM reste juste.
 - **Réseau** : pour les hôtes cités par une erreur réseau (et les URL de la commande), résolution DNS puis connexion TCP, 2 s maximum chacune, rien n'est envoyé ; `CG_PROBE_NET=0` désactive. Constats : nom introuvable, rien n'écoute, pas de réponse, répond de nouveau (panne passagère ou au-delà de la connexion).
@@ -21,7 +24,7 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ### Mesuré — secrets, essai 3 : les règles par format généralisent à moitié (2026-11-11, attentes fixées avant)
 - Règles ajoutées et commitées avant un jeu neuf de 25 types tirés du catalogue des outils spécialisés, dont beaucoup absents des règles, et 40 textes de questions publiques jamais utilisés (`eval/secrets-3.ts`).
-- **Rappel 52 % (attente ≥ 80 % : non remplie)**, 3 % de textes propres masqués à tort (≤ 5 % : remplie). Sur trois essais, des règles par format attrapent environ la moitié des types qu'elles ne connaissent pas : le masquage s'améliore, il ne sera jamais complet. La protection qui reste vraie : ne pas écrire de secret dans la sortie d'un job ; le SDK masque désormais aussi à la source (voir plus bas, quand livré).
+- **Rappel 52 % (attente ≥ 80 % : non remplie)**, 3 % de textes propres masqués à tort (≤ 5 % : remplie). Sur trois essais, des règles par format attrapent environ la moitié des types qu'elles ne connaissent pas : le masquage s'améliore, il ne sera jamais complet. La protection qui reste vraie : ne pas écrire de secret dans la sortie d'un job ; le SDK masque aussi la sortie sur la machine du job, avant tout envoi (voir l'entrée SDK ci-dessus).
 
 ## [1.7.0] — 2026-11-11 — Réparation constatée, compte rendu d'incident, import qui nomme les jobs
 

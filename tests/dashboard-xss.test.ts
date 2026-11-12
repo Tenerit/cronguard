@@ -4,7 +4,8 @@ import { join } from 'path'
 
 // Garde-fous statiques sur le dashboard : la CSP bloque les scripts inline non hashés, mais une
 // interpolation non échappée reste une injection HTML (faux formulaire, lien piégé) : on garde ces tests.
-const html = readFileSync(join(__dirname, '../src/api/dashboard.html'), 'utf8')
+// Le dashboard est découpé (2026-11-12) : HTML + JS, lus ensemble.
+const html = ['dashboard.html', 'dashboard.js'].map(f => readFileSync(join(__dirname, '../src/api', f), 'utf8')).join(String.fromCharCode(10))
 
 describe('dashboard : échappement des champs saisis par un membre', () => {
   it("esc() échappe aussi l'apostrophe", () => {

@@ -29,7 +29,7 @@ describe('Content-Security-Policy header', () => {
     expect(csp).toContain('https://fonts.gstatic.com')
     const scriptSrc = /script-src([^;]*)/.exec(csp)![1]
     expect(scriptSrc).not.toContain("'unsafe-inline'")
-    expect(scriptSrc.match(/'sha256-[A-Za-z0-9+/]+=*'/g)).toHaveLength(3)   // 2 blocs dashboard + 1 status
+    expect(scriptSrc.match(/'sha256-[A-Za-z0-9+/]+=*'/g)).toHaveLength(2)   // 1 bloc dashboard (anti-flash du thème) + 1 status : le reste est servi en fichiers
   })
 
   it('hashes the text the browser sees (CRLF normalised to LF)', () => {
@@ -37,7 +37,7 @@ describe('Content-Security-Policy header', () => {
   })
 
   // Sous cette CSP, un handler inline ne lève aucune erreur visible : le bouton ne fait juste rien.
-  it.each(['dashboard.html', 'status.html'])('%s has no inline event handler', (page) => {
+  it.each(['dashboard.html', 'dashboard.js', 'status.html'])('%s has no inline event handler', (page) => {
     const html = readFileSync(join(__dirname, '../api', page), 'utf8')
     expect(html).not.toMatch(/\son[a-z]+\s*=\s*["']/i)
     expect(html).not.toMatch(/javascript:/i)

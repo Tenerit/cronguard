@@ -113,6 +113,10 @@ app.use('/ping',     pingRouter)
 // Doit être en premier : app.use('/dashboard', requireApiKey) capturerait sinon le GET /dashboard
 
 app.get('/dashboard', (_, res) => res.sendFile('dashboard.html', { root: __dirname }))
+// CSS et JS du dashboard, servis tels quels (liste fermée : rien d'autre du dossier n'est exposé). Chemins relatifs
+// dans dashboard.html : la démo statique (?demo=1) marche aussi, posée telle quelle sur n'importe quel hébergeur.
+for (const f of ['dashboard.css', 'dashboard-i18n.js', 'dashboard.js'])
+  app.get('/' + f, (_, res) => res.sendFile(f, { root: __dirname }))
 
 // Page publique de tarifs (sert aussi de cancel_url Stripe). Rendue depuis PLANS
 // → une seule source de vérité pour les prix et les features.
