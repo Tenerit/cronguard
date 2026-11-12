@@ -49,3 +49,14 @@ describe('SDK Node : résolution constatée', () => {
     delete process.env.CG_STATE_DIR; delete process.env.CG_PROBE_LOGIN
   })
 })
+
+describe('SDK Node : chemin avec joker (labo terrain du 12/11 : « laravel-*.log » coupé en « laravel- »)', () => {
+  it('garde le motif entier et vérifie son existence par correspondance', () => {
+    const d = mkdtempSync(join(tmpdir(), 'cg-glob-'))
+    mkdirSync(join(d, 'logs')); writeFileSync(join(d, 'logs', 'laravel-01.log'), 'x')
+    process.chdir(d)
+    const out = pathProbe('error: stat of logs/laravel-*.log failed: No such file or directory\nerror: stat of logs/other-*.txt failed: No such file or directory')
+    expect(out.find(x => x.path === 'logs/laravel-*.log')).toMatchObject({ exists: true })
+    expect(out.find(x => x.path === 'logs/other-*.txt')).toMatchObject({ exists: false })
+  })
+})

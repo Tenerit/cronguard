@@ -53,7 +53,7 @@ const EXPECT: Record<string, string | null> = {
 }
 const INJECT: Record<string, [string, string]> = {   // conteneur, commande (root)
   'backup-db':     ['shop', 'dd if=/dev/zero of=/backups/filler bs=1024 count=4096 2>/dev/null; true'],
-  'sync-invoices': ['shop', 'pkill -f billing.py; true'],
+  'sync-invoices': ['shop', 'pkill -f "[b]illing.py"; true'],
   sitemap:         ['shop', `cp /opt/jobs/sitemap.sh /opt/sitemap.bak && printf '#!/bin/sh\\nsitemapgen > /srv/www/sitemap.xml\\n' > /opt/jobs/sitemap.sh`],
   'etl-nightly':   ['data', `cp /etc/crontabs/app /opt/crontab.bak && sed -i 's#WAREHOUSE_URL=postgres://etl@warehouse.internal/dw ##' /etc/crontabs/app`],
   'export-report': ['data', `printf 'id,amount\\n' > /srv/data/upstream.csv`],

@@ -63,6 +63,16 @@ cg_end() {
       printf '\ncronguard: sortie attendue non conforme : %s\n' "$exp_msg" >> "$_CG_OUTPUT_FILE"
     fi
   fi
+  # Processus du job tué par le noyau (mémoire) alors que le job sort avec 0 (script qui ignore l'échec d'une
+  # commande) : c'est une panne silencieuse, signalée comme telle (labo clients du 12/11 : non détectée avant).
+  if [[ "$exit_code" -eq 0 && $expect_failed -eq 0 && "${_CG_OOM_START:-}" =~ ^[0-9]+$ ]]; then
+    local oom_now
+    oom_now=$(awk '/^oom_kill /{print $2}' "/sys/fs/cgroup$(sed -n 's/^0:://p' /proc/self/cgroup 2>/dev/null)/memory.events" 2>/dev/null)
+    if [[ "$oom_now" =~ ^[0-9]+$ && $oom_now -gt $_CG_OOM_START ]]; then
+      expect_failed=1
+      printf '\ncronguard: un processus du job a été tué par le noyau (mémoire) pendant cette exécution, malgré le code 0\n' >> "$_CG_OUTPUT_FILE"
+    fi
+  fi
   if [[ -f "$_CG_OUTPUT_FILE" ]]; then
     # Tronque les logs à 3000 chars, échappe les guillemets
     # Secrets masqués ICI, sur la machine du job, avant tout envoi (le serveur masque de nouveau derrière).
@@ -287,13 +297,16 @@ def _cg_login(names):
     if where:
         res['loginFound'] = where
     return res
+def _cg_hits(q):
+    import glob as g
+    return sorted(g.glob(q))[:1] if '*' in q else ([q] if os.path.exists(q) else [])
 def _cg_paths(text):
     cands, denied = [], set()
     for line in text.splitlines():
         if not re.search(r"No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system", line, re.I):
             continue
         # Chemin non cité : jeton entier depuis un début de mot (« data/input.csv », pas « /input.csv »).
-        for m in re.finditer(r"'([^'\s]{1,200})'|\"([^\"\s]{1,200})\"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+-]+(?:/[\w.@+-]+)+)", line):
+        for m in re.finditer(r"'([^'\s]{1,200})'|\"([^\"\s]{1,200})\"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+*-]+(?:/[\w.@+*-]+)+)", line):
             p = next(g for g in m.groups() if g)
             if ('/' in p or '.' in p) and p not in cands:
                 cands.append(p)
@@ -303,13 +316,15 @@ def _cg_paths(text):
     for p in cands:
         todo.append(p)
         par = os.path.dirname(os.path.expanduser(p))
-        if (p in denied or not os.path.exists(os.path.expanduser(p))) and par and os.path.isdir(par) and par not in todo:
+        if (p in denied or not _cg_hits(os.path.expanduser(p))) and par and os.path.isdir(par) and par not in todo:
             todo.append(par)   # fichier à créer ou refusé : le dossier parent porte les droits (relevé aussi à la réussite)
     res = []
     for p in todo[:5]:
         q = os.path.expanduser(p)
-        d = {'path': p[:256], 'relative': not os.path.isabs(q), 'exists': os.path.exists(q)}
+        hits = _cg_hits(q)
+        d = {'path': p[:256], 'relative': not os.path.isabs(q), 'exists': bool(hits)}
         if d['exists']:
+            q = hits[0]
             s = os.stat(q)
             try:
                 import pwd
@@ -427,7 +442,7 @@ def _cg_oom_kills():
     except Exception:
         pass
     return None
-def _cg_resources(oom_start, paths, text=''):
+def _cg_resources(oom_start, paths, text='', cmd=''):
     res, d = {}, _cg_cgroup_dir()
     now = _cg_oom_kills()
     if oom_start not in (None, '') and now is not None and now > int(oom_start):
@@ -443,6 +458,10 @@ def _cg_resources(oom_start, paths, text=''):
     # qu'il faut mesurer, pas seulement le dossier de lancement (défaut trouvé par le labo du 11/11).
     full = [m.group(1) or m.group(2) for line in text.splitlines() if re.search(r'No space left|ENOSPC|Disk quota exceeded|disk full', line, re.I)
             for m in re.finditer(r"'(/[^']+)'|(?:^|\s)(/[\w./@+-]+)", line)]
+    if not full and re.search(r'No space left|ENOSPC|Disk quota exceeded|disk full', text, re.I):
+        # Message sans chemin (labo du 12/11 : pg_dump) : les chemins absolus de la commande et des sorties attendues.
+        spec = ' '.join(x.split()[0] for x in os.environ.get('CG_EXPECT', '').split(';') if x.strip())
+        full = [w for w in re.findall(r"(?:^|[\s=])(/[\w./@+*-]+)", cmd + ' ' + spec) if '*' not in os.path.dirname(w)]
     for p in full[:3] + [os.getcwd()] + [x['path'] for x in paths if x.get('exists')]:
         q = os.path.expanduser(p)
         q = q if os.path.isdir(q) else os.path.dirname(q) or '.'
@@ -623,7 +642,7 @@ ctx.update(_cg_login(names))
 _p = _cg_paths(out)
 if _p:
     ctx['paths'] = _p
-ctx['resources'] = _cg_resources(os.environ.get('_CG_OOM_START'), ctx.get('paths', []), out)
+ctx['resources'] = _cg_resources(os.environ.get('_CG_OOM_START'), ctx.get('paths', []), out, cmd)
 _net = _cg_net(out, cmd)
 if _net:
     ctx['net'] = _net

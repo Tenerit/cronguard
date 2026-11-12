@@ -87,21 +87,27 @@ export function pathProbe(text: string): Array<Record<string, unknown>> {
   for (const line of text.split('\n')) {
     if (!/No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system/i.test(line)) continue
     // Chemin non cité : jeton entier depuis un début de mot (« data/input.csv », pas « /input.csv »).
-    for (const m of line.matchAll(/'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?\/?[\w.@+-]+(?:\/[\w.@+-]+)+)/g)) {
+    for (const m of line.matchAll(/'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?\/?[\w.@+*-]+(?:\/[\w.@+*-]+)+)/g)) {
       const v = m[1] ?? m[2] ?? m[3]
       if ((v.includes('/') || v.includes('.')) && !cands.includes(v)) cands.push(v)
       if ((v.includes('/') || v.includes('.')) && /Permission denied|Read-only file system/i.test(line)) denied.add(v)
     }
   }
   const expand = (v: string) => v.startsWith('~') ? p.join(os.homedir(), v.slice(1)) : v
+  // Motif (« laravel-*.log ») : existe si au moins un fichier du dossier y correspond ; droits lus sur le premier.
+  const hit = (q: string): string | null => {
+    if (!q.includes('*')) return fs.existsSync(q) ? q : null
+    const re = new RegExp('^' + p.basename(q).replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$')
+    try { const f = fs.readdirSync(p.dirname(q)).filter((n: string) => re.test(n)).sort()[0]; return f ? p.join(p.dirname(q), f) : null } catch { return null }
+  }
   const todo: string[] = []
   for (const v of cands) {
     todo.push(v)
     const parent = p.dirname(expand(v))
-    if ((denied.has(v) || !fs.existsSync(expand(v))) && parent && parent !== '.' && fs.existsSync(parent) && !todo.includes(parent)) todo.push(parent)   // fichier à créer : le dossier parent porte les droits
+    if ((denied.has(v) || !hit(expand(v))) && parent && parent !== '.' && fs.existsSync(parent) && !todo.includes(parent)) todo.push(parent)   // fichier à créer : le dossier parent porte les droits
   }
   return todo.slice(0, 5).map(v => {
-    const q = expand(v), d: Record<string, unknown> = { path: v.slice(0, 256), relative: !p.isAbsolute(q), exists: fs.existsSync(q) }
+    const h = hit(expand(v)), q = h ?? expand(v), d: Record<string, unknown> = { path: v.slice(0, 256), relative: !p.isAbsolute(expand(v)), exists: !!h }
     if (d.exists) {
       const s = fs.statSync(q)
       // Nom du propriétaire lu dans /etc/passwd (pas de sous-processus : `id` écrivait sur la sortie d'erreur du job).

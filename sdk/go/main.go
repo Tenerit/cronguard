@@ -217,6 +217,13 @@ func report(key, command string, code int, start time.Time, raw []byte, oomStart
 			text += "\ncronguard: sortie attendue non conforme : " + strings.Join(bad, "; ") + "\n"
 		}
 	}
+	// Processus tué par le noyau (mémoire) alors que la commande sort avec 0 : panne silencieuse, signalée.
+	if code == 0 && !expectFailed && oomStart != nil {
+		if now := oomKills(); now != nil && *now > *oomStart {
+			expectFailed = true
+			text += "\ncronguard: un processus du job a été tué par le noyau (mémoire) pendant cette exécution, malgré le code 0\n"
+		}
+	}
 	text = maskSecrets(text) // masqués sur la machine du job, avant tout envoi
 	marker := base(key) + ".fail"
 	body := map[string]any{"exit_code": code}
@@ -416,7 +423,7 @@ func runContext(text, command string, oomStart *int) map[string]any {
 	if len(paths) > 0 {
 		ctx["paths"] = paths
 	}
-	ctx["resources"] = resources(oomStart, paths, text)
+	ctx["resources"] = resources(oomStart, paths, text, command)
 	if n := netProbe(text, command); len(n) > 0 {
 		ctx["net"] = n
 	}
@@ -434,7 +441,7 @@ func expandUser(p string) string {
 var (
 	pathErr  = regexp.MustCompile(`(?i)No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system`)
 	denyErr  = regexp.MustCompile(`(?i)Permission denied|Read-only file system`)
-	pathToks = regexp.MustCompile(`'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+-]+(?:/[\w.@+-]+)+)`)
+	pathToks = regexp.MustCompile(`'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+*-]+(?:/[\w.@+*-]+)+)`)
 )
 
 // Chemins cités par l'erreur (même règle que _cg_paths) : existence, propriétaire, droits de l'utilisateur du job.
@@ -462,8 +469,7 @@ func pathProbe(text string) []map[string]any {
 	for _, p := range cands {
 		todo = append(todo, p)
 		par := filepath.Dir(expandUser(p))
-		_, err := os.Stat(expandUser(p))
-		if st, e := os.Stat(par); (denied[p] || err != nil) && par != "." && e == nil && st.IsDir() && !contains(todo, par) {
+		if st, e := os.Stat(par); (denied[p] || hit(expandUser(p)) == "") && par != "." && e == nil && st.IsDir() && !contains(todo, par) {
 			todo = append(todo, par) // fichier à créer ou refusé : le dossier parent porte les droits
 		}
 	}
@@ -473,8 +479,12 @@ func pathProbe(text string) []map[string]any {
 			break
 		}
 		q := expandUser(p)
+		rel := !filepath.IsAbs(q)
+		if h := hit(q); h != "" {
+			q = h
+		}
 		st, err := os.Stat(q)
-		d := map[string]any{"path": trunc(p, 256), "relative": !filepath.IsAbs(q), "exists": err == nil}
+		d := map[string]any{"path": trunc(p, 256), "relative": rel, "exists": err == nil}
 		if err == nil {
 			if s, ok := st.Sys().(*syscall.Stat_t); ok {
 				d["owner"] = strconv.Itoa(int(s.Uid))
@@ -489,6 +499,22 @@ func pathProbe(text string) []map[string]any {
 		res = append(res, d)
 	}
 	return res
+}
+
+// hit : le fichier lui-même, ou pour un motif (« laravel-*.log ») le premier fichier qui y correspond ; "" sinon.
+func hit(q string) string {
+	if !strings.Contains(q, "*") {
+		if _, err := os.Stat(q); err == nil {
+			return q
+		}
+		return ""
+	}
+	m, _ := filepath.Glob(q)
+	if len(m) == 0 {
+		return ""
+	}
+	sort.Strings(m)
+	return m[0]
 }
 
 func contains(xs []string, x string) bool {
@@ -534,9 +560,10 @@ func oomKills() *int {
 var (
 	noSpace   = regexp.MustCompile(`(?i)No space left|ENOSPC|Disk quota exceeded|disk full`)
 	spacePath = regexp.MustCompile(`'(/[^']+)'|(?:^|\s)(/[\w./@+-]+)`)
+	cmdPath   = regexp.MustCompile(`(?:^|[\s=])(/[\w./@+*-]+)`)
 )
 
-func resources(oomStart *int, paths []map[string]any, text string) map[string]any {
+func resources(oomStart *int, paths []map[string]any, text, command string) map[string]any {
 	res := map[string]any{}
 	if now := oomKills(); oomStart != nil && now != nil && *now > *oomStart {
 		res["oomKills"] = *now - *oomStart
@@ -552,6 +579,20 @@ func resources(oomStart *int, paths []map[string]any, text string) map[string]an
 		if noSpace.MatchString(l) {
 			for _, m := range spacePath.FindAllStringSubmatch(l, -1) {
 				full = append(full, m[1]+m[2])
+			}
+		}
+	}
+	if len(full) == 0 && noSpace.MatchString(text) {
+		// Message sans chemin (pg_dump) : chemins absolus de la commande et des sorties attendues (CG_EXPECT).
+		var spec []string
+		for _, it := range strings.Split(os.Getenv("CG_EXPECT"), ";") {
+			if f := strings.Fields(it); len(f) > 0 {
+				spec = append(spec, f[0])
+			}
+		}
+		for _, m := range cmdPath.FindAllStringSubmatch(command+" "+strings.Join(spec, " "), -1) {
+			if !strings.Contains(filepath.Dir(m[1]), "*") {
+				full = append(full, m[1])
 			}
 		}
 	}
