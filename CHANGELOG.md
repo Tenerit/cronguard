@@ -7,6 +7,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Évaluation — deux labos de bout en bout, et ce qu'ils ont cassé (2026-11-12)
+- **Labo terrain** (`eval/archive/FIELD-LAB.md`) : 11 situations **tirées au sort** parmi de vraies questions StackExchange, vérité = la réponse acceptée recopiée avant le run, Debian et son vrai cron. **Détection 9/11, cause juste 5/10 (+1 partielle), cause fausse affirmée 0/11.** Les 2 ratés sont des jobs qui échouent en sortant avec 0. Un cas exclu comme prévu (symptôme non reproduit).
+- **Labo « trois clients »** (`eval/archive/CLIENT-LAB*.md`) : chaîne complète (vrai crond, SDK installé depuis le serveur, API, worker, vérificateur, webhook, rapport de pilote). Scénarios écrits par moi, donc biaisés. Pré-enregistré : **5/8** causes par le bon constat (seuil 7, raté). Après corrections (non indépendant) : 6/8, puis **7/8 sans cause fausse**.
+- Corrigé grâce à eux (non indépendant) : « disque plein » sans chemin dans le message (le SDK mesure les volumes de la commande et de `CG_EXPECT`) ; chemin avec joker (`laravel-*.log`) plus coupé ; processus tué par OOM dans un job sorti avec 0, désormais signalé.
+- **Cause fausse introduite puis corrigée :** le compteur OOM vaut pour tout le cgroup (le conteneur, ou `cron.service` pour tous les jobs d'un hôte systemd) ; un OOM du job voisin devenait la cause d'un bogue applicatif. Un OOM n'est plus attribué qu'avec une trace dans le job (code 137, « Killed »), côté serveur aussi pour les SDK déjà installés ; le SDK Python ne transforme plus une réussite en panne sur ce seul compteur.
+- Reste : un message d'erreur sans hôte ni port (Python : `[Errno 111] Connection refused`) n'est expliqué que par la fiche générique.
+
 ### Ajouté — sortie attendue proposée à l'import ; rôle de l'IA essayé, non adopté (2026-11-12)
 - À l'import d'une crontab, CronGuard propose pour chaque job le fichier qu'il doit produire (« doit produire : /bak/shop-*.sql ») et l'ajoute à la ligne de crontab (`CG_EXPECT`) : un job qui réussit sans rien produire devient une panne, sans que l'utilisateur connaisse `CG_EXPECT`. Journaux, `/dev/null`, options et chemins absents de la commande ne sont jamais proposés.
 - **Essai pré-enregistré** (161 lignes réelles, `eval/archive/EXPECT-SUGGEST.md`) : règle 10/14 contre modèle local 12/14, 0 chemin inventé ; le critère d'adoption du modèle était rempli, mais les 2 cas d'écart venaient d'un défaut de la règle (date avec espace) trouvé par les tests unitaires pendant le run. Règle corrigée : 12/14, 0 faux sur 139 (chiffre non indépendant). À rappel égal, la règle est livrée, le modèle n'est pas adopté (5 s par job, modèle de 5 Go). Code du modèle déplacé dans `eval/lib/expect-ai.ts`.
