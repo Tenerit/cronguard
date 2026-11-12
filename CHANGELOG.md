@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Sécurité — blocs `<style>` autorisés seulement par empreinte (2026-11-12)
+- CSP : `style-src-elem` n'a plus `'unsafe-inline'` ; chaque bloc `<style>` servi (page de statut, page de retour `/r/…`, `/pricing`) est autorisé par son empreinte SHA-256, calculée au démarrage comme pour les scripts (CSS des pages serveur sortie dans `src/api/page-styles.ts`). C'est le vecteur qui permet de lire un jeton par sélecteurs d'attributs CSS.
+- **Écart assumé :** `style-src-attr 'unsafe-inline'` reste. Le dashboard a ≈230 attributs `style=`, dont des éléments masqués que le JS affiche avec `el.style.display = ''` : les passer en classes casserait ces bascules sans erreur visible. Un attribut `style=` ne peut que déplacer un élément, et `img-src`/`font-src`/`connect-src` bloquent déjà toute `url()` sortante. `style-src` garde `'unsafe-inline'` pour les navigateurs sans CSP 3, qui ignorent les deux nouvelles directives.
+- Vérifié : e2e sur la vraie API (chaque bloc `<style>` reçu est dans l'en-tête, sans `unsafe-inline`) ; dans un vrai navigateur, un bloc autorisé s'applique, un bloc injecté est bloqué avec l'erreur CSP, un attribut s'applique.
+
 ### Tests — cas dorés communs aux 4 SDK (2026-11-12)
 - `sdk/testdata/golden.json` : 25 cas de masquage et 8 cas de « ce qui a changé », que le bloc partagé bash/Python, le SDK Node et le binaire Go doivent rendre à l'identique (`tests/sdk-golden.test.ts`, `sdk/go/golden_test.go`). Référence : le bloc partagé ; `python sdk/testdata/make-golden.py` régénère, à faire seulement pour un changement voulu.
 - Avant, seule la liste des motifs de masquage était comparée : Node et Go pouvaient rendre autre chose sans qu'un test le voie.

@@ -249,6 +249,21 @@ async function main() {
   const pageHtml = await pageRes.text()
   check('Lien signé : la page montre la cause, sans rien enregistrer', pageRes.status === 200 && pageHtml.includes('Cette analyse était-elle juste')
     && (await db.query(`SELECT user_feedback FROM analyses WHERE id=$1`, [target])).rows[0].user_feedback === null, String(pageRes.status))
+  // CSP des styles : chaque bloc <style> réellement servi doit être autorisé par son empreinte (style-src-elem sans
+  // 'unsafe-inline'), sinon le navigateur l'ignore et la page s'affiche sans mise en forme.
+  const { hashOf } = await import('../src/api/csp')
+  const styleOk = async (label: string, res: Response, html: string) => {
+    const csp = res.headers.get('content-security-policy') ?? ''
+    const elem = csp.split(';').map(x => x.trim()).find(x => x.startsWith('style-src-elem')) ?? ''
+    const blocks = [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(m => m[1])
+    check(`CSP styles — ${label} : ${blocks.length} bloc(s) <style>, tous autorisés, sans unsafe-inline`,
+      blocks.length > 0 && !elem.includes('unsafe-inline') && blocks.every(b => elem.includes(hashOf(b))), elem.slice(0, 200))
+  }
+  await styleOk('page de retour /r/', pageRes, pageHtml)
+  const pricing = await fetch(`http://localhost:${API_PORT}/pricing`)
+  await styleOk('/pricing', pricing, await pricing.text())
+  const statusPage = await fetch(`http://localhost:${API_PORT}/status/${mon.id}`, { headers: { accept: 'text/html' } })
+  await styleOk('page de statut', statusPage, await statusPage.text())
   check('Lien signé : jeton altéré refusé', (await rev(tok(target, later).slice(0, -2) + 'xx')).status === 404)
   check('Lien signé : jeton expiré refusé', (await rev(tok(target, Math.floor(Date.now() / 1000) - 60))).status === 404)
   check('Lien signé : ✅ enregistre la validation', (await rev(`${tok(target, later)}/ok`, form(''))).status === 200

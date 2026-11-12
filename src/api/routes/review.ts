@@ -10,21 +10,14 @@ import { verifyReviewToken } from '../../services/review-links'
 import { findAnalysis, recordFeedback, recordFix, AnalysisRef } from '../../services/analysis-feedback'
 import { escapeHtml as e } from '../../services/escape'
 import { db } from '../../db'
+import { REVIEW_CSS } from '../page-styles'
 
 export const reviewRouter = Router()
 reviewRouter.use(express.urlencoded({ extended: false, limit: '4kb' }))
 
 function page(title: string, body: string): string {
   return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>${e(title)} — CronGuard</title><style>
-body{font-family:system-ui,-apple-system,sans-serif;background:#0e1117;color:#e6edf3;margin:0;padding:24px 16px;line-height:1.5}
-main{max-width:560px;margin:0 auto}h1{font-size:20px;margin:0 0 4px}.job{color:#8b949e;margin:0 0 20px;font-family:monospace}
-.box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 16px;margin:0 0 14px}
-.lbl{font-size:12px;color:#8b949e;text-transform:uppercase;letter-spacing:.04em;margin:0 0 4px}
-button{font:inherit;border:0;border-radius:8px;padding:12px 16px;width:100%;margin:8px 0 0;cursor:pointer}
-.ok{background:#238636;color:#fff}.fix{background:#1f6feb;color:#fff}.bad{background:transparent;color:#f85149;border:1px solid #f8514966}
-textarea{font:inherit;width:100%;box-sizing:border-box;min-height:90px;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:8px;padding:10px}
-.done{background:#23863622;border-color:#238636}</style></head><body><main>${body}</main></body></html>`
+<meta name="robots" content="noindex"><title>${e(title)} — CronGuard</title><style>${REVIEW_CSS}</style></head><body><main>${body}</main></body></html>`
 }
 
 async function resolve(req: Request, res: Response): Promise<AnalysisRef | null> {

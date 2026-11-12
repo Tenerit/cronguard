@@ -3,7 +3,7 @@ import express from 'express'
 import helmet from 'helmet'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { CSP_DIRECTIVES, inlineScriptHashes } from '../api/csp'
+import { CSP_DIRECTIVES, inlineScriptHashes, inlineStyleHashes } from '../api/csp'
 
 // Monte exactement la même config que l'app réelle (index.ts) sur une app minimale,
 // pour vérifier que les directives produisent bien le header attendu — sans booter
@@ -30,6 +30,15 @@ describe('Content-Security-Policy header', () => {
     const scriptSrc = /script-src([^;]*)/.exec(csp)![1]
     expect(scriptSrc).not.toContain("'unsafe-inline'")
     expect(scriptSrc.match(/'sha256-[A-Za-z0-9+/]+=*'/g)).toHaveLength(2)   // 1 bloc dashboard (anti-flash du thème) + 1 status : le reste est servi en fichiers
+  })
+
+  it('<style> blocks only by hash (style-src-elem), style attributes allowed (style-src-attr)', async () => {
+    const csp = (await request(app).get('/x')).headers['content-security-policy']
+    const elem = /style-src-elem([^;]*)/.exec(csp)![1]
+    expect(elem).not.toContain("'unsafe-inline'")
+    expect(elem.match(/'sha256-[A-Za-z0-9+/]+=*'/g)).toHaveLength(3)   // status.html + page de retour + /pricing
+    expect(csp).toContain("style-src-attr 'unsafe-inline'")
+    expect(inlineStyleHashes('<style>a{}</style><style>b{}</style>')).toHaveLength(2)
   })
 
   it('hashes the text the browser sees (CRLF normalised to LF)', () => {

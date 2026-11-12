@@ -30,6 +30,7 @@ import { redis }  from '../config/redis'
 import { logger } from '../config/logger'
 
 import { CSP_DIRECTIVES }  from './csp'
+import { PRICING_CSS }     from './page-styles'
 import { escapeHtml }      from '../services/escape'
 import { requireApiKey }  from './middleware/auth'
 import { asyncHandler }   from './middleware/async-handler'
@@ -130,17 +131,7 @@ app.get('/pricing', (_req, res) => {
     </div>`
   res.type('html').send(`<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>CronGuard — Pricing</title>
-<style>
-  body{font-family:system-ui,-apple-system,sans-serif;background:#0e1117;color:#e6edf3;margin:0;padding:48px 16px;text-align:center}
-  h1{font-size:28px;margin:0 0 8px} .sub{color:#8b949e;margin:0 0 40px}
-  .plans{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;max-width:760px;margin:0 auto}
-  .plan{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:28px;width:300px;text-align:left}
-  .plan.pro{border-color:#8957e5}
-  .plan h2{margin:0 0 4px} .price{font-size:32px;font-weight:700;margin:0 0 16px} .price span{font-size:15px;color:#8b949e;font-weight:400}
-  ul{list-style:none;padding:0;margin:0 0 24px} li{padding:6px 0;color:#c9d1d9} li::before{content:"✓ ";color:#3fb950}
-  .cta{display:block;text-align:center;padding:10px;border-radius:8px;background:#238636;color:#fff;text-decoration:none;font-weight:500}
-  .cta.ghost{background:transparent;border:1px solid #30363d;color:#c9d1d9}
-</style></head><body>
+<style>${PRICING_CSS}</style></head><body>
 <h1>CronGuard pricing</h1>
 <p class="sub">Self-hosted is free. Hosted Pro unlocks AI root-cause analysis &amp; unlimited monitors.</p>
 <div class="plans">${card(PLANS.free)}${card(PLANS.pro)}</div>
