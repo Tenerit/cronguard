@@ -218,7 +218,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 
   # La commande d'origine passe en $0, un seul niveau d'apostrophes : ' → '\''
   q="${rest//\'/\'\\\'\'}"
-  out+="$sched${user:+ $user} CRONGUARD_URL=$CRONGUARD_URL bash -c 'source $CRONGUARD_LIB && cg_run $key bash -c \"\$0\"' '$q'"$'\n'
+  out+="$sched${user:+ $user} CRONGUARD_URL=$CRONGUARD_URL bash -c 'source $CRONGUARD_LIB && cg_run $key \"\${SHELL:-/bin/sh}\" -c \"\$0\"' '$q'"$'\n'
 done <<<"$input"
 
 echo "# ── Crontab à recoller (crontab -e) ─────────────────────────────" >&2

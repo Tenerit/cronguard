@@ -127,7 +127,7 @@ cg_run() {
 
   cg_start "$ping_key"
   # Commande envoyée à l'échec (vérifiée côté serveur). Forme de l'import : cg_run KEY bash -c "<cmd>".
-  if [[ "${1:-}" == bash && "${2:-}" == -c ]]; then _CG_COMMAND="${3:-}"; else _CG_COMMAND="$*"; fi
+  if [[ "${2:-}" == -c && "${1:-}" =~ (^|/)(ba|da|k|z)?sh$ ]]; then _CG_COMMAND="${3:-}"; else _CG_COMMAND="$*"; fi
 
   # Chevauchement : l'exécution précédente tourne-t-elle encore ? (pid vivant dans le verrou du job)
   local lock prev=""

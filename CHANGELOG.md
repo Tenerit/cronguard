@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Corrigé — CronGuard ne change plus le shell du job (2026-11-12)
+- L'import (dashboard et `cronguard-import.sh`) enveloppait chaque commande dans `bash -c` : un job écrit pour `/bin/sh`, le shell de cron, se comportait autrement une fois branché. Au labo terrain 2 (g40), une erreur réelle (`<( )` sous sh) disparaissait. La commande tourne désormais sous `${SHELL:-/bin/sh}`, le shell que cron aurait utilisé, `SHELL=` de la crontab compris. Le SDK retrouve la commande d'origine quel que soit le shell.
+- Vérifié dans Debian avec son vrai cron : `cat <(ls)` échoue comme sans CronGuard (`/bin/sh: Syntax error: "(" unexpected`) et le serveur établit la cause (`cmd-bashism-sh`) ; avec `SHELL=/bin/bash`, la même ligne réussit ; un job ordinaire réussit.
+- **Crontabs déjà importées :** elles gardent l'ancien gabarit (`bash -c`). Réimporter la crontab pour retrouver le comportement de cron.
+
 ### Évaluation — labo terrain 2 : nettement moins bon (2026-11-12)
 - 12 nouvelles situations tirées au sort (`eval/archive/FIELD-LAB-2.md`), jamais vues par les corrections du jour : **détection 7/12, cause juste 1/12, cause fausse affirmée 1/12** (labo 1 : 9/11, 5/10, 0/11). 5 ratés sont des jobs qui « réussissent » en faisant mal leur travail.
 - Corrigé (non indépendant) : **fausses alertes « job lent »** sur des jobs de quelques millisecondes (« 291 ms, moyenne 66 ms ») : il faut maintenant aussi dépasser la moyenne d'au moins 30 s (`SLOW_MIN_DELTA_MS`) ; **cause fausse** sur une clé SSH à phrase de passe sans agent : le constat « pas d'agent SSH » passe avant « identifiants d'un autre compte », qui est désormais formulé au conditionnel (le compte et le HOME du cron sont des faits, l'autre compte ne l'est pas).

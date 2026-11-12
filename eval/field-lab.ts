@@ -31,7 +31,7 @@ const kids: ChildProcess[] = []
 // Ligne enveloppée comme le fait l'import du dashboard (createImport) : même gabarit, même proposition CG_EXPECT.
 function wrap(sched: string, user: string, cmd: string, key: string): string {
   const exp = ruleExpect(cmd)
-  return `${sched}${user ? ' ' + user : ''} ${exp ? `CG_EXPECT='${exp.replace(/'/g, '')}' ` : ''}CRONGUARD_URL=${URL_IN} bash -c 'source /usr/local/lib/cronguard.sh && cg_run ${key} bash -c "$0"' '${cmd.replace(/'/g, "'\\''")}'`
+  return `${sched}${user ? ' ' + user : ''} ${exp ? `CG_EXPECT='${exp.replace(/'/g, '')}' ` : ''}CRONGUARD_URL=${URL_IN} bash -c 'source /usr/local/lib/cronguard.sh && cg_run ${key} "\${SHELL:-/bin/sh}" -c "$0"' '${cmd.replace(/'/g, "'\\''")}'`
 }
 
 // Lignes des questions (eval/crontab-lines*.json), planning ramené à « chaque minute ».

@@ -1255,10 +1255,11 @@ async function createImport() {
     try { m = await api('/monitors', { method: 'POST', body: JSON.stringify({ name, schedule: j.schedule.startsWith('@') ? undefined : j.schedule }) }) }
     catch (e) { const why = e.message; toast(`${name} : ${why}`, 'err'); continue }   // toast = textContent
     if (!m || m.demo) return   // démo : lecture seule (toast déjà affiché)
-    // La commande d'origine passe en $0, un seul niveau d'apostrophes : ' → '\''
+    // La commande d'origine passe en $0, un seul niveau d'apostrophes : ' → '\''. Elle tourne sous le shell de cron
+    // ($SHELL, /bin/sh par défaut), pas sous bash : sinon un job « sh » se comporte autrement (labo terrain 2, g40).
     // Sortie attendue proposée : « réussi mais n'a rien produit » devient une panne (CG_EXPECT du SDK).
     const exp = j.expect ? `CG_EXPECT='${j.expect.replace(/'/g, '')}' ` : ''
-    out.push(`${j.schedule}${j.user ? ' ' + j.user : ''} ${exp}CRONGUARD_URL=${BASE_URL} bash -c 'source /usr/local/lib/cronguard.sh && cg_run ${m.ping_key} bash -c "$0"' '${j.cmd.replace(/'/g, "'\\''")}'`)
+    out.push(`${j.schedule}${j.user ? ' ' + j.user : ''} ${exp}CRONGUARD_URL=${BASE_URL} bash -c 'source /usr/local/lib/cronguard.sh && cg_run ${m.ping_key} "\${SHELL:-/bin/sh}" -c "$0"' '${j.cmd.replace(/'/g, "'\\''")}'`)
   }
   if (!out.length) return
   const pre = document.getElementById('imp-out')
