@@ -25,6 +25,8 @@ curl -fsS "$URL/health" | grep -q '"model":"none"' && ok "sans LLM configuré : 
 
 KEY=$(curl -fsS -X POST "$URL/auth/register" -H 'Content-Type: application/json' -d '{"email":"allinone@example.invalid"}' | sed -n 's/.*"apiKey":"\([^"]*\)".*/\1/p')
 [ -n "$KEY" ] || fail "inscription"
+# Le SDK servi par l'image (étape 3 du démarrage) : sinon l'import de crontab donne une commande en 404.
+curl -fsS "$URL/sdk/cronguard.sh" | grep -q '^cg_run()' && ok "SDK servi par l'image (/sdk/cronguard.sh)" || fail "SDK absent de l'image"
 PING=$(curl -fsS -X POST "$URL/monitors" -H "X-API-Key: $KEY" -H 'Content-Type: application/json' -d '{"name":"nightly-backup"}' | sed -n 's/.*"ping_key":"\([^"]*\)".*/\1/p')
 [ -n "$PING" ] || fail "création du monitor"
 curl -fsS -X POST "$URL/ping/$PING" -H 'Content-Type: application/json' \
