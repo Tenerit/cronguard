@@ -352,6 +352,11 @@ async function main() {
   const l3 = await fail('importer: ERROR quota table locked by maintenance window 9\nexit status 1', {}, mon3)
   check('Fiche désactivée : plus servie', off.status === 200 && l3.model_used !== 'team-fix', JSON.stringify({ status: off.status, model: l3.model_used }))
 
+  // Job qui échoue en moins d'1 ms (ou busybox, à la seconde) : duration_ms 0 refusé faisait perdre la panne entière.
+  const zero = await fail('fast: command not found', { duration_ms: 0 }, mon3)
+  const { rows: [zp] } = await db.query(`SELECT p.duration_ms FROM pings p JOIN analyses a ON a.ping_id = p.id WHERE a.id = $1`, [zero.id])
+  check('Durée 0 : panne reçue et analysée, durée enregistrée comme non mesurée', !!zero.id && zp?.duration_ms === null, JSON.stringify(zp))
+
   // Vue responsable : un incident dont la correction est écrite, un sans, un hors semaine (écart avant/après).
   type Imp = { incidents: number; week: number; documented: number }
   const imp0 = await (await get('/dashboard/impact', client.api_key)).json() as Imp

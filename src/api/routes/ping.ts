@@ -18,7 +18,9 @@ const limiter = rateLimit({
 
 const Schema = z.object({
   status:      z.enum(['success', 'fail']),
-  duration_ms: z.number().int().positive().max(86_400_000).optional(),
+  // 0 accepté (un job qui échoue en moins d'1 ms, ou busybox qui ne compte qu'en secondes) mais enregistré comme
+  // non mesuré : refusé, le ping entier était perdu ; gardé à 0, il fausserait la référence des alertes de lenteur.
+  duration_ms: z.number().int().nonnegative().max(86_400_000).optional().transform(v => v || undefined),
   records:     z.number().int().nonnegative().max(1_000_000_000).optional(),
   exit_code:   z.number().int().min(-999).max(999).optional(),
   output:      z.string().max(4000).optional(),

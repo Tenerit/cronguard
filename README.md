@@ -149,7 +149,7 @@ Lab (pre-registered, `eval/sdk-lab.ts`): the responsible change shown in 8/8 bro
 
 **Kubernetes:** [`sdk/kubernetes/cronjob.yaml`](sdk/kubernetes/cronjob.yaml) runs the bash SDK in a CronJob (image with bash, curl and python3; a small volume keeps the fingerprint and the unsent pings between pods). Checked in a container with the same paths and command, not on a real cluster.
 
-The Node SDK covers the test commands and the observed fix; fingerprints, `CG_EXPECT` and the features above are bash and Python for now.
+The Node SDK does the same inside `monitor()` (`cgStep('upload')` for steps), with three gaps: no OOM counter (a Node process killed by the kernel takes the SDK with it; the missing ping alerts), no `CG_SKIP_IF_RUNNING` and no `doctor`, and `CG_EXPECT` wildcards only in the file name.
 
 ---
 

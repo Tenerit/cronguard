@@ -7,6 +7,15 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Corrigé — pannes perdues : durée 0, et code de sortie du SDK Node (2026-11-12)
+- **Le serveur refusait `duration_ms: 0`** (400), et un 4xx n'est pas rejoué : la panne entière était perdue. Touchés : les jobs qui échouent en moins d'1 ms, et **tout job de moins d'une seconde sur busybox/Alpine**, dont `date` ne donne pas les millisecondes (aussi les réussites, d'où de fausses alertes « en retard »). 0 est maintenant accepté et enregistré comme durée non mesurée, pour ne pas fausser la référence des alertes de lenteur. Trouvé en relisant le test Kubernetes, qui envoyait `"duration_ms":0` à un faux serveur. Vérifié en e2e.
+- **Le SDK Node envoyait `exitCode` et `durationMs`**, que le serveur ignore (il attend `exit_code`, `duration_ms`) : code de sortie et durée n'arrivaient jamais. Corrigé, et la sortie est bornée à 3 000 caractères comme en Python (au-delà de 4 000, le serveur refusait le ping).
+
+### Ajouté — SDK Node au niveau de bash et Python (2026-11-12)
+- Secrets masqués avant envoi (même liste que Python, un test vérifie qu'elles sont identiques), pings gardés et rejoués dans l'ordre (même file sur disque que bash/Python), ce qui a changé depuis la dernière réussite (script, arguments, PATH, dossier, noms des variables, version de Node), `CG_EXPECT`, étapes (`cgStep`), chevauchement, réseau (DNS et TCP, plus le message natif `getaddrinfo ENOTFOUND`), mémoire du cgroup et espace disque.
+- Manques : pas de compteur OOM (Node tué par le noyau emporte le SDK), pas de `CG_SKIP_IF_RUNNING` ni de `doctor`, jokers de `CG_EXPECT` dans le nom de fichier seulement.
+- 9 tests contre un vrai serveur HTTP local ; pas de labo en conteneur pour le SDK Node.
+
 ### Ajouté — vue responsable et modèle Kubernetes (2026-11-12)
 - **Vue responsable** (onglet Analyses, bandeau Impact) : incidents de la semaine et part des pannes dont l'équipe a écrit la correction, à côté du MTTR et des services récurrents déjà présents. `GET /dashboard/impact` renvoie `week` et `documented`. Vérifié en e2e sur un vrai PostgreSQL (+3 incidents, +2 cette semaine, +1 documenté).
 - **Modèle Kubernetes** `sdk/kubernetes/cronjob.yaml` : CronJob + volume d'état (PVC), `concurrencyPolicy: Forbid`, `backoffLimit: 0`. Vérifié dans un conteneur Alpine aux mêmes chemins et avec la même commande, deux exécutions : file rejouée dans l'ordre et fichier modifié vu entre les deux. **Pas testé sur un vrai cluster.**
