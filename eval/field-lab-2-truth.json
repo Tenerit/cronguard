@@ -1,0 +1,156 @@
+{
+ "_note": "Labo terrain 2 : suite du même tirage (graine 20261112, ordre 26 à 70), vérité recopiée des réponses AVANT tout scénario. Jamais vu par les corrections du 12/11.",
+ "cases": [
+  {
+   "id": "g1",
+   "url": "https://stackoverflow.com/questions/21253921/zip-file-is-not-extracting-by-crontab",
+   "truth": "Le dossier courant de cron n'est pas /root/perl : le script lit et dézippe en chemins relatifs. Faire chdir($dir) ou des chemins complets.",
+   "keywords": [
+    "dossier courant",
+    "relatif",
+    "chdir"
+   ]
+  },
+  {
+   "id": "g7",
+   "url": "https://stackoverflow.com/questions/69949431/django-crontab-not-working-on-docker-python3-9-buster-image",
+   "truth": "Dans un conteneur, cron ne transmet pas les variables d'environnement du conteneur : les réglages de Django ne les trouvent pas.",
+   "keywords": [
+    "variable",
+    "environnement"
+   ]
+  },
+  {
+   "id": "g10",
+   "url": "https://stackoverflow.com/questions/39460215/running-rsync-in-crontab-with-keys",
+   "truth": "Clé SSH protégée par une phrase de passe : l'agent SSH de la session n'existe pas sous cron. Il faut une clé sans phrase de passe.",
+   "keywords": [
+    "agent SSH",
+    "SSH_AUTH_SOCK",
+    "clé"
+   ]
+  },
+  {
+   "id": "g12",
+   "url": "https://serverfault.com/questions/1010968/get-an-email-notification-when-my-cron-fails-with-non-zero-exit-code-crontab",
+   "truth": "« || mail » : si le mail part, la ligne entière sort avec 0, l'échec du script est masqué.",
+   "keywords": [
+    "code de sortie",
+    "mail"
+   ]
+  },
+  {
+   "id": "g13",
+   "url": "https://stackoverflow.com/questions/59407306/how-to-set-up-laravel-cron-job-in-cpanel",
+   "truth": "php artisan lancé hors du dossier du projet : faire cd vers le projet avant.",
+   "keywords": [
+    "dossier",
+    "cd",
+    "relatif"
+   ]
+  },
+  {
+   "id": "g19",
+   "url": "https://askubuntu.com/questions/611336/why-putting-a-script-in-etc-cron-hourly-is-not-working",
+   "truth": "run-parts ignore un fichier dont le nom contient un point (ou un caractère hors [A-Za-z0-9_-]) : le script de /etc/cron.hourly ne tourne jamais.",
+   "keywords": [
+    "run-parts",
+    "nom",
+    "point"
+   ]
+  },
+  {
+   "id": "g20",
+   "url": "https://stackoverflow.com/questions/75657137/cron-displaying-error-despite-bash-script-running-fine-manually-linux",
+   "truth": "« ~ » entre guillemets n'est pas développé, et la redirection d'entrée n'a pas le chemin du dossier : le fichier d'entrée est introuvable sous cron.",
+   "keywords": [
+    "~",
+    "chemin",
+    "introuvable"
+   ]
+  },
+  {
+   "id": "g29",
+   "url": "https://stackoverflow.com/questions/14498069/php-cron-job-within-codeigniter-framework",
+   "truth": "URL mal écrite : un espace au lieu d'un « / » avant cron_event, wget appelle la mauvaise page.",
+   "keywords": [
+    "URL",
+    "wget"
+   ]
+  },
+  {
+   "id": "g30",
+   "url": "https://stackoverflow.com/questions/73968659/zero-bytes-when-backup-using-pg-dump-and-pg-dumpall-using-crontab",
+   "truth": "Fichier de 0 octet : pg_dump échoue sous l'utilisateur de la crontab (pas les mêmes accès que l'utilisateur interactif), seule la redirection crée le fichier.",
+   "keywords": [
+    "utilisateur",
+    "identifiants",
+    "0 octet"
+   ]
+  },
+  {
+   "id": "g40",
+   "url": "https://stackoverflow.com/questions/57063844/rsync-succeeds-from-the-shell-but-complains-of-syntax-or-usage-error-from-cron",
+   "truth": "La substitution de processus <( ) est du bash : cron lance la ligne avec /bin/sh.",
+   "keywords": [
+    "sh",
+    "bash",
+    "syntaxe"
+   ]
+  },
+  {
+   "id": "g42",
+   "url": "https://stackoverflow.com/questions/27382566/backup-script-on-crontab-not-working",
+   "truth": "Chemins relatifs dans le script de sauvegarde : sous cron le dossier courant n'est pas le bon. Tout mettre en absolu.",
+   "keywords": [
+    "relatif",
+    "absolu"
+   ]
+  },
+  {
+   "id": "g44",
+   "url": "https://unix.stackexchange.com/questions/465179/cron-script-cannot-find-logwatch-and-chkrootkit",
+   "truth": "logwatch et chkrootkit sont dans /usr/sbin, absent du PATH de cron : ajouter /usr/sbin au PATH.",
+   "keywords": [
+    "PATH",
+    "/usr/sbin",
+    "introuvable"
+   ]
+  }
+ ],
+ "excluded": {
+  "b3-0": "réponse hors sujet",
+  "b3-2": "pas une panne (question de configuration)",
+  "b3-3": "cause non établie par la réponse (« not exactly sure »)",
+  "b3-4": "demande de donner au labo le contrôle du Docker de l'hôte (non reproduit)",
+  "b3-5": "aucune réponse",
+  "b3-6": "réponse sans cause (outil conseillé)",
+  "b3-8": "QNAP (OS spécifique)",
+  "b3-9": "pas une panne de job",
+  "b3-11": "réponse sans cause",
+  "b3-14": "réponse sans cause",
+  "b3-15": "pas une panne",
+  "b3-16": "correctif sans mécanisme identifiable",
+  "b3-17": "symptôme non décrit précisément",
+  "b3-18": "aucune réponse",
+  "b4-1": "aucune réponse",
+  "b4-2": "aucune réponse",
+  "b4-3": "pas une panne (tutoriel)",
+  "b4-4": "réponse sans cause",
+  "b4-5": "cause supposée (« my first guess »)",
+  "b4-6": "pas une panne de job (mail de cron)",
+  "b4-7": "SELinux, absent de Debian",
+  "b4-8": "pas une panne (question de mot de passe)",
+  "b4-11": "question de planification",
+  "b4-12": "cause supposée (« I may be wrong »)",
+  "b4-13": "pas une panne de job",
+  "b4-14": "aucune réponse",
+  "b4-15": "question de planification",
+  "b4-16": "aucun job en échec à surveiller",
+  "b4-17": "macOS",
+  "b4-18": "question de planification",
+  "b4-19": "reverse shell : non reproduit",
+  "b4-21": "cause supposée (« I think »)",
+  "b4-23": "cause supposée (conseil de débogage)"
+ }
+}
