@@ -607,6 +607,7 @@ describe('Dashboard — données agrégées', () => {
     if (res.status === 200) {
       expect(res.body).toHaveProperty('incidents')
       expect(res.body).toHaveProperty('avgMttrMs')
+      expect(res.body).toHaveProperty('documented')
     }
   })
 })

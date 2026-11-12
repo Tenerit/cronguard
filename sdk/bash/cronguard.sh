@@ -651,6 +651,8 @@ PY
 # renvoyé, dans l'ordre, avant le prochain ping de n'importe quel job. Silencieux : ne bloque jamais le job.
 _cg_send() {   # vrai si le serveur a répondu 2xx ou 4xx (un 4xx ne passerait pas mieux plus tard)
   local code
+  # Sans curl rien ne part : le dire (stderr, donc dans les logs du cron) au lieu de tout garder en file en silence.
+  command -v curl >/dev/null 2>&1 || { echo "cronguard: curl not found, ping kept in the queue" >&2; return 1; }
   code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST -H "Content-Type: application/json" \
     -d "$2" "${CRONGUARD_URL}/ping/$1" 2>/dev/null)
   [[ "$code" =~ ^[24] ]]

@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — vue responsable et modèle Kubernetes (2026-11-12)
+- **Vue responsable** (onglet Analyses, bandeau Impact) : incidents de la semaine et part des pannes dont l'équipe a écrit la correction, à côté du MTTR et des services récurrents déjà présents. `GET /dashboard/impact` renvoie `week` et `documented`. Vérifié en e2e sur un vrai PostgreSQL (+3 incidents, +2 cette semaine, +1 documenté).
+- **Modèle Kubernetes** `sdk/kubernetes/cronjob.yaml` : CronJob + volume d'état (PVC), `concurrencyPolicy: Forbid`, `backoffLimit: 0`. Vérifié dans un conteneur Alpine aux mêmes chemins et avec la même commande, deux exécutions : file rejouée dans l'ordre et fichier modifié vu entre les deux. **Pas testé sur un vrai cluster.**
+- Trouvé pendant cette vérification : sans `curl` dans l'image, le SDK bash n'envoie rien (les pings restent en file, rien n'est perdu). Exigence ajoutée au modèle, et le SDK bash l'écrit désormais sur stderr (`curl not found, ping kept in the queue`).
+
 ### Ajouté — SDK : pings jamais perdus, chevauchement, étapes, `cronguard doctor` (2026-11-12, attentes fixées avant)
 - **Pings jamais perdus** : un ping que le serveur n'a pas reçu est gardé sur disque (600, 200 au plus) et renvoyé, dans l'ordre, avant le prochain ping de n'importe quel job (bash et Python).
 - **Chevauchement** : verrou par job avec le pid ; une panne pendant que l'exécution précédente tourne porte le fait (`ctx-overlap`, en dernier parmi les constats) ; `CG_SKIP_IF_RUNNING=1` saute l'exécution et le signale.

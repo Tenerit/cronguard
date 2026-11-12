@@ -1,0 +1,73 @@
+# CronGuard — Kubernetes CronJob template (bash SDK).
+#
+# 1. Put the SDK in a ConfigMap and the ping key in a Secret:
+#      kubectl create configmap cronguard-sdk --from-file=sdk/bash/cronguard.sh
+#      kubectl create secret generic backup-cronguard --from-literal=ping-key=YOUR_PING_KEY
+# 2. Replace the image and the command below, then: kubectl apply -f cronjob.yaml
+#
+# Requirements and limits (read before relying on it):
+# - The job image needs bash, curl and python3 (the probes are Python). Without curl nothing is sent:
+#   pings wait in the state volume and are replayed in order once curl is there. Without python3 the run is still
+#   reported (exit code, logs, duration) but without the context facts.
+# - A pod starts empty: without the volume below, "what changed since the last success", the replay of
+#   pings the server did not receive and the observed fix are lost at every run. The PVC keeps them.
+#   ReadWriteOnce is enough because concurrencyPolicy: Forbid never runs two pods at once.
+# - Overlap is handled by Kubernetes (concurrencyPolicy: Forbid), not by CG_SKIP_IF_RUNNING.
+# - When the container hits its memory limit, Kubernetes on cgroup v2 (1.28+) kills the whole container,
+#   SDK included, so nothing is sent: CronGuard alerts on the missing ping after the grace period, and
+#   `kubectl describe pod` shows OOMKilled. The SDK's OOM fact needs the SDK to survive the kill.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cronguard-state
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 16Mi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backup
+spec:
+  schedule: "0 3 * * *"
+  timeZone: "Etc/UTC"             # keep equal to the monitor's cron timezone in CronGuard
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0             # a retry would send a second ping for the same run
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: job
+              image: your-registry/backup-job:1.0     # must contain bash, curl and python3
+              command: ["bash", "-c"]
+              args:
+                - |
+                  . /opt/cronguard/cronguard.sh
+                  cg_run "$CG_PING_KEY" /scripts/backup.sh
+              env:
+                - name: CRONGUARD_URL
+                  value: "http://cronguard-api.monitoring.svc:3000"
+                - name: CG_PING_KEY
+                  valueFrom:
+                    secretKeyRef: { name: backup-cronguard, key: ping-key }
+                - name: CG_STATE_DIR
+                  value: /var/lib/cronguard
+                - name: CG_PROBE_LOGIN
+                  value: "0"                     # no login shell in a container: skip the cron-vs-shell comparison
+                # - name: CG_EXPECT              # optional: what the job must produce
+                #   value: "/backup/db-*.dump min=1M"
+              volumeMounts:
+                - { name: cronguard-sdk, mountPath: /opt/cronguard, readOnly: true }
+                - { name: cronguard-state, mountPath: /var/lib/cronguard }
+          volumes:
+            - name: cronguard-sdk
+              configMap: { name: cronguard-sdk }
+            - name: cronguard-state
+              persistentVolumeClaim: { claimName: cronguard-state }

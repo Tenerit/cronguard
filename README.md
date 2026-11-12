@@ -147,6 +147,8 @@ Lab (pre-registered, `eval/sdk-lab.ts`): the responsible change shown in 8/8 bro
 
 **Also in the bash and Python SDKs:** `cg_step dump` / `cg_step upload` (the failure says in which step it stopped and how long the previous ones took); a ping the server did not receive is kept and replayed in order; an overlap with the previous run is reported (`CG_SKIP_IF_RUNNING=1` skips the run); memory (OOM from the cgroup), full volume and network (DNS, refused, no answer) are established as facts; secrets are masked on the host before sending. Before the first failure, `cg_doctor "<command>"` checks a command as cron will run it, without running it.
 
+**Kubernetes:** [`sdk/kubernetes/cronjob.yaml`](sdk/kubernetes/cronjob.yaml) runs the bash SDK in a CronJob (image with bash, curl and python3; a small volume keeps the fingerprint and the unsent pings between pods). Checked in a container with the same paths and command, not on a real cluster.
+
 The Node SDK covers the test commands and the observed fix; fingerprints, `CG_EXPECT` and the features above are bash and Python for now.
 
 ---

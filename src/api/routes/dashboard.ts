@@ -81,8 +81,12 @@ dashboardRouter.get('/impact', asyncHandler(async (req, res) => {
       COALESCE(ROUND(AVG(i.duration_ms)), 0)::bigint       AS avg_mttr_ms,
       COALESCE(SUM(i.duration_ms), 0)::bigint              AS total_downtime_ms,
       COUNT(*) FILTER (WHERE i.data_impact = 'confirmed')::int AS data_loss,
-      COUNT(DISTINCT i.monitor_id)::int                    AS affected_monitors
+      COUNT(DISTINCT i.monitor_id)::int                    AS affected_monitors,
+      -- Vue responsable : incidents des 7 derniers jours, et ceux dont l'équipe a écrit la correction.
+      COUNT(*) FILTER (WHERE i.resolved_at > NOW() - INTERVAL '7 days')::int AS week,
+      COUNT(*) FILTER (WHERE a.verified_fix IS NOT NULL)::int AS documented
     FROM incidents i JOIN monitors m ON m.id = i.monitor_id
+    LEFT JOIN analyses a ON a.id = i.analysis_id
     WHERE m.client_id = $1 AND i.resolved_at > NOW() - ($2 || ' days')::interval
   `, [res.locals.clientId, days])
 
@@ -101,6 +105,8 @@ dashboardRouter.get('/impact', asyncHandler(async (req, res) => {
     totalDowntimeMs:  Number(agg.total_downtime_ms),
     dataLoss:         agg.data_loss,
     affectedMonitors: agg.affected_monitors,
+    week:             agg.week,
+    documented:       agg.documented,
     recurring,
   })
 }))

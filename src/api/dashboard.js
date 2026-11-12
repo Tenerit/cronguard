@@ -103,7 +103,7 @@ const DEMO_TEAM = [
 const DEMO_MAINT = [
   { id:'m1', label:'Maintenance hebdo', cron_expr:'0 3 * * 0', duration_min:60, active:true, monitor_id:null, active_now:false },
 ]
-const DEMO_IMPACT = { incidents:7, affectedMonitors:3, avgMttrMs:11*60000, totalDowntimeMs:96*60000, dataLoss:1,
+const DEMO_IMPACT = { incidents:7, affectedMonitors:3, avgMttrMs:11*60000, totalDowntimeMs:96*60000, dataLoss:1, week:2, documented:4,
   recurring:[{ name:'etl-warehouse', n:3 }, { name:'sync-invoices', n:2 }] }
 
 function demoOverview() {
@@ -532,6 +532,9 @@ function renderImpact(d) {
   const rec = d.recurring?.length
     ? `<div style="margin-top:10px;font-size:11px;color:var(--text2)">${t('impact.recurring')} : ${d.recurring.map(r=>`<b style="color:var(--text)">${esc(r.name)}</b> ×${r.n}`).join(' · ')}</div>`
     : ''
+  // Vue responsable : une phrase lisible sans connaître les crons (semaine, part des pannes documentées par l'équipe).
+  const pct = Math.round(100 * (d.documented || 0) / d.incidents)
+  const mgr = `<div class="impact-mgr" style="margin-top:8px;font-size:11px;color:var(--text2)">${t('impact.week')} : <b style="color:var(--text)">${d.week ?? 0}</b> · ${t('impact.documented')} : <b style="color:var(--text)">${pct} %</b> (${d.documented || 0}/${d.incidents})</div>`
   el.innerHTML = `
     <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">${t('impact.header')}</div>
     <div class="stats impact-stats" style="margin:0">
@@ -539,7 +542,7 @@ function renderImpact(d) {
       <div class="stat stat-ai"><div class="stat-label">${t('impact.mttr')}</div><div class="stat-val" style="font-size:22px">${fmtMs(d.avgMttrMs)}</div><div class="stat-sub">${t('impact.mttrSub')}</div></div>
       <div class="stat stat-late"><div class="stat-label">${t('impact.downtime')}</div><div class="stat-val" style="font-size:22px">${fmtMs(d.totalDowntimeMs)}</div><div class="stat-sub">${t('impact.downtimeSub')}</div></div>
       <div class="stat ${d.dataLoss?'stat-fail':'stat-ok'}"><div class="stat-label">${t('impact.dataLoss')}</div><div class="stat-val">${d.dataLoss}</div><div class="stat-sub">${t('impact.dataLossSub')}</div></div>
-    </div>${rec}`
+    </div>${mgr}${rec}`
 }
 
 async function loadClientInfo() {

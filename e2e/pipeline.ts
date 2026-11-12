@@ -352,6 +352,16 @@ async function main() {
   const l3 = await fail('importer: ERROR quota table locked by maintenance window 9\nexit status 1', {}, mon3)
   check('Fiche désactivée : plus servie', off.status === 200 && l3.model_used !== 'team-fix', JSON.stringify({ status: off.status, model: l3.model_used }))
 
+  // Vue responsable : un incident dont la correction est écrite, un sans, un hors semaine (écart avant/après).
+  type Imp = { incidents: number; week: number; documented: number }
+  const imp0 = await (await get('/dashboard/impact', client.api_key)).json() as Imp
+  await db.query(`INSERT INTO incidents (monitor_id, started_at, resolved_at, duration_ms, analysis_id) VALUES
+    ($1, NOW() - INTERVAL '1 hour', NOW(), 60000, $2), ($3, NOW() - INTERVAL '2 hours', NOW(), 120000, NULL),
+    ($3, NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days', 60000, NULL)`, [mon.id, l1.id, mon3.id])
+  const imp = await (await get('/dashboard/impact', client.api_key)).json() as Imp
+  check('Vue responsable : +3 incidents, +2 cette semaine, +1 avec correction écrite',
+    imp.incidents - imp0.incidents === 3 && imp.week - imp0.week === 2 && imp.documented - imp0.documented === 1, JSON.stringify({ imp0, imp }))
+
 }
 
 async function finish(fatal?: Error) {
