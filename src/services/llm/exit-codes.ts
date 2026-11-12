@@ -45,6 +45,55 @@ const RSYNC: Record<number, [string, string]> = {
   255: ['La connexion SSH utilisée par rsync a échoué (clé refusée, hôte injoignable, clé d\'hôte inconnue).', 'Tester ssh seul avec la même clé, sous l\'utilisateur du cron.'],
 }
 
+// Codes de sortie de wget (man wget, « EXIT STATUS »).
+const WGET: Record<number, [string, string]> = {
+  1: ['wget a échoué (erreur générique).', 'Relancer la commande sans -q pour voir le message de wget.'],
+  2: ['wget refuse la ligne de commande (option inconnue ou mal écrite, ou .wgetrc invalide).', 'Afficher la commande exacte ; vérifier les options et les guillemets autour de l\'URL.'],
+  3: ['wget ne peut pas écrire le fichier de sortie (droits, disque plein, dossier absent).', 'Vérifier le dossier de destination (-O / -P) et les droits de l\'utilisateur du cron.'],
+  4: ['wget : échec réseau (nom introuvable, connexion refusée ou expirée).', 'Tester l\'URL avec curl -v sous l\'utilisateur du cron ; vérifier le DNS et le pare-feu.'],
+  5: ['wget : le certificat TLS du serveur n\'est pas vérifié.', 'Installer les certificats (ca-certificates) ou corriger le certificat du serveur ; éviter --no-check-certificate.'],
+  6: ['wget : identifiant ou mot de passe refusé par le serveur.', 'Vérifier --user / --password ou le fichier .netrc lu par l\'utilisateur du cron.'],
+  7: ['wget : erreur de protocole (réponse inattendue du serveur).', 'Relancer sans -q pour voir l\'échange ; vérifier l\'URL et le proxy.'],
+  8: ['wget : le serveur a répondu par une erreur (404, 500, 403…).', 'Ouvrir l\'URL appelée : la page n\'existe pas, ou le serveur refuse ce chemin.'],
+}
+const WGET_VALUE_OPTS = new Set(['-O', '-o', '-a', '-P', '-t', '-T', '-U', '-e', '-i', '-B', '-w', '-Q', '-l', '--header', '--user', '--password', '--post-data', '--output-document', '--directory-prefix', '--tries', '--timeout'])
+
+/** Outil appelé par la commande (après VAR=…, sudo, time, nice, env) et ses arguments, jusqu'au premier opérateur. */
+function toolArgs(command: string | undefined): { tool: string; args: string[] } | null {
+  const words = (command ?? '').trim().split(/\s+/)
+  let i = 0
+  while (i < words.length && (/^\w+=/.test(words[i]) || ['sudo', 'time', 'nice', 'env', 'nohup', '/usr/bin/time'].includes(words[i]))) i++
+  if (i >= words.length) return null
+  const tool = words[i].split('/').pop() ?? ''
+  const args: string[] = []
+  for (const w of words.slice(i + 1)) { if (/^(;|\||&&|\|\||&|[0-9]?>>?|<|2>&1)/.test(w)) break; args.push(w) }
+  return { tool, args }
+}
+
+/** wget ou curl sans message (-q, -s) : la commande et le code de sortie suffisent. Mot isolé pris pour une 2e adresse. */
+export function commandToolFinding(command: string | undefined, exitCode: number | undefined): Finding | null {
+  const t = toolArgs(command)
+  if (!t) return null
+  if (t.tool === 'wget') {
+    const pos: string[] = []
+    for (let i = 0; i < t.args.length; i++) {
+      const a = t.args[i]
+      if (WGET_VALUE_OPTS.has(a)) { i++; continue }
+      if (a.startsWith('-')) continue
+      pos.push(a.replace(/^['"]|['"]$/g, ''))
+    }
+    const stray = pos.find(p => !/:\/\//.test(p))
+    if (stray && pos.length > 1 && exitCode !== 0) return { id: 'wget-stray-arg', category: 'code',
+      cause: `wget a reçu « ${stray.slice(0, 80)} » comme une adresse de plus : la ligne contient sans doute un espace au lieu d'un « / » (ou d'un « ? ») dans l'URL.`,
+      action: "Écrire l'URL d'un seul tenant et la mettre entre guillemets." }
+    if (exitCode !== undefined && WGET[exitCode]) return { id: `wget-${exitCode}`, category: exitCode === 3 ? 'resources' : exitCode === 2 ? 'code' : 'network',
+      cause: `Code ${exitCode} de wget : ${WGET[exitCode][0]}`, action: WGET[exitCode][1] }
+  }
+  if (t.tool === 'curl' && exitCode !== undefined && CURL[exitCode])
+    return { id: `curl-${exitCode}`, category: exitCode === 23 ? 'resources' : exitCode === 22 || exitCode === 67 ? 'dependency' : 'network', cause: CURL[exitCode][0], action: CURL[exitCode][1] }
+  return null
+}
+
 /** Code de curl ou de rsync lu dans les logs (prioritaire : plus précis qu'un code de sortie). */
 export function toolCodeFinding(logs: string): Finding | null {
   const c = /curl: \((\d+)\)|\[curl\] (\d+):/.exec(logs)

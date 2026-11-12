@@ -87,8 +87,8 @@ export function pathProbe(text: string): Array<Record<string, unknown>> {
   for (const line of text.split('\n')) {
     if (!/No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system/i.test(line)) continue
     // Chemin non cité : jeton entier depuis un début de mot (« data/input.csv », pas « /input.csv »).
-    for (const m of line.matchAll(/'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?\/?[\w.@+*-]+(?:\/[\w.@+*-]+)+)/g)) {
-      const v = m[1] ?? m[2] ?? m[3]
+    for (const m of line.matchAll(/'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?\/?[\w.@+*-]+(?:\/[\w.@+*-]+)+)|(?:^|\s)([\w@+*-]+\.[\w*]{1,10}):\s*(?:No such file|Permission denied|cannot open|can't open|cannot access|cannot stat)/g)) {
+      const v = m[1] ?? m[2] ?? m[3] ?? m[4]
       if ((v.includes('/') || v.includes('.')) && !cands.includes(v)) cands.push(v)
       if ((v.includes('/') || v.includes('.')) && /Permission denied|Read-only file system/i.test(line)) denied.add(v)
     }
@@ -174,7 +174,7 @@ const stateBase = (pingKey: string) => failMarker(pingKey).slice(0, -5)   // <do
 // Secrets masqués sur la machine du job, avant tout envoi. Copie exacte de _CG_MASK (sdk/python) : un test vérifie
 // que les deux listes sont identiques. Préfixe Python (?i)/(?im) → drapeaux JS.
 export const MASK_PATTERNS = [
-  String.raw`(?i)\b(?:password|passwd|pwd|secret)\s*[:=]\s*(?!(?:YES|NO)\b)(\S+)`,
+  String.raw`(?i)\b(?:password|passwd|pwd|secret)\s*[:=]\s*(?!(?:YES|NO)\b)(?![^\s:]+:(?:\s|$))(\S+)`,
   String.raw`(?i)\b[a-z][a-z0-9+.-]*://[^\s:/@]+:([^\s@/]+)@`,
   String.raw`(?i)\bbearer\s+([A-Za-z0-9_\-.]{20,})`,
   String.raw`(?i)\bAuthorization:\s*(?:Basic|Bearer|Token)\s+([A-Za-z0-9+/=._-]{8,})`,

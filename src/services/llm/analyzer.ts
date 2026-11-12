@@ -7,7 +7,7 @@ import { mineTemplates } from './drain'
 import { knownFix }      from './known-fixes'
 import { commandFinding } from './command-lint'
 import { contextFinding, diagnosticChecks } from './run-context'
-import { toolCodeFinding, exitCodeFinding } from './exit-codes'
+import { toolCodeFinding, exitCodeFinding, commandToolFinding } from './exit-codes'
 import { evidenceLines } from './evidence'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -372,9 +372,17 @@ function analysisWithoutEvidence(ctx: LogOnlyContext): AnalysisResult {
   if (seen) return { cause: seen.cause, action: seen.action, prevention: '', checks: [], severity: 'high', category: seen.category,
     confidence: 'high', data_impact: 'possible', fix_minutes: 30, fromCache: false, correlatedMonitors: ctx.correlatedFailures,
     model: 'knowledge', finding: seen.id }
+  // wget / curl lancés en silencieux (-q, -s) : le code de sortie de l'outil et la commande disent la cause.
+  const tool = commandToolFinding(ctx.command, ctx.exitCode)
+  if (tool) return { cause: tool.cause, action: tool.action, prevention: '', checks: [], severity: 'medium', category: tool.category,
+    confidence: 'high', data_impact: 'possible', fix_minutes: 15, fromCache: false, correlatedMonitors: ctx.correlatedFailures,
+    model: 'knowledge', finding: tool.id }
+  // La commande envoie sa sortie dans un fichier : c'est là qu'est la cause (labo terrain 2, Django : « >> /var/log/cron.log »).
+  const sent = /(?:^|[^0-9&])(?:1|2|&)?>>?\s*(\/(?!dev\/null)[^\s;|&]+)/.exec(ctx.command ?? '')?.[1]
   return {
-    cause:       `Échec sans log${exit} : cause impossible à déterminer.`,
-    action:      'Consulter les logs du job sur son hôte.',
+    cause:       sent ? `Échec sans log${exit} : la commande envoie sa sortie dans ${sent}, la cause y est écrite.`
+                      : `Échec sans log${exit} : cause impossible à déterminer.`,
+    action:      sent ? `Lire la fin de ${sent} sur l'hôte (tail -n 50 ${sent}).` : 'Consulter les logs du job sur son hôte.',
     prevention:  'Envoyer la sortie du job dans le champ output du ping pour permettre l\'analyse.',
     checks:      [
       'Logs du job sur son hôte',
@@ -414,7 +422,7 @@ export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'act
   // Un code de sortie dit CE QUI s'est passé (tué, introuvable), pas toujours pourquoi : confiance moyenne.
   if (!kf) {
     const tool = toolCodeFinding(cleanLogs)
-    const exit = tool ? null : exitCodeFinding(job?.exitCode)
+    const exit = tool ? null : commandToolFinding(job?.command, job?.exitCode) ?? exitCodeFinding(job?.exitCode)
     const coded = tool ?? exit
     if (coded) return { ...res, cause: coded.cause, action: coded.action, category: coded.category,
       confidence: tool ? 'high' : 'medium', finding: coded.id }

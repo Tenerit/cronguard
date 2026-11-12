@@ -99,6 +99,14 @@
   {
    "in": "AUTH [user-list]",
    "out": "AUTH [user-list]"
+  },
+  {
+   "in": "Password: pg_dump: error: connection to server failed",
+   "out": "Password: pg_dump: error: connection to server failed"
+  },
+  {
+   "in": "password: hunter22secret",
+   "out": "password: [REDACTED]"
   }
  ],
  "fpdiff": [

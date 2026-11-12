@@ -38,7 +38,9 @@ MASK = [
     'password=NO,retry',                                           # masqué quand même : la règle « clé=valeur » en début de ligne le prend
     'mode secret: NO,fallback',                                    # (?!(?:YES|NO)\b) : seule la 1re règle s'applique, pas masqué
     'docker login -u bob -p --password-stdin registry.local',      # (?![-$]) : une option, pas un secret
-    'AUTH [user-list]',                                            # (?!\[) : pas un secret
+    'AUTH [user-list]',
+    'Password: pg_dump: error: connection to server failed',     # invite suivie d'une étiquette (labo terrain 2) : rien à masquer
+    'password: hunter22secret',                                            # (?!\[) : pas un secret
 ]
 
 base = {'command': 'abc', 'path': '/usr/bin:/bin', 'cwd': '/srv', 'vars': ['HOME', 'PGPASSWORD', 'TOKEN'],

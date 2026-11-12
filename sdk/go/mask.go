@@ -46,9 +46,9 @@ var maskSrc = []string{
 
 // Clé : un extrait du motif concerné ; valeur : ce que l'assertion Python refusait.
 var maskReject = map[string]*regexp.Regexp{
-	"password|passwd|pwd|secret)": regexp.MustCompile(`^(?:YES|NO)\b`), // (?!(?:YES|NO)\b)
-	"docker|podman|helm|oras":     regexp.MustCompile(`^[-$]`),         // (?![-$])
-	`AUTH\s+(`:                    regexp.MustCompile(`^\[`),           // (?!\[)
+	"password|passwd|pwd|secret)": regexp.MustCompile(`^(?:YES|NO)\b|^[^\s:]+:$`), // (?!(?:YES|NO)\b)(?![^\s:]+:(?:\s|$))
+	"docker|podman|helm|oras":     regexp.MustCompile(`^[-$]`),                    // (?![-$])
+	`AUTH\s+(`:                    regexp.MustCompile(`^\[`),                      // (?!\[)
 }
 
 type maskRule struct{ re, reject *regexp.Regexp }

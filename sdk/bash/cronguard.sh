@@ -308,7 +308,7 @@ def _cg_paths(text):
         if not re.search(r"No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system", line, re.I):
             continue
         # Chemin non cité : jeton entier depuis un début de mot (« data/input.csv », pas « /input.csv »).
-        for m in re.finditer(r"'([^'\s]{1,200})'|\"([^\"\s]{1,200})\"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+*-]+(?:/[\w.@+*-]+)+)", line):
+        for m in re.finditer(r"'([^'\s]{1,200})'|\"([^\"\s]{1,200})\"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+*-]+(?:/[\w.@+*-]+)+)|(?:^|\s)([\w@+*-]+\.[\w*]{1,10}):\s*(?:No such file|Permission denied|cannot open|can't open|cannot access|cannot stat)", line):
             p = next(g for g in m.groups() if g)
             if ('/' in p or '.' in p) and p not in cands:
                 cands.append(p)
@@ -536,7 +536,7 @@ def _cg_net(text, cmd=''):
     return out
 # Secrets masqués sur la machine du job, avant tout envoi (mêmes formats que le masquage du serveur, qui repasse derrière).
 _CG_MASK = [
-    r'(?i)\b(?:password|passwd|pwd|secret)\s*[:=]\s*(?!(?:YES|NO)\b)(\S+)',
+    r'(?i)\b(?:password|passwd|pwd|secret)\s*[:=]\s*(?!(?:YES|NO)\b)(?![^\s:]+:(?:\s|$))(\S+)',
     r'(?i)\b[a-z][a-z0-9+.-]*://[^\s:/@]+:([^\s@/]+)@',
     r'(?i)\bbearer\s+([A-Za-z0-9_\-.]{20,})',
     r'(?i)\bAuthorization:\s*(?:Basic|Bearer|Token)\s+([A-Za-z0-9+/=._-]{8,})',

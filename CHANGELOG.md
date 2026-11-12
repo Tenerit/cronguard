@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Corrigé — le reste du labo terrain 2 (2026-11-12, non indépendant)
+- **Nom de fichier nu dans l'erreur** (« line 11: hw1_input.txt: No such file ») : vérifié par la sonde des 4 SDK ; le constat « chemin relatif cherché depuis… » peut maintenant se déclencher (cas g20).
+- **wget / curl silencieux** (`-q`, `-s`) : le code de sortie de l'outil, lu avec la commande, explique l'échec (codes officiels de wget, codes de curl) ; un mot isolé pris par wget pour une 2e adresse est signalé (« un espace au lieu d'un / dans l'URL », cas g29).
+- **Échec sans log** : si la commande envoie sa sortie dans un fichier, CronGuard le dit et donne la commande pour la lire (cas g7 : « >> /var/log/cron.log »).
+- **Invite « Password: »** suivie d'une étiquette (« pg_dump: ») : plus prise pour un mot de passe, au serveur comme dans les 4 SDK (cas doré ajouté) ; un vrai mot de passe reste masqué (cas g30).
+
 ### Corrigé — CronGuard ne change plus le shell du job (2026-11-12)
 - L'import (dashboard et `cronguard-import.sh`) enveloppait chaque commande dans `bash -c` : un job écrit pour `/bin/sh`, le shell de cron, se comportait autrement une fois branché. Au labo terrain 2 (g40), une erreur réelle (`<( )` sous sh) disparaissait. La commande tourne désormais sous `${SHELL:-/bin/sh}`, le shell que cron aurait utilisé, `SHELL=` de la crontab compris. Le SDK retrouve la commande d'origine quel que soit le shell.
 - Vérifié dans Debian avec son vrai cron : `cat <(ls)` échoue comme sans CronGuard (`/bin/sh: Syntax error: "(" unexpected`) et le serveur établit la cause (`cmd-bashism-sh`) ; avec `SHELL=/bin/bash`, la même ligne réussit ; un job ordinaire réussit.

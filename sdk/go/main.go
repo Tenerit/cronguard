@@ -442,7 +442,7 @@ func expandUser(p string) string {
 var (
 	pathErr  = regexp.MustCompile(`(?i)No such file|Permission denied|cannot open|can't open|cannot access|cannot stat|Read-only file system`)
 	denyErr  = regexp.MustCompile(`(?i)Permission denied|Read-only file system`)
-	pathToks = regexp.MustCompile(`'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+*-]+(?:/[\w.@+*-]+)+)`)
+	pathToks = regexp.MustCompile(`'([^'\s]{1,200})'|"([^"\s]{1,200})"|(?:^|[\s(=])((?:~|\.{1,2})?/?[\w.@+*-]+(?:/[\w.@+*-]+)+)|(?:^|\s)([\w@+*-]+\.[\w*]{1,10}):\s*(?:No such file|Permission denied|cannot open|can't open|cannot access|cannot stat)`)
 )
 
 // Chemins cités par l'erreur (même règle que _cg_paths) : existence, propriétaire, droits de l'utilisateur du job.
@@ -454,7 +454,7 @@ func pathProbe(text string) []map[string]any {
 			continue
 		}
 		for _, m := range pathToks.FindAllStringSubmatch(line, -1) {
-			p := m[1] + m[2] + m[3]
+			p := m[1] + m[2] + m[3] + m[4]
 			if !strings.ContainsAny(p, "/.") {
 				continue
 			}
