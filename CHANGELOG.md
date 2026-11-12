@@ -7,6 +7,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Essayé, abandonné — « réussi mais en erreur » (2026-11-12)
+- Signaler un job sorti avec 0 dont la sortie contient une erreur forte (19 marqueurs figés avant la mesure). Fausses alertes 1/40 sur des sorties saines produites par de vrais outils (2,5 %), rappel **47/98 (48 %)** sur de vrais journaux d'erreur : sous le seuil de 50 % fixé d'avance, abandonné sans ajuster la liste après coup (`eval/archive/SILENT-ERRORS.md`). La défense qui reste : `CG_EXPECT`, proposé à l'import.
+
 ### Évaluation — deux labos de bout en bout, et ce qu'ils ont cassé (2026-11-12)
 - **Labo terrain** (`eval/archive/FIELD-LAB.md`) : 11 situations **tirées au sort** parmi de vraies questions StackExchange, vérité = la réponse acceptée recopiée avant le run, Debian et son vrai cron. **Détection 9/11, cause juste 5/10 (+1 partielle), cause fausse affirmée 0/11.** Les 2 ratés sont des jobs qui échouent en sortant avec 0. Un cas exclu comme prévu (symptôme non reproduit).
 - **Labo « trois clients »** (`eval/archive/CLIENT-LAB*.md`) : chaîne complète (vrai crond, SDK installé depuis le serveur, API, worker, vérificateur, webhook, rapport de pilote). Scénarios écrits par moi, donc biaisés. Pré-enregistré : **5/8** causes par le bon constat (seuil 7, raté). Après corrections (non indépendant) : 6/8, puis **7/8 sans cause fausse**.

@@ -1,0 +1,70 @@
+{
+ "negatives": "40 sorties saines (code 0) sur 40 commandes",
+ "falseAlarms": "1/40 (2.5 %)",
+ "recall": "47/98 (48 %)",
+ "falseAlarmDetail": [
+  {
+   "name": "find-as-nobody",
+   "hits": [
+    {
+     "marker": "permission denied",
+     "line": "find: '/etc/ssl/private': Permission denied"
+    }
+   ]
+  }
+ ],
+ "nonZeroCommands": [],
+ "missed": [
+  "p2-cron-perm-denied-owner",
+  "p2-crontab-percent",
+  "p2-pg-dump-pgpass-root",
+  "p2-docker-no-space",
+  "p2-cron-malware",
+  "p2-curl-60-ca-bundle",
+  "p2-spring-sftp-duplicate",
+  "p2-ffmpeg-display-boot",
+  "p2-python-ascii-encode",
+  "p2-php-oom-ssh-safe-mode",
+  "p3-ruby-rvm-env",
+  "p3-smtp-port-blocked",
+  "p3-node-full-path",
+  "p3-notify-send-display",
+  "p4-python-version-cron",
+  "p4-laravel-mail-template",
+  "p4-git-ssh-agent",
+  "p4-gsutil-path",
+  "p4-date-percent",
+  "p4-crontab-backquote",
+  "p4-php-relative-require",
+  "p4-sh-run-by-python",
+  "p4-cron-no-user-var",
+  "p4-display-xauthority",
+  "p5-ruby-shebang-127",
+  "p5-crontab-percent-expr",
+  "p5-svn-sshpass-noninteractive",
+  "p5-perl-env-login-shell",
+  "p5-python-version-import",
+  "p5-php-set-time-limit",
+  "p5-macos-tcc-trash",
+  "p5-proxy-env-cron",
+  "p5-wget-ssl-status5",
+  "p6-sysctl-path",
+  "p6-rvm-gem-path",
+  "p6-wget-503-auth",
+  "p6-date-unquoted-format",
+  "p6-sphinx-path",
+  "p6-sudo-root-module",
+  "p6-selenium-firefox-version",
+  "p7-node-heap-parallel",
+  "p7-docker-cron-not-installed",
+  "p7-k8s-busybox-no-kubectl",
+  "p7-readonly-fs-errors",
+  "pub-pg-dump-version-mismatch-cron",
+  "pub-certbot-timeout-aaaa-old-provider",
+  "pub-certbot-timeout-firewall-restarted",
+  "pub-velero-x509-unknown-authority",
+  "pub-weaviate-x509-legacy-cn",
+  "pub-aws-s3-sync-sso-expired",
+  "pub-s3-upload-expired-token"
+ ]
+}
