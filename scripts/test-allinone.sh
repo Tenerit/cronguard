@@ -2,6 +2,7 @@
 # Test de l'image tout-en-un : démarrage, panne analysée sans IA, données conservées après
 # redémarrage, arrêt propre de PostgreSQL. Usage : scripts/test-allinone.sh [image]
 set -euo pipefail
+export MSYS_NO_PATHCONV=1   # Git Bash (Windows) : ne pas réécrire /data/… en chemin Windows dans docker exec
 IMG="${1:-cronguard-allinone:test}"
 NAME="cg-allinone-test-$$"
 VOL="cg-allinone-test-$$"

@@ -360,10 +360,16 @@ async function v21(client: {query(sql: string, params?: unknown[]): Promise<{ ro
 
 // ─── V25 : résolution constatée — le contexte relevé par le SDK à l'échec (noms, chemins, booléens : aucune valeur
 // secrète) est gardé avec le ping ; à la première réussite qui suit, la différence est rangée sur l'analyse.
+// ALTER … IF NOT EXISTS prend quand même un verrou exclusif à CHAQUE démarrage : sur deux tables à la suite, il
+// s'interbloquait avec un autre processus déjà en train de les lire (checker tué, conteneur tout-en-un arrêté :
+// trouvé par scripts/test-allinone.sh le 2026-11-12). On ne touche donc aux tables que si une colonne manque.
 async function v25(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
-  await client.query(`ALTER TABLE pings ADD COLUMN IF NOT EXISTS context JSONB`)
-  await client.query(`ALTER TABLE pings ADD COLUMN IF NOT EXISTS command TEXT`)
-  await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS resolution JSONB`)
+  const { rows } = await client.query(`SELECT table_name || '.' || column_name AS c FROM information_schema.columns
+    WHERE (table_name = 'pings' AND column_name IN ('context', 'command')) OR (table_name = 'analyses' AND column_name = 'resolution')`) as { rows: Array<{ c: string }> }
+  const has = new Set(rows.map(r => r.c))
+  if (!has.has('pings.context')) await client.query(`ALTER TABLE pings ADD COLUMN IF NOT EXISTS context JSONB`)
+  if (!has.has('pings.command')) await client.query(`ALTER TABLE pings ADD COLUMN IF NOT EXISTS command TEXT`)
+  if (!has.has('analyses.resolution')) await client.query(`ALTER TABLE analyses ADD COLUMN IF NOT EXISTS resolution JSONB`)
 }
 
 // ─── V24 : fiches d'équipe (fin de la boucle d'apprentissage) : une correction de l'équipe, validée par un admin,
@@ -444,6 +450,9 @@ async function v16(client: {query(sql: string, params?: unknown[]): Promise<unkn
 // Clé stable du verrou consultatif des migrations (arbitraire mais fixe).
 const MIGRATION_LOCK_KEY = 947_218_314
 
+// À changer à chaque nouvelle migration : sinon une base déjà marquée ne la jouerait jamais.
+const SCHEMA_MARKER = 'schema_v25'
+
 export async function runMigrations() {
   const client = await db.connect()
   try {
@@ -452,6 +461,11 @@ export async function runMigrations() {
     // (api + analysis/timeout/retention workers) → pas de course sur le DDL.
     // `_xact_` = relâché automatiquement au COMMIT/ROLLBACK (aucune fuite de verrou).
     await client.query('SELECT pg_advisory_xact_lock($1)', [MIGRATION_LOCK_KEY])
+    // Schéma déjà à jour : on ne rejoue rien. Rejouer les ALTER … IF NOT EXISTS à chaque démarrage prenait des
+    // verrous exclusifs qui s'interbloquaient avec les processus déjà lancés (conteneur tout-en-un arrêté, 2026-11-12).
+    await client.query(`CREATE TABLE IF NOT EXISTS migration_markers (name TEXT PRIMARY KEY, done_at TIMESTAMPTZ DEFAULT NOW())`)
+    const { rows: [current] } = await client.query(`SELECT 1 FROM migration_markers WHERE name = $1`, [SCHEMA_MARKER])
+    if (current) { await client.query('COMMIT'); return }
     await v1(client)
     await v2(client)
     await v3(client)
@@ -477,6 +491,7 @@ export async function runMigrations() {
     await v23(client)
     await v24(client)
     await v25(client)
+    await client.query(`INSERT INTO migration_markers (name) VALUES ($1) ON CONFLICT DO NOTHING`, [SCHEMA_MARKER])
     await client.query('COMMIT')
     logger.info('[DB] Migrations terminées (v1 → v25)')
   } catch (err) {

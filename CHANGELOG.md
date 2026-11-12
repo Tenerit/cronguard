@@ -7,6 +7,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Corrigé — le conteneur tout-en-un pouvait s'arrêter au démarrage (2026-11-12)
+- Chaque processus (API, worker, checker) rejouait toutes les migrations à chaque démarrage. Les `ALTER … IF NOT EXISTS` prennent un verrou exclusif même quand la colonne existe : la migration v25 (deux tables à la suite) s'interbloquait avec un processus déjà en train de les lire ; le checker plantait sur « deadlock detected » et, dans l'image tout-en-un, tout le conteneur s'arrêtait. Trouvé par `scripts/test-allinone.sh` (échec intermittent, 1 sur 3).
+- Une base marquée `schema_v25` ne rejoue plus rien ; le marqueur suit la dernière migration (vérifié par un test). Le test tout-en-un passe **5 fois sur 5** ; le test de bout en bout simule une base plus ancienne avant de rejouer les migrations.
+
 ### Modifié — dashboard découpé (2026-11-12)
 - `dashboard.html` (4 740 lignes) devient une page de 930 lignes et trois fichiers servis tels quels : `dashboard.css`, `dashboard-i18n.js` (traductions FR/EN), `dashboard.js` (application et démo). Aucune ligne de contenu modifiée ; ordre de chargement identique. Les Dockerfiles et la compilation copient les nouveaux fichiers ; la démo statique marche toujours (chemins relatifs). Seul le petit script anti-flash du thème reste en ligne, autorisé par son empreinte. `style-src 'unsafe-inline'` reste nécessaire : ~190 attributs `style=` dans les gabarits.
 

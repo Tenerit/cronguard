@@ -191,10 +191,12 @@ async function main() {
   check('Clé : l\'empreinte elle-même ne permet pas de se connecter', (await get('/monitors', stored)).status === 401)
   const legacyKey = 'cg_live_legacyplaintextkey0000000000'
   const { rows: [legacy] } = await db.query(`INSERT INTO clients (email, api_key) VALUES ('legacy@example.invalid', $1) RETURNING id`, [legacyKey])
+  await db.query(`DELETE FROM migration_markers WHERE name LIKE 'schema_v%'`)   // simule une base d'une version plus ancienne
   execSync('npx tsx src/db/migrations.ts', { env: { ...process.env, DATABASE_URL: dbUrl.toString() }, stdio: 'ignore' })
   const migrated = (await db.query(`SELECT api_key FROM clients WHERE id = $1`, [legacy.id])).rows[0].api_key as string
   check('Clé : migration v18 convertit une ancienne clé en clair', migrated === hashApiKey(legacyKey), migrated.slice(0, 12))
   check('Clé : l\'ancienne clé en clair marche toujours après migration', (await get('/monitors', legacyKey)).status === 200)
+  await db.query(`DELETE FROM migration_markers WHERE name LIKE 'schema_v%'`)   // simule une base d'une version plus ancienne
   execSync('npx tsx src/db/migrations.ts', { env: { ...process.env, DATABASE_URL: dbUrl.toString() }, stdio: 'ignore' })
   const twice = (await db.query(`SELECT api_key FROM clients WHERE id = $1`, [legacy.id])).rows[0].api_key
   check('Clé : migration idempotente (pas de double hash)', twice === migrated)
@@ -262,6 +264,7 @@ async function main() {
   check('Secrets : jamais stockés en clair (sortie du job)', !/S3cretE2E|hunter2E2E/.test(stored2) && stored2.includes('[REDACTED]'), stored2.slice(0, 80))
   const { rows: [old] } = await db.query(`INSERT INTO pings (monitor_id, status, output, pinged_at) VALUES ($1, 'fail', 'old run password=legacyS3cret', NOW() - INTERVAL '2 days') RETURNING id`, [mon.id])
   await db.query(`DELETE FROM migration_markers WHERE name = 'v21_redact_ping_output'`)
+  await db.query(`DELETE FROM migration_markers WHERE name LIKE 'schema_v%'`)   // simule une base d'une version plus ancienne
   execSync('npx tsx src/db/migrations.ts', { env: { ...process.env, DATABASE_URL: dbUrl.toString() }, stdio: 'ignore' })
   const backfilled = (await db.query(`SELECT output FROM pings WHERE id=$1`, [old.id])).rows[0].output as string
   check('Secrets : la migration masque les logs déjà stockés', !backfilled.includes('legacyS3cret') && backfilled.includes('[REDACTED]'), backfilled)

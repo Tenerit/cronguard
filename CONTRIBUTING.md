@@ -70,6 +70,8 @@ few-shot du feedback utilisateur. Le modèle est interchangeable.
 - TypeScript strict — `npx tsc --noEmit` doit être propre.
 - Migrations idempotentes (`IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`), jamais
   de modification destructive d'une migration déjà publiée — ajoutez `vN+1`.
+- Nouvelle migration : passez `SCHEMA_MARKER` à `schema_vN+1` (un test le vérifie). Une base déjà marquée ne
+  rejoue rien au démarrage : rejouer les `ALTER … IF NOT EXISTS` à chaque boot s'interbloquait entre processus.
 - Sécurité : ne jamais logguer de secret ; les logs envoyés au LLM passent par
   `sanitizeLogs`. Ne committez jamais `.env`.
 
