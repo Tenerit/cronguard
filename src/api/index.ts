@@ -24,6 +24,7 @@ validateEnv()
 import express   from 'express'
 import cors      from 'cors'
 import helmet    from 'helmet'
+import { join }  from 'path'
 import rateLimit from 'express-rate-limit'
 import { db, initDb } from '../db'
 import { redis }  from '../config/redis'
@@ -114,6 +115,9 @@ app.use('/ping',     pingRouter)
 // Doit être en premier : app.use('/dashboard', requireApiKey) capturerait sinon le GET /dashboard
 
 app.get('/dashboard', (_, res) => res.sendFile('dashboard.html', { root: __dirname }))
+// Le SDK bash servi par l'API elle-même : l'installer sur la machine d'un job ne demande plus le dépôt
+// (une commande curl affichée par l'import de crontab). Code public, aucun secret.
+app.get('/sdk/cronguard.sh', (_, res) => res.type('text/x-shellscript').sendFile('sdk/bash/cronguard.sh', { root: join(__dirname, '..', '..') }))
 // CSS et JS du dashboard, servis tels quels (liste fermée : rien d'autre du dossier n'est exposé). Chemins relatifs
 // dans dashboard.html : la démo statique (?demo=1) marche aussi, posée telle quelle sur n'importe quel hébergeur.
 for (const f of ['dashboard.css', 'dashboard-i18n.js', 'dashboard.js'])

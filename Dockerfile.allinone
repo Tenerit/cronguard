@@ -23,6 +23,7 @@ COPY --from=builder --chown=cronguard:cronguard /app/dist         ./dist
 COPY --from=builder --chown=cronguard:cronguard /app/node_modules ./node_modules
 COPY --from=builder --chown=cronguard:cronguard /app/package.json ./
 COPY --chown=cronguard:cronguard src/api/dashboard.html src/api/dashboard.css src/api/dashboard-i18n.js src/api/dashboard.js src/api/status.html ./dist/api/
+COPY --chown=cronguard:cronguard sdk/bash/cronguard.sh ./sdk/bash/
 COPY docker/allinone-entrypoint.sh /usr/local/bin/cronguard-allinone
 RUN chmod +x /usr/local/bin/cronguard-allinone
 

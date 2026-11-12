@@ -372,6 +372,25 @@ async function main() {
   const { rows: [zp] } = await db.query(`SELECT p.duration_ms FROM pings p JOIN analyses a ON a.ping_id = p.id WHERE a.id = $1`, [zero.id])
   check('Durée 0 : panne reçue et analysée, durée enregistrée comme non mesurée', !!zero.id && zp?.duration_ms === null, JSON.stringify(zp))
 
+  // last_status : 'failed' puis 'ok' (le worker y écrivait 'fail' / 'success' : compteurs du tableau de bord à 0).
+  const { rows: [mon4] } = await db.query(`INSERT INTO monitors (client_id, name, grace_period) VALUES ($1,'status-check',300) RETURNING id, ping_key`, [client.id])
+  const statusAfter = async (body: object) => {
+    await fetch(`http://localhost:${API_PORT}/ping/${mon4.ping_key}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    for (let i = 0; i < 40; i++) {
+      const { rows: [r] } = await db.query(`SELECT last_status FROM monitors WHERE id = $1`, [mon4.id])
+      if (r.last_status === (body as { expect?: string }).expect) return r.last_status
+      await sleep(250)
+    }
+    return (await db.query(`SELECT last_status FROM monitors WHERE id = $1`, [mon4.id])).rows[0].last_status
+  }
+  const sFail = await statusAfter({ status: 'fail', exit_code: 1, output: 'boom', expect: 'failed' })
+  const ov1 = await (await get('/dashboard/overview', client.api_key)).json() as { monitors: { failed: number }; alerts: Array<{ name: string }> }
+  const sOk = await statusAfter({ status: 'success', expect: 'ok' })
+  const ov2 = await (await get('/dashboard/overview', client.api_key)).json() as { monitors: { ok: number } }
+  check("Statut du monitor : « failed » puis « ok », comptés par le tableau de bord",
+    sFail === 'failed' && sOk === 'ok' && ov1.monitors.failed >= 1 && ov1.alerts.some(a => a.name === 'status-check') && ov2.monitors.ok >= 1,
+    JSON.stringify({ sFail, sOk, failed: ov1.monitors.failed, ok: ov2.monitors.ok }))
+
   // Vue responsable : un incident dont la correction est écrite, un sans, un hors semaine (écart avant/après).
   type Imp = { incidents: number; week: number; documented: number }
   const imp0 = await (await get('/dashboard/impact', client.api_key)).json() as Imp

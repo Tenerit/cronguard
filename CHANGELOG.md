@@ -7,6 +7,16 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Corrigé — statut des monitors faux depuis le premier commit (2026-11-12)
+- Le worker écrivait dans `monitors.last_status` le statut du ping (`success` / `fail`), alors que le tableau de bord, le badge, la page de statut, les métriques et le rapport hebdo attendent `ok` / `failed`. Effet en usage réel : compteurs « ok » et « en échec » à 0, liste des alertes en cours vide, badge et page de statut « unknown », rapport hebdo faux. La démo et les données de démonstration écrivaient `ok` / `failed` : le défaut ne se voyait que sur de vrais pings. Le dashboard contournait `fail` à deux endroits sans corriger la source.
+- Corrigé dans le worker ; migration v27 qui remet les monitors existants dans le bon vocabulaire. Test e2e (échec puis réussite, compteurs du tableau de bord) ; avec l'ancien code il échoue (`fail`, compteur « en échec » à 0).
+- Trouvé en déroulant le parcours d'un débutant de bout en bout : import d'une crontab dans le dashboard, commandes copiées dans un conteneur, pings réels.
+
+### Simplicité — brancher un job sans le dépôt (2026-11-12)
+- L'API sert son SDK bash (`GET /sdk/cronguard.sh`, copié dans les deux images Docker). Le résultat de l'import de crontab donne les deux étapes : 1. installer le SDK sur la machine des jobs (une commande `curl` vers ce serveur), 2. les lignes à coller dans `crontab -e`. Avertit quand l'adresse affichée est `localhost` (inutilisable depuis une autre machine).
+- Vérifié de bout en bout : crontab importée dans le dashboard, commandes affichées exécutées telles quelles dans un conteneur Alpine sous l'environnement minimal de cron ; un job réussi, un job en échec avec la cause constatée par le SDK (« 10.0.0.9:5432 ne répond pas »).
+- Garde-fou ajouté : un test vérifie que les fichiers JS du dashboard se compilent. Pendant ce travail, une apostrophe non échappée dans les traductions cassait tout le dashboard sans qu'aucun test ne le voie (corrigée avant commit).
+
 ### Simplicité — créer son compte depuis le navigateur (2026-11-12)
 - L'écran de connexion propose « Pas encore de compte ? Créer un compte » : un e-mail, un clic, la clé s'affiche une seule fois avec un bouton Copier et elle est déjà remplie pour se connecter. Plus de commande `curl` à l'installation. Même route qu'avant (`POST /auth/register`, limitée en débit) : rien ne change côté serveur, un e-mail déjà pris ne renvoie jamais la clé existante.
 - L'adresse de l'API prend celle de la page (le dashboard est servi par l'API) ; le champ passe sous « Avancé ».

@@ -102,10 +102,12 @@ function createPingWorker() {
     // Résolution constatée : le SDK n'envoie un contexte en réussite qu'à la première réussite après un échec.
     if (!fail && runContext) await attachResolution(monitorId)
 
-    // La complétion (success/fail) efface l'état "en cours" du run
+    // La complétion (success/fail) efface l'état "en cours" du run. last_status = 'ok' | 'failed' : c'est ce
+    // qu'attendent le tableau de bord, le badge, la page de statut, les métriques et le rapport hebdo (le statut
+    // du ping, 'success' | 'fail', y était écrit depuis le premier commit : compteurs à 0, alertes absentes).
     await db.query(
       `UPDATE monitors SET last_ping_at=NOW(), last_status=$2, last_start_at=NULL, hung_alerted=false WHERE id=$1`,
-      [monitorId, status]
+      [monitorId, fail ? 'failed' : 'ok']
     )
 
     // Enregistre le premier ping client (pour l'onboarding)

@@ -363,6 +363,13 @@ async function v21(client: {query(sql: string, params?: unknown[]): Promise<{ ro
 // ALTER … IF NOT EXISTS prend quand même un verrou exclusif à CHAQUE démarrage : sur deux tables à la suite, il
 // s'interbloquait avec un autre processus déjà en train de les lire (checker tué, conteneur tout-en-un arrêté :
 // trouvé par scripts/test-allinone.sh le 2026-11-12). On ne touche donc aux tables que si une colonne manque.
+// ─── V27 : last_status normalisé. Le worker y écrivait le statut du ping ('success' | 'fail') au lieu de
+// 'ok' | 'failed' attendus partout : les monitors déjà touchés sont remis dans le bon vocabulaire.
+async function v27(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`UPDATE monitors SET last_status = 'ok' WHERE last_status = 'success'`)
+  await client.query(`UPDATE monitors SET last_status = 'failed' WHERE last_status = 'fail'`)
+}
+
 // ─── V26 : langue des alertes par compte (une alerte n'a pas de navigateur). NULL = français, comptes existants inchangés.
 async function v26(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
   await client.query(`ALTER TABLE clients ADD COLUMN IF NOT EXISTS lang TEXT`)
@@ -456,7 +463,7 @@ async function v16(client: {query(sql: string, params?: unknown[]): Promise<unkn
 const MIGRATION_LOCK_KEY = 947_218_314
 
 // À changer à chaque nouvelle migration : sinon une base déjà marquée ne la jouerait jamais.
-const SCHEMA_MARKER = 'schema_v26'
+const SCHEMA_MARKER = 'schema_v27'
 
 export async function runMigrations() {
   const client = await db.connect()
@@ -497,9 +504,10 @@ export async function runMigrations() {
     await v24(client)
     await v25(client)
     await v26(client)
+    await v27(client)
     await client.query(`INSERT INTO migration_markers (name) VALUES ($1) ON CONFLICT DO NOTHING`, [SCHEMA_MARKER])
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v26)')
+    logger.info('[DB] Migrations terminées (v1 → v27)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

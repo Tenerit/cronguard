@@ -415,7 +415,7 @@ async function loadMonitors() {
       totalPings   += p.length
       successPings += p.filter(x => x.status === 'success').length
       // Détecte les monitors en échec récent sans analyse → marque comme pending
-      const isFailed = m.last_status === 'failed' || m.last_status === 'fail'
+      const isFailed = m.last_status === 'failed'
       const isRecent = m.last_ping_at && (Date.now() - new Date(m.last_ping_at).getTime()) < 120000
       if (isFailed && isRecent && !pendingAnalysis.has(m.id)) {
         // On vérifie s'il y a une analyse très récente dans les logs
@@ -438,7 +438,7 @@ async function loadMonitors() {
 function renderAlertBanner(list) {
   const el = document.getElementById('alert-banner')
   if (!el) return
-  const failed = list.filter(m => (m.last_status==='failed'||m.last_status==='fail') && !(m.paused_until && new Date(m.paused_until)>new Date()))
+  const failed = list.filter(m => m.last_status==='failed' && !(m.paused_until && new Date(m.paused_until)>new Date()))
   const late   = list.filter(m => m.last_status==='late' && !(m.paused_until && new Date(m.paused_until)>new Date()))
   if (!failed.length && !late.length) { el.innerHTML = ''; return }
   const cls   = failed.length ? 'crit' : 'warn'
@@ -1259,7 +1259,9 @@ async function createImport() {
   }
   if (!out.length) return
   const pre = document.getElementById('imp-out')
-  pre.textContent = `# ${t('imp.paste')}\n` + out.join('\n')
+  // 1. le SDK sur la machine du job (servi par cette API), 2. les lignes à coller dans « crontab -e ».
+  const local = /\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/.test(BASE_URL) ? `# ${t('imp.localhost')}\n` : ''
+  pre.textContent = `${local}# ${t('imp.step1')}\nsudo curl -fsSL ${BASE_URL}/sdk/cronguard.sh -o /usr/local/lib/cronguard.sh\n\n# ${t('imp.paste')}\n` + out.join('\n')
   pre.style.display = ''
   document.getElementById('imp-copy').style.display = ''
   document.getElementById('imp-create').style.display = 'none'
