@@ -54,11 +54,11 @@ A classic monitor would have said `backup-db is DOWN`.
 
 ---
 
-## Quick start
+## Quick start (5 minutes)
 
-**Look at the UI, nothing installed.** Open `src/api/dashboard.html?demo=1` in a browser (or host that single file anywhere): sample monitors, analyses and the AI playground with pre-recorded replies, read-only.
+You need a Linux machine with Docker. Four steps, all from the browser after the first one.
 
-**Run it, one container** (PostgreSQL, Redis, API and workers inside; AI optional):
+**1. Start CronGuard** (one container: database, queue, API and workers inside):
 
 ```bash
 git clone https://github.com/Tenerit/cronguard && cd cronguard
@@ -66,7 +66,18 @@ docker build -f Dockerfile.allinone -t cronguard .
 docker run -d --restart unless-stopped -p 3000:3000 -v cronguard-data:/data --name cronguard cronguard
 ```
 
-Open **http://localhost:3000/dashboard** and click **No account yet? Create one**: your API key is shown once, copy it. Without a model, failures get everything but the plain-words explanation; add it with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1 -e LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`. Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host.
+**2. Create your account.** Open **http://localhost:3000/dashboard**, click **No account yet? Create one**, copy the key it shows (once).
+
+**3. Connect your jobs.** Click **Import a crontab**, paste the output of `crontab -l` from the machine that runs your jobs. CronGuard names each job and gives you two things to copy back onto that machine: one command that installs the SDK, and your crontab with each line wrapped. If your jobs run on another machine, replace `localhost` with this server's address.
+
+**4. Get the alerts.** Settings › Notifications: Slack, Teams, Discord, Google Chat, Mattermost, PagerDuty, or **ntfy** for a push on your phone with nothing to sign up for. Email needs an SMTP server (`-e SMTP_HOST=… -e SMTP_USER=… -e SMTP_PASS=… -e SMTP_FROM=…` on `docker run`).
+
+That's it: the next failure arrives with what the SDK observed on the machine. Everything else (team, escalation, maintenance windows, status pages) is under *Settings › advanced settings*, when you need it.
+
+<details>
+<summary>Other ways to run it: demo, AI explanation, air-gapped, production, backups</summary>
+
+**Look at the UI, nothing installed.** Open `src/api/dashboard.html?demo=1` in a browser (or host that single file anywhere): sample monitors, analyses and the AI playground with pre-recorded replies, read-only.
 
 **Demo with sample data and the AI model:**
 
@@ -76,9 +87,15 @@ docker compose -f docker-compose.demo.yml up     # then log in with API key cg_d
 
 Boots PostgreSQL, Redis and Ollama, seeds 9 monitors with realistic failures and pulls the explanation model (`qwen2.5:7b`, ~4.7 GB on first boot; causes show immediately, plain-words explanations once the pull is done).
 
+**Plain-words explanation (optional AI).** Without a model, failures get everything but that explanation; add it with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1 -e LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`.
+
+**Backups.** Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host.
+
 **Air-gapped server:** on a connected machine, `scripts/offline-bundle.sh [folder] [--with-model]` writes the image (~80 MB), `install.sh` and `SHA256SUMS`; `--with-model` adds the Ollama image and the model (several GB). Copy the folder, then `sha256sum -c SHA256SUMS && ./install.sh`. No network needed.
 
 **Production with Docker Compose:** `docker-compose.yml` (separate API, workers and services), see [DEPLOY.md](DEPLOY.md). For development: `./setup.sh` then `make dev`.
+
+</details>
 
 ---
 

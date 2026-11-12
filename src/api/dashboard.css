@@ -1005,6 +1005,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);overflow-x:h
 .stab:hover{color:var(--text2);background:var(--bg3)}
 .stab.active{color:var(--green);border-bottom-color:var(--green)}
 .stab-off{display:none!important}
+.settings-tabs:not(.show-adv) .stab-adv{display:none}
+.settings-tabs.show-adv .stab-more{opacity:.7}
 
 /* ─── Bannière démo (lecture seule) ───────────────────────────────────────── */
 .demo-banner{

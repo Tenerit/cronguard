@@ -419,11 +419,13 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
         <div class="settings-tabs" role="tablist">
           <button class="stab active" data-stab-btn="account" data-click="setSettingsTab" data-args='["account"]' data-i18n="set.tab.account">Compte</button>
           <button class="stab" data-stab-btn="notifications" data-click="setSettingsTab" data-args='["notifications"]' data-i18n="set.tab.notifications">Notifications</button>
-          <button class="stab" data-stab-btn="alerts" data-click="setSettingsTab" data-args='["alerts"]' data-i18n="set.tab.alerts">Alertes</button>
-          <button class="stab" data-stab-btn="team" data-click="setSettingsTab" data-args='["team"]' data-i18n="set.tab.team">Équipe</button>
-          <button class="stab" data-stab-btn="status" data-click="setSettingsTab" data-args='["status"]' data-i18n="set.tab.status">Statut</button>
-          <button class="stab" data-stab-btn="learning" data-click="setSettingsTab" data-args='["learning"]' data-i18n="set.tab.learning">Apprentissage</button>
-          <button class="stab" data-stab-btn="audit" data-click="setSettingsTab" data-args='["audit"]' data-i18n="set.tab.audit">Audit</button>
+          <button class="stab stab-adv" data-stab-btn="alerts" data-click="setSettingsTab" data-args='["alerts"]' data-i18n="set.tab.alerts">Alertes</button>
+          <button class="stab stab-adv" data-stab-btn="team" data-click="setSettingsTab" data-args='["team"]' data-i18n="set.tab.team">Équipe</button>
+          <button class="stab stab-adv" data-stab-btn="status" data-click="setSettingsTab" data-args='["status"]' data-i18n="set.tab.status">Statut</button>
+          <button class="stab stab-adv" data-stab-btn="learning" data-click="setSettingsTab" data-args='["learning"]' data-i18n="set.tab.learning">Apprentissage</button>
+          <button class="stab stab-adv" data-stab-btn="audit" data-click="setSettingsTab" data-args='["audit"]' data-i18n="set.tab.audit">Audit</button>
+          <!-- Mode simple : Compte et Notifications d'abord, le reste sur demande (mémorisé dans ce navigateur). -->
+          <button class="stab stab-more" id="stab-more" data-click="toggleAdvancedSettings" data-i18n="set.tab.more">réglages avancés ▸</button>
         </div>
         <div class="settings-section" data-stab="account">
           <div class="settings-title" data-i18n="set.account">compte</div>

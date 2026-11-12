@@ -1307,7 +1307,19 @@ function setView(view) {
 
 // ─── Sous-navigation Settings ─────────────────────────────────────────────────
 let settingsTab = 'account'
+// Réglages avancés (alertes, équipe, statut, apprentissage, audit) masqués tant qu'on ne les demande pas.
+function showAdvancedSettings(on) {
+  document.querySelector('.settings-tabs')?.classList.toggle('show-adv', on)
+  try { on ? localStorage.setItem('cg_adv', '1') : localStorage.removeItem('cg_adv') } catch { /* stockage indisponible */ }
+  const more = document.getElementById('stab-more'); if (more) more.textContent = t(on ? 'set.tab.less' : 'set.tab.more')
+}
+function toggleAdvancedSettings() {
+  const on = !document.querySelector('.settings-tabs')?.classList.contains('show-adv')
+  showAdvancedSettings(on)
+  if (!on && !['account', 'notifications'].includes(settingsTab)) setSettingsTab('account')
+}
 function setSettingsTab(tab) {
+  if (!['account', 'notifications'].includes(tab) && !document.querySelector('.settings-tabs')?.classList.contains('show-adv')) showAdvancedSettings(true)   // lien direct vers un onglet avancé
   settingsTab = tab
   document.querySelectorAll('[data-stab-btn]').forEach(b =>
     b.classList.toggle('active', b.getAttribute('data-stab-btn') === tab))
@@ -2493,6 +2505,8 @@ async function trySSO() {
   } catch { /* pas de SSO → écran de connexion classique */ }
   return false
 }
+
+try { if (localStorage.getItem('cg_adv') === '1') showAdvancedSettings(true) } catch { /* stockage indisponible */ }
 
 if (DEMO) {
   startDemo()

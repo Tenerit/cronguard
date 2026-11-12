@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Simplicité — mode simple et démarrage en 5 minutes (2026-11-12)
+- Réglages : seuls « Compte » et « Notifications » s'affichent d'abord ; alertes avancées, équipe, statut, apprentissage et audit sont derrière « réglages avancés ▸ » (mémorisé dans le navigateur ; un lien direct vers un onglet avancé l'affiche). Vérifié en navigateur.
+- README (EN/FR) : le démarrage tient en 4 étapes (lancer, créer son compte, importer sa crontab, recevoir les alertes) ; démo, IA, sans Internet, production et sauvegardes passent sous « Autres façons de le lancer ». Dit ce qui manque encore : l'e-mail demande un serveur SMTP, ntfy marche sans inscription.
+- **Pas réglé :** l'étape 1 suppose l'accès au dépôt (privé) et une construction de l'image ; une image publiée réduirait l'installation à une commande.
+
 ### Corrigé — statut des monitors faux depuis le premier commit (2026-11-12)
 - Le worker écrivait dans `monitors.last_status` le statut du ping (`success` / `fail`), alors que le tableau de bord, le badge, la page de statut, les métriques et le rapport hebdo attendent `ok` / `failed`. Effet en usage réel : compteurs « ok » et « en échec » à 0, liste des alertes en cours vide, badge et page de statut « unknown », rapport hebdo faux. La démo et les données de démonstration écrivaient `ok` / `failed` : le défaut ne se voyait que sur de vrais pings. Le dashboard contournait `fail` à deux endroits sans corriger la source.
 - Corrigé dans le worker ; migration v27 qui remet les monitors existants dans le bon vocabulaire. Test e2e (échec puis réussite, compteurs du tableau de bord) ; avec l'ancien code il échoue (`fail`, compteur « en échec » à 0).

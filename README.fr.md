@@ -54,20 +54,30 @@ Un outil classique aurait écrit `backup-db is DOWN`.
 
 ---
 
-## Démarrer
+## Démarrer (5 minutes)
 
-**Voir l'interface sans rien installer.** Ouvrez `src/api/dashboard.html?demo=1` dans un navigateur (ou hébergez ce seul fichier n'importe où) : monitors, analyses et playground IA d'exemple, en lecture seule.
+Il faut une machine Linux avec Docker. Quatre étapes, toutes dans le navigateur après la première.
 
-**Lancer, un seul conteneur** (PostgreSQL, Redis, API et workers dedans ; IA facultative) :
+**1. Lancer CronGuard** (un seul conteneur : base, file, API et workers dedans) :
 
 ```bash
 git clone https://github.com/Tenerit/cronguard && cd cronguard
 docker build -f Dockerfile.allinone -t cronguard .
 docker run -d --restart unless-stopped -p 3000:3000 -v cronguard-data:/data --name cronguard cronguard
-curl -X POST http://localhost:3000/auth/register -H "Content-Type: application/json" -d '{"email":"vous@exemple.fr"}'   # affiche votre clé API, une seule fois
 ```
 
-Ouvrez **http://localhost:3000/dashboard**. Sans modèle, les pannes ont tout sauf l'explication en langage simple ; pour l'ajouter : `-e LLM_BASE_URL=http://<hôte-ollama>:11434/v1 -e LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`. Les données sont dans le volume `cronguard-data`, avec une sauvegarde PostgreSQL au démarrage puis toutes les 24 h dans `/data/backups`, gardée 7 jours. Copiez ce dossier hors de la machine.
+**2. Créer son compte.** Ouvrez **http://localhost:3000/dashboard**, cliquez **Pas encore de compte ? Créer un compte**, copiez la clé affichée (une seule fois).
+
+**3. Brancher ses jobs.** Cliquez **importer une crontab**, collez le résultat de `crontab -l` pris sur la machine des jobs. CronGuard nomme chaque job et vous donne deux choses à recopier sur cette machine : une commande qui installe le SDK, et votre crontab avec chaque ligne enveloppée. Si vos jobs tournent sur une autre machine, remplacez `localhost` par l'adresse de ce serveur.
+
+**4. Recevoir les alertes.** Réglages › Notifications : Slack, Teams, Discord, Google Chat, Mattermost, PagerDuty, ou **ntfy** pour une notification sur le téléphone, sans inscription. L'e-mail demande un serveur SMTP (`-e SMTP_HOST=… -e SMTP_USER=… -e SMTP_PASS=… -e SMTP_FROM=…` sur `docker run`).
+
+C'est tout : la prochaine panne arrive avec ce que le SDK a constaté sur la machine. Le reste (équipe, escalade, fenêtres de maintenance, pages de statut) est sous *Réglages › réglages avancés*, quand vous en avez besoin.
+
+<details>
+<summary>Autres façons de le lancer : démo, IA d'explication, sans Internet, production, sauvegardes</summary>
+
+**Voir l'interface sans rien installer.** Ouvrez `src/api/dashboard.html?demo=1` dans un navigateur (ou hébergez ce seul fichier n'importe où) : monitors, analyses et playground IA d'exemple, en lecture seule.
 
 **Démo avec données d'exemple et IA d'explication** (télécharge `qwen2.5:7b`, ~4,7 Go au premier lancement) :
 
@@ -75,9 +85,15 @@ Ouvrez **http://localhost:3000/dashboard**. Sans modèle, les pannes ont tout sa
 docker compose -f docker-compose.demo.yml up     # puis connexion avec la clé cg_demo_dockerdemo123456
 ```
 
+**Explication en langage simple (IA facultative).** Sans modèle, les pannes ont tout sauf cette explication ; pour l'ajouter : `-e LLM_BASE_URL=http://<hôte-ollama>:11434/v1 -e LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`.
+
+**Sauvegardes.** Les données sont dans le volume `cronguard-data`, avec une sauvegarde PostgreSQL au démarrage puis toutes les 24 h dans `/data/backups`, gardée 7 jours. Copiez ce dossier hors de la machine.
+
 **Serveur sans Internet :** sur une machine connectée, `scripts/offline-bundle.sh [dossier] [--with-model]` produit l'image, `install.sh` et `SHA256SUMS` ; `--with-model` ajoute Ollama et le modèle (plusieurs Go). Copiez le dossier, puis `sha256sum -c SHA256SUMS && ./install.sh`.
 
 **Production avec Docker Compose :** `docker-compose.yml`, voir [DEPLOY.md](DEPLOY.md). Développement : `./setup.sh` puis `make dev`.
+
+</details>
 
 ---
 

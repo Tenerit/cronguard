@@ -51,7 +51,7 @@ if [ -f ollama-image.tar.gz ]; then
 fi
 docker run -d --restart unless-stopped -p \${PORT:-3000}:3000 -v cronguard-data:/data \$AI --name cronguard $TAG
 echo "CronGuard : http://localhost:\${PORT:-3000}/dashboard"
-echo "Créer le compte : curl -X POST http://localhost:\${PORT:-3000}/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"vous@exemple.fr\"}'"
+echo "Créer le compte : ouvrez http://localhost:\${PORT:-3000}/dashboard, puis « Pas encore de compte ? Créer un compte »"
 EOF
 chmod +x "$OUT/install.sh"
 
