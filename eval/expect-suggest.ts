@@ -18,7 +18,8 @@
  */
 import 'dotenv/config'
 import { readFileSync, writeFileSync } from 'fs'
-import { ruleExpect, aiExpect, globDates } from '../src/services/expect-suggest'
+import { ruleExpect, globDates } from '../src/services/expect-suggest'
+import { aiExpect } from './lib/expect-ai'
 
 const LINES = [...JSON.parse(readFileSync('eval/crontab-lines.json', 'utf8')), ...JSON.parse(readFileSync('eval/crontab-lines-2.json', 'utf8'))] as Array<{ command: string }>
 // Étiquettes (index dans la concaténation des deux fichiers) : chemin attendu, avec * pour une date calculée.

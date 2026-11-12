@@ -7,6 +7,10 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — sortie attendue proposée à l'import ; rôle de l'IA essayé, non adopté (2026-11-12)
+- À l'import d'une crontab, CronGuard propose pour chaque job le fichier qu'il doit produire (« doit produire : /bak/shop-*.sql ») et l'ajoute à la ligne de crontab (`CG_EXPECT`) : un job qui réussit sans rien produire devient une panne, sans que l'utilisateur connaisse `CG_EXPECT`. Journaux, `/dev/null`, options et chemins absents de la commande ne sont jamais proposés.
+- **Essai pré-enregistré** (161 lignes réelles, `eval/archive/EXPECT-SUGGEST.md`) : règle 10/14 contre modèle local 12/14, 0 chemin inventé ; le critère d'adoption du modèle était rempli, mais les 2 cas d'écart venaient d'un défaut de la règle (date avec espace) trouvé par les tests unitaires pendant le run. Règle corrigée : 12/14, 0 faux sur 139 (chiffre non indépendant). À rappel égal, la règle est livrée, le modèle n'est pas adopté (5 s par job, modèle de 5 Go). Code du modèle déplacé dans `eval/lib/expect-ai.ts`.
+
 ### Simplicité — mode simple et démarrage en 5 minutes (2026-11-12)
 - Réglages : seuls « Compte » et « Notifications » s'affichent d'abord ; alertes avancées, équipe, statut, apprentissage et audit sont derrière « réglages avancés ▸ » (mémorisé dans le navigateur ; un lien direct vers un onglet avancé l'affiche). Vérifié en navigateur.
 - README (EN/FR) : le démarrage tient en 4 étapes (lancer, créer son compte, importer sa crontab, recevoir les alertes) ; démo, IA, sans Internet, production et sauvegardes passent sous « Autres façons de le lancer ». Dit ce qui manque encore : l'e-mail demande un serveur SMTP, ntfy marche sans inscription.

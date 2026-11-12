@@ -1228,7 +1228,7 @@ async function analyzeImport() {
     let s = {}
     try { s = await api('/monitors/suggest-name', { method: 'POST', body: JSON.stringify({ command: jobs[i].cmd, schedule: jobs[i].schedule }) }) } catch { /* nom du code */ }
     Object.assign(jobs[i], { name: /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s.name || '') ? s.name : codeJobName(jobs[i].cmd), ai: !!s.name,
-      role: s.role || '', when: s.when || jobs[i].schedule, critical: s.critical === true })
+      role: s.role || '', when: s.when || jobs[i].schedule, critical: s.critical === true, expect: typeof s.expect === 'string' ? s.expect : '' })
   }
   importJobs = jobs
   status.textContent = `${jobs.length} ${t('imp.found')} ${jobs.some(j => j.ai) ? t('imp.aiNote') : t('imp.codeNote')}`
@@ -1237,6 +1237,7 @@ async function analyzeImport() {
     <div class="imp-main">
       <input class="field-input imp-name" id="imp-name-${i}" value="${esc(j.name)}" maxlength="60" aria-label="${esc(t('mod.new.name'))}">
       <div class="imp-meta">${j.role ? esc(j.role) + ' — ' : ''}${esc(j.when)}${j.critical ? ` <span class="imp-crit">⚑ ${t('imp.critical')}</span>` : ''}</div>
+      ${j.expect ? `<div class="imp-meta">${esc(t('imp.expect'))} <code>${esc(j.expect)}</code></div>` : ''}
       <code class="imp-cmd">${esc(j.cmd.slice(0, 160))}</code>
     </div></div>`).join('')
   document.getElementById('imp-create').style.display = ''
@@ -1255,7 +1256,9 @@ async function createImport() {
     catch (e) { const why = e.message; toast(`${name} : ${why}`, 'err'); continue }   // toast = textContent
     if (!m || m.demo) return   // démo : lecture seule (toast déjà affiché)
     // La commande d'origine passe en $0, un seul niveau d'apostrophes : ' → '\''
-    out.push(`${j.schedule}${j.user ? ' ' + j.user : ''} CRONGUARD_URL=${BASE_URL} bash -c 'source /usr/local/lib/cronguard.sh && cg_run ${m.ping_key} bash -c "$0"' '${j.cmd.replace(/'/g, "'\\''")}'`)
+    // Sortie attendue proposée : « réussi mais n'a rien produit » devient une panne (CG_EXPECT du SDK).
+    const exp = j.expect ? `CG_EXPECT='${j.expect.replace(/'/g, '')}' ` : ''
+    out.push(`${j.schedule}${j.user ? ' ' + j.user : ''} ${exp}CRONGUARD_URL=${BASE_URL} bash -c 'source /usr/local/lib/cronguard.sh && cg_run ${m.ping_key} bash -c "$0"' '${j.cmd.replace(/'/g, "'\\''")}'`)
   }
   if (!out.length) return
   const pre = document.getElementById('imp-out')

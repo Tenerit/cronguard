@@ -1,3 +1,4 @@
+import { ruleExpect } from '../../services/expect-suggest'
 import { Router } from 'express'
 import { z }      from 'zod'
 import { db }     from '../../db'
@@ -291,7 +292,8 @@ monitorsRouter.post('/lint', asyncHandler(async (req, res) => {
 monitorsRouter.post('/suggest-name', requireRole('member'), asyncHandler(async (req, res) => {
   const parsed = z.object({ command: z.string().min(1).max(1000), schedule: z.string().max(120).optional() }).safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'command requis (1000 caractères max)' })
-  res.json(await suggestJobName(parsed.data.command, parsed.data.schedule))
+  // expect : sortie attendue proposée par la règle (CG_EXPECT) ; essai eval/expect-suggest.ts : la règle égale le modèle.
+  res.json({ ...await suggestJobName(parsed.data.command, parsed.data.schedule), expect: ruleExpect(parsed.data.command) })
 }))
 
 // ─── POST /analyze/preview — Analyse immédiate avec diagnostic complet ────────

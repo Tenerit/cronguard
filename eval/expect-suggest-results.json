@@ -1,0 +1,232 @@
+{
+ "model": "qwen2.5:7b-instruct-q4_K_M",
+ "rule": {
+  "recall": "10/14 (71 %)",
+  "falseOnNegatives": "2/139 (1.4 %)",
+  "invented": 0
+ },
+ "ai": {
+  "recall": "12/14 (86 %)",
+  "falseOnNegatives": "2/139 (1.4 %)",
+  "invented": 0
+ },
+ "medianMs": 5186,
+ "rows": [
+  {
+   "i": 10,
+   "cmd": "root    php /sites/internal.domain.com/www/cron/account/clock/accountability-report.php",
+   "gold": null,
+   "rule": null,
+   "ai": "/sites/internal.domain.com/www/cron/account/clock/accountability-report.php",
+   "aiRaw": {
+    "raison": "La commande exécute un script PHP qui semble générer un rapport d'accountabilité.",
+    "fichier": "/sites/internal.domain.com/www/cron/account/clock/accountability-report.php"
+   },
+   "ms": 7497
+  },
+  {
+   "i": 15,
+   "cmd": "root    php /sites/internal.domain.com/www/cron/ebay/archive/associa",
+   "gold": null,
+   "rule": null,
+   "ai": "/sites/internal.domain.com/www/cron/ebay/archive/associa",
+   "aiRaw": {
+    "raison": "La commande PHP exécute un script qui semble produire une archive.",
+    "fichier": "/sites/internal.domain.com/www/cron/ebay/archive/associa"
+   },
+   "ms": 6679
+  },
+  {
+   "i": 18,
+   "cmd": "cronuser echo \"Test\" > /path/to/test.txt",
+   "gold": "/path/to/test.txt",
+   "rule": "/path/to/test.txt",
+   "ai": "/path/to/test.txt",
+   "aiRaw": {
+    "raison": "La commande écrit directement dans un fichier.",
+    "fichier": "/path/to/test.txt"
+   },
+   "ms": 4310
+  },
+  {
+   "i": 19,
+   "cmd": "cronuser /bin/echo \"Test\" > /var/www/eDialog/test.txt",
+   "gold": "/var/www/eDialog/test.txt",
+   "rule": "/var/www/eDialog/test.txt",
+   "ai": "/var/www/eDialog/test.txt",
+   "aiRaw": {
+    "raison": "La commande écrit dans un fichier.",
+    "fichier": "/var/www/eDialog/test.txt"
+   },
+   "ms": 4362
+  },
+  {
+   "i": 21,
+   "cmd": "/bin/echo \"Test\" > /path/to/test.txt",
+   "gold": "/path/to/test.txt",
+   "rule": "/path/to/test.txt",
+   "ai": "/path/to/test.txt",
+   "aiRaw": {
+    "raison": "La commande écrit le contenu 'Test' dans un fichier.",
+    "fichier": "/path/to/test.txt"
+   },
+   "ms": 4635
+  },
+  {
+   "i": 24,
+   "cmd": "arp -n > results.txt",
+   "gold": "results.txt",
+   "rule": "results.txt",
+   "ai": "results.txt",
+   "aiRaw": {
+    "raison": "La commande sauvegarde les entrées ARP dans un fichier.",
+    "fichier": "results.txt"
+   },
+   "ms": 4634
+  },
+  {
+   "i": 42,
+   "cmd": "cp /home/app/log/file.log.$(date --d=\"-1 day\" +%Y%m%d) /root/",
+   "gold": "/root/file.log.*",
+   "rule": null,
+   "ai": null,
+   "aiRaw": {
+    "raison": "La commande copie un fichier log d'hier vers le répertoire root.",
+    "fichier": "/root/file.log.*"
+   },
+   "ms": 5709
+  },
+  {
+   "i": 64,
+   "cmd": "wget -O --q -t 1 http://domain:8280/folder/cron.php",
+   "gold": null,
+   "rule": "--q",
+   "ai": null,
+   "aiRaw": {
+    "raison": "La commande télécharge du contenu mais ne spécifie pas de fichier de sortie.",
+    "fichier": null
+   },
+   "ms": 4870
+  },
+  {
+   "i": 65,
+   "cmd": "wget --no-check-certificate -O --q -t 1 https://domain/folder/cron.php",
+   "gold": null,
+   "rule": "--q",
+   "ai": null,
+   "aiRaw": {
+    "raison": "La commande télécharge du contenu d'une URL mais ne spécifie pas de fichier de sortie.",
+    "fichier": null
+   },
+   "ms": 5307
+  },
+  {
+   "i": 88,
+   "cmd": "mysqldump -u root -p PASS database > backup_`date \"+\\%F\"`.sql 2> cron_back.log",
+   "gold": "backup_*.sql",
+   "rule": null,
+   "ai": "backup_*",
+   "aiRaw": {
+    "raison": "La commande crée un fichier de sauvegarde SQL du base de données.",
+    "fichier": "backup_*"
+   },
+   "ms": 5408
+  },
+  {
+   "i": 89,
+   "cmd": "mysqldump -u root -pVERYSECUREPASSWORD --all-databases > /var/www/cloud/dump_komplett.sql &> /dev/null",
+   "gold": "/var/www/cloud/dump_komplett.sql",
+   "rule": "/var/www/cloud/dump_komplett.sql",
+   "ai": "/var/www/cloud/dump_komplett.sql",
+   "aiRaw": {
+    "raison": "La commande enregistre une sauvegarde de toutes les bases de données MySQL dans un fichier.",
+    "fichier": "/var/www/cloud/dump_komplett.sql"
+   },
+   "ms": 7383
+  },
+  {
+   "i": 91,
+   "cmd": "root     mysqldump -u root -ppasswordD billing \"/home/backup/database_`date '+%m-%d-%Y'`.sql\"",
+   "gold": "/home/backup/database_*.sql",
+   "rule": null,
+   "ai": "/home/backup/database_*.sql",
+   "aiRaw": {
+    "raison": "La commande crée une sauvegarde de la base de données billing.",
+    "fichier": "/home/backup/database_*-*-*.sql"
+   },
+   "ms": 6548
+  },
+  {
+   "i": 92,
+   "cmd": "/usr/lib/postgresql/12/bin/pg_dump -h 127.0.0.1 -Fc db_kp -f /backup-nfs/dump_dbkp_TEST1`date +\\%d-\\%m-\\%y`.sql",
+   "gold": "/backup-nfs/dump_dbkp_TEST1*.sql",
+   "rule": null,
+   "ai": "/backup-nfs/dump_dbkp_*.sql",
+   "aiRaw": {
+    "raison": "La commande utilise pg_dump pour créer une sauvegarde de la base de données db_kp.",
+    "fichier": "/backup-nfs/dump_dbkp_*.sql"
+   },
+   "ms": 7853
+  },
+  {
+   "i": 105,
+   "cmd": "echo test > test.txt",
+   "gold": "test.txt",
+   "rule": "test.txt",
+   "ai": "test.txt",
+   "aiRaw": {
+    "raison": "La commande écrit directement dans un fichier.",
+    "fichier": "test.txt"
+   },
+   "ms": 3876
+  },
+  {
+   "i": 111,
+   "cmd": "wget -O \"/Users/me/Downloads/example.txt\" \"http://www.example.com/example.txt\"",
+   "gold": "/Users/me/Downloads/example.txt",
+   "rule": "/Users/me/Downloads/example.txt",
+   "ai": "/Users/me/Downloads/example.txt",
+   "aiRaw": {
+    "raison": "Téléchargement depuis une URL.",
+    "fichier": "/Users/me/Downloads/example.txt"
+   },
+   "ms": 4486
+  },
+  {
+   "i": 122,
+   "cmd": "docker exec -it --user root lemp_mariadb mysqldump -uroot -pxxxxxxx iot  >/home/backup/backup_data.gz",
+   "gold": "/home/backup/backup_data.gz",
+   "rule": "/home/backup/backup_data.gz",
+   "ai": "/home/backup/backup_data.gz",
+   "aiRaw": {
+    "raison": "La commande effectue une sauvegarde de la base de données iot.",
+    "fichier": "/home/backup/backup_data.gz"
+   },
+   "ms": 6480
+  },
+  {
+   "i": 138,
+   "cmd": "find /home/swayraines -mmin -300 -exec tar -zcvf folder/backup/back.tar {} > /folder/backup/backlog.log 2>&1 \\;",
+   "gold": "folder/backup/back.tar",
+   "rule": "folder/backup/back.tar",
+   "ai": null,
+   "aiRaw": {
+    "raison": "La commande archivage ne spécifie pas de fichier de sortie spécifique pour l'archive elle-même.",
+    "fichier": null
+   },
+   "ms": 6067
+  },
+  {
+   "i": 139,
+   "cmd": "sudo tar -cpzf backupfolder/localhost.tar.gz /var/www",
+   "gold": "backupfolder/localhost.tar.gz",
+   "rule": "backupfolder/localhost.tar.gz",
+   "ai": "backupfolder/localhost.tar.gz",
+   "aiRaw": {
+    "raison": "Cette commande crée une archive de la répertoire /var/www et l'enregistre dans backupfolder/localhost.tar.gz.",
+    "fichier": "backupfolder/localhost.tar.gz"
+   },
+   "ms": 7840
+  }
+ ]
+}
