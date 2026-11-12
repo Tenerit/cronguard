@@ -1,0 +1,32 @@
+{
+ "_note": "Vérité attendue recopiée des réponses StackExchange AVANT tout lancement (2026-11-12). Ordre du tirage, graine 20261112. Exclus avec raison en bas.",
+ "cases": [
+  { "n": 0,  "title": "Cron and Crontab files not executed in Docker", "truth": "Debian cron n'exécute pas un fichier de crontab qui a plus d'un lien physique (overlay de Docker) : le job ne tourne jamais.", "keywords": ["lien", "hard link", "hardlink", "crontab ignoré", "nlink"] },
+  { "n": 1,  "title": "Crontab mysqldump has massive error log", "truth": "Selon la réponse acceptée : l'espace entre « 2> » et le nom du fichier. (Réponse douteuse : « 2> f » est valide ; le symptôme sera tenté tel quel.)", "keywords": ["2>", "redirection"] },
+  { "n": 2,  "title": "tar archiving via cron does not work", "truth": "Chemin relatif backupfolder/ : depuis la crontab de root, cron part de /root où ce dossier n'existe pas (et sudo inutile dans la crontab de root).", "keywords": ["relatif", "dossier de lancement", "backupfolder", "No such file"] },
+  { "n": 4,  "title": "Crontab runs bash in a different way", "truth": "Script sans ligne #!/bin/bash, lancé par sh : la syntaxe bash (« == » dans [ ]) échoue ; et l'environnement de cron (PATH).", "keywords": ["sh", "bash", "unexpected operator", "#!"] },
+  { "n": 6,  "title": "Git auto-pull using cronjob", "truth": "git est dans /usr/local/bin, absent du PATH de cron : il faut le chemin complet.", "keywords": ["git", "PATH", "introuvable", "not found"] },
+  { "n": 7,  "title": "php script runs from command line, but not from crontab", "truth": "php n'est pas dans le PATH de cron (variables d'environnement du shell de l'utilisateur absentes).", "keywords": ["php", "PATH", "introuvable", "not found"] },
+  { "n": 13, "title": "bash function command not found in cronjob", "truth": "Cron n'accepte pas les fonctions shell : adddate n'existe pas pour la commande ; la mettre dans un script.", "keywords": ["fonction", "adddate"] },
+  { "n": 14, "title": "cron stop sending error mails if command output is redirected", "truth": "Le script sort en erreur (exit 1) mais sa sortie est redirigée : cron n'envoie pas de mail. Mesure : CronGuard alerte-t-il quand même ?", "keywords": [] },
+  { "n": 16, "title": "Interaction between aws cli, crontab and user privileges", "truth": "« sudo aws configure » a rangé les identifiants dans /home/ubuntu au lieu de /root : la crontab de root ne les trouve pas.", "keywords": ["identifiants", "credentials", "/home/ubuntu", "HOME", "autre utilisateur"] },
+  { "n": 18, "title": "environment variables in system wide cron", "truth": "Les variables d'environnement du conteneur ne sont pas transmises à cron (Debian) : le script échoue à les lire (et l'attrape, sortie 0).", "keywords": ["variable", "INFLUXDB_USER", "environnement"] },
+  { "n": 20, "title": "Rake Task from Crontab?", "truth": "rake / bundle introuvables sans l'environnement du shell de connexion : lancer via bash -l.", "keywords": ["rake", "PATH", "shell de connexion", "not found"] },
+  { "n": 21, "title": "Delete log file when exceeds size limit", "truth": "logrotate -f force la rotation sans tenir compte de « size 100M » : tous les journaux sont supprimés. Retirer -f.", "keywords": ["-f", "force"] }
+ ],
+ "reserve": [22, 25],
+ "excluded": {
+  "3": "réponse sans cause (« ça marche chez moi »)",
+  "5": "réponse sans cause (l'auteur a contourné sans comprendre)",
+  "8": "aucune réponse",
+  "9": "la réponse ne traite pas l'erreur posée",
+  "10": "certbot-auto obsolète, dépend de dépôts externes (non reproductible)",
+  "11": "macOS",
+  "12": "pas une panne de job : le mail de cron n'arrive pas (catégorie non prévue par le protocole, signalée)",
+  "15": "réponse sans cause (« je ne sais pas pourquoi »)",
+  "17": "aucune réponse",
+  "19": "aléa de planification de cron, non reproductible",
+  "23": "pic de charge, pas une panne",
+  "24": "question de planification, pas une panne"
+ }
+}
