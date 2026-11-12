@@ -174,10 +174,18 @@ export function contextFinding(logs: string, c?: RunContext, exitCode?: number):
       action: `Appeler ${c.found[cmd]} en chemin absolu, ou ajouter PATH=${dir}:${c.path ?? '/usr/bin:/bin'} en tête de la crontab.` }
   }
 
+  // 1 bis. Pas d'agent SSH : testé AVANT les identifiants du HOME (labo terrain 2 : une clé à phrase de passe sans agent
+  // recevait « identifiants d'un autre compte », alors que le compte était le même).
+  if (c.sshAgent === false && /Permission denied \(publickey|Could not read from remote repository|agent refused|Could not open a connection to your authentication agent/i.test(logs)) {
+    return { id: 'ctx-no-ssh-agent', category: 'network',
+      cause: "SSH_AUTH_SOCK est absent dans l'environnement du cron : la clé chargée dans l'agent de votre session n'est pas disponible.",
+      action: 'Utiliser une clé dédiée au job, sans passphrase, indiquée explicitement (ssh -i / IdentityFile, GIT_SSH_COMMAND="ssh -i …").' }
+  }
+
   // 2. Identifiants lus dans le HOME : le cron tourne sous un autre compte que le vôtre.
   if (CREDS.test(logs) && c.user && c.home) {
     return { id: 'ctx-other-user', category: 'dependency',
-      cause: `Le cron tourne sous « ${c.user} » (HOME=${c.home}) : il lit les identifiants de ${c.home} (.pgpass, .my.cnf, .aws, .ssh, trousseau GPG), pas ceux du compte où le job marche à la main.`,
+      cause: `Identifiants introuvables pour le compte du cron : « ${c.user} » (HOME=${c.home}) les cherche dans ${c.home} (.pgpass, .my.cnf, .aws, .ssh, trousseau GPG). S'ils sont dans le HOME d'un autre compte (celui où la commande marche à la main), le cron ne les voit pas.`,
       action: `Placer les identifiants dans ${c.home} pour ${c.user} (droits 600), ou installer le job dans la crontab du bon utilisateur (crontab -u <user> -e).` }
   }
 
@@ -195,12 +203,6 @@ export function contextFinding(logs: string, c?: RunContext, exitCode?: number):
       action: 'Définir DISPLAY=:0 et XAUTHORITY (fichier .Xauthority de la session) dans la crontab, ou utiliser un mode sans affichage (headless, xvfb-run).' }
   }
 
-  // 5. Pas d'agent SSH.
-  if (c.sshAgent === false && /Permission denied \(publickey|Could not read from remote repository|agent refused|Could not open a connection to your authentication agent/i.test(logs)) {
-    return { id: 'ctx-no-ssh-agent', category: 'network',
-      cause: "SSH_AUTH_SOCK est absent dans l'environnement du cron : la clé chargée dans l'agent de votre session n'est pas disponible.",
-      action: 'Utiliser une clé dédiée au job, sans passphrase, indiquée explicitement (ssh -i / IdentityFile, GIT_SSH_COMMAND="ssh -i …").' }
-  }
 
   // 6. Script bash exécuté par /bin/sh.
   if (c.shell && /\/(da)?sh$/.test(c.shell) && /Syntax error: "?\(|\[\[: not found|source: not found|Bad substitution|failed to open files-from <\(/.test(logs)) {

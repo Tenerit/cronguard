@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Évaluation — labo terrain 2 : nettement moins bon (2026-11-12)
+- 12 nouvelles situations tirées au sort (`eval/archive/FIELD-LAB-2.md`), jamais vues par les corrections du jour : **détection 7/12, cause juste 1/12, cause fausse affirmée 1/12** (labo 1 : 9/11, 5/10, 0/11). 5 ratés sont des jobs qui « réussissent » en faisant mal leur travail.
+- Corrigé (non indépendant) : **fausses alertes « job lent »** sur des jobs de quelques millisecondes (« 291 ms, moyenne 66 ms ») : il faut maintenant aussi dépasser la moyenne d'au moins 30 s (`SLOW_MIN_DELTA_MS`) ; **cause fausse** sur une clé SSH à phrase de passe sans agent : le constat « pas d'agent SSH » passe avant « identifiants d'un autre compte », qui est désormais formulé au conditionnel (le compte et le HOME du cron sont des faits, l'autre compte ne l'est pas).
+- Reste ouvert : l'enveloppe `bash -c` de l'import change le shell du job (sh → bash) et peut masquer ou créer un bogue ; un nom de fichier relatif sans « / » dans l'erreur n'est pas vérifié ; les codes de sortie de wget ne sont pas expliqués ; le masquage abîme la ligne qui suit une invite « Password: ».
+
 ### Essayé, abandonné — « réussi mais en erreur » (2026-11-12)
 - Signaler un job sorti avec 0 dont la sortie contient une erreur forte (19 marqueurs figés avant la mesure). Fausses alertes 1/40 sur des sorties saines produites par de vrais outils (2,5 %), rappel **47/98 (48 %)** sur de vrais journaux d'erreur : sous le seuil de 50 % fixé d'avance, abandonné sans ajuster la liste après coup (`eval/archive/SILENT-ERRORS.md`). La défense qui reste : `CG_EXPECT`, proposé à l'import.
 

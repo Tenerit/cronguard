@@ -18,6 +18,9 @@ const ANOMALY_FACTOR = 2.5
 // repose sur assez de succès passés. Sur 1-2 échantillons la moyenne est instable →
 // un job neuf ou naturellement variable génère du bruit (= fatigue d'alerte semaine 1).
 const SLOW_MIN_SAMPLES = Math.max(1, parseInt(process.env.SLOW_WARMUP_SAMPLES ?? '5'))
+// Plancher absolu : × 2,5 sur un job de quelques millisecondes n'est que du bruit (labo terrain 2, 2026-11-12 :
+// « 291 ms, moyenne 66 ms » alertait sur 8 jobs sains). Il faut aussi dépasser la moyenne d'au moins 30 s.
+const SLOW_MIN_DELTA_MS = Math.max(0, parseInt(process.env.SLOW_MIN_DELTA_MS ?? '30000'))
 
 async function check() {
   const windows = await getAllActiveWindows()
@@ -98,13 +101,18 @@ async function checkSlow(windows: Map<string, MaintenanceWindow[]>): Promise<num
         WHERE monitor_id=p.monitor_id AND status='success'
           AND pinged_at > NOW()-INTERVAL '7 days' AND id!=p.id
       )
+      AND p.duration_ms - (
+        SELECT AVG(duration_ms) FROM pings
+        WHERE monitor_id=p.monitor_id AND status='success'
+          AND pinged_at > NOW()-INTERVAL '7 days' AND id!=p.id
+      ) >= $3
       AND (
         SELECT COUNT(*) FROM pings
         WHERE monitor_id=p.monitor_id AND status='success'
           AND pinged_at > NOW()-INTERVAL '7 days' AND id!=p.id
       ) >= $2
       AND NOT EXISTS (SELECT 1 FROM analyses WHERE ping_id=p.id)
-  `, [ANOMALY_FACTOR, SLOW_MIN_SAMPLES])
+  `, [ANOMALY_FACTOR, SLOW_MIN_SAMPLES, SLOW_MIN_DELTA_MS])
   let count = 0
   for (const p of rows) {
     if (isMonitorInMaintenance(p.monitor_id, windows.get(p.client_id) ?? [])) {
