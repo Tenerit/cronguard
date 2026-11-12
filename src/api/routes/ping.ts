@@ -63,6 +63,10 @@ const Schema = z.object({
       host: z.string().max(253), port: z.number().int().min(0).max(65535),   // 0 : DNS seul (port inconnu)
       dns: z.enum(['ok', 'fail']), tcp: z.enum(['open', 'refused', 'timeout', 'unreachable']).optional(),
     })).max(3).optional(),
+    // Étapes marquées par cg_step (nom + horodatage ms) et fin de l'exécution ; chevauchement constaté au démarrage.
+    steps:    z.array(z.object({ name: z.string().max(60), at: z.number().int().nonnegative() })).max(20).optional(),
+    stepsEnd: z.number().int().nonnegative().optional(),
+    overlap:  z.object({ pid: z.number().int().nonnegative(), since: z.number().int().nonnegative() }).optional(),
     // Sorties attendues (CG_EXPECT) vérifiées par le SDK après un code 0.
     expect:   z.array(z.object({
       pattern: z.string().max(200), ok: z.boolean(), reason: z.string().max(80).optional(),

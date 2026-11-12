@@ -373,6 +373,53 @@ def _cg_mask(text):
     for v in sorted(vals, key=len, reverse=True):
         text = text.replace(v, '[REDACTED]')
     return text
+# Étapes du job (cg_step « dump », « upload »…) : fichier tenu par le SDK pendant l'exécution, lu à la fin.
+def _cg_steps():
+    f = os.environ.get('_CG_STEPS_FILE')
+    out = []
+    try:
+        for line in open(f):
+            at, _, name = line.strip().partition(' ')
+            if at.isdigit() and name:
+                out.append({'name': name[:60], 'at': int(at)})
+    except Exception:
+        pass
+    return out[-20:]
+# Chevauchement : l'exécution précédente du même job tournait encore (pid vivant au démarrage de celle-ci).
+def _cg_overlap():
+    v = os.environ.get('_CG_OVERLAP', '').split()
+    return {'pid': int(v[0]), 'since': int(v[1])} if len(v) == 2 and v[0].isdigit() and v[1].isdigit() else None
+# cronguard doctor : vérifie une commande comme cron la lancera, SANS l'exécuter (avant la première panne).
+_CG_CRON_VARS = ('HOME', 'LOGNAME', 'PATH', 'SHELL', 'USER', 'PWD', 'MAILTO')
+def _cg_doctor(cmd, cron_path='/usr/bin:/bin'):
+    import shlex, shutil
+    issues = []
+    try:
+        words = shlex.split(cmd)
+    except Exception:
+        words = cmd.split()
+    exe = next((w for w in words if '=' not in w and w not in ('sudo', 'env', 'nice', 'ionice', 'timeout', 'flock', 'cd', '&&')), '')
+    if exe and '/' not in exe and not shutil.which(exe, path=cron_path):
+        where = shutil.which(exe) or (_cg_login([exe]).get('loginFound') or {}).get(exe)
+        issues.append('« %s » est introuvable dans le PATH de cron (%s)%s' % (exe, cron_path, ' ; trouvé dans %s : chemin absolu ou PATH= en tête de crontab' % os.path.dirname(where) if where else ''))
+    assigned = {w.split('=', 1)[0] for w in words if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', w)}
+    for v in dict.fromkeys(re.findall(r'\$\{?([A-Za-z_][A-Za-z0-9_]*)', cmd)):
+        if v not in _CG_CRON_VARS and v not in assigned:
+            issues.append('variable $%s : absente sous cron, sauf si la crontab la définit' % v)
+    for w in words:
+        if w.startswith(('>', '<', '2>')) or w in ('>', '>>', '2>', '<'):
+            continue
+        if ('/' in w and not w.startswith(('/', '~', '$', '-')) and not re.match(r'^[a-z]+://', w)) or w.startswith('./'):
+            issues.append('chemin relatif « %s » : cron démarre dans le HOME de l\'utilisateur, pas dans le dossier du script' % w)
+    for m in re.finditer(r'(?:^|\s)\d?>>?\s*(/[^\s;|&]+)', cmd):
+        d = os.path.dirname(m.group(1)) or '/'
+        if not os.path.isdir(d):
+            issues.append('redirection vers %s : le dossier %s n\'existe pas' % (m.group(1), d))
+        elif not os.access(d, os.W_OK):
+            issues.append('redirection vers %s : le dossier %s n\'est pas modifiable par %s' % (m.group(1), d, os.environ.get('USER') or 'cet utilisateur'))
+    if re.search(r'(?<!\\)%', cmd):
+        issues.append('« % » non échappé : dans une crontab, il coupe la commande (écrire \\%)')
+    return issues
 # <<< cg-probes
 
 
@@ -540,17 +587,56 @@ class CronGuard:
     def _ping(self, payload: dict):
         # Nettoie les None pour ne pas polluer le payload
         body = {k: v for k, v in payload.items() if v is not None}
+        ctx = body.get('context')
+        if isinstance(ctx, dict):
+            steps, ov = _cg_steps(), _cg_overlap()
+            if steps:
+                ctx['steps'], ctx['stepsEnd'] = steps, int(time.time() * 1000)
+            if ov:
+                ctx['overlap'] = ov
+        # Ne jamais perdre une panne : pings en attente renvoyés d'abord, dans l'ordre ; sinon gardé sur disque.
+        q = os.path.join(os.path.dirname(_marker(self.ping_key)), 'queue')
         try:
-            requests.post(
-                f"{self.base_url}/ping/{self.ping_key}",
-                json=body,
-                timeout=TIMEOUT_S,
-            )
+            for f in sorted(os.listdir(q))[:50]:
+                with open(os.path.join(q, f)) as fh:
+                    if not self._send(f.split('__', 1)[1], json.load(fh)):
+                        break
+                os.remove(os.path.join(q, f))
+        except Exception:
+            pass
+        if self._send(self.ping_key, body):
+            return
+        try:
+            os.makedirs(q, mode=0o700, exist_ok=True)
+            name = '%d-%d__%s' % (int(time.time() * 1000), os.getpid(), re.sub(r'[^A-Za-z0-9_-]', '_', self.ping_key))
+            with os.fdopen(os.open(os.path.join(q, name), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as fh:
+                json.dump(body, fh)
+            for old in sorted(os.listdir(q))[:-200]:   # 200 en attente au plus
+                os.remove(os.path.join(q, old))
         except Exception:
             pass  # Ne jamais crasher à cause du monitoring
 
+    def _send(self, key: str, body: dict) -> bool:
+        # Vrai si le serveur a répondu 2xx ou 4xx (un 4xx ne passerait pas mieux plus tard).
+        try:
+            r = requests.post(f"{self.base_url}/ping/{key}", json=body, timeout=TIMEOUT_S)
+            return r.status_code < 500
+        except Exception:
+            return False
+
 
 # ── Décorateur ────────────────────────────────────────────────────────────────
+
+def cg_step(name: str) -> None:
+    """Marque une étape du job : à l'échec, CronGuard dit laquelle a échoué et combien de temps chacune a pris."""
+    f = os.environ.get('_CG_STEPS_FILE')
+    if f:
+        try:
+            with open(f, 'a') as fh:
+                fh.write('%d %s\n' % (int(time.time() * 1000), name))
+        except Exception:
+            pass
+
 
 def monitor(ping_key: str, base_url: str = CRONGUARD_URL):
     """
@@ -566,6 +652,23 @@ def monitor(ping_key: str, base_url: str = CRONGUARD_URL):
         def wrapper(*args, **kwargs) -> Any:
             start = time.time()
             oom = _cg_oom_kills()
+            # Étapes (cg_step) et chevauchement : mêmes fichiers d'état que le SDK bash.
+            import tempfile
+            os.environ['_CG_STEPS_FILE'] = os.path.join(tempfile.gettempdir(), 'cg_steps_%d' % os.getpid())
+            lock = _marker(ping_key)[:-5] + '.lock'
+            os.environ['_CG_OVERLAP'] = ''
+            try:
+                prev = open(lock).read().split()
+                os.kill(int(prev[0]), 0)
+                os.environ['_CG_OVERLAP'] = ' '.join(prev[:2])
+            except Exception:
+                pass
+            try:
+                os.makedirs(os.path.dirname(lock), mode=0o700, exist_ok=True)
+                with open(lock, 'w') as fh:
+                    fh.write('%d %d' % (os.getpid(), int(time.time())))
+            except Exception:
+                pass
             try:
                 result = fn(*args, **kwargs)
                 duration_ms = int((time.time() - start) * 1000)
@@ -585,5 +688,29 @@ def monitor(ping_key: str, base_url: str = CRONGUARD_URL):
                     oom_start=oom,
                 )
                 raise
+            finally:
+                for f in (os.environ.get('_CG_STEPS_FILE', ''),):
+                    try:
+                        os.remove(f)
+                    except Exception:
+                        pass
+                try:
+                    if open(lock).read().split()[0] == str(os.getpid()):
+                        os.remove(lock)
+                except Exception:
+                    pass
         return wrapper
     return decorator
+
+
+if __name__ == '__main__':
+    # python3 cronguard.py doctor "<commande>" : vérifie une commande comme cron la lancera, sans l'exécuter.
+    import sys
+    if len(sys.argv) == 3 and sys.argv[1] == 'doctor':
+        issues = _cg_doctor(sys.argv[2])
+        print('cronguard doctor :' if issues else 'cronguard doctor : rien à signaler pour cette commande sous cron.')
+        for i in issues:
+            print('  - ' + i)
+        sys.exit(1 if issues else 0)
+    print('usage : python3 cronguard.py doctor "<commande>"')
+    sys.exit(2)

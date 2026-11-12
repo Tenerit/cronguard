@@ -36,6 +36,7 @@ cg_start() {
   _CG_PING_KEY="$1"
   _CG_START_TIME=$(_cg_now_ms)
   _CG_OUTPUT_FILE=$(mktemp /tmp/cg_XXXXXX)   # 6 X : minimum de busybox (Alpine), sinon aucun fichier et la sortie est perdue
+  export _CG_STEPS_FILE="$_CG_OUTPUT_FILE.steps"   # cg_step l'alimente, y compris depuis le script du job
   # Compteur oom_kill du cgroup v2 au démarrage : à l'échec, un écart = le noyau a tué un processus du job (fait, pas déduction).
   _CG_OOM_START=$(awk '/^oom_kill /{print $2}' "/sys/fs/cgroup$(sed -n 's/^0:://p' /proc/self/cgroup 2>/dev/null)/memory.events" 2>/dev/null)
   export _CG_OOM_START
@@ -88,7 +89,7 @@ cg_end() {
   # Vraie réussite : empreinte gardée pour répondre, au prochain échec, à « qu'est-ce qui a changé ? ».
   if [[ "$exit_code" -eq 0 && $expect_failed -eq 0 ]]; then _cg_context_fields save >/dev/null; fi
   unset _CG_EXPECT_JSON
-  rm -f "$_CG_OUTPUT_FILE"
+  rm -f "$_CG_OUTPUT_FILE" "$_CG_OUTPUT_FILE.steps"
 
   if [[ "$exit_code" -eq 0 && $expect_failed -eq 0 ]]; then
     _cg_ping "$_CG_PING_KEY" \
@@ -116,11 +117,24 @@ cg_run() {
   # Commande envoyée à l'échec (vérifiée côté serveur). Forme de l'import : cg_run KEY bash -c "<cmd>".
   if [[ "${1:-}" == bash && "${2:-}" == -c ]]; then _CG_COMMAND="${3:-}"; else _CG_COMMAND="$*"; fi
 
+  # Chevauchement : l'exécution précédente tourne-t-elle encore ? (pid vivant dans le verrou du job)
+  local lock prev=""
+  lock="${CG_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/cronguard}/${ping_key//[^A-Za-z0-9_-]/_}.lock"
+  [[ -f "$lock" ]] && prev="$(cat "$lock" 2>/dev/null)" && { kill -0 "${prev%% *}" 2>/dev/null || prev=""; }
+  export _CG_OVERLAP="$prev"
+  if [[ -n "$prev" && "${CG_SKIP_IF_RUNNING:-0}" == 1 ]]; then
+    printf 'cronguard: exécution précédente toujours en cours (pid %s) : exécution sautée (CG_SKIP_IF_RUNNING=1)\n' "${prev%% *}" > "$_CG_OUTPUT_FILE"
+    cg_end "$records" 75   # EX_TEMPFAIL : signalée comme un échec, la commande n'a pas été lancée
+    return 0
+  fi
+  ( umask 077; mkdir -p "${lock%/*}" && printf '%s %s\n' "$$" "$(date +%s)" > "$lock" ) 2>/dev/null
+
   # Exécute la commande en capturant stdout + stderr
   "$@" > "$_CG_OUTPUT_FILE" 2>&1
   local exit_code=$?
 
   cg_end "$records" "$exit_code"
+  [[ "$(cat "$lock" 2>/dev/null)" == "$$ "* ]] && rm -f "$lock"   # seulement notre verrou
   return $exit_code
 }
 
@@ -534,6 +548,53 @@ def _cg_mask(text):
     for v in sorted(vals, key=len, reverse=True):
         text = text.replace(v, '[REDACTED]')
     return text
+# Étapes du job (cg_step « dump », « upload »…) : fichier tenu par le SDK pendant l'exécution, lu à la fin.
+def _cg_steps():
+    f = os.environ.get('_CG_STEPS_FILE')
+    out = []
+    try:
+        for line in open(f):
+            at, _, name = line.strip().partition(' ')
+            if at.isdigit() and name:
+                out.append({'name': name[:60], 'at': int(at)})
+    except Exception:
+        pass
+    return out[-20:]
+# Chevauchement : l'exécution précédente du même job tournait encore (pid vivant au démarrage de celle-ci).
+def _cg_overlap():
+    v = os.environ.get('_CG_OVERLAP', '').split()
+    return {'pid': int(v[0]), 'since': int(v[1])} if len(v) == 2 and v[0].isdigit() and v[1].isdigit() else None
+# cronguard doctor : vérifie une commande comme cron la lancera, SANS l'exécuter (avant la première panne).
+_CG_CRON_VARS = ('HOME', 'LOGNAME', 'PATH', 'SHELL', 'USER', 'PWD', 'MAILTO')
+def _cg_doctor(cmd, cron_path='/usr/bin:/bin'):
+    import shlex, shutil
+    issues = []
+    try:
+        words = shlex.split(cmd)
+    except Exception:
+        words = cmd.split()
+    exe = next((w for w in words if '=' not in w and w not in ('sudo', 'env', 'nice', 'ionice', 'timeout', 'flock', 'cd', '&&')), '')
+    if exe and '/' not in exe and not shutil.which(exe, path=cron_path):
+        where = shutil.which(exe) or (_cg_login([exe]).get('loginFound') or {}).get(exe)
+        issues.append('« %s » est introuvable dans le PATH de cron (%s)%s' % (exe, cron_path, ' ; trouvé dans %s : chemin absolu ou PATH= en tête de crontab' % os.path.dirname(where) if where else ''))
+    assigned = {w.split('=', 1)[0] for w in words if re.match(r'^[A-Za-z_][A-Za-z0-9_]*=', w)}
+    for v in dict.fromkeys(re.findall(r'\$\{?([A-Za-z_][A-Za-z0-9_]*)', cmd)):
+        if v not in _CG_CRON_VARS and v not in assigned:
+            issues.append('variable $%s : absente sous cron, sauf si la crontab la définit' % v)
+    for w in words:
+        if w.startswith(('>', '<', '2>')) or w in ('>', '>>', '2>', '<'):
+            continue
+        if ('/' in w and not w.startswith(('/', '~', '$', '-')) and not re.match(r'^[a-z]+://', w)) or w.startswith('./'):
+            issues.append('chemin relatif « %s » : cron démarre dans le HOME de l\'utilisateur, pas dans le dossier du script' % w)
+    for m in re.finditer(r'(?:^|\s)\d?>>?\s*(/[^\s;|&]+)', cmd):
+        d = os.path.dirname(m.group(1)) or '/'
+        if not os.path.isdir(d):
+            issues.append('redirection vers %s : le dossier %s n\'existe pas' % (m.group(1), d))
+        elif not os.access(d, os.W_OK):
+            issues.append('redirection vers %s : le dossier %s n\'est pas modifiable par %s' % (m.group(1), d, os.environ.get('USER') or 'cet utilisateur'))
+    if re.search(r'(?<!\\)%', cmd):
+        issues.append('« % » non échappé : dans une crontab, il coupe la commande (écrire \\%)')
+    return issues
 # <<< cg-probes
 cmd = sys.argv[2][:1000]
 mode = sys.argv[3] if len(sys.argv) > 3 else 'ctx'
@@ -545,6 +606,10 @@ if mode == 'save':   # empreinte de cette réussite, pour la comparer au prochai
             json.dump(_cg_fingerprint(cmd), f)
     except Exception:
         pass
+    sys.exit(0)
+if mode == 'doctor':  # cg_doctor : un risque par ligne, rien si la commande passera sous cron
+    for i in _cg_doctor(cmd):
+        print('  - ' + i)
     sys.exit(0)
 if mode == 'mask':    # sortie envoyée (3 000 derniers caractères), secrets masqués sur la machine du job
     print(json.dumps(_cg_mask(out[-3000:])))
@@ -571,16 +636,52 @@ if fpfile and os.path.exists(fpfile):   # qu'est-ce qui a changé depuis la dern
         pass
 if os.environ.get('_CG_EXPECT_JSON'):
     ctx['expect'] = json.loads(os.environ['_CG_EXPECT_JSON'])
+_st = _cg_steps()
+if _st:
+    ctx['steps'] = _st
+    ctx['stepsEnd'] = int(time.time() * 1000)
+_ov = _cg_overlap()
+if _ov:
+    ctx['overlap'] = _ov
 sys.stdout.write((',"command":' + json.dumps(cmd) if cmd else '') + ',"context":' + json.dumps(ctx))
 PY
 }
 
+# Ne jamais perdre une panne : un ping que le serveur n'a pas reçu est gardé sur disque (600, 200 au plus) et
+# renvoyé, dans l'ordre, avant le prochain ping de n'importe quel job. Silencieux : ne bloque jamais le job.
+_cg_send() {   # vrai si le serveur a répondu 2xx ou 4xx (un 4xx ne passerait pas mieux plus tard)
+  local code
+  code=$(curl -s -m 5 -o /dev/null -w '%{http_code}' -X POST -H "Content-Type: application/json" \
+    -d "$2" "${CRONGUARD_URL}/ping/$1" 2>/dev/null)
+  [[ "$code" =~ ^[24] ]]
+}
 _cg_ping() {
-  curl -s -m 5 -X POST \
-    -H "Content-Type: application/json" \
-    -d "$2" \
-    "${CRONGUARD_URL}/ping/$1" \
-    > /dev/null 2>&1 || true   # Silencieux — ne jamais bloquer le job
+  local q="${CG_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/cronguard}/queue" f
+  if [[ -d "$q" ]]; then
+    for f in $(ls -1 "$q" 2>/dev/null | sort | head -n 50); do
+      if _cg_send "${f#*__}" "$(cat "$q/$f")"; then rm -f "$q/$f"; else break; fi
+    done
+  fi
+  _cg_send "$1" "$2" && return 0
+  ( umask 077; mkdir -p "$q" && printf '%s' "$2" > "$q/$(_cg_now_ms)-$$__${1//[^A-Za-z0-9_-]/_}" ) 2>/dev/null
+  ls -1 "$q" 2>/dev/null | sort -r | tail -n +201 | while read -r f; do rm -f "$q/$f"; done   # garde les 200 plus récents
+  return 0
+}
+
+# ── cg_step : marque une étape du job (« cg_step dump », « cg_step upload ») ──
+# À l'échec, CronGuard dit dans quelle étape le job s'est arrêté et combien de temps chacune a pris.
+cg_step() {
+  [[ -n "${_CG_STEPS_FILE:-}" ]] && printf '%s %s\n' "$(_cg_now_ms)" "${1:-étape}" >> "$_CG_STEPS_FILE"
+  return 0
+}
+
+# ── cg_doctor : vérifie une commande comme cron la lancera, SANS l'exécuter ──
+# Usage : cg_doctor "pg_dump -Fc clients > /bak/c.dump"   (code de retour 1 si un risque est trouvé)
+cg_doctor() {
+  local r
+  r="$(_CG_COMMAND="$1" _cg_context_fields doctor)"
+  if [[ -z "$r" ]]; then echo "cronguard doctor : rien à signaler pour cette commande sous cron."; return 0; fi
+  printf 'cronguard doctor :\n%s\n' "$r"; return 1
 }
 
 # ─────────────────────────────────────────────────────────────────────────────

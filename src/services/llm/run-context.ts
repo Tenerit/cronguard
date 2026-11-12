@@ -24,6 +24,19 @@ export interface RunContext {
   expect?:        ExpectFact[]           // sorties attendues (CG_EXPECT) vérifiées après un code 0
   resources?:     { oomKills?: number; memMax?: string; memPeak?: string; disk?: Array<{ path: string; free: number; total: number }> }
   net?:           Array<{ host: string; port: number; dns: 'ok' | 'fail'; tcp?: 'open' | 'refused' | 'timeout' | 'unreachable' }>
+  steps?:         Array<{ name: string; at: number }>   // cg_step : étapes du job (horodatage ms)
+  stepsEnd?:      number
+  overlap?:       { pid: number; since: number }        // l'exécution précédente tournait encore
+}
+
+/** « Arrêté pendant l'étape « upload » (dump : 3 min 12 s) » — fait relevé par cg_step, null sans étape. */
+export function stepFact(c?: RunContext): string | null {
+  const s = c?.steps
+  if (!s?.length) return null
+  const dur = (ms: number) => ms < 60_000 ? `${Math.round(ms / 1000)} s` : `${Math.floor(ms / 60_000)} min ${Math.round((ms % 60_000) / 1000)} s`
+  const done = s.slice(0, -1).map((x, i) => `${x.name} : ${dur(s[i + 1].at - x.at)}`)
+  const last = s[s.length - 1]
+  return `Arrêté pendant l'étape « ${last.name} »${c?.stepsEnd ? ` (après ${dur(c.stepsEnd - last.at)})` : ''}${done.length ? ` — avant : ${done.join(', ')}` : ''}`
 }
 
 export interface ChangeFact { kind: 'command' | 'env' | 'var' | 'file' | 'tool'; label: string; before?: string; after?: string }
@@ -107,7 +120,7 @@ export function contextFinding(logs: string, c?: RunContext): Finding | null {
       action: 'Relancer le job ; si ça recommence, regarder le service cible au moment de la panne (redémarrage, saturation).' }
   }
 
-  if (!logs) return null
+  if (!logs) return overlapFinding(c)
 
   // 1. Commande introuvable… mais présente ailleurs sur la machine : le fait, pas une hypothèse.
   const nf = NOT_FOUND.exec(logs)
@@ -197,7 +210,16 @@ export function contextFinding(logs: string, c?: RunContext): Finding | null {
       cause: `« ${gone.path} » n'existe pas sur la machine au moment de l'échec (vérifié par CronGuard).`,
       action: `Vérifier ce qui doit créer ou monter « ${gone.path} » (étape précédente, montage, nom calculé à partir de la date).` }
   }
-  return null
+  return overlapFinding(c)
+}
+
+// Chevauchement : constaté, mais en dernier — il explique un verrou ou un doublon, pas une commande introuvable.
+function overlapFinding(c: RunContext): Finding | null {
+  if (!c.overlap) return null
+  const since = new Date(c.overlap.since * 1000).toISOString().slice(11, 16)
+  return { id: 'ctx-overlap', category: 'timeout',
+    cause: `L'exécution précédente de ce job tournait encore (pid ${c.overlap.pid}, lancée à ${since} UTC) : les deux se sont chevauchées.`,
+    action: 'Espacer le planning ou raccourcir le job ; CG_SKIP_IF_RUNNING=1 saute une exécution tant que la précédente tourne (verrou flock en alternative).' }
 }
 
 /** Commandes de test à lancer soi-même quand rien n'établit la cause : reproduire la panne dans

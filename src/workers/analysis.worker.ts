@@ -11,7 +11,7 @@ import { evidenceLines } from '../services/llm/evidence'
 import { explainCached } from '../services/llm/explain'
 import { teamFixAnalysis } from '../services/team-fixes'
 import { contextDiff, resolutionText } from '../services/resolution'
-import type { RunContext } from '../services/llm/run-context'
+import { stepFact, type RunContext } from '../services/llm/run-context'
 import { knownFix }      from '../services/llm/known-fixes'
 import { planHasAI }     from '../config/plans'
 import { shouldAlert, clearAlert }  from '../services/alerts/dedup'
@@ -385,6 +385,7 @@ function createAnalysisWorker() {
       analysis.evidence = evidenceLines(clean, analysis.cause)
       const changed = ctx.runContext?.changed ?? []
       if (changed.length) analysis.changed = changed.slice(0, 3).map(c => c.label + (c.before !== undefined ? ` : ${c.before} → ${c.after}` : ''))
+      analysis.step = stepFact(ctx.runContext) ?? undefined
       // La correction vérifiée ou la fiche d'équipe (validées chez vous) priment : pas de fiche générique à côté.
       analysis.knownFix = analysis.verifiedFix || analysis.finding?.startsWith('team-') ? null : knownFix(clean)
     }

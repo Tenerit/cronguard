@@ -22,7 +22,8 @@ function message(p: AlertPayload): Msg {
   return {
     title: `${EMOJI[a?.severity ?? 'medium']} ${p.jobName} en échec (${p.env})`,
     facts: a ? [['Cause', a.cause], [a.verifiedFix ? 'Correction vérifiée' : 'Piste à vérifier', a.action],
-      ...(a.changed?.length ? [['Changé depuis la dernière réussite', a.changed.join(' ; ')] as [string, string]] : [])] : [['Analyse', 'Indisponible (voir les logs)']],
+      ...(a.changed?.length ? [['Changé depuis la dernière réussite', a.changed.join(' ; ')] as [string, string]] : []),
+      ...(a.step ? [['Étape', a.step] as [string, string]] : [])] : [['Analyse', 'Indisponible (voir les logs)']],
     line: a?.evidence?.[0], ok: p.reviewUrl, fix: p.reviewUrl && `${p.reviewUrl}?v=fix`,
     status: p.statusPageUrl, severity: a?.severity ?? 'medium',
   }

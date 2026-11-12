@@ -1985,9 +1985,10 @@ function resolutionHtml(a) {
 // « Qu'est-ce qui a changé depuis la dernière réussite ? » — empreinte relevée par le SDK, comparée à l'échec.
 // Un fait, pas une cause : affiché à côté du diagnostic, jamais à sa place.
 function changedHtml(a) {
-  if (!Array.isArray(a.changed) || !a.changed.length) return ''
+  const step = a.step ? `<div class="an-resolution an-changed"><div class="an-evidence-h">${t('an.step')}</div>${esc(a.step)}</div>` : ''
+  if (!Array.isArray(a.changed) || !a.changed.length) return step
   const line = c => esc(c.label) + (c.before !== undefined ? ` : <code>${esc(c.before)}</code> → <code>${esc(c.after)}</code>` : '')
-  return `<div class="an-resolution an-changed"><div class="an-evidence-h">${t('an.changed')}</div><ul>${a.changed.map(c => '<li>' + line(c) + '</li>').join('')}</ul></div>`
+  return `<div class="an-resolution an-changed"><div class="an-evidence-h">${t('an.changed')}</div><ul>${a.changed.map(c => '<li>' + line(c) + '</li>').join('')}</ul></div>` + step
 }
 
 async function confirmResolution(analysisId, text) {

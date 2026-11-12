@@ -1,4 +1,5 @@
 import { knownFix, knownFixLine, KnownFix } from './known-fixes'
+import { stepFact, type RunContext } from './run-context'
 
 // Lignes de log qui appuient la cause annoncée, choisies par le code et non par le modèle :
 // elles sont recopiées des logs, donc jamais inventées. Un 3B se trompe ; montrer « regardez,
@@ -97,7 +98,7 @@ function byCloseness(logs: string, cause: string, max: number): string[] {
 
 // Pour les lignes d'analyse lues en base : la cause vit dans diagnosis (jsonb, ou texte selon le driver).
 // Ajoute aussi la correction connue (pack) déclenchée par ces logs.
-export function withLogHints<T extends { diagnosis?: unknown; ping_output?: string | null; ping_context?: unknown }>(row: T, sanitize: (s: string) => string): T & { evidence: string[]; known_fix: KnownFix | null; changed: unknown[] | null } {
+export function withLogHints<T extends { diagnosis?: unknown; ping_output?: string | null; ping_context?: unknown }>(row: T, sanitize: (s: string) => string): T & { evidence: string[]; known_fix: KnownFix | null; changed: unknown[] | null; step: string | null } {
   let d = row.diagnosis as { cause?: string } | string | null | undefined
   if (typeof d === 'string') { try { d = JSON.parse(d) } catch { d = null } }
   const cause = (d && typeof d === 'object' ? d.cause : '') ?? ''
@@ -106,5 +107,6 @@ export function withLogHints<T extends { diagnosis?: unknown; ping_output?: stri
   let ctx = row.ping_context as { changed?: unknown[] } | string | null | undefined
   if (typeof ctx === 'string') { try { ctx = JSON.parse(ctx) } catch { ctx = null } }
   const changed = ctx && typeof ctx === 'object' && Array.isArray(ctx.changed) ? ctx.changed : null
-  return { ...row, ping_context: undefined, evidence: logs ? evidenceLines(logs, cause) : [], known_fix: knownFix(logs), changed }
+  const step = ctx && typeof ctx === 'object' ? stepFact(ctx as RunContext) : null
+  return { ...row, ping_context: undefined, evidence: logs ? evidenceLines(logs, cause) : [], known_fix: knownFix(logs), changed, step }
 }
