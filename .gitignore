@@ -49,3 +49,4 @@ eval/score-*.log
 sdk/go/cronguard
 eval/field-lab/gen/
 eval/silent-errors/out/
+eval/field-lab-2/gen/
