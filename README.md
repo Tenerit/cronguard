@@ -64,10 +64,9 @@ A classic monitor would have said `backup-db is DOWN`.
 git clone https://github.com/Tenerit/cronguard && cd cronguard
 docker build -f Dockerfile.allinone -t cronguard .
 docker run -d --restart unless-stopped -p 3000:3000 -v cronguard-data:/data --name cronguard cronguard
-curl -X POST http://localhost:3000/auth/register -H "Content-Type: application/json" -d '{"email":"you@example.com"}'   # prints your API key, once
 ```
 
-Open **http://localhost:3000/dashboard**. Without a model, failures get everything but the plain-words explanation; add it with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1 -e LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`. Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host.
+Open **http://localhost:3000/dashboard** and click **No account yet? Create one**: your API key is shown once, copy it. Without a model, failures get everything but the plain-words explanation; add it with `-e LLM_BASE_URL=http://<ollama-host>:11434/v1 -e LLM_EXPLAIN_MODEL=qwen2.5:7b-instruct-q4_K_M`. Data lives in the `cronguard-data` volume, with a PostgreSQL backup at start-up and every 24 h in `/data/backups`, kept 7 days (`BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP_DAYS`, `BACKUP_ENABLED=false`; restore with `pg_restore --clean`). Copy that folder off the host.
 
 **Demo with sample data and the AI model:**
 

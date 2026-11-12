@@ -47,14 +47,32 @@ try{var _th=localStorage.getItem('cg_theme')||(window.matchMedia&&matchMedia('(p
       <label class="field-label">API Key</label>
       <input class="field-input" type="password" id="auth-key" placeholder="cg_live_..." autocomplete="off">
     </div>
-    <div class="field">
-      <label class="field-label" data-i18n="auth.apiUrl">URL de l'API</label>
-      <input class="field-input" type="text" id="auth-url" value="http://localhost:3000">
-    </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;padding:8px" data-click="login" data-i18n="auth.login">
       → Connexion
     </button>
     <div class="field-err" id="auth-err"></div>
+    <!-- Premier lancement : créer son compte ici, sans commande curl. -->
+    <details class="auth-more" id="auth-register">
+      <summary data-i18n="auth.noAccount">Pas encore de compte ? Créer un compte</summary>
+      <div class="field">
+        <label class="field-label" for="reg-email">Email</label>
+        <input class="field-input" type="email" id="reg-email" autocomplete="email" placeholder="vous@exemple.com">
+      </div>
+      <button class="btn btn-ghost auth-wide" data-click="registerAccount" data-i18n="auth.create">Créer mon compte</button>
+      <div class="auth-newkey" id="reg-result" hidden>
+        <div data-i18n="auth.keyOnce">Votre clé API, affichée une seule fois : copiez-la et gardez-la (elle sert aussi à brancher vos jobs).</div>
+        <code id="reg-key"></code>
+        <button class="btn btn-ghost auth-wide" data-click="copyNewKey" data-i18n="auth.copyKey">Copier la clé</button>
+      </div>
+    </details>
+    <!-- Le dashboard est servi par l'API : son adresse suffit. Ce champ ne sert que si l'API est ailleurs. -->
+    <details class="auth-more">
+      <summary data-i18n="auth.advanced">Avancé : adresse de l'API</summary>
+      <div class="field">
+        <label class="field-label" for="auth-url" data-i18n="auth.apiUrl">URL de l'API</label>
+        <input class="field-input" type="text" id="auth-url">
+      </div>
+    </details>
   </div>
 </div>
 

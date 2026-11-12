@@ -209,7 +209,8 @@ function startDemo() {
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
-let BASE_URL      = localStorage.getItem('cg_url') || 'http://localhost:3000'
+// Servi par l'API (cas normal) : même adresse. Ouvert en fichier : l'API locale par défaut.
+let BASE_URL      = localStorage.getItem('cg_url') || (location.protocol.startsWith('http') ? location.origin : 'http://localhost:3000')
 let API_KEY       = localStorage.getItem('cg_key') || ''
 let monitors      = []
 let searchText    = ''
@@ -305,9 +306,11 @@ function toast(msg, type='info', ms=3000) {
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
+const authUrl = () => document.getElementById('auth-url').value.trim().replace(/\/$/, '') || BASE_URL
+
 async function login() {
   const key = document.getElementById('auth-key').value.trim()
-  const url = document.getElementById('auth-url').value.trim().replace(/\/$/, '') || 'http://localhost:3000'
+  const url = authUrl()
   if (!key) { document.getElementById('auth-err').textContent = t('auth.errKey'); return }
   API_KEY = key; BASE_URL = url
   try {
@@ -317,6 +320,24 @@ async function login() {
     boot()
   } catch { document.getElementById('auth-err').textContent = t('auth.errInvalid') }
 }
+
+// Créer son compte depuis l'écran de connexion (même route que l'ancienne commande curl, déjà limitée en débit).
+async function registerAccount() {
+  const email = document.getElementById('reg-email').value.trim()
+  const err = document.getElementById('auth-err')
+  err.textContent = ''
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = t('auth.errEmail'); return }
+  try {
+    const r = await fetch(authUrl() + '/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) })
+    if (r.status === 409) { err.textContent = t('auth.errExists'); return }
+    const d = await r.json()
+    if (!r.ok || !d.apiKey) throw new Error()
+    document.getElementById('auth-key').value = d.apiKey   // prête pour « Connexion »
+    document.getElementById('reg-key').textContent = d.apiKey
+    document.getElementById('reg-result').hidden = false
+  } catch { err.textContent = t('auth.errRegister') }
+}
+function copyNewKey() { copyText(document.getElementById('reg-key').textContent, t('toast.apiKeyCopied')) }
 
 function logout() {
   clearInterval(timer)
@@ -2478,5 +2499,6 @@ if (DEMO) {
   document.getElementById('auth-url').value = BASE_URL
   boot()
 } else {
+  document.getElementById('auth-url').value = BASE_URL
   trySSO()   // si échec, l'écran de saisie de clé reste affiché
 }

@@ -7,6 +7,11 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Simplicité — créer son compte depuis le navigateur (2026-11-12)
+- L'écran de connexion propose « Pas encore de compte ? Créer un compte » : un e-mail, un clic, la clé s'affiche une seule fois avec un bouton Copier et elle est déjà remplie pour se connecter. Plus de commande `curl` à l'installation. Même route qu'avant (`POST /auth/register`, limitée en débit) : rien ne change côté serveur, un e-mail déjà pris ne renvoie jamais la clé existante.
+- L'adresse de l'API prend celle de la page (le dashboard est servi par l'API) ; le champ passe sous « Avancé ».
+- Vérifié dans un vrai navigateur, sur l'API du dépôt et une base jetable : création, clé affichée, connexion, puis messages « compte existant » et « e-mail invalide ».
+
 ### Sécurité — blocs `<style>` autorisés seulement par empreinte (2026-11-12)
 - CSP : `style-src-elem` n'a plus `'unsafe-inline'` ; chaque bloc `<style>` servi (page de statut, page de retour `/r/…`, `/pricing`) est autorisé par son empreinte SHA-256, calculée au démarrage comme pour les scripts (CSS des pages serveur sortie dans `src/api/page-styles.ts`). C'est le vecteur qui permet de lire un jeton par sélecteurs d'attributs CSS.
 - **Écart assumé :** `style-src-attr 'unsafe-inline'` reste. Le dashboard a ≈230 attributs `style=`, dont des éléments masqués que le JS affiche avec `el.style.display = ''` : les passer en classes casserait ces bascules sans erreur visible. Un attribut `style=` ne peut que déplacer un élément, et `img-src`/`font-src`/`connect-src` bloquent déjà toute `url()` sortante. `style-src` garde `'unsafe-inline'` pour les navigateurs sans CSP 3, qui ignorent les deux nouvelles directives.
