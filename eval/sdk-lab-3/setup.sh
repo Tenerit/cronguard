@@ -20,14 +20,15 @@ server
 run queue sh -c 'echo run 11; exit 0'
 
 # ── 8. Chevauchement : signalé, puis exécution sautée ──
-run overlap sleep 6 &
+# « wait » sans argument attendrait aussi le faux serveur, qui ne s'arrête jamais : on n'attend que ces deux jobs.
+run overlap sleep 6 & P1=$!
 sleep 1
 run overlap sh -c 'echo "lock held by another run"; exit 1'
-CG_SKIP_IF_RUNNING=1 run overlap-skip-base true
-(run overlap-skip sleep 6 &) ; sleep 1
+run overlap-skip sleep 6 & P2=$!
+sleep 1
 CG_SKIP_IF_RUNNING=1 run overlap-skip sh -c 'echo should-not-run > /bak/ran.txt'
 [ -f /bak/ran.txt ] && echo "SKIP-RAN" > /lab/out/skip-ran.flag || true
-wait
+wait $P1 $P2
 
 # ── 9. Étapes (bash et Python) ──
 printf '. /opt/cronguard.sh\ncg_step dump\nsleep 1\ncg_step upload\necho "upload failed: 403"\nexit 1\n' > /tmp/steps.sh

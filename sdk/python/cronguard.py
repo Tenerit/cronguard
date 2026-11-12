@@ -597,7 +597,7 @@ class CronGuard:
         # Ne jamais perdre une panne : pings en attente renvoyés d'abord, dans l'ordre ; sinon gardé sur disque.
         q = os.path.join(os.path.dirname(_marker(self.ping_key)), 'queue')
         try:
-            for f in sorted(os.listdir(q))[:50]:
+            for f in sorted(x for x in os.listdir(q) if '__' in x)[:50]:   # pas le compteur .seq
                 with open(os.path.join(q, f)) as fh:
                     if not self._send(f.split('__', 1)[1], json.load(fh)):
                         break
@@ -608,10 +608,17 @@ class CronGuard:
             return
         try:
             os.makedirs(q, mode=0o700, exist_ok=True)
-            name = '%d-%d__%s' % (int(time.time() * 1000), os.getpid(), re.sub(r'[^A-Za-z0-9_-]', '_', self.ping_key))
+            # Même compteur que le SDK bash (fichier .seq) : l'ordre d'envoi est gardé, même dans la même seconde.
+            try:
+                n = int(open(os.path.join(q, '.seq')).read().strip() or 0) + 1
+            except Exception:
+                n = 1
+            with open(os.path.join(q, '.seq'), 'w') as fh:
+                fh.write(str(n))
+            name = '%012d__%s' % (n, re.sub(r'[^A-Za-z0-9_-]', '_', self.ping_key))
             with os.fdopen(os.open(os.path.join(q, name), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), 'w') as fh:
                 json.dump(body, fh)
-            for old in sorted(os.listdir(q))[:-200]:   # 200 en attente au plus
+            for old in sorted(x for x in os.listdir(q) if '__' in x)[:-200]:   # 200 en attente au plus
                 os.remove(os.path.join(q, old))
         except Exception:
             pass  # Ne jamais crasher à cause du monitoring

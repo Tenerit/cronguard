@@ -7,6 +7,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — SDK : pings jamais perdus, chevauchement, étapes, `cronguard doctor` (2026-11-12, attentes fixées avant)
+- **Pings jamais perdus** : un ping que le serveur n'a pas reçu est gardé sur disque (600, 200 au plus) et renvoyé, dans l'ordre, avant le prochain ping de n'importe quel job (bash et Python).
+- **Chevauchement** : verrou par job avec le pid ; une panne pendant que l'exécution précédente tourne porte le fait (`ctx-overlap`, en dernier parmi les constats) ; `CG_SKIP_IF_RUNNING=1` saute l'exécution et le signale.
+- **Étapes** : `cg_step dump`, `cg_step upload` (bash et Python) ; la panne dit dans quelle étape le job s'est arrêté et combien de temps ont pris les précédentes, dans le dashboard et toutes les alertes.
+- **`cg_doctor "<commande>"`** (et `python3 cronguard.py doctor`) : vérifie une commande comme cron la lancera, **sans l'exécuter** — PATH, variables, chemins relatifs, destination des redirections, `%` non échappé.
+- **Mesuré** (`eval/sdk-lab-3.ts`) — **résultat fixé avant : pings reçus 10 sur 10 mais PAS dans l'ordre (attente non remplie)** ; chevauchement 2 sur 2, étapes 2 sur 2, doctor 5 sur 5 sans faux sur 3 commandes saines : remplies. Cause du désordre : busybox ne donne que des secondes, et les fichiers d'attente se triaient sur le pid. Corrigé par un compteur partagé : **10 sur 10 dans l'ordre**, mêmes scénarios. Le 1er lancement du labo bloquait (un `wait` attendait le faux serveur) : défaut de l'outil de mesure, corrigé. Défaut vu à la relecture et corrigé, non couvert par le labo : le SDK Python aurait lu le compteur comme un ping en attente.
+
 ### Corrigé — le conteneur tout-en-un pouvait s'arrêter au démarrage (2026-11-12)
 - Chaque processus (API, worker, checker) rejouait toutes les migrations à chaque démarrage. Les `ALTER … IF NOT EXISTS` prennent un verrou exclusif même quand la colonne existe : la migration v25 (deux tables à la suite) s'interbloquait avec un processus déjà en train de les lire ; le checker plantait sur « deadlock detected » et, dans l'image tout-en-un, tout le conteneur s'arrêtait. Trouvé par `scripts/test-allinone.sh` (échec intermittent, 1 sur 3).
 - Une base marquée `schema_v25` ne rejoue plus rien ; le marqueur suit la dernière migration (vérifié par un test). Le test tout-en-un passe **5 fois sur 5** ; le test de bout en bout simule une base plus ancienne avant de rejouer les migrations.

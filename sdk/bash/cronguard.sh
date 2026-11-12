@@ -663,7 +663,9 @@ _cg_ping() {
     done
   fi
   _cg_send "$1" "$2" && return 0
-  ( umask 077; mkdir -p "$q" && printf '%s' "$2" > "$q/$(_cg_now_ms)-$$__${1//[^A-Za-z0-9_-]/_}" ) 2>/dev/null
+  # Nom = compteur à zéros devant : l'ordre d'envoi est gardé même dans la même seconde (busybox n'a pas %N).
+  ( umask 077; mkdir -p "$q" && n=$(( $(cat "$q/.seq" 2>/dev/null || echo 0) + 1 )) && echo "$n" > "$q/.seq" \
+    && printf '%s' "$2" > "$q/$(printf '%012d' "$n")__${1//[^A-Za-z0-9_-]/_}" ) 2>/dev/null
   ls -1 "$q" 2>/dev/null | sort -r | tail -n +201 | while read -r f; do rm -f "$q/$f"; done   # garde les 200 plus récents
   return 0
 }

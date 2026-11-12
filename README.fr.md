@@ -101,6 +101,8 @@ La crontab n'est jamais modifiée : vous relisez et recollez le résultat. Pour 
   CG_EXPECT="/bak/db-*.dump min=1M" cg_run "votre-ping-key" /scripts/backup.sh   # par défaut, écrit pendant cette exécution ; age=26h pour élargir
   ```
 
+**Aussi dans les SDK bash et Python :** `cg_step dump` / `cg_step upload` (la panne dit dans quelle étape le job s'est arrêté et combien de temps ont pris les précédentes) ; un ping non reçu par le serveur est gardé et renvoyé dans l'ordre ; un chevauchement avec l'exécution précédente est signalé (`CG_SKIP_IF_RUNNING=1` la saute) ; mémoire (OOM via le cgroup), volume plein et réseau (DNS, refusé, sans réponse) sont établis comme des faits ; les secrets sont masqués sur la machine avant l'envoi. Avant la première panne, `cg_doctor "<commande>"` vérifie une commande comme cron la lancera, sans l'exécuter.
+
 Labo (attentes fixées avant, `eval/sdk-lab.ts`) : le changement responsable montré dans 8 jobs cassés sur 8, rien quand rien n'a changé ; sorties vides, pas récrites, absentes ou trop petites détectées 5 sur 5, aucune fausse alerte sur 22 exécutions normales.
 
 ---
