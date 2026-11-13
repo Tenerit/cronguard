@@ -14,6 +14,13 @@ describe('public8 (entraînement) : nouvelles fiches', () => {
     ["error: error running non-shared postrotate script for /var/log/nginx/access.log of '/var/log/nginx/*.log '", 'logrotate-postrotate'],
   ])('%s → %s', (logs, id) => expect(knownFix(logs)?.id).toBe(id))
 
+  it('corpus : fiches élargies', () => {
+    expect(knownFix('/var/local/myapp/bin/import: line 13: cake: command not found')?.id).toBe('command-not-found')
+    expect(knownFix("xprop:  unable to open display ''")?.id).toBe('no-display')
+    expect(knownFix("gpg: cannot open `/dev/tty': No such device or address")?.id).toBe('not-a-tty')
+    expect(knownFix('file_get_contents(template/index.htm): failed to open stream: No such file or directory')?.id).toBe('relative-path')
+    expect(knownFix('file_get_contents(/var/www/t.htm): failed to open stream: No such file or directory')?.id).not.toBe('relative-path')
+  })
   it('ne se déclenchent pas à tort', () => {
     expect(knownFix('/bin/sh: 1: node: not found')?.id).toBe('command-not-found')
     expect(knownFix('+ grep -q done status.txt\n+ echo ok')).toBeNull()   // grep suivi d'autre chose : le script a continué

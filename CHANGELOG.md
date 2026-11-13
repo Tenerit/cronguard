@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — 11 fiches tirées du corpus de réglage (2026-11-13)
+- Familles non couvertes du corpus StackExchange de réglage (`eval/corpus-gaps.ts`) : page refusée (403), script absent à un chemin absolu (partage pas monté), espace manquant après `[`, `/dev/tcp` sous sh, HOME à « / », utilisateur supprimé dans logrotate, dossier personnel absent, crontab ignorée pour ses droits (INSECURE MODE), crontab interdite (cron.allow), mails de cron bloqués (ssmtp), aucun démon cron installé.
+- Élargies : commande introuvable dans un script sans extension, `unable to open display`, gpg sans `/dev/tty`, `failed to open stream` sur un chemin relatif (PHP).
+- Couverture du corpus : 39 % → 51 %. Aucun raté nouveau sur les jeux étiquetés.
+- **Contamination signalée** : la fiche « aucun démon cron » répond aussi au cas public7 `p7-docker-cron-not-installed` (public7 : cause juste 29 % → 43 %). Elle vient du corpus, mais public7 n'est plus un jeu indépendant pour ce cas.
+
 ### Ajouté — public8 : nouveau jeu StackExchange, découpé entraînement / test (2026-11-13)
 - **5 fiches** réglées sur la moitié entraînement : binaire d'une autre architecture (`Exec format error`), php-cgi qui ne trouve pas le script (`No input file specified`), `set -e` arrêté par un grep sans résultat, script appelé sans `./`, échec du bloc postrotate de logrotate.
 - **Échecs masqués prévenus à l'import** : `cmd || mail …` et un pipe vers gzip/tee font sortir la ligne avec 0 ; le dashboard et le script d'import le signalent avant la première panne (labo terrain 2, g12).

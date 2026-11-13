@@ -80,6 +80,18 @@ const SAMPLES: Array<[string, string | null]> = [
   ["ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)", 'mysql-socket'],
   ['ERROR 1040 (HY000): Too many connections', 'mysql-too-many-connections'],
   ["mysqldump: Couldn't execute 'SELECT COLUMN_NAME FROM information_schema.COLUMN_STATISTICS': Unknown table 'COLUMN_STATISTICS' in information_schema (1109)", 'mysqldump-column-statistics'],
+  // corpus de réglage (2026-11-13)
+  ['2014-12-10 05:40:01 ERROR 403: Forbidden.', 'http-403'],
+  ['/usr/bin/python can\'t open file "/abs/path/to/script.py": [Errno 2] No such file or directory', 'script-file-missing'],
+  ['-bash: [1: command not found', 'bracket-no-space'],
+  ['/bin/sh: 1: cannot create /dev/tcp/example.com/80: Directory nonexistent', 'dev-tcp-sh'],
+  ["Error: couldn't get currently installed version for //.local/share/letsencrypt/bin/letsencrypt:", 'home-is-root'],
+  ["error: tomcat6:7 unknown user 'tomcat6'", 'logrotate-unknown-user'],
+  ['(CRON) ERROR chdir failed (/home/sysagent): No such file or directory', 'cron-home-chdir'],
+  ['cron[3164]: (system) INSECURE MODE (group/other writable) (/etc/crontab)', 'crontab-insecure-mode'],
+  ['The user curator cannot use this program (crontab)', 'cron-allow-denied'],
+  ['sSMTP[6924]: Cannot open mailhub:25', 'ssmtp-mailhub'],
+  ['Failed to start crond.service: Unit crond.service failed to load: No such file or directory.', 'no-cron-daemon'],
   // public8, moitié entraînement (2026-11-13)
   ["Error starting process '/var/task/selenium-manager': Exec format error", 'exec-format-error'],
   ['No input file specified.', 'php-no-input-file'],
@@ -158,7 +170,7 @@ const SAMPLES: Array<[string, string | null]> = [
   ['Error: cannot connect to X server :0', 'no-display'],
   // Voisins à ne pas confondre
   ["KeyError: 'total_amount'", null],                                   // clé de données, pas une variable d'environnement
-  ["python3: can't open file '/opt/jobs/report.py': [Errno 2] No such file or directory", null],   // chemin absolu
+  ["python3: can't open file '/opt/jobs/report.py': [Errno 2] No such file or directory", 'script-file-missing'],   // chemin absolu : pas « relatif » (fiche dédiée depuis le 13/11)
   ['GET /api/orders/42 -> 404 Not Found', null],
   ['Error: not found: invoice 8812', null],
   ['401 Unauthorized: the provided authorization grant is invalid, expired, or revoked', 'http-401'],   // pas « identifiants cloud expirés »
