@@ -167,6 +167,19 @@ export const LABELS: Record<string, Label> = {
   'p7-bad-interpreter-not-exec':  { mech: /ex[ée]cutable|droit|chmod|permission|interpr[ée]teur/i, act: /chmod|ex[ée]cutable|droit/i, key: /bad interpreter/ },
   'p7-crontab-pasted-in-bash':    { mech: /bash|crontab -e|pas une commande|ligne de crontab|planification|syntaxe (de )?crontab|coll[ée]e?/i, act: /crontab -e/i, key: /\*\/10/ },
 
+  // ── Public8 (TEST, moitié non lue pendant le réglage du 2026-11-13 ; étiquettes écrites avant le run)
+  'p8-mysqldump-invalid-view':    { mech: /\bvue\b|\bview\b|definer|r[ée]f[ée]renc|table supprim|invalide/i, act: /--force|drop view|supprimer la vue|recr[ée]er la vue|corriger la vue/i, key: /1356/ },
+  'p8-python-relative-tar':       { mech: /dossier courant|r[ée]pertoire courant|relati|working directory|cwd/i, act: /absolu|chdir|\bcd\b/i, key: /Errno 2/ },
+  'p8-scrapy-venv-cron':          { mech: /virtualenv|venv|environnement virtuel|autre interpr[ée]teur|autre version de python|autre python/i, act: /activate|venv\/bin\/python|bin\/python|chemin complet de l'interpr[ée]teur/i, key: /ImportError/ },
+  'p8-magento-php-run-by-sh':     { mech: /(ex[ée]cut|lanc|interpr[ée]t)\w* (par|avec|comme) (un script )?(bash|sh|shell)|pas (par|avec) php|sans php|PHP_BIN/i, act: /PHP_BIN|\/usr\/bin\/php|\bphp \/|avec php|par php/i, key: /\?php: No such file/ },
+  'p8-pm2-home-env':              { mech: /PM2_HOME|autre (d[ée]mon|instance)|variable d'environnement|environnement de (la session|votre shell)/i, act: /PM2_HOME/i, key: /Process 4 not found/ },
+  'p8-selenium-no-display':       { mech: /affichage|display|xvfb|X11|graphique|headless/i, act: /xvfb|headless|DISPLAY/i, key: /stable firefox connection/ },
+  'p8-wget-not-installed':        { mech: /pas install|non install|n'est pas install|absent du syst[eè]me|not installed/i, act: /(apt-get|apt|yum|dnf) install wget|install\w* wget|\bcurl\b/i, key: /wget command not found/ },
+  'p8-python-not-in-path':        { mech: /\bPATH\b/i, act: /chemin (complet|absolu)|\/usr\/bin\/python|PATH=/i, key: /python: command not found/ },
+  'p8-laravel-cron-six-fields':   { mech: /6 champs|six champs|5 champs|cinq champs|sixi[eè]me|nombre de champs|champ en trop/i, act: /\* \* \* \* \*|everyMinute|5 champs|cinq champs|retirer/i, key: /is not a valid position/ },
+  'p8-perl-inc-env-var':          { mech: /@INC|PERL5LIB|variable d'environnement|use lib|CARSPATH/i, act: /PERL5LIB|CARSPATH|use lib|d[ée]finir.{0,40}variable|variable.{0,40}crontab/i, key: /Can't locate/ },
+  'p8-r-here-working-dir':        { mech: /dossier courant|r[ée]pertoire courant|working directory|relati|here\(\)|dossier de lancement/i, act: /chemin (du script|absolu)|dirname|absolu|setwd|--file|\bcd\b/i, key: /does not exist/ },
+
   // ── Public4 (TEST, collecté avant les leviers contexte d'exécution / vérification de commande) ──
   'p4-python-version-cron':     { mech: /version|python ?2|interpréteur|ancien python|autre python/i, act: /python ?2\.7|python3|shebang|chemin|version/i, key: /SyntaxError/ },
   'p4-laravel-mail-template':   { mech: /template|\bvue\b|\bview\b|welcome/i, act: /emails\.welcome|template|\bvue\b|\bview\b/i, key: /Undefined variable: errors/ },
