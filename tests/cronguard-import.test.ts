@@ -6,6 +6,7 @@ import { mkdtempSync, writeFileSync, readFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { lintCommand } from '../src/services/llm/command-lint'
+import { lintScript } from '../src/services/llm/script-lint'
 
 // Import de crontab (sdk/bash/cronguard-import.sh) : la ligne réécrite doit exécuter
 // EXACTEMENT la commande d'origine, sinon on casse les crons du client en les surveillant.
@@ -42,8 +43,8 @@ describe.skipIf(!hasBash)('cronguard-import.sh', () => {
       req.on('end', () => {
         if (req.headers['x-api-key'] !== 'cg_test') { res.writeHead(401).end(); return }
         if (req.url === '/monitors/lint') {   // prévention : renvoie le vrai résultat de lintCommand
-          linted.push(JSON.parse(body).command)
-          res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ findings: lintCommand(JSON.parse(body).command) }))
+          const q = JSON.parse(body); linted.push(q.command)
+          res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ findings: [...lintCommand(q.command), ...(q.script ? lintScript(q.script, q.scriptPath) : [])] }))
           return
         }
         if (req.url === '/monitors/suggest-name') {   // serveur sans modèle d'explication : le nom du code reste
@@ -99,6 +100,17 @@ describe.skipIf(!hasBash)('cronguard-import.sh', () => {
     expect(stderr).toMatch(/⚠ mysqldump : La commande contient un % non échappé/)
     expect(stderr).toMatch(/⚠ mysqldump : Le mot de passe est séparé de -p/)
     expect(stderr).not.toContain('S3cret')   // la réponse ne recopie jamais la commande
+  })
+
+  it('prévention : lit le script appelé (docker -it, ~ entre guillemets), sur plusieurs lignes', async () => {
+    const sh = join(dir, 'renew.sh').replace(/\\/g, '/')
+    writeFileSync(sh, '#!/bin/bash\n# renouvellement\ndocker run -ti --rm certbot renew\ncat "~/notes.txt"\n')
+    writeFileSync(join(dir, 'crontab'), `0 3 * * * ${sh}`)
+    const { stderr } = await promisify(execFile)('bash', [SCRIPT, join(dir, 'crontab')], {
+      env: { ...process.env, CRONGUARD_URL: url, CRONGUARD_API_KEY: 'cg_test', CRONGUARD_LIB: join(dir, 'lib.sh').replace(/\\/g, '/') },
+      encoding: 'utf8', timeout: 20_000 })
+    expect(stderr).toMatch(/docker run\/exec avec -t/)
+    expect(stderr).toMatch(/« ~ » entre guillemets/)
   })
 
   it('ne réenveloppe pas une ligne déjà surveillée', async () => {

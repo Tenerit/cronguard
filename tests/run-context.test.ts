@@ -93,6 +93,19 @@ describe.skipIf(!hasBash)('sonde du SDK bash (cg_run)', { timeout: 30_000 }, () 
     expect(typeof p.context.user).toBe('string')
   })
 
+  it("à l'échec : le script appelé est envoyé, secrets masqués sur la machine du job", async () => {
+    const sdk = join(__dirname, '../sdk/bash/cronguard.sh').replace(/\\/g, '/')
+    const sh = join(dir, 'job.sh').replace(/\\/g, '/')
+    writeFileSync(sh, '#!/bin/bash\nPGPASSWORD=hunter2secret\ndocker exec -it db pg_dump app\nexit 3\n', { mode: 0o755 })
+    await promisify(execFile)('bash', ['-c', `source '${sdk}' && cg_run key-3 bash -c 'bash ${sh}'; true`], {
+      env: { ...process.env, CRONGUARD_URL: url }, encoding: 'utf8', timeout: 20_000,
+    })
+    const s = pings.at(-1)!.context.script
+    expect(s.path.replace(/\\/g, '/')).toMatch(/job\.sh$/)
+    expect(s.text).toContain('docker exec -it')
+    expect(s.text).not.toContain('hunter2secret')
+  })
+
   it('succès : ni commande ni contexte envoyés', async () => {
     const sdk = join(__dirname, '../sdk/bash/cronguard.sh').replace(/\\/g, '/')
     await promisify(execFile)('bash', ['-c', `source '${sdk}' && cg_run key-2 true`], { env: { ...process.env, CRONGUARD_URL: url }, encoding: 'utf8', timeout: 20_000 })

@@ -7,6 +7,7 @@ import { logger }    from '../../config/logger'
 import { sanitizeLogs } from '../../services/sanitizer'
 import { asyncHandler } from '../middleware/async-handler'
 import { RUNNERS } from '../../services/llm/run-context'
+import { lintScript } from '../../services/llm/script-lint'
 
 export const pingRouter = Router()
 
@@ -75,6 +76,9 @@ export const Schema = z.object({
       pattern: z.string().max(200), ok: z.boolean(), reason: z.string().max(80).optional(),
       path: z.string().max(200).optional(), size: z.number().int().nonnegative().optional(), mtime: z.number().int().optional(),
     })).max(5).optional(),
+    // Script appelé par la commande (SDK bash, 2026-11-13), secrets déjà masqués. Lu ici puis JETÉ : seuls les ids
+    // des risques trouvés (script-lint) entrent dans la file et la base, jamais le texte.
+    script:   z.object({ path: z.string().max(256), text: z.string().max(20_000) }).optional(),
   }).optional(),
 })
 
@@ -116,7 +120,7 @@ async function enqueuePing(monitor: MonitorRow, data: PingData): Promise<'succes
       // Secrets masqués DÈS l'entrée : la file Redis, la base, la file des échecs et les alertes ne
       // voient jamais un mot de passe ou un jeton présent dans la sortie du job ou sa commande.
       exitCode: data.exit_code, output: data.output && sanitizeLogs(data.output).clean,
-      command: data.command && sanitizeLogs(data.command).clean, runContext: data.context,
+      command: data.command && sanitizeLogs(data.command).clean, runContext: withScriptRisks(data.context),
     })
   } catch (e) {
     // Redis down : le ping ne peut pas être enregistré. Loggue + rethrow → la route
@@ -128,6 +132,13 @@ async function enqueuePing(monitor: MonitorRow, data: PingData): Promise<'succes
   }
 
   return status
+}
+
+/** Remplace le texte du script par les risques qu'il contient (ids) : le script ne quitte jamais cette requête. */
+function withScriptRisks(ctx: PingData['context'] & { script?: { path: string; text?: string; risks?: string[] } } | undefined) {
+  if (!ctx?.script?.text) return ctx
+  const { path, text } = ctx.script
+  return { ...ctx, script: { path, risks: lintScript(text, path).map(f => f.id) } }
 }
 
 async function findMonitor(pingKey: string): Promise<MonitorRow | null> {

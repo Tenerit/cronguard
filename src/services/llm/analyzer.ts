@@ -6,6 +6,7 @@ import { isOpen, onSuccess, onFailure } from './circuit-breaker'
 import { mineTemplates } from './drain'
 import { knownFix }      from './known-fixes'
 import { commandFinding } from './command-lint'
+import { explainScriptRisks } from './script-lint'
 import { contextFinding, diagnosticChecks } from './run-context'
 import { toolCodeFinding, exitCodeFinding, commandToolFinding } from './exit-codes'
 import { evidenceLines } from './evidence'
@@ -415,7 +416,7 @@ export function groundWithKnownFix<T extends Pick<AnalysisResult, 'cause' | 'act
   res: T, cleanLogs: string, job?: Pick<JobContext, 'command' | 'runContext' | 'exitCode'>,
 ): T {
   const kf = knownFix(cleanLogs)
-  const observed = commandFinding(job?.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job?.runContext, job?.exitCode)
+  const observed = commandFinding(job?.command && sanitizeLogs(job.command).clean, cleanLogs) ?? explainScriptRisks(job?.runContext?.script?.risks, cleanLogs) ?? contextFinding(cleanLogs, job?.runContext, job?.exitCode)
   if (observed) return { ...res, cause: observed.cause, action: observed.action, category: observed.category,
     checks: kf ? kf.steps.slice(0, 3) : res.checks, confidence: 'high', finding: observed.id, ...(kf ? { knownFix: kf } : {}) }
   // Sans fiche : sens officiel d'un code (curl / rsync dans les logs, sinon code de sortie 126/127/128+N).
@@ -454,7 +455,7 @@ function restatedLine(cause: string, logs: string): string | null {
 
 /** Une source déterministe établit-elle la cause ? (mêmes sources et même ordre que groundWithKnownFix) */
 export function hasCertainKnowledge(cleanLogs: string, job: Pick<JobContext, 'command' | 'runContext' | 'exitCode'>): boolean {
-  const observed = commandFinding(job.command && sanitizeLogs(job.command).clean, cleanLogs) ?? contextFinding(cleanLogs, job.runContext, job.exitCode)
+  const observed = commandFinding(job.command && sanitizeLogs(job.command).clean, cleanLogs) ?? explainScriptRisks(job.runContext?.script?.risks, cleanLogs) ?? contextFinding(cleanLogs, job.runContext, job.exitCode)
   return !!(observed || knownFix(cleanLogs) || toolCodeFinding(cleanLogs))
 }
 

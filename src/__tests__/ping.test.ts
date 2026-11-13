@@ -146,6 +146,15 @@ describe('POST /ping/:pingKey — logique', () => {
     }))
   })
 
+  it('script du job : seuls les risques entrent dans la file, jamais son texte', async () => {
+    const res = await request(app).post(`/ping/${PING_KEY}`).send({ status: 'fail', exit_code: 1, output: 'the input device is not a TTY',
+      context: { script: { path: '/opt/renew.sh', text: '#!/bin/bash\ndocker run -ti certbot renew\n' } } })
+    expect(res.status).toBe(200)
+    const job = mockQueueAdd.mock.calls.at(-1)[1]
+    expect(job.runContext.script).toEqual({ path: '/opt/renew.sh', risks: ['script-docker-tty'] })
+    expect(JSON.stringify(job)).not.toContain('certbot')
+  })
+
   it('répond en < 50ms (ping doit être ultra-rapide)', async () => {
     const start = Date.now()
     await request(app).post(`/ping/${PING_KEY}`).send({ status: 'success' })

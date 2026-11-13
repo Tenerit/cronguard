@@ -664,6 +664,38 @@ if _st:
 _ov = _cg_overlap()
 if _ov:
     ctx['overlap'] = _ov
+def _cg_script(cmd):
+    # Script appelé par la commande (2026-11-13) : le serveur le lit (chemins relatifs, -it, ~ entre guillemets…) et
+    # n'en garde que les risques trouvés, jamais le texte. Secrets masqués ici, sur la machine du job.
+    import shlex
+    skip = {'sudo', 'nice', 'nohup', 'time', 'env', 'exec', 'bash', 'sh', 'dash', 'zsh', 'ksh', 'python', 'python3', 'php', 'perl', 'node', 'ruby', '/usr/bin/env'}
+    cwd = os.getcwd()
+    for seg in re.split(r'&&|\|\||;|\|', cmd):
+        try:
+            words = shlex.split(seg)
+        except ValueError:
+            continue
+        words = [w for w in words if not re.match(r'^[A-Za-z_]\w*=', w)]
+        if words[:1] == ['cd'] and len(words) > 1:
+            cwd = os.path.join(cwd, os.path.expanduser(words[1]))
+            continue
+        for w in words:
+            if os.path.basename(w) in skip or w.startswith('-'):
+                continue
+            p = os.path.join(cwd, os.path.expanduser(w))
+            try:
+                if os.path.isfile(p) and os.path.getsize(p) <= 200_000:
+                    with open(p, 'rb') as f:
+                        head = f.read(20_000)
+                    if b'\0' not in head:
+                        return {'path': p[:256], 'text': _cg_mask(head.decode('utf-8', 'replace'))}
+            except OSError:
+                pass
+            break
+    return None
+_sc = _cg_script(cmd) if cmd else None
+if _sc:
+    ctx['script'] = _sc
 sys.stdout.write((',"command":' + json.dumps(cmd) if cmd else '') + ',"context":' + json.dumps(ctx))
 PY
 }

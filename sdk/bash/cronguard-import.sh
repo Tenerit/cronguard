@@ -52,8 +52,20 @@ if [[ $apply -eq 1 && -z "${CRONGUARD_API_KEY:-}" ]]; then
 fi
 
 json_str() {   # échappe une chaîne pour JSON (\ " et caractères de contrôle courants)
-  local s="${1//\\/\\\\}"; s="${s//\"/\\\"}"; s="${s//$'\t'/\\t}"
+  local s="${1//\\/\\\\}"; s="${s//\"/\\\"}"; s="${s//$'\t'/\\t}"; s="${s//$'\n'/\\n}"; s="${s//$'\r'/\\r}"
   printf '"%s"' "$s"
+}
+
+script_of() {   # script appelé par la commande (après VAR=, sudo, interpréteur), s'il est lisible ici
+  local w words
+  read -ra words <<<"$1"
+  for w in "${words[@]}"; do
+    case "$w" in *=*|sudo|nice|nohup|time|env|bash|sh|dash|python|python3|php|perl|node|ruby|/usr/bin/env|-*) continue ;; esac
+    w="${w/#\~/$HOME}"
+    if [[ -f "$w" && -r "$w" ]] && grep -qI . "$w" 2>/dev/null; then printf '%s' "$w"; fi   # binaire : rien à lire
+    return 0   # set -e : un script absent d'ici n'arrête pas l'import
+  done
+  return 0
 }
 
 job_name() {   # nom lisible : premier exécutable significatif de la commande
@@ -197,10 +209,13 @@ while IFS= read -r line || [[ -n "$line" ]]; do
   fi
   if [[ -n "${seen[$name]:-}" ]]; then seen[$name]=$(( ${seen[$name]} + 1 )); name="$name-${seen[$name]}"; else seen[$name]=1; fi
 
-  # Prévention : risques connus de la commande (%, -p espacé, syntaxe bash sous sh…), avant toute panne.
+  # Prévention : risques connus de la commande (%, -p espacé, syntaxe bash sous sh…) et du script qu'elle lance
+  # (-it, ~ entre guillemets, chemins relatifs…), avant toute panne. Le serveur lit le script et ne le garde pas.
   if [[ -n "${CRONGUARD_API_KEY:-}" ]]; then
+    sf="$(script_of "$rest")"; sbody=""
+    [[ -n "$sf" ]] && sbody=",\"script\":$(json_str "$(head -c 50000 "$sf")"),\"scriptPath\":$(json_str "$sf")"
     lint="$(curl -sS -m 10 -X POST "$CRONGUARD_URL/monitors/lint" -H 'Content-Type: application/json' \
-      -H "X-API-Key: $CRONGUARD_API_KEY" -d "{\"command\":$(json_str "$rest")}" 2>/dev/null || true)"
+      -H "X-API-Key: $CRONGUARD_API_KEY" -d "{\"command\":$(json_str "$rest")$sbody}" 2>/dev/null || true)"
     while IFS= read -r risk; do
       if [[ -n "$risk" ]]; then echo "  ⚠ $name : $risk" >&2; fi
     done < <(printf '%s' "$lint" | grep -o '"cause":"[^"]*"' | sed 's/^"cause":"//; s/"$//' || true)

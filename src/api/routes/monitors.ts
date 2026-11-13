@@ -12,6 +12,7 @@ import { withLogHints, evidenceLines }   from '../../services/llm/evidence'
 import { knownFix }                      from '../../services/llm/known-fixes'
 import { findAnalysis, recordFeedback, recordFix } from '../../services/analysis-feedback'
 import { lintCommand }                   from '../../services/llm/command-lint'
+import { lintScript }                    from '../../services/llm/script-lint'
 import { suggestJobName }                from '../../services/llm/job-names'
 import { monitorLimitFor }               from '../../config/plans'
 
@@ -281,9 +282,12 @@ monitorsRouter.post('/analyses/:analysisId/fix', requireRole('member'), asyncHan
 // Utilisé par cronguard-import.sh : signale %, -p espacé, syntaxe bash sous sh… à l'import.
 // Lecture seule, rien n'est stocké. La réponse ne recopie pas la commande (mot de passe possible).
 monitorsRouter.post('/lint', asyncHandler(async (req, res) => {
-  const parsed = z.object({ command: z.string().min(1).max(1000) }).safeParse(req.body)
+  // script : contenu du script appelé (lu par cronguard-import.sh sur la machine), analysé puis oublié.
+  const parsed = z.object({ command: z.string().min(1).max(1000), script: z.string().max(50_000).optional(),
+    scriptPath: z.string().max(256).optional() }).safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'command requis (1000 caractères max)' })
-  res.json({ findings: lintCommand(parsed.data.command) })
+  const { command, script, scriptPath } = parsed.data
+  res.json({ findings: [...lintCommand(command), ...(script ? lintScript(script, scriptPath) : [])] })
 }))
 
 // ─── POST /suggest-name — nom d'un job à l'import de la crontab (cronguard-import.sh) ─────

@@ -27,6 +27,7 @@ export interface RunContext {
   steps?:         Array<{ name: string; at: number }>   // cg_step : étapes du job (horodatage ms)
   stepsEnd?:      number
   overlap?:       { pid: number; since: number }        // l'exécution précédente tournait encore
+  script?:        { path: string; risks?: string[]; text?: string }  // text : en transit seulement (route ping), remplacé par risks
 }
 
 /** « Arrêté pendant l'étape « upload » (dump : 3 min 12 s) » — fait relevé par cg_step, null sans étape. */
