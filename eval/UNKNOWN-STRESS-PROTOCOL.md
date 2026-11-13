@@ -15,3 +15,7 @@ Outil : `eval/unknown-stress.ts` — l'analyse sans modèle sur des issues GitHu
 - 0 plantage, aucun texte > 200 ms.
 - Fausses causes parmi les déclenchements : **≤ 33 %** (taux mesuré avant ces correctifs). Au-dessus : publié tel quel,
   et les fiches génériques fautives passent en formulation « plusieurs causes possibles ».
+
+## Mesure 2 — piste typée pour l'inconnu (error-shape.ts), protocole écrit avant le run
+Sur github4 (jeu neuf), textes où aucune fiche ne répond : la ligne retenue et son type annoncé sont jugés, « type juste » si
+le type décrit bien la ligne. Attente fixée avant : **type juste ≥ 80 %** des pistes. En dessous : la piste est retirée.

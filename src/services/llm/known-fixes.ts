@@ -593,7 +593,8 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'not-a-tty', category: 'dependency',
-    match: /the input device is not a TTY|not a tty|Pseudo-terminal will not be allocated|stdin: is not a tty|cannot open .?\/dev\/tty|\/dev\/tty: No such device or address/i,
+    // /dev/tty EXACTEMENT : « /dev/ttyACM0 », « /dev/ttyUSB0 » sont des ports série, pas le terminal (2026-11-13).
+    match: /the input device is not a TTY|not a tty|Pseudo-terminal will not be allocated|stdin: is not a tty|cannot open .?\/dev\/tty(?![\w])|\/dev\/tty: No such device or address/i,
     title: 'La commande demande un terminal (TTY)',
     cause: "Une commande du job demande un terminal interactif (docker -it, ssh -t, bash -l) alors que cron n'en fournit aucun.",
     action: 'Retirer les options interactives : docker exec/run sans -t/-it, ssh -T, pas de bash -l.',

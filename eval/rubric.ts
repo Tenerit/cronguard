@@ -232,7 +232,8 @@ export function grade(caseName: string, expectedCategory: string, logs: string, 
   // Idem pour les commandes de test construites par le code (diagnosticChecks : reproduction dans l'environnement
   // du cron, écarts constatés) : elles reprennent la commande du job et des faits relevés, pas une invention.
   // Corrigé le 2026-11-10 avant public7 (biais vu sur public6 : −1 sur 7 cas sur 15).
-  const builtByCode = /^(Reproduire avec l'environnement du cron|Variables présentes dans votre shell|PATH de votre shell|Relancer le job à la main sous l'utilisateur du cron)/
+  // « Piste (…) : » ajouté le 2026-11-13 : vérifications par type d'erreur (error-shape.ts), gabarits du code + objet du log.
+  const builtByCode = /^(Reproduire avec l'environnement du cron|Variables présentes dans votre shell|PATH de votre shell|Relancer le job à la main sous l'utilisateur du cron|Piste \()/
   const generated = [res.cause, res.action, ...res.checks].filter(x => !fromFix.has(x) && !builtByCode.test(x)).join(' ')
   const invented = unverifiableIdentifiers(generated, logs)
   const noInvent = invented.length ? 0 : 1
