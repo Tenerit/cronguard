@@ -290,11 +290,11 @@ monitorsRouter.post('/lint', asyncHandler(async (req, res) => {
 // Planning écrit par le code ; nom et rôle proposés par l'IA locale si un modèle d'explication est déclaré.
 // Lecture seule, rien n'est stocké : l'admin voit l'aperçu et choisit d'appliquer.
 monitorsRouter.post('/suggest-name', requireRole('member'), asyncHandler(async (req, res) => {
-  const parsed = z.object({ command: z.string().min(1).max(1000), schedule: z.string().max(120).optional() }).safeParse(req.body)
+  const parsed = z.object({ command: z.string().min(1).max(1000), schedule: z.string().max(120).optional(), lang: z.enum(['fr', 'en']).optional() }).safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'command requis (1000 caractères max)' })
   // expect : sortie attendue proposée par la règle (CG_EXPECT) ; essai eval/expect-suggest.ts : la règle égale le modèle.
   res.json({ ...await suggestJobName(parsed.data.command, parsed.data.schedule), expect: ruleExpect(parsed.data.command),
-    risks: lintCommand(parsed.data.command).map(f => f.cause) })
+    risks: lintCommand(parsed.data.command, parsed.data.lang).map(f => f.cause) })
 }))
 
 // ─── POST /analyze/preview — Analyse immédiate avec diagnostic complet ────────

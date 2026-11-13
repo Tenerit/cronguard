@@ -1226,7 +1226,7 @@ async function analyzeImport() {
   for (let i = 0; i < jobs.length; i++) {
     status.textContent = `${t('imp.progress')} ${i + 1}/${jobs.length}…`
     let s = {}
-    try { s = await api('/monitors/suggest-name', { method: 'POST', body: JSON.stringify({ command: jobs[i].cmd, schedule: jobs[i].schedule }) }) } catch { /* nom du code */ }
+    try { s = await api('/monitors/suggest-name', { method: 'POST', body: JSON.stringify({ command: jobs[i].cmd, schedule: jobs[i].schedule, lang: LANG === 'fr' ? 'fr' : 'en' }) }) } catch { /* nom du code */ }
     Object.assign(jobs[i], { name: /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s.name || '') ? s.name : codeJobName(jobs[i].cmd), ai: !!s.name,
       role: s.role || '', when: s.when || jobs[i].schedule, critical: s.critical === true, expect: typeof s.expect === 'string' ? s.expect : '',
       risks: Array.isArray(s.risks) ? s.risks.filter(x => typeof x === 'string') : [] })

@@ -66,6 +66,29 @@ export function commandFinding(command: string | undefined, logs: string): Findi
 }
 
 /** Tous les risques d'une commande, sans échec (prévention à l'import). */
-export function lintCommand(command: string): Finding[] {
-  return RULES.filter(x => x.test(command)).map(({ id, category, cause, action }) => ({ id, category, cause, action }))
+export function lintCommand(command: string, lang: 'fr' | 'en' = 'fr'): Finding[] {
+  return RULES.filter(x => x.test(command)).map(({ id, category, cause, action }) =>
+    lang === 'en' && EN[id] ? { id, category, cause: EN[id][0], action: EN[id][1] } : { id, category, cause, action })
+}
+
+// Prévention à l'import, en anglais pour le dashboard en anglais (2026-11-13). Les constats d'échec restent en français.
+const EN: Record<string, [string, string]> = {
+  'cmd-percent': ['The command contains an unescaped %: in a crontab, % is a newline, so the command is cut there.',
+    'Escape every % as \\% in the crontab (e.g. date +\\%Y\\%m\\%d), or move the command into a script.'],
+  'cmd-mysql-p-space': ['The password is separated from -p by a space: mysql takes it as a database name and sends no password.',
+    'Glue the password to -p (-pPASSWORD), or better, put it in an options file (--defaults-extra-file, chmod 600).'],
+  'cmd-rsync-e-unquoted': ["rsync's -e option is not quoted: only « ssh » is taken as the command, its options become files to copy.",
+    'Quote the whole ssh command: rsync -e "ssh -i ~/.ssh/key -p 22" …'],
+  'cmd-bashism-sh': ['The command uses bash syntax (source, <( ), [[ ]]) but is run by sh, which does not understand it.',
+    'Run the script with bash (bash script.sh, #!/bin/bash shebang) or put SHELL=/bin/bash at the top of the crontab.'],
+  'cmd-unquoted-subst': ['An unquoted $(…) substitution is part of a path: if it produces a space, the path is split in two.',
+    'Put the path in double quotes: "…/file_$(date +\\%F).log".'],
+  'cmd-relative-path': ["The command calls a script by a relative path: under cron, the current directory is the user's HOME, not the script's.",
+    'Use the absolute path of the script, or cd /path/to/project && before the command.'],
+  'cmd-sudo': ['The command uses sudo, which asks for a password or a terminal, both missing under cron.',
+    "Put the job in root's crontab (sudo crontab -e) instead of calling sudo, or allow this exact command without a password in sudoers."],
+  'cmd-or-masks': ['After « || », the fallback command succeeds when the job fails: the line exits with 0 and the failure is no longer visible.',
+    'Remove the « || … » (CronGuard already alerts) or end with « exit 1 »: cmd || { mail …; exit 1; }.'],
+  'cmd-pipe-masks': ["A pipe's exit code is its last command's (gzip, tee…): if the first one fails, the line still exits with 0.",
+    'Put the command in a bash script with « set -o pipefail », or check the produced file (CG_EXPECT).'],
 }

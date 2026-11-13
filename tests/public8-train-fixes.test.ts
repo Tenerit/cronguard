@@ -27,6 +27,13 @@ describe('échecs masqués : prévenus à l’import', () => {
     expect(lintCommand('set -o pipefail; mysqldump db | gzip > /b/db.sql.gz')).toEqual([])
     expect(lintCommand('/opt/a.sh || /opt/b.sh')).toEqual([])
   })
+  it('en anglais pour le dashboard en anglais, chaque règle traduite', () => {
+    const all = 'sh x.sh % mysql -p s db; rsync -e ssh -p 22 a b; f$(date); sudo a || mail r; a | gzip'
+    const fr = [...lintCommand(all), ...lintCommand('./r.sh')], en = [...lintCommand(all, 'en'), ...lintCommand('./r.sh', 'en')]
+    expect(en.map(f => f.id)).toEqual(fr.map(f => f.id))
+    expect(fr.length).toBe(9)
+    en.forEach((f, i) => expect(f.cause).not.toBe(fr[i].cause))
+  })
   it('n’expliquent jamais une panne (rien à lire dans les logs)', () => {
     expect(commandFinding('/opt/backup.sh || mail root', 'Error: anything')).toBeNull()
   })
