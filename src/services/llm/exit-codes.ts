@@ -47,7 +47,7 @@ const RSYNC: Record<number, [string, string]> = {
 
 // Codes de sortie de wget (man wget, « EXIT STATUS »).
 const WGET: Record<number, [string, string]> = {
-  1: ['wget a échoué (erreur générique).', 'Relancer la commande sans -q pour voir le message de wget.'],
+  // 1 = erreur générique : ne dit rien de la cause, pas de fiche (labo public5 : « status 5 » SSL masqué par « code 1 »).
   2: ['wget refuse la ligne de commande (option inconnue ou mal écrite, ou .wgetrc invalide).', 'Afficher la commande exacte ; vérifier les options et les guillemets autour de l\'URL.'],
   3: ['wget ne peut pas écrire le fichier de sortie (droits, disque plein, dossier absent).', 'Vérifier le dossier de destination (-O / -P) et les droits de l\'utilisateur du cron.'],
   4: ['wget : échec réseau (nom introuvable, connexion refusée ou expirée).', 'Tester l\'URL avec curl -v sous l\'utilisateur du cron ; vérifier le DNS et le pare-feu.'],
