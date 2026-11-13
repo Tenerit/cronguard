@@ -1144,7 +1144,7 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'permission-denied', category: 'dependency',
-    match: /Permission denied|EACCES/i,
+    match: /Permission denied|\bEACCES\b/i,   // \b : « ensureAccessToken » contenait « eAcces » (issues GitHub, 13/11)
     title: 'Accès refusé à un fichier ou dossier',
     cause: "L'utilisateur qui exécute le cron n'a pas les droits sur ce fichier ou dossier : il appartient à un autre utilisateur (www-data, root…), ou le service qui l'écrit le crée avec des droits restrictifs (umask du service, rotation de logs).",
     action: "Lancer le job sous l'utilisateur propriétaire (crontab -u <user>) ou ajuster propriétaire et droits (chown / chmod) du dossier concerné.",
