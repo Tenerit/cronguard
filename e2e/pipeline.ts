@@ -247,7 +247,10 @@ async function main() {
   const target = String(d.id)
   const pageRes = await rev(tok(target, later))
   const pageHtml = await pageRes.text()
-  check('Lien signé : la page montre la cause, sans rien enregistrer', pageRes.status === 200 && pageHtml.includes('Cette analyse était-elle juste')
+  // Panne que rien n'a reconnue : la page demande la vraie cause (boucle d'apprentissage, 2026-11-13).
+  const recognized = (await db.query(`SELECT recognized_by FROM analyses WHERE id=$1`, [target])).rows[0].recognized_by
+  check('Lien signé : la page montre la cause, sans rien enregistrer', pageRes.status === 200
+    && pageHtml.includes(recognized ? 'Cette analyse était-elle juste' : "CronGuard n'a pas reconnu cette panne")
     && (await db.query(`SELECT user_feedback FROM analyses WHERE id=$1`, [target])).rows[0].user_feedback === null, String(pageRes.status))
   // CSP des styles : chaque bloc <style> réellement servi doit être autorisé par son empreinte (style-src-elem sans
   // 'unsafe-inline'), sinon le navigateur l'ignore et la page s'affiche sans mise en forme.
