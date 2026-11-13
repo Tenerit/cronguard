@@ -175,6 +175,7 @@ const SAMPLES: Array<[string, string | null]> = [
   ['java.lang.IllegalArgumentException: Cron expression must consist of 6 fields (found 5 in "0 2 * * *")', 'spring-cron-fields'],
   ['Error: cannot connect to X server :0', 'no-display'],
   // Voisins à ne pas confondre
+  ['mywidget: cannot open /dev/ttyACM0: Permission denied', 'permission-denied'],   // port série, pas le terminal
   ["KeyError: 'total_amount'", null],                                   // clé de données, pas une variable d'environnement
   ["python3: can't open file '/opt/jobs/report.py': [Errno 2] No such file or directory", 'script-file-missing'],   // chemin absolu : pas « relatif » (fiche dédiée depuis le 13/11)
   ['GET /api/orders/42 -> 404 Not Found', null],

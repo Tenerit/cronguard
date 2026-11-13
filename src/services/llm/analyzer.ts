@@ -7,7 +7,6 @@ import { mineTemplates } from './drain'
 import { knownFix }      from './known-fixes'
 import { commandFinding } from './command-lint'
 import { explainScriptRisks } from './script-lint'
-import { unknownErrorLead } from './error-shape'
 import { contextFinding, diagnosticChecks } from './run-context'
 import { toolCodeFinding, exitCodeFinding, commandToolFinding } from './exit-codes'
 import { evidenceLines } from './evidence'
@@ -484,10 +483,7 @@ export function analysisWithoutModel(ctx: LogOnlyContext): AnalysisResult {
   }
   // Un fait constaté (commande, environnement) vaut aussi sans modèle ; sinon la confiance reste « medium ».
   const grounded = groundWithKnownFix(base, clean, ctx)
-  if (grounded.finding || grounded.knownFix) return grounded
-  // Inconnu : la structure de l'erreur (type, outil, objet) donne une piste typée, pas une cause (confiance basse).
-  const lead = !kf && line ? unknownErrorLead(line) : null
-  return lead ? { ...base, cause: lead.cause, category: lead.category, checks: [...base.checks, ...lead.checks].slice(0, 4) } : base
+  return grounded.finding || grounded.knownFix ? grounded : base
 }
 
 export async function analyzeFailure(

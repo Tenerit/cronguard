@@ -12,6 +12,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - Fiches trop lâches corrigées : `EACCES` dans un mot, une ligne de config `TimeoutStartSec`, « repository password » dans une phrase.
 - Nouvelles fiches : socket local refusé (démon arrêté ou autre session, PulseAudio), module Unix sous Windows, module retiré de Python, sous-module privé (versions incompatibles).
 - Mesure sur un jeu neuf gelé (github4, 120 issues) : 1 fausse cause sur 7 déclenchements (14 %), contre 6 sur 18 (33 %) avant les correctifs sur d'autres issues. Détail : `eval/archive/UNKNOWN-STRESS.md`.
+- **Essayé puis retiré** : une « piste typée » (type d'erreur, outil, objet) pour les erreurs que rien ne reconnaît. Mesurée sur github4 : 3 types justes sur 8 (38 %), sous les 80 % fixés d'avance. Constat qui reste : 776 formes d'erreur inconnues sur 584 textes, presque aucune ne revient.
+- Corrigé : la fiche « pas de terminal » ne se déclenche plus sur un port série (/dev/ttyACM0).
 
 
 ### Ajouté — lecture du script du job (2026-11-13)
