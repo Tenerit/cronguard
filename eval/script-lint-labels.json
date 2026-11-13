@@ -1,0 +1,15 @@
+{
+  "_note": "github3 moitié TEST, issues avec un bloc de script (10). Étiquettes écrites d'après la discussion, AVANT de lancer script-lint (2026-11-13). causeInScript = id de règle si la cause établie se lit dans le script avec nos règles, sinon null. Attente fixée avant : 0 cas ne peut pas mesurer le rappel ; on mesure les fausses alertes (risque signalé alors que la cause est ailleurs) et on publie le résultat tel quel.",
+  "cases": [
+    { "t": 1,  "status": "excluded", "why": "pas un job cron (débogage Azure Functions)" },
+    { "t": 28, "status": "labelled", "causeInScript": null, "truth": "le programme a besoin de la session utilisateur (service systemd utilisateur), pas lisible dans « pipx run IoTuring »" },
+    { "t": 29, "status": "excluded", "why": "pas un job cron (build Vercel), sans cause établie" },
+    { "t": 31, "status": "labelled", "causeInScript": null, "truth": "update.sh livré sans droit d'exécution dans l'archive (droits du fichier, pas son contenu)" },
+    { "t": 35, "status": "labelled", "causeInScript": null, "truth": "donnée en base avec la mauvaise casse (itemtype), et utilisateur du cron différent du serveur web" },
+    { "t": 39, "status": "excluded", "why": "pas un job cron (CRD Pulumi nommée crontabs)" },
+    { "t": 44, "status": "excluded", "why": "cause non établie" },
+    { "t": 55, "status": "labelled", "causeInScript": null, "truth": "permission macOS (Accessibilité) perdue par le nouvel exécutable après mise à jour" },
+    { "t": 56, "status": "labelled", "causeInScript": null, "truth": "le démon cron n'est pas actif dans le conteneur (mod universal-cron à activer)" },
+    { "t": 73, "status": "excluded", "why": "demande de fonctionnalité" }
+  ]
+}
