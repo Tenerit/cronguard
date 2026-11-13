@@ -80,6 +80,12 @@ const SAMPLES: Array<[string, string | null]> = [
   ["ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)", 'mysql-socket'],
   ['ERROR 1040 (HY000): Too many connections', 'mysql-too-many-connections'],
   ["mysqldump: Couldn't execute 'SELECT COLUMN_NAME FROM information_schema.COLUMN_STATISTICS': Unknown table 'COLUMN_STATISTICS' in information_schema (1109)", 'mysqldump-column-statistics'],
+  // banc « inconnu », issues GitHub (2026-11-13)
+  ['Error: "Failed to connect to socket: Connection refused (os error 111)"', 'unix-socket-refused'],
+  ["ModuleNotFoundError: No module named 'fcntl'", 'python-posix-module-on-windows'],
+  ["ModuleNotFoundError: No module named 'distutils'", 'python-module-removed'],
+  ["ModuleNotFoundError: No module named 'psycopg2._psycopg'", 'python-private-module-mismatch'],
+  ['Error during Volume command: Connection failure: Connection refused pa_context_connect() failed: Connection refused', 'unix-socket-refused'],
   // corpus de réglage (2026-11-13)
   ['2014-12-10 05:40:01 ERROR 403: Forbidden.', 'http-403'],
   ['/usr/bin/python can\'t open file "/abs/path/to/script.py": [Errno 2] No such file or directory', 'script-file-missing'],

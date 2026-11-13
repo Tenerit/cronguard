@@ -705,6 +705,33 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     steps: ['Ordre Spring : seconde minute heure jour mois jour-de-semaine.'],
   },
   {
+    // Banc « inconnu » (2026-11-13) : un module Unix de la bibliothèque standard « manque » = le script tourne sous Windows.
+    id: 'python-posix-module-on-windows', category: 'dependency',
+    match: /No module named '(?:fcntl|termios|pwd|grp|resource|posix|crypt)'/,
+    title: 'Module Unix absent : le script tourne sous Windows',
+    cause: "Ce module fait partie de Python sous Linux/macOS mais n'existe pas sous Windows : le job est lancé par un Python Windows (planificateur de tâches, Git Bash), pas par celui de la machine Unix prévue.",
+    action: "Lancer le job sous Linux/macOS (ou WSL), ou remplacer le module par un équivalent multiplateforme (portalocker pour fcntl).",
+    steps: ['python -c "import sys; print(sys.platform)" dans l\'environnement du job.', 'Vérifier quel python lance le job (chemin complet).'],
+  },
+  {
+    // Banc « inconnu » (2026-11-13, vu sur les moitiés test github2/3, qui ne mesurent donc plus ces fiches) :
+    // module retiré de Python lui-même, ou sous-module privé d'un paquet = versions incompatibles, pas un environnement.
+    id: 'python-module-removed', category: 'dependency',
+    match: /No module named '(?:distutils|imp|asynchat|asyncore|smtpd|imghdr|cgi|cgitb|pipes|crypt|telnetlib|nntplib|audioop)'/,
+    title: 'Module retiré des versions récentes de Python',
+    cause: "Ce module a été retiré de la bibliothèque standard dans une version récente de Python (3.12 / 3.13) : le job tourne avec un Python plus récent que celui prévu par le code ou ses dépendances.",
+    action: "Lancer le job avec la version de Python prévue (chemin complet de l'interpréteur ou du virtualenv), ou mettre à jour la dépendance qui importe ce module (setuptools fournit distutils).",
+    steps: ['python3 --version dans l\'environnement du job.', 'pip install -U setuptools (distutils) ou mettre à jour le paquet qui l\'importe.'],
+  },
+  {
+    id: 'python-private-module-mismatch', category: 'dependency',
+    match: /No module named '[\w.]+\._\w+'/,
+    title: 'Versions de paquets Python incompatibles',
+    cause: "Le module manquant est une partie interne d'un paquet (nom en « ._ ») : deux paquets installés ne sont pas de versions compatibles, ou une extension compilée ne correspond pas à cette version de Python.",
+    action: "Réinstaller le paquet concerné dans l'environnement du job (pip install --force-reinstall <paquet>) avec des versions compatibles (fichier de dépendances figé).",
+    steps: ['pip show <paquet> dans l\'environnement du job.', 'pip check : dépendances incompatibles.'],
+  },
+  {
     id: 'python-module-missing', category: 'dependency',
     match: /ModuleNotFoundError: No module named|ImportError: No module named/,
     title: 'Module Python introuvable (mauvais environnement)',
@@ -810,7 +837,8 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   },
   {
     id: 'backup-repo-password', category: 'dependency',
-    match: /wrong password or no key found|passphrase supplied in BORG_PASSPHRASE[^\n]*incorrect|Enter passphrase for key|repository password/i,
+    // « repository password » seul retiré (2026-11-13) : une phrase qui le cite n'est pas un échec (banc « inconnu »).
+    match: /wrong password or no key found|passphrase supplied in BORG_PASSPHRASE[^\n]*incorrect|Enter passphrase for key|enter password for repository/i,
     title: 'Mot de passe du dépôt de sauvegarde absent sous cron',
     cause: "Le mot de passe du dépôt (restic, borg) n'est pas fourni au job : la variable RESTIC_PASSWORD / BORG_PASSPHRASE est définie dans votre shell, pas dans l'environnement du cron.",
     action: "Fournir le mot de passe au job via un fichier protégé (RESTIC_PASSWORD_FILE, BORG_PASSCOMMAND) chargé par le script.",
@@ -910,6 +938,21 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     steps: ['Ne pas utiliser --force-renewal en boucle.', 'Tester avec certbot renew --dry-run.'],
   },
   {
+    id: 'docker-daemon', category: 'dependency',
+    match: /Cannot connect to the Docker daemon|permission denied while trying to connect to the Docker daemon socket/i,
+    title: 'Démon Docker inaccessible',
+    cause: "Le démon Docker est arrêté, ou l'utilisateur du cron n'a pas accès à /var/run/docker.sock (pas dans le groupe docker).",
+    action: "Démarrer Docker (systemctl status docker) ou exécuter le job sous un utilisateur du groupe docker.",
+    steps: ['systemctl status docker', 'id <user> (groupe docker ?)'],
+  },  {
+    // Banc « inconnu » (2026-11-13) : un SOCKET LOCAL refusé n'est pas un service réseau en panne (swww sous cron).
+    id: 'unix-socket-refused', category: 'dependency',
+    match: /(?:connect to socket|\.sock\b|unix:\/\/?\S*|connect\(\) to unix:)[^\n]*(?:Connection refused|No such file or directory)|(?:Connection refused|No such file or directory)[^\n]*\.sock\b|Socket file not found|pa_context_connect\(\) failed/i,
+    title: 'Socket local injoignable (démon arrêté ou autre session)',
+    cause: "Le job parle à un démon local par un socket Unix : le démon ne tourne pas, ou le socket appartient à la session d'un utilisateur dont cron n'a pas les variables (XDG_RUNTIME_DIR, DBUS_SESSION_BUS_ADDRESS).",
+    action: "Vérifier que le démon tourne (systemctl status / --user), et donner au job les variables de la session : XDG_RUNTIME_DIR=/run/user/$(id -u).",
+    steps: ['ls -l <chemin du socket> sous l\'utilisateur du cron.', 'echo $XDG_RUNTIME_DIR dans un job de test.'],
+  },  {
     id: 'connection-refused', category: 'network',
     match: /ECONNREFUSED|Connection refused/,
     title: 'Service cible injoignable (connexion refusée)',
@@ -945,14 +988,8 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     action: "S'authentifier (docker login) ou passer par un miroir / registre interne, et ne tirer l'image que si elle a changé.",
     steps: ['docker login avec un compte de service.', 'Utiliser --pull=missing plutôt que de tirer à chaque exécution.'],
   },
-  {
-    id: 'docker-daemon', category: 'dependency',
-    match: /Cannot connect to the Docker daemon|permission denied while trying to connect to the Docker daemon socket/i,
-    title: 'Démon Docker inaccessible',
-    cause: "Le démon Docker est arrêté, ou l'utilisateur du cron n'a pas accès à /var/run/docker.sock (pas dans le groupe docker).",
-    action: "Démarrer Docker (systemctl status docker) ou exécuter le job sous un utilisateur du groupe docker.",
-    steps: ['systemctl status docker', 'id <user> (groupe docker ?)'],
-  },
+
+
   {
     id: 'cloud-no-credentials', category: 'dependency',
     match: /Unable to locate credentials|NoCredentialsError|could not find default credentials|No valid credential sources found/i,
@@ -993,7 +1030,8 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
   // ── Exécution, données ─────────────────────────────────────────────────────
   {
     id: 'killed-by-timeout', category: 'timeout',
-    match: /timeout: sending signal|exceeded (soft|hard) limit|start operation timed out|TimeoutStartSec|Job .* timed out/i,
+    // « TimeoutStartSec » seul retiré (2026-11-13) : une ligne de config n'est pas un dépassement (banc « inconnu »).
+    match: /timeout: sending signal|exceeded (soft|hard) limit|start operation timed out|Job .* timed out/i,
     title: 'Job tué par sa limite de durée',
     cause: 'Le job a dépassé la durée maximale qui lui est accordée (timeout, TimeoutStartSec, watchdog) et a été tué avant la fin.',
     action: 'Réduire la durée du job (traitement incrémental, découpage) ou ajuster la limite si la durée est devenue normale.',
