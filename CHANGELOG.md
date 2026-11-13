@@ -7,6 +7,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — lecture du script du job (2026-11-13)
+- **script-lint** : 11 règles (shell et Python) qui lisent le script lancé par le cron : docker -it sans terminal, « ~ » entre guillemets, syntaxe bash sans #!, chemins relatifs sans cd, sudo, outils du bureau sans les variables de session, fins de ligne Windows, read interactif, open() Python relatif, os.environ obligatoire.
+- **À l'import** (`cronguard-import.sh`) : le script appelé est lu et ses risques affichés avant la première panne.
+- **À l'échec** (SDK bash) : le script appelé est envoyé, secrets masqués sur la machine du job ; le serveur n'en garde que les risques (ids), jamais le texte. Un risque explique la panne seulement si sa ligne d'erreur est dans les logs.
+- **Mesure** (`eval/archive/SCRIPT-LINT.md`, issues GitHub, moitié test jamais lue) : 0 fausse alerte sur 10 scripts ; rappel non mesurable (aucun cas test dont la cause se lise dans le script). La mesure du gain se fera au labo terrain 3.
+- Corrigé : `json_str` de l'import n'échappait pas les sauts de ligne.
+
+
 ### Ajouté — 11 fiches tirées du corpus de réglage (2026-11-13)
 - Familles non couvertes du corpus StackExchange de réglage (`eval/corpus-gaps.ts`) : page refusée (403), script absent à un chemin absolu (partage pas monté), espace manquant après `[`, `/dev/tcp` sous sh, HOME à « / », utilisateur supprimé dans logrotate, dossier personnel absent, crontab ignorée pour ses droits (INSECURE MODE), crontab interdite (cron.allow), mails de cron bloqués (ssmtp), aucun démon cron installé.
 - Élargies : commande introuvable dans un script sans extension, `unable to open display`, gpg sans `/dev/tty`, `failed to open stream` sur un chemin relatif (PHP).
