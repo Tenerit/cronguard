@@ -27,29 +27,32 @@ async function resolve(req: Request, res: Response): Promise<AnalysisRef | null>
   return a
 }
 
-async function analysisText(id: string): Promise<{ cause: string; action: string }> {
-  const { rows: [r] } = await db.query(`SELECT cause, action FROM analyses WHERE id = $1`, [id])
-  return { cause: r?.cause ?? '', action: r?.action ?? '' }
+async function analysisText(id: string): Promise<{ cause: string; action: string; unknown: boolean }> {
+  const { rows: [r] } = await db.query(`SELECT cause, action, recognized_by FROM analyses WHERE id = $1`, [id])
+  // Panne que rien n'a reconnue (ni fiche, ni constat, ni correction validée) : la page demande la VRAIE cause.
+  return { cause: r?.cause ?? '', action: r?.action ?? '', unknown: !!r && !r.recognized_by }
 }
 
 reviewRouter.get('/:token', asyncHandler(async (req, res) => {
   const a = await resolve(req, res)
   if (!a) return
-  const { cause, action } = await analysisText(a.id)
+  const { cause, action, unknown } = await analysisText(a.id)
   const wantFix = req.query.v === 'fix'
   const state = a.verified_fix ? `<div class="box done"><p class="lbl">Correction déjà enregistrée</p>${e(a.verified_fix)}</div>`
     : a.user_feedback === 'positive' ? '<div class="box done">Analyse déjà validée. Vous pouvez encore préciser la correction.</div>' : ''
   res.type('html').send(page('Votre retour', `
-<h1>Cette analyse était-elle juste ?</h1><p class="job">${e(a.job_name)}</p>
+<h1>${unknown ? "CronGuard n'a pas reconnu cette panne" : 'Cette analyse était-elle juste ?'}</h1><p class="job">${e(a.job_name)}</p>
 <div class="box"><p class="lbl">Cause</p>${e(cause)}</div>
 <div class="box"><p class="lbl">Action proposée</p>${e(action)}</div>
 ${state}
 <form method="post" action="/r/${e(req.params.token)}/ok"><button class="ok">✅ L'analyse était juste</button></form>
 <form method="post" action="/r/${e(req.params.token)}/fix" class="box" style="margin-top:14px">
-  <p class="lbl">✏️ Ce qui a vraiment réglé la panne</p>
+  <p class="lbl">${unknown ? '✏️ La vraie cause, et ce qui a réglé la panne' : '✏️ Ce qui a vraiment réglé la panne'}</p>
   <textarea name="fix" maxlength="500" required ${wantFix ? 'autofocus' : ''} placeholder="Ex. : ajouté --single-transaction au mysqldump"></textarea>
   <button class="fix">Enregistrer la correction</button>
-  <p style="font-size:12px;color:#8b949e;margin:6px 0 0">Elle sera proposée telle quelle si la même panne revient.</p>
+  <p style="font-size:12px;color:#8b949e;margin:6px 0 0">${unknown
+    ? 'Vous l\'écrivez une fois : la même panne sera reconnue la prochaine fois sur ce job. Un admin peut l\'étendre à tous vos jobs (Réglages › Apprentissage).'
+    : 'Elle sera proposée telle quelle si la même panne revient.'}</p>
 </form>
 <form method="post" action="/r/${e(req.params.token)}/wrong"><button class="bad">❌ L'analyse était fausse</button></form>`))
 }))
@@ -81,5 +84,6 @@ reviewRouter.post('/:token/fix', asyncHandler(async (req, res) => {
   const parsed = z.object({ fix: z.string().trim().min(3).max(500) }).safeParse(req.body)
   if (!parsed.success) return res.status(400).type('html').send(page('Correction trop courte', '<h1>Correction trop courte</h1><p>Entre 3 et 500 caractères. Revenez en arrière pour la compléter.</p>'))
   const fix = await recordFix(a, parsed.data.fix)
-  await done(res, a, `Correction enregistrée, proposée si la même panne revient :<br><br>${e(fix)}`, 'analysis.fix_recorded')
+  await done(res, a, `Correction enregistrée, proposée si la même panne revient :<br><br>${e(fix)}<br><br>` +
+    '<span style="font-size:12px;color:#8b949e">Un admin peut en faire une fiche d\'équipe (Réglages › Apprentissage) : elle sera alors reconnue sur tous vos jobs.</span>', 'analysis.fix_recorded')
 }))

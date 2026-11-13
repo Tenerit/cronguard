@@ -14,6 +14,18 @@ export interface UnrecognizedFailure {
   analysisId:  string | null      // l'analyse corrigée la plus récente : base du brouillon de fiche d'équipe
 }
 
+/** Ce que la boucle rapporte (2026-11-13) : pannes reconnues grâce à l'équipe (fiche d'équipe, correction déjà
+ *  validée) contre pannes encore inconnues, sur la période. Les alertes « job lent » ne comptent pas. */
+export async function learningStats(clientId: string, days = 30): Promise<{ learned: number; unknown: number; days: number }> {
+  const { rows: [r] } = await db.query(`
+    SELECT COUNT(*) FILTER (WHERE a.recognized_by LIKE 'team-%' OR a.recognized_by = 'memory')::int AS learned,
+           COUNT(*) FILTER (WHERE a.recognized_by IS NULL)::int AS unknown
+    FROM analyses a JOIN monitors m ON m.id = a.monitor_id
+    WHERE m.client_id = $1 AND a.alert_type != 'slow' AND a.created_at > NOW() - make_interval(days => $2)
+  `, [clientId, days])
+  return { learned: r?.learned ?? 0, unknown: r?.unknown ?? 0, days }
+}
+
 export async function unrecognizedFailures(clientId: string, days = 7, limit = 10): Promise<UnrecognizedFailure[]> {
   const { rows } = await db.query(`
     SELECT a.signature, COUNT(*)::int AS occurrences, ARRAY_AGG(DISTINCT m.name) AS jobs, MAX(a.created_at) AS last_seen,

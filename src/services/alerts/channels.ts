@@ -7,7 +7,7 @@ import { logger } from '../../config/logger'
 import { redis } from '../../config/redis'
 import { isSafeWebhookTarget } from '../webhook-guard'
 import type { AlertPayload, RecoveryPayload } from './index'
-import { T, langOf, localizeFact } from './i18n'
+import { T, langOf, localizeFact, alertLabels } from './i18n'
 
 export type ChannelType = 'discord' | 'gchat' | 'mattermost' | 'ntfy' | 'pagerduty'
 export type Channels = Partial<Record<ChannelType, string>>   // URL du webhook, ou clé de routage PagerDuty
@@ -19,7 +19,7 @@ const COLOR: Record<string, number> = { critical: 0xd73a49, high: 0xe36209, medi
 interface Msg { title: string; facts: Array<[string, string]>; line?: string; ok?: string; fix?: string; status: string; severity: string; L: typeof T['fr'] }
 
 export function message(p: AlertPayload): Msg {
-  const a = p.analysis, lang = langOf(p.client.lang), L = T[lang]
+  const a = p.analysis, lang = langOf(p.client.lang), L = alertLabels(lang, a)
   return {
     title: `${EMOJI[a?.severity ?? 'medium']} ${L.failedShort(p.jobName, p.env)}`,
     facts: a ? [[L.cause, a.cause], [a.verifiedFix ? L.verifiedFix : L.toCheck, a.action],

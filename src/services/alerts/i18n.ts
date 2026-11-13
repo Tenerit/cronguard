@@ -15,7 +15,7 @@ const fr = {
   changed: 'Changé depuis la dernière réussite', step: 'Étape', severity: 'Sévérité', confidence: 'confiance',
   knownFix: 'Correction connue (à adapter)', logLines: 'Lignes de log liées', decisiveLine: 'Ligne décisive',
   analysis: 'Analyse', unavailable: 'Indisponible (voir les logs)', unavailableMail: 'Diagnostic indisponible — vérifiez les logs manuellement.',
-  statusPage: 'Page de statut', statusShort: 'Statut', seeStatus: 'Voir la page de statut', analysisRight: '✅ Analyse juste', fix: '✏️ Corriger',
+  statusPage: 'Page de statut', statusShort: 'Statut', seeStatus: 'Voir la page de statut', analysisRight: '✅ Analyse juste', fix: '✏️ Corriger', recordCause: '✏️ Enregistrer la vraie cause',
   whatFixed: 'Ce qui a réglé la panne', manageAlerts: 'Gérer les alertes',
   restored: (job: string) => `Rétabli : ${job}`, jobRestored: (job: string) => `Job rétabli : ${job}`,
   restoredBody: (d: string | null) => `Le job a de nouveau pingé avec succès${d ? ` après ${d} d'incident` : ''}.`,
@@ -36,7 +36,7 @@ const en: Dict = {
   changed: 'Changed since the last success', step: 'Step', severity: 'Severity', confidence: 'confidence',
   knownFix: 'Known fix (adapt it)', logLines: 'Related log lines', decisiveLine: 'Decisive line',
   analysis: 'Analysis', unavailable: 'Unavailable (see the logs)', unavailableMail: 'Diagnosis unavailable — check the logs manually.',
-  statusPage: 'Status page', statusShort: 'Status', seeStatus: 'Open the status page', analysisRight: '✅ Analysis right', fix: '✏️ Correct it',
+  statusPage: 'Status page', statusShort: 'Status', seeStatus: 'Open the status page', analysisRight: '✅ Analysis right', fix: '✏️ Correct it', recordCause: '✏️ Record the real cause',
   whatFixed: 'What fixed it', manageAlerts: 'Manage alerts',
   restored: (job) => `Restored: ${job}`, jobRestored: (job) => `Job restored: ${job}`,
   restoredBody: (d) => `The job pinged successfully again${d ? ` after ${d} of incident` : ''}.`,
@@ -66,4 +66,12 @@ export function localizeFact(lang: Lang, s: string): string {
   if (lang === 'fr') return s
   for (const [re, to] of FACTS) s = s.replace(re, to)
   return s
+}
+
+// Cause inconnue (2026-11-13) : le bouton ✏️ demande la VRAIE cause, qui sera reconnue la prochaine fois (boucle
+// d'apprentissage : correction → fiche d'équipe). Inconnue = ni fiche, ni constat, ni correction déjà validée, confiance basse.
+export function alertLabels(lang: Lang, a: { knownFix?: unknown; finding?: string; verifiedFix?: string | null; confidence?: string } | null | undefined): Dict {
+  const L = T[lang]
+  const unknown = !a || (!a.knownFix && !a.finding && !a.verifiedFix && a.confidence === 'low')
+  return unknown ? { ...L, fix: L.recordCause } : L
 }

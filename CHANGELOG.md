@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — la boucle « inconnu → connu » rendue visible (2026-11-13)
+- **Alerte** : quand rien n'a reconnu la panne, le bouton ✏️ devient « Enregistrer la vraie cause » (FR/EN, 8 canaux).
+- **Page ✏️** : pour une panne inconnue, elle demande la vraie cause et explique la suite : reconnue la prochaine fois sur ce job, puis sur tous les jobs une fois transformée en fiche d'équipe.
+- **Onglet Apprentissage** : compteur sur 30 jours, pannes reconnues grâce à ce que l'équipe a enregistré (fiche d'équipe, correction validée) contre pannes encore inconnues. Requête vérifiée sur un vrai PostgreSQL.
+
+
 ### Ajouté — banc « inconnu » : l'app face à des textes jamais vus (2026-11-13)
 - `eval/unknown-stress.ts` : l'analyse sans modèle sur des issues GitHub entières. 0 plantage, 0 lenteur sur 518 textes.
 - Fiches trop lâches corrigées : `EACCES` dans un mot, une ligne de config `TimeoutStartSec`, « repository password » dans une phrase.

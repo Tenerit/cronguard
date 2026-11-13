@@ -72,4 +72,11 @@ describe('alertes en anglais (clients.lang = en)', () => {
   it('sans langue : français, comme avant', () => {
     expect(message({ ...payload, client: { email: 'a@b.c' } }).title).toContain('en échec')
   })
+  it('panne inconnue : le bouton ✏️ demande la vraie cause (boucle d’apprentissage)', () => {
+    const unknown = { ...payload, client: { email: 'a@b.c' }, analysis: { cause: 'Cause non établie', action: 'x', severity: 'medium', confidence: 'low' } }
+    expect(message(unknown).L.fix).toBe('✏️ Enregistrer la vraie cause')
+    expect(message({ ...unknown, client: { email: 'a@b.c', lang: 'en' } }).L.fix).toBe('✏️ Record the real cause')
+    const known = { ...unknown, analysis: { ...unknown.analysis, knownFix: { id: 'x' }, confidence: 'medium' } }
+    expect(message(known).L.fix).toBe('✏️ Corriger')
+  })
 })

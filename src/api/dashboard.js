@@ -128,6 +128,7 @@ const DEMO_LEARN = {
                    verifiedFix:'Attendre la fin de la maintenance (02h30) puis relancer, ou décaler le cron à 03h.', analysisId:'demo-a9' }],
   unrecognized: [{ signature:'exporter: error quota table locked by maintenance window <n>', occurrences:3, jobs:['export-reports','etl-warehouse'], verifiedFix:'x' },
                  { signature:'ledger: fatal reconciliation drift after <dur>, delta <size>', occurrences:2, jobs:['sync-invoices'], verifiedFix:null }],
+  stats:        { learned: 4, unknown: 5, days: 30 },
 }
 const DEMO_TEAM_FIXES = [{ id:'demo-f1', match:'stale advisory lock', title:'Verrou consultatif orphelin', created_by:'ops@acme.example', created_at:dISO(60*24*6),
   cause:"Panne déjà rencontrée et corrigée par votre équipe : « reconcile: ERROR stale advisory lock held by dead session ».",
@@ -1345,6 +1346,9 @@ async function loadLearning() {
   const empty = key => `<div style="font-size:12px;color:var(--text3)">${t(key)}</div>`
   try {
     const [learn, team] = await Promise.all([api('/clients/learning'), api('/clients/fixes')])
+    // Ce que la boucle rapporte : pannes reconnues grâce à l'équipe contre pannes encore inconnues (30 j).
+    const st = document.getElementById('learn-stats'), s = learn.stats
+    if (st) st.textContent = s ? t('learn.stats').replace('{learned}', String(s.learned)).replace('{unknown}', String(s.unknown)) : ''
     cand.innerHTML = learn.candidates.length ? learn.candidates.map(c => `
       <div class="settings-row" style="align-items:flex-start">
         <div style="min-width:0">

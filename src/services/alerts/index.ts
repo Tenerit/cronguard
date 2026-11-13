@@ -7,7 +7,7 @@ import { escapeHtml }   from '../escape'
 import { redis }        from '../../config/redis'
 import type { AnalysisResult } from '../llm/analyzer'
 import { sendChannelAlerts, sendChannelRecovery, type Channels } from './channels'
-import { T, langOf, localizeFact, type Lang } from './i18n'
+import { T, langOf, localizeFact, alertLabels, type Lang } from './i18n'
 
 // Compteur cross-process des échecs de LIVRAISON de notification. Exposé en /metrics
 // (cronguard_notification_failures_total) → un canal qui tombe en silence (SMTP mal
@@ -73,7 +73,7 @@ export async function sendSlackAlert(payload: AlertPayload) {
   const { slackWebhook } = payload.client
   if (!slackWebhook) return
 
-  const lang    = langOf(payload.client.lang), L = T[lang]
+  const lang    = langOf(payload.client.lang), L = alertLabels(lang, payload.analysis)
   const emoji   = SEVERITY_EMOJI[payload.analysis?.severity ?? 'medium']
   const hasAI   = !!payload.analysis
   const isRepeat = (payload.alertCount ?? 1) > 1
@@ -159,7 +159,7 @@ export async function sendSlackAlert(payload: AlertPayload) {
 // ─── Email ───────────────────────────────────────────────────────────────────
 
 export async function sendEmailAlert(payload: AlertPayload) {
-  const lang     = langOf(payload.client.lang), L = T[lang]
+  const lang     = langOf(payload.client.lang), L = alertLabels(lang, payload.analysis)
   const emoji    = SEVERITY_EMOJI[payload.analysis?.severity ?? 'medium']
   const hasAI    = !!payload.analysis
 
@@ -275,7 +275,7 @@ export async function sendWebhookAlert(payload: AlertPayload) {
 // une carte adaptative. Lisible en 5 s à 2h40 : cause, action, ligne décisive, deux boutons de retour.
 // Les boutons ouvrent la page signée /r/<jeton> : pas de bot Azure, rien à déclarer chez Microsoft.
 export function teamsCard(payload: AlertPayload): object {
-  const a = payload.analysis, lang = langOf(payload.client.lang), L = T[lang]
+  const a = payload.analysis, lang = langOf(payload.client.lang), L = alertLabels(lang, a)
   const facts = a ? [
     { title: L.cause,  value: a.cause },
     { title: actionLabel(a, lang), value: a.action },

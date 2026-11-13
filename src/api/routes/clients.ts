@@ -7,7 +7,7 @@ import { requireRole }  from '../middleware/ownership'
 import { audit }        from '../middleware/audit'
 import { getRedis }        from '../../config/redis'
 import { getAnalysisQueue } from '../../queue'
-import { unrecognizedFailures } from '../../services/learning'
+import { unrecognizedFailures, learningStats } from '../../services/learning'
 import { teamFixes, draftTeamFix, forgetTeamFixes } from '../../services/team-fixes'
 import { sanitizeLogs } from '../../services/sanitizer'
 
@@ -30,11 +30,12 @@ clientsRouter.post('/rotate-key', requireRole('owner'), asyncHandler(async (_req
 // Non reconnues : 7 derniers jours (par défaut). Candidates : déjà corrigées par l'équipe sur 90 jours.
 clientsRouter.get('/learning', requireRole('admin'), asyncHandler(async (req, res) => {
   const days = Math.min(Math.max(parseInt(req.query.days as string) || 7, 1), 90)
-  const [unrecognized, recent] = await Promise.all([
+  const [unrecognized, recent, stats] = await Promise.all([
     unrecognizedFailures(res.locals.clientId, days),
     unrecognizedFailures(res.locals.clientId, 90, 50),
+    learningStats(res.locals.clientId, 30),
   ])
-  res.json({ unrecognized, candidates: recent.filter(f => f.verifiedFix) })
+  res.json({ unrecognized, candidates: recent.filter(f => f.verifiedFix), stats })
 }))
 
 // ─── Fiches d'équipe (admin+) — fin de la boucle d'apprentissage ───────────────
