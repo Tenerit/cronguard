@@ -7,6 +7,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — banc « inconnu » : l'app face à des textes jamais vus (2026-11-13)
+- `eval/unknown-stress.ts` : l'analyse sans modèle sur des issues GitHub entières. 0 plantage, 0 lenteur sur 518 textes.
+- Fiches trop lâches corrigées : `EACCES` dans un mot, une ligne de config `TimeoutStartSec`, « repository password » dans une phrase.
+- Nouvelles fiches : socket local refusé (démon arrêté ou autre session, PulseAudio), module Unix sous Windows, module retiré de Python, sous-module privé (versions incompatibles).
+- Mesure sur un jeu neuf gelé (github4, 120 issues) : 1 fausse cause sur 7 déclenchements (14 %), contre 6 sur 18 (33 %) avant les correctifs sur d'autres issues. Détail : `eval/archive/UNKNOWN-STRESS.md`.
+
+
 ### Ajouté — lecture du script du job (2026-11-13)
 - **script-lint** : 11 règles (shell et Python) qui lisent le script lancé par le cron : docker -it sans terminal, « ~ » entre guillemets, syntaxe bash sans #!, chemins relatifs sans cd, sudo, outils du bureau sans les variables de session, fins de ligne Windows, read interactif, open() Python relatif, os.environ obligatoire.
 - **À l'import** (`cronguard-import.sh`) : le script appelé est lu et ses risques affichés avant la première panne.
