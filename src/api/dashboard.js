@@ -1228,7 +1228,8 @@ async function analyzeImport() {
     let s = {}
     try { s = await api('/monitors/suggest-name', { method: 'POST', body: JSON.stringify({ command: jobs[i].cmd, schedule: jobs[i].schedule }) }) } catch { /* nom du code */ }
     Object.assign(jobs[i], { name: /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s.name || '') ? s.name : codeJobName(jobs[i].cmd), ai: !!s.name,
-      role: s.role || '', when: s.when || jobs[i].schedule, critical: s.critical === true, expect: typeof s.expect === 'string' ? s.expect : '' })
+      role: s.role || '', when: s.when || jobs[i].schedule, critical: s.critical === true, expect: typeof s.expect === 'string' ? s.expect : '',
+      risks: Array.isArray(s.risks) ? s.risks.filter(x => typeof x === 'string') : [] })
   }
   importJobs = jobs
   status.textContent = `${jobs.length} ${t('imp.found')} ${jobs.some(j => j.ai) ? t('imp.aiNote') : t('imp.codeNote')}`
@@ -1238,6 +1239,7 @@ async function analyzeImport() {
       <input class="field-input imp-name" id="imp-name-${i}" value="${esc(j.name)}" maxlength="60" aria-label="${esc(t('mod.new.name'))}">
       <div class="imp-meta">${j.role ? esc(j.role) + ' — ' : ''}${esc(j.when)}${j.critical ? ` <span class="imp-crit">⚑ ${t('imp.critical')}</span>` : ''}</div>
       ${j.expect ? `<div class="imp-meta">${esc(t('imp.expect'))} <code>${esc(j.expect)}</code></div>` : ''}
+      ${j.risks.map(r => `<div class="imp-meta imp-risk">⚠ ${esc(r)}</div>`).join('')}
       <code class="imp-cmd">${esc(j.cmd.slice(0, 160))}</code>
     </div></div>`).join('')
   document.getElementById('imp-create').style.display = ''

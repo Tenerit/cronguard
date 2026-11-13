@@ -171,7 +171,7 @@ describe('POST /monitors/suggest-name — import de crontab', () => {
     const res = await request(app).post('/monitors/suggest-name').set('X-API-Key', client.api_key)
       .send({ command: 'pg_dump -Fc clients > /bak/c.dump', schedule: '30 2 * * 1-5' })
     expect(res.status).toBe(200)
-    expect(res.body).toEqual({ name: null, role: null, critical: null, when: 'du lundi au vendredi, à 02:30', expect: '/bak/c.dump' })   // sortie attendue proposée par la règle
+    expect(res.body).toEqual({ name: null, role: null, critical: null, when: 'du lundi au vendredi, à 02:30', expect: '/bak/c.dump', risks: [] })   // sortie attendue proposée par la règle
   })
   it('refuse une commande vide (400)', async () => {
     const client = await createTestClient()

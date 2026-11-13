@@ -293,7 +293,8 @@ monitorsRouter.post('/suggest-name', requireRole('member'), asyncHandler(async (
   const parsed = z.object({ command: z.string().min(1).max(1000), schedule: z.string().max(120).optional() }).safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'command requis (1000 caractères max)' })
   // expect : sortie attendue proposée par la règle (CG_EXPECT) ; essai eval/expect-suggest.ts : la règle égale le modèle.
-  res.json({ ...await suggestJobName(parsed.data.command, parsed.data.schedule), expect: ruleExpect(parsed.data.command) })
+  res.json({ ...await suggestJobName(parsed.data.command, parsed.data.schedule), expect: ruleExpect(parsed.data.command),
+    risks: lintCommand(parsed.data.command).map(f => f.cause) })
 }))
 
 // ─── POST /analyze/preview — Analyse immédiate avec diagnostic complet ────────

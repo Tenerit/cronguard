@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Ajouté — public8 : nouveau jeu StackExchange, découpé entraînement / test (2026-11-13)
+- **5 fiches** réglées sur la moitié entraînement : binaire d'une autre architecture (`Exec format error`), php-cgi qui ne trouve pas le script (`No input file specified`), `set -e` arrêté par un grep sans résultat, script appelé sans `./`, échec du bloc postrotate de logrotate.
+- **Échecs masqués prévenus à l'import** : `cmd || mail …` et un pipe vers gzip/tee font sortir la ligne avec 0 ; le dashboard et le script d'import le signalent avant la première panne (labo terrain 2, g12).
+- **Corrigé** : le code 1 de wget (erreur générique) ne donne plus de cause ; il masquait une erreur SSL (public5).
+- **Mesure honnête** (`eval/archive/PUBLIC8.md`) : sur la moitié test, gain **0** (cause juste 1/11 avant comme après, attente fixée 0 à +2). Les fiches ne couvrent que 18 % de ces pannes neuves.
+
 ### Corrigé — le reste du labo terrain 2 (2026-11-12, non indépendant)
 - **Nom de fichier nu dans l'erreur** (« line 11: hw1_input.txt: No such file ») : vérifié par la sonde des 4 SDK ; le constat « chemin relatif cherché depuis… » peut maintenant se déclencher (cas g20).
 - **wget / curl silencieux** (`-q`, `-s`) : le code de sortie de l'outil, lu avec la commande, explique l'échec (codes officiels de wget, codes de curl) ; un mot isolé pris par wget pour une 2e adresse est signalé (« un espace au lieu d'un / dans l'URL », cas g29).

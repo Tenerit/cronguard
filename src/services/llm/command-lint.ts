@@ -44,6 +44,18 @@ const RULES: Rule[] = [
     when: /a terminal is required|no tty present|a password is required|sudo: /i,
     cause: 'La commande utilise sudo, qui demande un mot de passe ou un terminal, absents sous cron.',
     action: 'Mettre le job dans la crontab de root (sudo crontab -e) au lieu d\'appeler sudo, ou autoriser cette commande précise sans mot de passe dans sudoers.' },
+  // Échecs MASQUÉS (labo terrain 2, g12) : la ligne sort avec 0, ni cron ni CronGuard ne voient la panne. Prévention
+  // seulement (when ne correspond jamais : il n'y a pas de log d'échec à expliquer).
+  { id: 'cmd-or-masks', category: 'code',
+    test: c => /\|\|\s*(mailx?|sendmail|echo|printf|true|:|logger|exit\s+0)\b/.test(c),
+    when: /(?!)/,
+    cause: "Après « || », la commande de secours réussit quand le job échoue : la ligne sort avec 0, l'échec n'est plus visible.",
+    action: "Retirer le « || … » (CronGuard alerte déjà) ou finir par « exit 1 » : cmd || { mail …; exit 1; }." },
+  { id: 'cmd-pipe-masks', category: 'code',
+    test: c => /(^|[^|])\|\s*(gzip|bzip2|xz|zstd|tee|logger|mailx?|sendmail)\b/.test(c) && !/pipefail/.test(c),
+    when: /(?!)/,
+    cause: "Le code de sortie d'un pipe est celui de sa dernière commande (gzip, tee…) : si la première échoue, la ligne sort quand même avec 0.",
+    action: "Mettre la commande dans un script bash avec « set -o pipefail », ou vérifier le fichier produit (CG_EXPECT)." },
 ]
 
 /** La règle qui explique l'échec (ligne d'erreur présente dans les logs), sinon null. */

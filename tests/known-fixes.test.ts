@@ -80,6 +80,12 @@ const SAMPLES: Array<[string, string | null]> = [
   ["ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)", 'mysql-socket'],
   ['ERROR 1040 (HY000): Too many connections', 'mysql-too-many-connections'],
   ["mysqldump: Couldn't execute 'SELECT COLUMN_NAME FROM information_schema.COLUMN_STATISTICS': Unknown table 'COLUMN_STATISTICS' in information_schema (1109)", 'mysqldump-column-statistics'],
+  // public8, moitié entraînement (2026-11-13)
+  ["Error starting process '/var/task/selenium-manager': Exec format error", 'exec-format-error'],
+  ['No input file specified.', 'php-no-input-file'],
+  ['++ grep ERROR\n+ CRIT_ERRS=\n', 'set-e-grep-no-match'],
+  ['/bin/bash: probe.bash: command not found', 'script-without-dot-slash'],
+  ['error: error running non-shared postrotate script for /var/log/nginx/access.log', 'logrotate-postrotate'],
   ['mysqldump: Error: \'Access denied; you need (at least one of) the PROCESS privilege(s) for this operation\' when trying to dump tablespaces', 'mysqldump-process-privilege'],
   ['psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  Peer authentication failed for user "backup"', 'pg-peer-auth'],
   ['psql: error: FATAL:  role "root" does not exist', 'pg-role-missing'],

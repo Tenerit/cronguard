@@ -455,6 +455,15 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     steps: ['head -1 script pour voir le shebang.', 'command -v <interpréteur> sous l\'utilisateur du cron.'],
   },
   {
+    // Avant command-not-found : un nom de script (« probe.sh ») n'est jamais cherché dans le dossier courant.
+    id: 'script-without-dot-slash', category: 'code',
+    match: /(?:^|[\s:])(?:line \d+: |\d+: )?[\w.-]+\.(?:sh|bash|py|pl|php|rb|js):\s*(?:command )?not found/m,
+    title: 'Script appelé sans ./ ni chemin',
+    cause: "Le script est appelé par son seul nom : le shell le cherche dans le PATH, jamais dans le dossier courant, donc il est introuvable.",
+    action: "Appeler le script par son chemin absolu (/chemin/vers/script.sh), ou ./script.sh après un cd dans son dossier.",
+    steps: ['Remplacer « script.sh » par le chemin complet dans la crontab.', 'Vérifier le droit d\'exécution : ls -l /chemin/vers/script.sh.'],
+  },
+  {
     id: 'command-not-found', category: 'dependency',
     // Préfixe = le shell (sh: 1:) OU le script lui-même (backup.sh: line 5:), selon qui lance la commande.
     match: /(^|\s)(\/bin\/)?(ba|da)?sh: (line \d+: |\d+: )?[\w.\/-]+: (command )?not found|[\w.\/-]+\.(sh|bash): line \d+: [\w.-]+: command not found|[\w.\/-]+: \d+: [\w.\/-]+: [\w.+-]+: not found/m,
@@ -473,6 +482,41 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     cause: "Le navigateur lancé par le job ne démarre pas sous cron : PATH minimal où chrome et ses dépendances sont introuvables, ou pas d'affichage (mode headless non activé).",
     action: 'Définir un PATH complet (/usr/local/bin:/usr/bin:/usr/sbin) en tête de la crontab et lancer Chrome en --headless.',
     steps: ['Ajouter PATH=/usr/local/bin:/usr/bin:/usr/sbin:/bin en tête de la crontab.', 'Options Chrome : --headless --no-sandbox --disable-dev-shm-usage'],
+  },
+  // ── Ajouts du 2026-11-13, réglés sur la moitié ENTRAÎNEMENT de public8 (la moitié test n'a pas été lue).
+  {
+    id: 'exec-format-error', category: 'dependency',
+    match: /Exec format error/i,
+    title: 'Binaire pour une autre architecture, ou script sans #!',
+    cause: "Le noyau refuse d'exécuter le fichier : binaire compilé pour une autre architecture (arm64 contre x86_64), ou script sans ligne #! en tête.",
+    action: "Comparer « file <fichier> » avec « uname -m » et installer la bonne version ; pour un script, ajouter #!/bin/bash (ou l'interpréteur voulu) en première ligne.",
+    steps: ['file <fichier> : architecture du binaire, ou « text » pour un script.', 'uname -m : architecture de la machine.', 'Script : head -1 <fichier> doit commencer par #!.'],
+  },
+  {
+    id: 'php-no-input-file', category: 'code',
+    match: /No input file specified/i,
+    title: "php-cgi ne trouve pas le script",
+    cause: "php (version CGI) ne trouve pas le fichier demandé : le chemin passé est faux ou relatif à un autre dossier que celui du cron.",
+    action: "Appeler le script par son chemin absolu, de préférence avec php-cli (/usr/bin/php /chemin/complet/script.php).",
+    steps: ['ls -l <chemin du script> sous l\'utilisateur du cron.', 'php -v : « (cli) » attendu, pas « (cgi-fcgi) ».'],
+  },
+  {
+    id: 'logrotate-postrotate', category: 'code',
+    match: /error running (?:non-shared |shared )?(?:postrotate|prerotate) script/i,
+    title: 'La commande postrotate de logrotate a échoué',
+    cause: "La rotation a eu lieu, mais la commande du bloc postrotate (ou prerotate) a échoué ; sous cron, elle n'a ni terminal ni l'environnement de la session (docker exec -it, chemin relatif, PATH).",
+    action: "Lancer la commande du bloc postrotate seule, en root et sans terminal (… < /dev/null), puis retirer -it/-t ou mettre les chemins complets.",
+    steps: ['logrotate -d /etc/logrotate.d/<fichier> : simulation.', 'Copier la commande postrotate et la lancer avec « < /dev/null ».'],
+  },
+  {
+    id: 'set-e-grep-no-match', category: 'code',
+    // La dernière ligne tracée (set -x) est un grep : sous set -e, un grep sans résultat (code 1) arrête le script.
+    // Ou : grep tracé puis affectation vide (« + VAR= ») : la substitution n'a rien trouvé et le script s'est arrêté là.
+    match: /^\++ grep\b[^\n]*\s*$(?![\s\S])|^\+\+ grep\b[^\n]*\n(?:\+\+ [^\n]*\n)*\+ \w+=[ \t]*$/m,
+    title: 'set -e arrête le script sur un grep sans résultat',
+    cause: "Le script s'arrête sur un grep : grep sort avec 1 quand il ne trouve rien, et set -e (ou pipefail) traite ce code comme une erreur.",
+    action: "Rendre l'absence de résultat normale : « grep … || true », ou tester le code (if grep -q … ; then …).",
+    steps: ['Repérer le grep en dernière ligne de la trace.', 'Ajouter « || true » si ne rien trouver est normal.'],
   },
   {
     id: 'not-a-tty', category: 'dependency',
