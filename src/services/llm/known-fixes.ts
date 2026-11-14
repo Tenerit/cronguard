@@ -438,6 +438,16 @@ const FIXES: Array<KnownFix & { match: RegExp }> = [
     action: 'Convertir le script en fins de ligne Unix (dos2unix script.sh, ou sed -i \'s/\\r$//\').',
     steps: ['Vérifier : file script.sh (« with CRLF line terminators »).', 'dos2unix script.sh ; régler l\'éditeur / .gitattributes en LF.'],
   },
+  // ── Labo terrain 3 (2026-11-14, non indépendant) : retard d'un job qui n'a JAMAIS pingé (log du vérificateur,
+  //    timeout.checker.ts lateLog). Fait, pas supposition : la ligne n'a jamais été lancée, ou n'a jamais atteint le SDK.
+  {
+    id: 'never-pinged', category: 'code',
+    match: /^TIMEOUT: .* n'a pas pingé\.\nDernier ping: jamais$/m,
+    title: "Le job ne s'est jamais lancé (aucun ping depuis sa création)",
+    cause: "Aucun ping n'est jamais arrivé : cron ne lance pas cette ligne, ou elle s'arrête avant le SDK. Causes courantes : ligne rejetée (champ utilisateur manquant dans /etc/crontab ou /etc/cron.d, « bad username »), % non échappé qui coupe la ligne, fichier de /etc/cron.d ignoré (droits, nom avec un point), démon cron arrêté, ou CronGuard injoignable depuis la machine.",
+    action: "Lire le journal de cron à l'heure prévue (grep CRON /var/log/syslog, ou journalctl -u cron) : il dit si la ligne a été lancée, rejetée, ou jamais lue.",
+    steps: ['grep CRON /var/log/syslog | tail (ou journalctl -u cron --since "-1h").', 'Relire la ligne : champ utilisateur dans /etc/crontab et /etc/cron.d, % échappés en \\%.', "Depuis la machine du job : curl -sI $CRONGUARD_URL/health."],
+  },
   // ── Corpus de réglage (eval/corpus-raw.json), 2026-11-13 : familles non couvertes (eval/corpus-gaps.ts).
   {
     id: 'bracket-no-space', category: 'code',

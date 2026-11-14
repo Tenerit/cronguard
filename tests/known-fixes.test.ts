@@ -80,6 +80,8 @@ const SAMPLES: Array<[string, string | null]> = [
   ["ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)", 'mysql-socket'],
   ['ERROR 1040 (HY000): Too many connections', 'mysql-too-many-connections'],
   ["mysqldump: Couldn't execute 'SELECT COLUMN_NAME FROM information_schema.COLUMN_STATISTICS': Unknown table 'COLUMN_STATISTICS' in information_schema (1109)", 'mysqldump-column-statistics'],
+  // labo terrain 3 : retard d'un job qui n'a jamais pingé (log du vérificateur)
+  ['TIMEOUT: "h2" n\'a pas pingé.\nDernier ping: jamais\nPlanning: * * * * *', 'never-pinged'],
   // banc « inconnu », issues GitHub (2026-11-13)
   ['Error: "Failed to connect to socket: Connection refused (os error 111)"', 'unix-socket-refused'],
   ["ModuleNotFoundError: No module named 'fcntl'", 'python-posix-module-on-windows'],
@@ -175,6 +177,7 @@ const SAMPLES: Array<[string, string | null]> = [
   ['java.lang.IllegalArgumentException: Cron expression must consist of 6 fields (found 5 in "0 2 * * *")', 'spring-cron-fields'],
   ['Error: cannot connect to X server :0', 'no-display'],
   // Voisins à ne pas confondre
+  ['TIMEOUT: "backup" n\'a pas pingé.\nDernier ping: 64min\nPlanning: 0 * * * *', null],   // a déjà pingé : pas « jamais lancé »
   ['mywidget: cannot open /dev/ttyACM0: Permission denied', 'permission-denied'],   // port série, pas le terminal
   ["KeyError: 'total_amount'", null],                                   // clé de données, pas une variable d'environnement
   ["python3: can't open file '/opt/jobs/report.py': [Errno 2] No such file or directory", 'script-file-missing'],   // chemin absolu : pas « relatif » (fiche dédiée depuis le 13/11)

@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Mesuré — labo terrain 3 (2026-11-14)
+- 5 pannes réelles tirées au sort (StackExchange), vrai cron Debian : **détecté 3/5, cause juste 1/5, cause fausse 0/5** (`eval/archive/FIELD-LAB-3.md`). Cumul des trois labos : détecté 19/28, cause juste 7/27, cause fausse 1/28.
+- Point aveugle confirmé : les jobs sortis avec 0 qui ont échoué (proxy absent sous cron, base SQLite créée ailleurs).
+- **Ajouté (non indépendant)** : fiche « le job ne s'est jamais lancé » quand aucun ping n'est jamais arrivé (ligne rejetée, champ utilisateur manquant, % qui coupe la ligne, démon arrêté), au lieu de citer « TIMEOUT » comme ligne d'erreur.
+
+
 ### Ajouté — la boucle « inconnu → connu » rendue visible (2026-11-13)
 - **Alerte** : quand rien n'a reconnu la panne, le bouton ✏️ devient « Enregistrer la vraie cause » (FR/EN, 8 canaux).
 - **Page ✏️** : pour une panne inconnue, elle demande la vraie cause et explique la suite : reconnue la prochaine fois sur ce job, puis sur tous les jobs une fois transformée en fiche d'équipe.
