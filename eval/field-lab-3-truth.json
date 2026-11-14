@@ -1,0 +1,36 @@
+{
+  "_note": "Labo terrain 3 : suite du même tirage (graine 20261112, ordre 80 à 98, eval/field-lab-questions-6.json). Vérité recopiée des réponses AVANT tout scénario (2026-11-14). Jamais vu par les corrections du 12 et du 13/11. Première mesure indépendante de la lecture du script (SDK bash) et des fiches du 13/11.",
+  "cases": [
+    { "id": "h2",  "url": "https://serverfault.com/questions/210452/crontab-commands-not-running",
+      "truth": "La dernière ligne de /etc/crontab n'a pas de champ utilisateur : cron la rejette (« bad username ») et le job ne tourne jamais.",
+      "keywords": ["utilisateur", "username", "/etc/crontab", "champ"] },
+    { "id": "h4",  "url": "https://stackoverflow.com/questions/46235362/how-can-i-make-crontab-work-with-curl-and-ampersands-in-urls",
+      "truth": "Les % de l'URL ne sont pas échappés : dans une crontab, % est un saut de ligne, même entre guillemets ; la commande est coupée et la requête n'arrive pas.",
+      "keywords": ["%", "échapp", "saut de ligne"] },
+    { "id": "h10", "url": "https://stackoverflow.com/questions/77494817/api-call-script-fails-in-cron-job-but-works-fine-when-run-manually",
+      "truth": "Le proxy est défini dans le profil de l'utilisateur (variables http(s)_proxy) mais pas sous cron : la connexion directe expire. Le script attrape l'erreur et sort avec 0.",
+      "keywords": ["proxy", "http_proxy", "https_proxy", "variable"] },
+    { "id": "h14", "url": "https://stackoverflow.com/questions/12534135/crontab-not-executing-a-python-script",
+      "truth": "sqlite3.connect(\"test.db\") en chemin relatif : sous cron le dossier courant est le HOME, la base est créée ailleurs ; utiliser un chemin absolu ou cd. Sortie 0.",
+      "keywords": ["relatif", "absolu", "dossier courant", "test.db"] },
+    { "id": "h18", "url": "https://unix.stackexchange.com/questions/380005/save-arp-output-in-terminal-to-text-file-every-minute-using-crontab",
+      "truth": "arp est dans /usr/sbin, absent du PATH de cron : la commande est introuvable et la redirection laisse un fichier vide.",
+      "keywords": ["PATH", "/usr/sbin", "introuvable", "not found"] }
+  ],
+  "excluded": {
+    "h0": "cause non établie (sortie console non redirigée, pas une panne mesurable)",
+    "h1": "cause non établie par la réponse (conseils déjà appliqués dans la question)",
+    "h3": "pas une panne (question de syntaxe)",
+    "h5": "Windows",
+    "h6": "Solaris (version de tar)",
+    "h7": "macOS, réponse sans cause",
+    "h8": "Solaris (@reboot)",
+    "h9": "aucune réponse",
+    "h11": "aucune réponse",
+    "h12": "réponse sans cause établie (hypothèse sur les arguments)",
+    "h13": "pptp non reproductible, cause non établie",
+    "h15": "question de syntaxe, cause non établie",
+    "h16": "réponse hors sujet (autre méthode)",
+    "h17": "réponse sans cause établie (essais)"
+  }
+}
