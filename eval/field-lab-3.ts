@@ -103,7 +103,7 @@ async function main() {
       script: ctx.script ?? null, loginOnlyVars: ctx.loginOnlyVars ?? null,
       changed: (ctx.changed ?? []).map((x: { label: string }) => x.label), expect: ctx.expect ?? null, lastOutput: p.at(-1)?.output ?? null }))
   }
-  const setupLog = docker('exec', NAME, 'sh', '-c', 'tail -c 1500 /tmp/setup.log; echo; tail -3 /etc/crontab; ls -la /home/me /home/me/project /home/pi; tail -3 /var/log/bulk-requests.log 2>/dev/null')
+  const setupLog = docker('exec', NAME, 'sh', '-c', 'tail -c 1500 /tmp/setup.log; echo; tail -3 /etc/crontab; ls -la /home/me /home/me/project /home/pi; tail -3 /var/log/bulk-requests.log 2>/dev/null; true')
   fs.writeFileSync('eval/field-lab-3-observed.jsonl', rows.join('\n') + '\n')
   fs.writeFileSync('eval/field-lab-3-setup.log', setupLog)
   console.log(rows.join('\n'))
