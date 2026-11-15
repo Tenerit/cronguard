@@ -18,7 +18,8 @@ coverage
 # Outils locaux / éditeurs
 .claude
 CLAUDE.md
-GTM.md
+GTM*.md
+gtm/
 PLAN-ACTION.md
 PLAN-IA.md
 eval/real-cases.ts
@@ -50,3 +51,4 @@ sdk/go/cronguard
 eval/field-lab/gen/
 eval/silent-errors/out/
 eval/field-lab-2/gen/
+eval/field-lab-*/gen/
