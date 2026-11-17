@@ -1,6 +1,6 @@
 {
   "name": "cronguard",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Intelligent cron job monitoring with self-hosted LLM analysis",
   "license": "MIT",
   "keywords": [

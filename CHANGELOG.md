@@ -7,6 +7,8 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+## [1.8.0] — 2026-11-17 — Lecture des scripts, boucle « inconnu → connu », correctifs de sécurité depuis 1.7.0
+
 ### Mesuré — labo terrain 3 (2026-11-14)
 - 5 pannes réelles tirées au sort (StackExchange), vrai cron Debian : **détecté 3/5, cause juste 1/5, cause fausse 0/5** (`eval/archive/FIELD-LAB-3.md`). Cumul des trois labos : détecté 19/28, cause juste 7/27, cause fausse 1/28.
 - Point aveugle confirmé : les jobs sortis avec 0 qui ont échoué (proxy absent sous cron, base SQLite créée ailleurs).
