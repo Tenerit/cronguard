@@ -10,7 +10,7 @@
 1. `* * * * * root /bin/bash /root/scripts/vpnup.bash >> /root/scripts/vpn.log`
    - code : **root**
    - IA : **vpn-status-check** — Vérifie l'état du serveur VPN et enregistre les résultats dans un fichier de journalisation.
-2. `00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s "Backup failed, check attached logs" someone@gmail.com < /home/test/b`
+2. `00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s "Backup failed, check attached logs" redacted@example.com < /home/test/b`
    - code : **take_backup**
    - IA : **nightly-db-backup** — Effectue une sauvegarde quotidienne de la base de données et envoie un rapport par e-mail en cas d'échec. — ⚑ critique · marqué critique
 3. `17 * * * * root    cd / && run-parts --report /etc/cron.hourly`

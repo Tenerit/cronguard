@@ -84,7 +84,7 @@
  {
   "url": "https://stackoverflow.com/questions/10603939/crontab-executing-jar-with-properties-files",
   "title": "crontab executing jar with properties files",
-  "question": "I'm trying to use crontab to execute a jar every minute. \n\nThis jar is working well if I execute it via Terminal. The point is that the jar reads some constants at execution time, from two java properties files situated in the same directory (same level than the jar).\nThe problem comes when I try to execute it via crontab, it doesn't works and I think it's probably because this properties files aren't found.\n\nSo... how can I set the path of this two properties files in the crontab 'code'?\n\nmy crontab 'code' till now:\n\n\n```\nSHELL=/bin/bash\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\nMAILTO=myuser@gmail.com\nHOME=/\n\n*/1 * * * * /usr/local/jdk/bin/java -jar /home/myuser/Desktop/Pre/myjar.jar\n\n```\n\n\nThank you in advance,",
+  "question": "I'm trying to use crontab to execute a jar every minute. \n\nThis jar is working well if I execute it via Terminal. The point is that the jar reads some constants at execution time, from two java properties files situated in the same directory (same level than the jar).\nThe problem comes when I try to execute it via crontab, it doesn't works and I think it's probably because this properties files aren't found.\n\nSo... how can I set the path of this two properties files in the crontab 'code'?\n\nmy crontab 'code' till now:\n\n\n```\nSHELL=/bin/bash\nPATH=/sbin:/bin:/usr/sbin:/usr/bin\nMAILTO=redacted@example.com\nHOME=/\n\n*/1 * * * * /usr/local/jdk/bin/java -jar /home/myuser/Desktop/Pre/myjar.jar\n\n```\n\n\nThank you in advance,",
   "acceptedAnswer": null
  }
 ]

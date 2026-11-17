@@ -76,7 +76,7 @@
     "site": "stackoverflow",
     "title": "What is wrong with using $(date \"+%Y-%m-%d_%H:%M:%S\") in a cron job?",
     "url": "https://stackoverflow.com/questions/17603325/what-is-wrong-with-using-date-y-m-d-hms-in-a-cron-job",
-    "logs": "---------- Email message ----------\n\nFrom: Cron Daemon <root@MYSERVER>\n\nDate: Thu, Jul 11, 2013 at 9:37 PM\n\nSubject: Cron <MYUSERNAME@MYSERVER> mysqldump -u(USERNAME) -p(PASSWORD) --all-databases | \ngzip > /home/MYHOMEDIR/myDBBckups/full_backup$(date \"+\n\nTo: MYEMAIL@gmail.com\n\n\n/bin/sh: -c: line 0: unexpected EOF while looking for matching `\"'\n\n/bin/sh: -c: line 1: syntax error: unexpected end of file \n\n---------- End of Email message ----------\n",
+    "logs": "---------- Email message ----------\n\nFrom: Cron Daemon <root@MYSERVER>\n\nDate: Thu, Jul 11, 2013 at 9:37 PM\n\nSubject: Cron <MYUSERNAME@MYSERVER> mysqldump -u(USERNAME) -p(PASSWORD) --all-databases | \ngzip > /home/MYHOMEDIR/myDBBckups/full_backup$(date \"+\n\nTo: redacted@example.com\n\n\n/bin/sh: -c: line 0: unexpected EOF while looking for matching `\"'\n\n/bin/sh: -c: line 1: syntax error: unexpected end of file \n\n---------- End of Email message ----------\n",
     "answer": "The % character in the command portion of a cron job is translated to a newline character. Either use \\% to denote a % character, or put the date command into an external script that you invoke from cron. "
   },
   {

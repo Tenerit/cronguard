@@ -26,7 +26,7 @@ echo "sv2"
 /home2/backup/sv2/backup.sh
 SV2_STATUS=$([ "$?" == 0 ] && echo "OK" || echo "** FAIL **")
 if [ "$BOOTSTRAP_STATUS" == "OK" ] && [ "$SV2_STATUS" == "OK" ] ; then TITULO="Backup OK"; else TITULO="Backup !FAILED!"; fi
-( echo "Backup status"; echo "BOOTSTRAP_STATUS = $BOOTSTRAP_STATUS"; echo "SV2_STATUS = $SV2_STATUS" ) | mail -s "${TITULO}" "my@mail.org"
+( echo "Backup status"; echo "BOOTSTRAP_STATUS = $BOOTSTRAP_STATUS"; echo "SV2_STATUS = $SV2_STATUS" ) | mail -s "${TITULO}" "redacted@example.com"
 EOF
 chmod +x /home2/backup/backup-all.sh /home2/backup/*/backup.sh
 printf '#!/bin/sh\ncat > /tmp/mail-$(date +%%s).txt\n' > /usr/bin/mail && chmod +x /usr/bin/mail   # facteur local : le mail est écrit, pas envoyé

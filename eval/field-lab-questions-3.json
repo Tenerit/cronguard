@@ -118,11 +118,11 @@
  {
   "url": "https://serverfault.com/questions/1010968/get-an-email-notification-when-my-cron-fails-with-non-zero-exit-code-crontab",
   "title": "Get an email notification when my cron fails with non zero exit code - Crontab",
-  "question": "I have scheduled a script take_backup.sh in crontab like so\n\n\n```\n00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s \"Backup failed, check attached logs\" someone@gmail.com < /home/test/backup.log\n\n```\n\n\nThe requirement is to only send an email notification with the logs attached when the cron fails with a non zero exit code. I have set up logs and exit codes in the script to provide more details in backup.log. However, when this cron fails, I do not receive any notification.\n\nWhere am I going wrong?",
+  "question": "I have scheduled a script take_backup.sh in crontab like so\n\n\n```\n00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s \"Backup failed, check attached logs\" redacted@example.com < /home/test/backup.log\n\n```\n\n\nThe requirement is to only send an email notification with the logs attached when the cron fails with a non zero exit code. I have set up logs and exit codes in the script to provide more details in backup.log. However, when this cron fails, I do not receive any notification.\n\nWhere am I going wrong?",
   "acceptedAnswer": {
    "accepted": true,
    "score": 1,
-   "body": "if the \"mail\" part succeeds then the cron job has succeeded (and thus the code is zero)\n\n\n```\n 00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || ( mail -s \"Backup failed, check attached logs\" someone@gmail.com < /home/test/backup.log && false )\n\n```"
+   "body": "if the \"mail\" part succeeds then the cron job has succeeded (and thus the code is zero)\n\n\n```\n 00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || ( mail -s \"Backup failed, check attached logs\" redacted@example.com < /home/test/backup.log && false )\n\n```"
   }
  },
  {

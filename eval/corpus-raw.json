@@ -356,8 +356,8 @@
     "url": "https://serverfault.com/questions/1010968/get-an-email-notification-when-my-cron-fails-with-non-zero-exit-code-crontab",
     "title": "Get an email notification when my cron fails with non zero exit code - Crontab",
     "score": 3,
-    "logs": "00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s \"Backup failed, check attached logs\" someone@gmail.com < /home/test/backup.log\n",
-    "answer": "if the \"mail\" part succeeds then the cron job has succeeded (and thus the code is zero) 00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || ( mail -s \"Backup failed, check attached logs\" someone@gmail.com < /home/test/backup.log && false ) "
+    "logs": "00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s \"Backup failed, check attached logs\" redacted@example.com < /home/test/backup.log\n",
+    "answer": "if the \"mail\" part succeeds then the cron job has succeeded (and thus the code is zero) 00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || ( mail -s \"Backup failed, check attached logs\" redacted@example.com < /home/test/backup.log && false ) "
   },
   {
     "site": "serverfault",
@@ -917,7 +917,7 @@
     "title": "Rsync problem with cron and no problem manually",
     "score": 4,
     "logs": "2013/10/07 19:36:02 [6456] rsync: connection unexpectedly closed (0 bytes received so far) [Receiver]\n2013/10/07 19:36:02 [6456] rsync error: error in rsync protocol data stream (code 12) at io.c(605) [Receiver=3.0.9]\n",
-    "answer": " (I use keychain so I don't need to type any password etc ...) Ok, so you need to tell the program running in your cron job how to find your keychain. SSH looks for an SSH agent (which keychain emulates) via the environment variable SSH_AUTH_SOCK. So you need to set this environment variable in your crontab. In a typical configuration, SSH_AUTH_SOCK is a path to a socket with a random name. Since you're using keychain, you can easily find an alternate name for that socket: keychain writes files to ~/.keychain that contain environment variable declarations that set SSH_AUTH_SOCK and other similar variables (SSH_AGENT_PID, GPG_AGENT_INFO). So just include the appropriate file in your cron job. MAILTO=user+rpibackup@gmail.com 30 5 * * * . ~/.keychain/$(hostname)-sh; /home/user/backup.sh (Aside: cron has a built-in feature to send mail with the job's output, such that you receive a mail only"
+    "answer": " (I use keychain so I don't need to type any password etc ...) Ok, so you need to tell the program running in your cron job how to find your keychain. SSH looks for an SSH agent (which keychain emulates) via the environment variable SSH_AUTH_SOCK. So you need to set this environment variable in your crontab. In a typical configuration, SSH_AUTH_SOCK is a path to a socket with a random name. Since you're using keychain, you can easily find an alternate name for that socket: keychain writes files to ~/.keychain that contain environment variable declarations that set SSH_AUTH_SOCK and other similar variables (SSH_AGENT_PID, GPG_AGENT_INFO). So just include the appropriate file in your cron job. MAILTO=redacted@example.com 30 5 * * * . ~/.keychain/$(hostname)-sh; /home/user/backup.sh (Aside: cron has a built-in feature to send mail with the job's output, such that you receive a mail only"
   },
   {
     "site": "unix",

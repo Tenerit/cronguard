@@ -115,8 +115,8 @@ yum -y --enablerepo=webtatic install php-cli
 - Réécrit : Exécutez type -a rsync pour afficher les emplacements des exécutables. Utilisez ensuite le chemin complet de la bonne version dans votre script. Par exemple : /path/to/rsync rsync_options ...
 
 ### 25. https://serverfault.com/questions/1010968/get-an-email-notification-when-my-cron-fails-with-non-zero-exit-code-crontab
-- Origine : if the "mail" part succeeds then the cron job has succeeded (and thus the code is zero) 00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || ( mail -s "Backup failed, check attached logs" someone@gmail.com < /home/test/backup.log && false )
-- Réécrit : Si la partie 'mail' réussit, alors la tâche cron a réussi (donc le code est zéro). 00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || ( mail -s "Backup failed, check attached logs" someone@gmail.com < /home/test/backup.log && false )
+- Origine : if the "mail" part succeeds then the cron job has succeeded (and thus the code is zero) 00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || ( mail -s "Backup failed, check attached logs" redacted@example.com < /home/test/backup.log && false )
+- Réécrit : Si la partie 'mail' réussit, alors la tâche cron a réussi (donc le code est zéro). 00 19 * * * bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || ( mail -s "Backup failed, check attached logs" redacted@example.com < /home/test/backup.log && false )
 
 ### 26. https://serverfault.com/questions/221652/how-to-stop-cron-from-sending-messages-about-errors
 - Origine : You should check to make sure the lynx binary is in one of the locations specified in the PATH variable, or use the full path to the binary in the cron line. To surpress the errors, you want to redirect STDERR and STDOUT to /dev/null, like so: */5 * * * * lynx -dump http://www.domain.com/cron/realqueue >/dev/null 2>&1 The first redirection sends STDOUT to /dev/null, and the second sends STDERR with STDOUT (that is, to /dev/null).

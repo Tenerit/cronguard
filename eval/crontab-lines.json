@@ -7,7 +7,7 @@
  },
  {
   "schedule": "00 19 * * *",
-  "command": "bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s \"Backup failed, check attached logs\" someone@gmail.com < /home/test/backup.log",
+  "command": "bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s \"Backup failed, check attached logs\" redacted@example.com < /home/test/backup.log",
   "source": "https://serverfault.com/questions/1010968/get-an-email-notification-when-my-cron-fails-with-non-zero-exit-code-crontab",
   "critical": true
  },

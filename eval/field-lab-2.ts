@@ -41,7 +41,7 @@ const CASES: Array<{ id: string; file: string; user: string; cmd: string }> = [
   { id: 'g7hello', file: 'user-root',       user: '', cmd: 'echo "Hello world" >> /var/log/cron.log 2>&1' },
   { id: 'g10',     file: 'user-myuser',     user: '', cmd: 'rsync -av --delete myuser@mybox:/home/backup-src/ /home/backup' },
   { id: 'g10env',  file: 'user-myuser',     user: '', cmd: 'env >> /tmp/my_env_variables' },
-  { id: 'g12',     file: 'user-test',       user: '', cmd: 'bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s "Backup failed, check attached logs" someone@gmail.com < /home/test/backup.log' },
+  { id: 'g12',     file: 'user-test',       user: '', cmd: 'bash /home/test/take_backup.sh > /home/test/backup.log 2>&1 || mail -s "Backup failed, check attached logs" redacted@example.com < /home/test/backup.log' },
   { id: 'g19',     file: '',                user: '', cmd: '' },
   { id: 'g20',     file: 'user-kali',       user: '', cmd: 'bash ~/Documents/GitHub/BFOR206/hw1.sh' },
   { id: 'g29',     file: 'user-root',       user: '', cmd: 'wget -q -O /dev/null http://www.urlgoeshere.co.uk/index.php cron_event' },

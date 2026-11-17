@@ -13,7 +13,7 @@ import type { EvalCase } from './cases'
 export const PUBLIC_CASES: EvalCase[] = [
   {
     name: 'pub-pg-dump-version-mismatch-cron', category: 'database', severity: 'medium', exitCode: 1,
-    source: 'https://www.postgresql.org/message-id/4FAD6AE6.6000904@gmail.com',
+    source: 'https://www.postgresql.org/message-id/redacted@example.com',
     logs: `Plain backup of mitesh
 pg_dump: server version: 9.1.2; pg_dump version: 9.0.5
 pg_dump: aborting because of server version mismatch`,

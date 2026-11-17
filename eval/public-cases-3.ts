@@ -51,7 +51,7 @@ Date: Thu, Jul 11, 2013 at 9:37 PM
 Subject: Cron <MYUSERNAME@MYSERVER> mysqldump -u(USERNAME) -p(PASSWORD) --all-databases | 
 gzip > /home/MYHOMEDIR/myDBBckups/full_backup$(date "+
 
-To: MYEMAIL@gmail.com
+To: redacted@example.com
 
 
 /bin/sh: -c: line 0: unexpected EOF while looking for matching \`"'

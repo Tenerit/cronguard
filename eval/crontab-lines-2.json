@@ -265,7 +265,7 @@
  },
  {
   "schedule": "0 0,12 * * *",
-  "command": "/bin/bash -l -c 'cd /home/deployer/public/fulfillment_api/releases/20131010141756 && RACK_ENV=production bundle exec rake background_jobs:process_and_email['\\''khartnet@gmail.com'\\''] --silent'",
+  "command": "/bin/bash -l -c 'cd /home/deployer/public/fulfillment_api/releases/20131010141756 && RACK_ENV=production bundle exec rake background_jobs:process_and_email['\\''redacted@example.com'\\''] --silent'",
   "source": "https://stackoverflow.com/questions/19300382/ruby-crontab-rake-task-fails-but-only-when-command-is-ran-by-crontab",
   "critical": null
  },
