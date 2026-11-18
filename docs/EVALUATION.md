@@ -2,6 +2,19 @@
 
 Every number in the README comes from a script in [`eval/`](../eval) that anyone can re-run. The latest outputs sit in `eval/REPORT.md`, `eval/report.json` and `eval/EXPLAIN.md`; every dated trial is kept in [`eval/archive/`](../eval/archive). This page explains the method, gives every result, including the experiments that did not help, and shows how to score CronGuard on your own logs.
 
+## Results at a glance
+
+Measured, not asserted. Criteria are written down before each test; failures are published like successes ([CHANGELOG](../CHANGELOG.md)).
+
+| Test | Result |
+|---|---|
+| **Field labs: real failures drawn at random** (28 StackExchange questions, seed fixed before reading, replayed in a real Debian cron with the real SDK; truth written from the accepted answer before each run — [lab 1](../eval/archive/FIELD-LAB.md), [2](../eval/archive/FIELD-LAB-2.md), [3](../eval/archive/FIELD-LAB-3.md)) | **Detected 19/28. Right cause 7/27. Wrong cause stated 1/28** — when it states a cause, it is right 7 times out of 8; otherwise it says "not established". Blind spot: jobs that exit 0 while failing (9/28); use `CG_EXPECT` for those. |
+| **Real cron failures in a container** (real `crond`, a user with their own `~/.profile`, bash and Python SDKs, 11 failures with a known cause) | **11/11 causes established with the test commands, 3/11 without**; the genuine application bug left as "not established", nothing invented. Scenarios written by us: proof it works on real cron, not a coverage figure. |
+| **Held-out StackExchange failures** (public6, 15 cases collected before the changes) | Wrong causes stated as fact: **12/30 without model deduction vs 20/30 with it**, for the same number of right causes. Score 3.9/10 vs 4.2 (not significant). These cases have logs only — no host probes. |
+| Failures the known-fix library covers | 9.2/10 on the cases we tuned on, **5.0 on held-out ones**: the library generalises imperfectly, which is why it learns from your team. |
+
+**The number to judge us on is not out yet:** how many of *your* failures CronGuard explains. Run it on your jobs; the weekly report shows what it did not recognise.
+
 ## The score out of 10
 
 Each diagnosis is graded by code ([`eval/rubric.ts`](../eval/rubric.ts)), never by hand and never by another model:
