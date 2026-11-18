@@ -208,6 +208,51 @@ describe('POST /webhooks/stripe', () => {
     expect(res.status).toBe(200)
   })
 
+  // Faille corrigée le 2026-11-18 : l'email saisi dans Stripe n'est pas vérifié ; sans clientId (payment link),
+  // un paiement ne doit JAMAIS être rattaché à un compte existant (sinon : résilier → rétrograder la victime).
+  it('ne rattache pas un paiement sans clientId à un compte existant par son email', async () => {
+    const { db } = require('../db')
+    db.query.mockImplementationOnce(async () => ({ rows: [{ id: 'victim' }] }))   // SELECT … WHERE email : existe
+    const res = await sendWebhook({
+      type: 'checkout.session.completed',
+      data: { object: { customer_details: { email: 'victim@example.com' }, customer: 'cus_attacker', subscription: 'sub_x' } },
+    })
+    expect(res.status).toBe(200)
+    expect(db.query.mock.calls.some((c: any[]) => /SET stripe_id/.test(c[0]))).toBe(false)
+    expect(db.query.mock.calls.some((c: any[]) => /INSERT INTO subscriptions/.test(c[0]))).toBe(false)
+  })
+
+  it('le clientId posé par /billing/checkout rattache le paiement au bon compte', async () => {
+    const { db } = require('../db')
+    await sendWebhook({
+      type: 'checkout.session.completed',
+      data: { object: { metadata: { clientId: 'cli-1' }, customer_details: { email: 'autre@example.com' }, customer: 'cus_1', subscription: 'sub_1' } },
+    })
+    const link = db.query.mock.calls.find((c: any[]) => /SET stripe_id/.test(c[0]))
+    expect(link?.[0]).toMatch(/WHERE id = \$1/)
+    expect(link?.[1]).toEqual(['cli-1', 'cus_1'])
+  })
+
+  it('réactivation : seuls les monitors coupés par la facturation repartent, pas les pauses voulues', async () => {
+    const { db } = require('../db')
+    await sendWebhook({ type: 'customer.subscription.updated', data: { object: { customer: 'cus_123', status: 'active' } } })
+    const on = db.query.mock.calls.find((c: any[]) => /UPDATE monitors SET active = true/.test(c[0]))
+    expect(on?.[0]).toMatch(/WHERE disabled_by_billing AND/)
+    await sendWebhook({ type: 'customer.subscription.deleted', data: { object: { customer: 'cus_123' } } })
+    const off = db.query.mock.calls.find((c: any[]) => /UPDATE monitors SET active = false/.test(c[0]))
+    expect(off?.[0]).toMatch(/disabled_by_billing = true/)
+  })
+
+  it('sans secret de signature configuré : 503, aucun événement traité', async () => {
+    const saved = process.env.STRIPE_WEBHOOK_SECRET
+    delete process.env.STRIPE_WEBHOOK_SECRET
+    try {
+      const res = await request(app).post('/webhooks/stripe').set('stripe-signature', 'x').send(Buffer.from('{}'))
+      expect(res.status).toBe(503)
+      expect(mockConstructEvent).not.toHaveBeenCalled()
+    } finally { process.env.STRIPE_WEBHOOK_SECRET = saved }
+  })
+
   it('returns 200 for unhandled event types (idempotent)', async () => {
     const res = await sendWebhook({ type: 'unknown.event', data: { object: {} } })
     expect(res.status).toBe(200)

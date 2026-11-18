@@ -363,6 +363,12 @@ async function v21(client: {query(sql: string, params?: unknown[]): Promise<{ ro
 // ALTER … IF NOT EXISTS prend quand même un verrou exclusif à CHAQUE démarrage : sur deux tables à la suite, il
 // s'interbloquait avec un autre processus déjà en train de les lire (checker tué, conteneur tout-en-un arrêté :
 // trouvé par scripts/test-allinone.sh le 2026-11-12). On ne touche donc aux tables que si une colonne manque.
+// ─── V28 : monitors coupés PAR LA FACTURATION (rétrogradation), distingués d'une pause voulue par l'utilisateur :
+// à la réactivation de l'abonnement, seuls ceux-là sont rallumés (avant : tous, pauses comprises).
+async function v28(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
+  await client.query(`ALTER TABLE monitors ADD COLUMN IF NOT EXISTS disabled_by_billing BOOLEAN NOT NULL DEFAULT false`)
+}
+
 // ─── V27 : last_status normalisé. Le worker y écrivait le statut du ping ('success' | 'fail') au lieu de
 // 'ok' | 'failed' attendus partout : les monitors déjà touchés sont remis dans le bon vocabulaire.
 async function v27(client: {query(sql: string, params?: unknown[]): Promise<unknown>}) {
@@ -463,7 +469,7 @@ async function v16(client: {query(sql: string, params?: unknown[]): Promise<unkn
 const MIGRATION_LOCK_KEY = 947_218_314
 
 // À changer à chaque nouvelle migration : sinon une base déjà marquée ne la jouerait jamais.
-const SCHEMA_MARKER = 'schema_v27'
+const SCHEMA_MARKER = 'schema_v28'
 
 export async function runMigrations() {
   const client = await db.connect()
@@ -505,9 +511,10 @@ export async function runMigrations() {
     await v25(client)
     await v26(client)
     await v27(client)
+    await v28(client)
     await client.query(`INSERT INTO migration_markers (name) VALUES ($1) ON CONFLICT DO NOTHING`, [SCHEMA_MARKER])
     await client.query('COMMIT')
-    logger.info('[DB] Migrations terminées (v1 → v27)')
+    logger.info('[DB] Migrations terminées (v1 → v28)')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

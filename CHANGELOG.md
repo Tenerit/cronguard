@@ -7,6 +7,12 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [Unreleased]
 
+### Sécurité — facturation Stripe (2026-11-18)
+- **Corrigé (moyen)** : un paiement Stripe sans identifiant de compte (lien de paiement créé hors de l'app) était rattaché au compte portant **le même e-mail que celui saisi dans Stripe**, jamais vérifié. Quelqu'un pouvait lier son abonnement au compte d'un autre, puis résilier pour le rétrograder et couper ses monitors. Désormais seul l'identifiant posé par le serveur lors du checkout rattache un paiement ; sinon, rapprochement manuel (journalisé).
+- **Corrigé** : à la réactivation d'un abonnement, tous les monitors étaient rallumés, y compris ceux mis en pause par l'utilisateur. Seuls ceux coupés par la facturation repartent (colonne `disabled_by_billing`, migration v28).
+- **Durci** : webhook Stripe refusé explicitement (503) si `STRIPE_WEBHOOK_SECRET` n'est pas configuré.
+
+
 ## [1.8.0] — 2026-11-17 — Lecture des scripts, boucle « inconnu → connu », correctifs de sécurité depuis 1.7.0
 
 ### Mesuré — labo terrain 3 (2026-11-14)

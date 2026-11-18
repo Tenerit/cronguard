@@ -23,9 +23,10 @@ const accountRouter = express.Router()
 // "paiement échoué (3×)" et "abonnement annulé" — une seule source de vérité.
 async function downgradeToFree(customerId: string): Promise<void> {
   await db.query(`UPDATE clients SET plan = 'free' WHERE stripe_id = $1`, [customerId])
+  // disabled_by_billing : seuls ces monitors seront rallumés si l'abonnement repart (pas les pauses voulues).
   await db.query(`
-    UPDATE monitors SET active = false
-    WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
+    UPDATE monitors SET active = false, disabled_by_billing = true
+    WHERE active AND client_id = (SELECT id FROM clients WHERE stripe_id = $1)
       AND id NOT IN (
         SELECT id FROM monitors
         WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
@@ -56,14 +57,13 @@ webhookRouter.post(
   express.raw({ type: 'application/json' }),  // Raw body requis pour la signature
   async (req, res) => {
     const sig = req.headers['stripe-signature'] as string
+    // Sans secret de signature, on ne peut rien vérifier : refus explicite (ne pas compter sur le SDK pour échouer).
+    const secret = process.env.STRIPE_WEBHOOK_SECRET
+    if (!secret || !sig) return res.status(!secret ? 503 : 400).send(!secret ? 'Webhook not configured' : 'Missing signature')
 
     let event: Stripe.Event
     try {
-      event = getStripe().webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET!
-      )
+      event = getStripe().webhooks.constructEvent(req.body, sig, secret)
     } catch (err) {
       logger.warn('[Stripe] Invalid webhook signature', { err })
       return res.status(400).send('Invalid signature')
@@ -82,11 +82,11 @@ webhookRouter.post(
           const clientId       = session.metadata?.clientId
           const email          = session.customer_details?.email
 
-          // Liaison de compte : la metadata clientId (posée à la création du Checkout
-          // par /billing/checkout) FAIT FOI — l'email saisi dans Stripe peut différer
-          // de celui du compte CronGuard, ce qui créerait un compte pro orphelin.
+          // Liaison de compte : SEULE la metadata clientId (posée côté serveur par /billing/checkout, événement
+          // signé) peut rattacher un paiement à un compte existant. L'email saisi dans Stripe n'est pas vérifié :
+          // le rattacher à un compte existant permettait à n'importe qui de lier SON abonnement au compte d'un
+          // autre, puis de résilier pour le rétrograder et couper ses monitors (corrigé le 2026-11-18).
           // trial_ends_at remis à NULL : sinon expireTrails downgrade ensuite le payeur.
-          // Fallback email : Checkout créés hors app (dashboard Stripe / payment link).
           let client: { id: string; email: string } | undefined
           let freshKey: string | undefined   // seulement si le compte est créé ici
           if (clientId) {
@@ -98,14 +98,16 @@ webhookRouter.post(
             `, [clientId, customerId])
             client = rows[0]
           }
+          // Checkout créé hors de l'app (payment link) dont l'email existe déjà : rapprochement MANUEL.
           if (!client && email) {
-            const { rows } = await db.query(`
-              UPDATE clients SET stripe_id = $2, plan = 'pro', trial_ends_at = NULL
-              WHERE email = $1
-              RETURNING id, email
-            `, [email, customerId])
-            client = rows[0]
+            const { rows: [taken] } = await db.query(`SELECT id FROM clients WHERE email = $1`, [email])
+            if (taken) {
+              logger.warn('[Stripe] Checkout sans clientId pour un email existant : non rattaché, à rapprocher à la main',
+                { customerId, subscriptionId })
+              break
+            }
           }
+          // Email inconnu : nouveau compte ; la clé part à cette adresse, donc à son seul propriétaire.
           if (!client && email) {
             freshKey = newApiKey()
             const { rows } = await db.query(`
@@ -176,10 +178,10 @@ webhookRouter.post(
           `, [customerId, isActive ? 'pro' : 'free'])
 
           if (isActive) {
-            // Réactive tous les monitors
+            // Rallume seulement ce que la facturation avait coupé ; les pauses voulues restent en pause.
             await db.query(`
-              UPDATE monitors SET active = true
-              WHERE client_id = (SELECT id FROM clients WHERE stripe_id = $1)
+              UPDATE monitors SET active = true, disabled_by_billing = false
+              WHERE disabled_by_billing AND client_id = (SELECT id FROM clients WHERE stripe_id = $1)
             `, [customerId])
           }
           break
